@@ -40,10 +40,13 @@
 !product-detail.html
 !cart.html
 !checkout.html
+!transaction-success.html
 !cart/
 !cart/index.html
 !checkout/
 !checkout/index.html
+!transaction-success/
+!transaction-success/index.html
 !.nojekyll
 !.gitignore
 !.htaccess
