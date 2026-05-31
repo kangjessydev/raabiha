@@ -1,0 +1,102 @@
+Log created: 2026-05-31 09:44:53
+Type: backup
+[2026-05-31 09:44:54][notice]Start backing up.
+[2026-05-31 09:44:54][notice]server info fcgi:Off max execution time: 300 wp version:7.0 php version:8.2.12 db version:10.4.32 php ini:safe_mode: memory_limit:512M memory_get_usage:107.89 MB memory_get_peak_usage:108.96 MB extensions:PDO enabled curl enabled zlib enabled   is_multisite:0
+[2026-05-31 09:44:54][notice]Prepare to backup backup_db files.
+[2026-05-31 09:44:54][notice]Start exporting database.
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_wc_category_lookup
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_wc_reserved_stock
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_actionscheduler_claims
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_actionscheduler_groups
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_links
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_term_relationships
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_wc_admin_note_actions
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_wc_product_download_directories
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_wc_rate_limits
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_wc_tax_rate_classes
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_wc_webhooks
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_woocommerce_attribute_taxonomies
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_woocommerce_log
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_woocommerce_order_items
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_woocommerce_payment_tokens
+[2026-05-31 09:44:54][notice]Preparing to dump table raa_woocommerce_shipping_zones
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_yoast_migrations
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_commentmeta
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_term_taxonomy
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_termmeta
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_terms
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_usermeta
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_wc_customer_lookup
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_wc_download_log
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_wc_order_coupon_lookup
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_wc_order_operational_data
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_wc_order_tax_lookup
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_wc_orders_meta
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_wc_product_attributes_lookup
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_woocommerce_api_keys
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_woocommerce_order_itemmeta
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_woocommerce_payment_tokenmeta
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_woocommerce_sessions
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_woocommerce_shipping_zone_locations
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_woocommerce_shipping_zone_methods
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_woocommerce_tax_rate_locations
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_yoast_primary_term
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_users
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_wc_admin_notes
+[2026-05-31 09:44:55][notice]Preparing to dump table raa_yoast_indexable_hierarchy
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_wc_order_addresses
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_wc_order_stats
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_woocommerce_tax_rates
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_yoast_seo_links
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_wc_order_product_lookup
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_woocommerce_downloadable_product_permissions
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_actionscheduler_logs
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_yoast_indexable
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_wc_product_meta_lookup
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_comments
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_wc_orders
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_posts
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_postmeta
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_actionscheduler_actions
+[2026-05-31 09:44:56][notice]Preparing to dump table raa_options
+[2026-05-31 09:44:56][notice]Exporting database finished.
+[2026-05-31 09:44:56][notice]Start compressing database
+[2026-05-31 09:44:56][notice]Prepare to zip file. file: localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_db.sql
+[2026-05-31 09:44:56][notice]Adding zip files completed.localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_db.part001.zip, filesize: 430.34 KB
+[2026-05-31 09:44:56][notice]Compressing database completed
+[2026-05-31 09:44:56][notice]Backing up backup_db completed.
+[2026-05-31 09:44:56][notice]Prepare to backup backup_themes files.
+[2026-05-31 09:44:56][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_themes.part001.zip index:532
+[2026-05-31 09:44:58][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_themes.part001.zip success. index:532 file size:18.44 MB
+[2026-05-31 09:44:58][notice]Backing up backup_themes completed.
+[2026-05-31 09:44:58][notice]Prepare to backup backup_plugin files.
+[2026-05-31 09:44:59][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_plugin.part001.zip index:8691
+[2026-05-31 09:45:13][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_plugin.part001.zip success. index:8691 file size:32.21 MB
+[2026-05-31 09:45:13][notice]Backing up backup_plugin completed.
+[2026-05-31 09:45:13][notice]Prepare to backup backup_uploads files.
+[2026-05-31 09:45:14][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_uploads.part001.zip index:101
+[2026-05-31 09:45:16][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_uploads.part001.zip success. index:101 file size:9.89 MB
+[2026-05-31 09:45:16][notice]Backing up backup_uploads completed.
+[2026-05-31 09:45:16][notice]Prepare to backup backup_content files.
+[2026-05-31 09:45:16][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_content.part001.zip index:422
+[2026-05-31 09:45:18][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_content.part001.zip success. index:422 file size:2.74 MB
+[2026-05-31 09:45:18][notice]Backing up backup_content completed.
+[2026-05-31 09:45:18][notice]Prepare to backup backup_core files.
+[2026-05-31 09:45:19][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_core.part001.zip index:3519
+[2026-05-31 09:45:29][notice]Compressing zip file:localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_core.part001.zip success. index:3519 file size:17.15 MB
+[2026-05-31 09:45:30][notice]Backing up backup_core completed.
+[2026-05-31 09:45:30][notice]Prepare to backup backup_merge files.
+[2026-05-31 09:45:30][notice]Prepare to zip file. file: localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_db.zip
+[2026-05-31 09:45:30][notice]Adding zip files completed.localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_all.part001.zip, filesize: 430.32 KB
+[2026-05-31 09:45:30][notice]Prepare to zip file. file: localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_themes.zip
+[2026-05-31 09:45:31][notice]Adding zip files completed.localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_all.part001.zip, filesize: 18.79 MB
+[2026-05-31 09:45:31][notice]Prepare to zip file. file: localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_plugin.zip
+[2026-05-31 09:45:34][notice]Adding zip files completed.localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_all.part001.zip, filesize: 49.18 MB
+[2026-05-31 09:45:34][notice]Prepare to zip file. file: localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_uploads.zip
+[2026-05-31 09:45:35][notice]Adding zip files completed.localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_all.part001.zip, filesize: 59.07 MB
+[2026-05-31 09:45:35][notice]Prepare to zip file. file: localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_content.zip
+[2026-05-31 09:45:36][notice]Adding zip files completed.localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_all.part001.zip, filesize: 61.76 MB
+[2026-05-31 09:45:36][notice]Prepare to zip file. file: localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_core.zip
+[2026-05-31 09:45:37][notice]Adding zip files completed.localhost_raabiha_wpvivid-68ede38b82a28_2026-05-31-09-44_backup_all.part001.zip, filesize: 78.38 MB
+[2026-05-31 09:45:38][notice]Backing up backup_merge completed.
+[2026-05-31 09:45:38][notice]Backup completed.

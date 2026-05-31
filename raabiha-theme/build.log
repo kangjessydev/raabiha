@@ -1,0 +1,22 @@
+
+> raabiha-dashboard@1.0.0 build
+> vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 3 modules transformed.
+x Build failed in 1.08s
+error during build:
+[vite:vue] [plugin vite:vue] src/components/BlogManager.vue (524:3): Invalid end tag.
+file: /home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/src/components/BlogManager.vue:524:3
+SyntaxError: [plugin vite:vue] src/components/BlogManager.vue (524:3): Invalid end tag.
+    at createCompilerError (/home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vue/compiler-core/dist/compiler-core.cjs.prod.js:1374:17)
+    at emitError (/home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vue/compiler-core/dist/compiler-core.cjs.prod.js:2980:5)
+    at Object.onclosetag (/home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vue/compiler-core/dist/compiler-core.cjs.prod.js:2387:9)
+    at Tokenizer.stateInClosingTagName (/home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vue/compiler-core/dist/compiler-core.cjs.prod.js:799:16)
+    at Tokenizer.parse (/home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vue/compiler-core/dist/compiler-core.cjs.prod.js:1157:16)
+    at Object.baseParse (/home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vue/compiler-core/dist/compiler-core.cjs.prod.js:3012:13)
+    at Object.parse (/home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vue/compiler-dom/dist/compiler-dom.cjs.prod.js:665:23)
+    at Object.parse$1 [as parse] (/home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vue/compiler-sfc/dist/compiler-sfc.cjs.js:1824:24)
+    at createDescriptor (file:///home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vitejs/plugin-vue/dist/index.mjs:71:43)
+    at transformMain (file:///home/kangjessy/Documents/projects/testing-ecommerce-wp-custom/raabiha-theme/node_modules/@vitejs/plugin-vue/dist/index.mjs:2421:34)

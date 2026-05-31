@@ -1,0 +1,17 @@
+.woocommerce-map-container {
+    min-height: 32rem;
+}
+
+.woocommerce-searchbox-wrapper {
+    padding: 1rem;
+}
+
+.woocommerce-searchbox-wrapper input {
+    width: 100%;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 4px -1px;
+    flex: 1;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    outline: none;
+}
