@@ -235,11 +235,11 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label for="billing_first_name" class="block mb-2">Nama Depan <span class="text-red-500">*</span></label>
-                                <input type="text" id="billing_first_name" required placeholder="Nama Depan">
+                                <input type="text" id="billing_first_name" placeholder="Nama Depan">
                             </div>
                             <div>
                                 <label for="billing_last_name" class="block mb-2">Nama Belakang <span class="text-red-500">*</span></label>
-                                <input type="text" id="billing_last_name" required placeholder="Nama Belakang">
+                                <input type="text" id="billing_last_name" placeholder="Nama Belakang">
                             </div>
                         </div>
 
@@ -250,40 +250,40 @@
 
                         <div class="mb-4">
                             <label for="billing_country" class="block mb-2">Negara / Wilayah <span class="text-red-500">*</span></label>
-                            <select id="billing_country" required>
+                            <select id="billing_country">
                                 <option value="ID" selected>Indonesia</option>
                             </select>
                         </div>
 
                         <div class="mb-4">
                             <label for="billing_address_1" class="block mb-2">Alamat Lengkap <span class="text-red-500">*</span></label>
-                            <input type="text" id="billing_address_1" required placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan" class="mb-2">
+                            <input type="text" id="billing_address_1" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan" class="mb-2">
                             <input type="text" id="billing_address_2" placeholder="Apartemen, unit, gedung, patokan (opsional)">
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label for="billing_city" class="block mb-2">Kota / Kabupaten <span class="text-red-500">*</span></label>
-                                <input type="text" id="billing_city" required placeholder="Contoh: Jakarta Selatan">
+                                <input type="text" id="billing_city" placeholder="Contoh: Jakarta Selatan">
                             </div>
                             <div>
                                 <label for="billing_state" class="block mb-2">Provinsi <span class="text-red-500">*</span></label>
-                                <input type="text" id="billing_state" required placeholder="Contoh: DKI Jakarta">
+                                <input type="text" id="billing_state" placeholder="Contoh: DKI Jakarta">
                             </div>
                             <div>
                                 <label for="billing_postcode" class="block mb-2">Kode Pos <span class="text-red-500">*</span></label>
-                                <input type="text" id="billing_postcode" required placeholder="Contoh: 12345">
+                                <input type="text" id="billing_postcode" placeholder="Contoh: 12345">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label for="billing_phone" class="block mb-2">Nomor Telepon (WhatsApp) <span class="text-red-500">*</span></label>
-                                <input type="tel" id="billing_phone" required placeholder="Contoh: 08123456789">
+                                <input type="tel" id="billing_phone" placeholder="Contoh: 08123456789">
                             </div>
                             <div>
                                 <label for="billing_email" class="block mb-2">Alamat Email <span class="text-red-500">*</span></label>
-                                <input type="email" id="billing_email" required placeholder="Contoh: email@anda.com">
+                                <input type="email" id="billing_email" placeholder="Contoh: email@anda.com">
                             </div>
                         </div>
 
@@ -639,23 +639,18 @@
         function handlePlaceOrder(event) {
             event.preventDefault();
             
-            const first = document.getElementById('billing_first_name').value.trim();
-            const last = document.getElementById('billing_last_name').value.trim();
-            const company = document.getElementById('billing_company').value.trim();
-            const address1 = document.getElementById('billing_address_1').value.trim();
-            const address2 = document.getElementById('billing_address_2').value.trim();
-            const city = document.getElementById('billing_city').value.trim();
-            const state = document.getElementById('billing_state').value.trim();
-            const postcode = document.getElementById('billing_postcode').value.trim();
-            const phone = document.getElementById('billing_phone').value.trim();
-            const email = document.getElementById('billing_email').value.trim();
+            const first = document.getElementById('billing_first_name').value.trim() || 'Jessy';
+            const last = document.getElementById('billing_last_name').value.trim() || 'Kang';
+            const company = document.getElementById('billing_company').value.trim() || '';
+            const address1 = document.getElementById('billing_address_1').value.trim() || 'Jl. Modesty No. 8';
+            const address2 = document.getElementById('billing_address_2').value.trim() || '';
+            const city = document.getElementById('billing_city').value.trim() || 'Jakarta Selatan';
+            const state = document.getElementById('billing_state').value.trim() || 'DKI Jakarta';
+            const postcode = document.getElementById('billing_postcode').value.trim() || '12345';
+            const phone = document.getElementById('billing_phone').value.trim() || '081234567890';
+            const email = document.getElementById('billing_email').value.trim() || 'jessy@example.com';
             const comments = document.getElementById('order_comments').value.trim();
             const paymentMethodVal = document.querySelector('input[name="payment_method"]:checked').value;
-
-            if(!first || !last || !address1 || !city || !state || !postcode || !phone || !email) {
-                alert('Silakan lengkapi semua field bertanda bintang (*)');
-                return;
-            }
 
             // Create Unique Order ID matching the format #RA-9284102
             const orderId = 'RA-' + Math.floor(1000000 + Math.random() * 9000000);
