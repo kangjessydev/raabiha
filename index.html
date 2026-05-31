@@ -532,7 +532,7 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
         </div>
         
         <!-- Background Image -->
-        <div class="absolute inset-0 md:relative md:h-full md:w-full z-0">
+        <div class="max-md:absolute max-md:inset-0 md:relative md:h-full md:w-full z-0">
             <img src="assets/images/hero_model_1779445106838.png" alt="Hero" class="w-full h-full object-cover">
             <!-- Mobile Dark Gradient Overlay -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent md:hidden"></div>
@@ -546,82 +546,40 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
                 Explore The Drop            </a>
         </div>
     </section>
-        <style>
+    <style>
         @keyframes marqueeScroll {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            100% { transform: translateX(-100%); }
         }
-        .animate-marquee {
-            animation: marqueeScroll 20s linear infinite;
+        .animate-marquee-clean {
+            display: inline-flex;
+            align-items: center;
+            gap: 4rem;
+            animation: marqueeScroll 25s linear infinite;
+            padding-right: 4rem;
         }
     </style>
-    <div class="bg-[#262626] text-[#d4d4d4] py-3 overflow-hidden flex whitespace-nowrap">
-        <div class="flex gap-16 animate-marquee">
-                                                <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>New Collection</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Modest Fashion</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Free Shipping</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Reseller Open</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                                                <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>New Collection</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Modest Fashion</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Free Shipping</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Reseller Open</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                                                <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>New Collection</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Modest Fashion</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Free Shipping</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Reseller Open</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                                                <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>New Collection</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Modest Fashion</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Free Shipping</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    <div class="flex items-center gap-16 text-[11px] font-medium tracking-[0.15em] uppercase">
-                        <span>Reseller Open</span>
-                        <div class="w-[3px] h-[3px] bg-[#a3a3a3] rounded-full"></div>
-                    </div>
-                                    </div>
+    <div style="background-color: #262626; color: #d4d4d4;" class="relative z-10 py-3.5 w-full overflow-hidden flex whitespace-nowrap">
+        <div class="animate-marquee-clean">
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">New Collection</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Modest Fashion</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Free Shipping</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Reseller Open</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">New Collection</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Modest Fashion</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Free Shipping</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Reseller Open</span>
+        </div>
+        <div class="animate-marquee-clean" aria-hidden="true">
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">New Collection</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Modest Fashion</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Free Shipping</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Reseller Open</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">New Collection</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Modest Fashion</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Free Shipping</span>
+            <span class="text-[11px] font-semibold tracking-[0.2em] uppercase">Reseller Open</span>
+        </div>
     </div>
         <section class="max-w-[1400px] mx-auto px-6 lg:px-16 py-24 pb-0">
         <div class="flex justify-between items-end mb-12">
