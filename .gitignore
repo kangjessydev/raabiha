@@ -1,0 +1,19 @@
+# Ignore everything by default
+*
+
+# Allow directories
+!assets/
+!assets/**
+!wp-content/
+!wp-content/plugins/
+!wp-content/plugins/woocommerce/
+!wp-content/plugins/woocommerce/assets/
+!wp-content/plugins/woocommerce/assets/**
+!wp-includes/
+!wp-includes/js/
+!wp-includes/js/**
+
+# Allow specific files in root
+!index.html
+!.nojekyll
+!.gitignore
