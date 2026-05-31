@@ -15,5 +15,7 @@
 
 # Allow specific files in root
 !index.html
+!about.html
+!contact.html
 !.nojekyll
 !.gitignore
