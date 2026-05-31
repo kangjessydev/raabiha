@@ -39,6 +39,11 @@
 !shop.html
 !product-detail.html
 !cart.html
+!checkout.html
+!cart/
+!cart/index.html
+!checkout/
+!checkout/index.html
 !.nojekyll
 !.gitignore
 !.htaccess
