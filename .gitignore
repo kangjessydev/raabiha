@@ -13,6 +13,22 @@
 !wp-includes/js/
 !wp-includes/js/**
 
+# Allow redirect folders
+!shop/
+!shop/index.html
+!product-detail/
+!product-detail/index.html
+!about/
+!about/index.html
+!contact/
+!contact/index.html
+!gallery/
+!gallery/index.html
+!blog/
+!blog/index.html
+!blog-detail/
+!blog-detail/index.html
+
 # Allow specific files in root
 !index.html
 !about.html
