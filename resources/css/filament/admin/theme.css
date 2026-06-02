@@ -1,0 +1,25 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/* Fix Cluster Sidebar to be sticky instead of scrolling with content */
+.fi-page-sub-navigation-sidebar-ctn {
+    position: sticky;
+    top: 6rem; /* Adjust based on topbar height + padding */
+    height: max-content;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+}
+
+/* Optional: Clean up scrollbar for the sidebar */
+.fi-page-sub-navigation-sidebar-ctn::-webkit-scrollbar {
+    width: 4px;
+}
+.fi-page-sub-navigation-sidebar-ctn::-webkit-scrollbar-track {
+    background: transparent;
+}
+.fi-page-sub-navigation-sidebar-ctn::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
+}
