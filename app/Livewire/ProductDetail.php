@@ -20,15 +20,25 @@ class ProductDetail extends Component
     #[Computed]
     public function sizes()
     {
-        // Dummy sizes for UI testing if no variants exist
-        return ['XS/S', 'M/L', 'Oversized'];
+        if (!isset($this->product)) return [];
+        
+        return \App\Models\AttributeOption::whereHas('variants', function($q) {
+            $q->where('product_id', $this->product->id);
+        })->whereHas('attribute', function($q) {
+            $q->where('slug', 'ukuran');
+        })->pluck('value')->toArray();
     }
 
     #[Computed]
     public function colors()
     {
-        // Dummy colors for UI testing
-        return ['Charcoal', 'Slate Sand', 'Dusty Rose'];
+        if (!isset($this->product)) return [];
+        
+        return \App\Models\AttributeOption::whereHas('variants', function($q) {
+            $q->where('product_id', $this->product->id);
+        })->whereHas('attribute', function($q) {
+            $q->where('slug', 'warna');
+        })->pluck('value')->toArray();
     }
 
     public function mount($slug)
