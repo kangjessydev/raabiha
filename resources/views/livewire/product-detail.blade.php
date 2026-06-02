@@ -137,6 +137,12 @@
                             <!-- Add to Cart Widget -->
                             <div class="woocommerce-variation-add-to-cart variations_button w-full flex flex-col gap-3">
                                 
+                                @if (session()->has('message'))
+                                    <div class="bg-[#064e3b]/10 border border-[#064e3b] text-[#064e3b] px-4 py-3 rounded text-[11px] font-mono tracking-widest mb-2">
+                                        {{ session('message') }}
+                                    </div>
+                                @endif
+
                                 <!-- Desktop Single Row: QTY + CTA + Wishlist -->
                                 <div class="hidden md:flex items-center gap-3 w-full h-14">
                                     <!-- QTY -->
