@@ -22,7 +22,7 @@ class ProductDetail extends Component
     {
         if (!isset($this->product)) return [];
         
-        return \App\Models\AttributeOption::whereHas('variants', function($q) {
+        return \App\Models\AttributeOption::whereHas('productVariants', function($q) {
             $q->where('product_id', $this->product->id);
         })->whereHas('attribute', function($q) {
             $q->where('slug', 'ukuran');
@@ -34,7 +34,7 @@ class ProductDetail extends Component
     {
         if (!isset($this->product)) return [];
         
-        return \App\Models\AttributeOption::whereHas('variants', function($q) {
+        return \App\Models\AttributeOption::whereHas('productVariants', function($q) {
             $q->where('product_id', $this->product->id);
         })->whereHas('attribute', function($q) {
             $q->where('slug', 'warna');
