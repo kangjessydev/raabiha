@@ -45,6 +45,7 @@ class ProductForm
                             ->label('Foto Produk (Bisa Pilih Banyak)')
                             ->image()
                             ->multiple()
+                            ->panelLayout('grid')
                             ->directory('products')
                             ->columnSpanFull(),
                     ])->columns(2),

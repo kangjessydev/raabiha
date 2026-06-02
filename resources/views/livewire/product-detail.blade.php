@@ -187,25 +187,25 @@
                 <div class="border-y border-[#e5e2de] divide-y divide-[#e5e2de]">
                     
                     <!-- 01. Product Description -->
-                    <div class="group py-6 product-accordion">
-                        <button class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
+                    <div class="group py-6 product-accordion" x-data="{ open: true }">
+                        <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
                             01. PRODUCT DESCRIPTION
-                            <svg class="w-4 h-4 transition-transform duration-300 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div id="accordion-desc" class="mt-6 text-[#1c1c1a] text-[14px] leading-relaxed font-sans accordion-content">
-                            <div class="space-y-6">
-                                <p class="leading-relaxed">{!! nl2br(e($product->description)) !!}</p>
+                        <div x-show="open" x-collapse class="mt-6 text-[#1c1c1a] text-[14px] leading-relaxed font-sans accordion-content">
+                            <div class="space-y-6 prose prose-sm max-w-none prose-p:my-2">
+                                {!! $product->description !!}
                             </div>
                         </div>
                     </div>
                     
                     <!-- 02. Reviews & Ratings -->
-                    <div class="group py-6 product-accordion">
-                        <button class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
+                    <div class="group py-6 product-accordion" x-data="{ open: false }">
+                        <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
                             02. REVIEWS & RATINGS (4.9 ★)
-                            <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div class="mt-6 text-[#1c1c1a] font-sans hidden accordion-content">
+                        <div x-show="open" x-collapse style="display: none;" class="mt-6 text-[#1c1c1a] font-sans accordion-content">
                             
                             <!-- Rating Overview Section -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 pb-8 border-b border-[#e5e2de]">
@@ -376,12 +376,12 @@
 
                     <!-- 03. Wholesale & Promo -->
                     @if(!empty($product->wholesale_pricing) || !empty($product->promo_rules))
-                    <div class="group py-6 product-accordion">
-                        <button class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
+                    <div class="group py-6 product-accordion" x-data="{ open: false }">
+                        <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
                             03. PROMO & GROSIR
-                            <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div class="mt-6 text-[#1c1c1a] font-sans hidden accordion-content">
+                        <div x-show="open" x-collapse style="display: none;" class="mt-6 text-[#1c1c1a] font-sans accordion-content">
                             @if(!empty($product->wholesale_pricing))
                             <div class="mb-6">
                                 <h4 class="text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Aturan Harga Grosir</h4>
