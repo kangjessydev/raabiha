@@ -26,7 +26,7 @@ class ProductDetail extends Component
             $q->where('product_id', $this->product->id);
         })->whereHas('attribute', function($q) {
             $q->where('slug', 'ukuran');
-        })->pluck('value')->toArray();
+        })->get();
     }
 
     #[Computed]
