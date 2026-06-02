@@ -39,6 +39,7 @@ class ProductForm
                             ->preload(),
                         RichEditor::make('description')
                             ->label('Deskripsi Produk')
+                            ->extraInputAttributes(['style' => 'min-height: 300px;'])
                             ->columnSpanFull(),
                         FileUpload::make('images')
                             ->label('Foto Produk (Bisa Pilih Banyak)')
@@ -77,72 +78,7 @@ class ProductForm
                             ->default(false),
                     ])->columns(2),
 
-                Section::make('Daftar Varian Produk')
-                    ->visible(fn (Get $get) => $get('has_variants') === true)
-                    ->schema([
-                        Repeater::make('variants')
-                            ->relationship('variants')
-                            ->schema([
-                                TextInput::make('name')
-                                    ->label('Nama Varian')
-                                    ->placeholder('Misal: Hitam - M')
-                                    ->required(),
-                                TextInput::make('sku')
-                                    ->label('SKU (Barcode)')
-                                    ->unique(ignoreRecord: true),
-                                TextInput::make('stock')
-                                    ->label('Stok Varian')
-                                    ->numeric()
-                                    ->default(0)
-                                    ->required(),
 
-                                Grid::make(2)
-                                    ->schema([
-                                        Toggle::make('is_price_override')
-                                            ->label('Gunakan Harga Kustom?')
-                                            ->live(),
-                                        Toggle::make('is_weight_override')
-                                            ->label('Gunakan Berat Kustom?')
-                                            ->live(),
-                                    ]),
-
-                                Grid::make(2)
-                                    ->schema([
-                                        TextInput::make('price')
-                                            ->label('Harga Normal Varian')
-                                            ->numeric()
-                                            ->prefix('Rp')
-                                            ->visible(fn (Get $get) => $get('is_price_override') === true)
-                                            ->required(fn (Get $get) => $get('is_price_override') === true),
-                                        TextInput::make('reseller_price')
-                                            ->label('Harga Reseller Varian')
-                                            ->numeric()
-                                            ->prefix('Rp')
-                                            ->visible(fn (Get $get) => $get('is_price_override') === true),
-                                    ]),
-
-                                Grid::make(2)
-                                    ->schema([
-                                        TextInput::make('weight')
-                                            ->label('Berat Varian')
-                                            ->numeric()
-                                            ->suffix('gram')
-                                            ->visible(fn (Get $get) => $get('is_weight_override') === true)
-                                            ->required(fn (Get $get) => $get('is_weight_override') === true),
-                                    ]),
-
-                                Select::make('attributeOptions')
-                                    ->label('Kombinasi Pilihan Atribut')
-                                    ->multiple()
-                                    ->relationship('attributeOptions', 'value')
-                                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->attribute->name}: {$record->value}")
-                                    ->preload()
-                                    ->required(),
-                            ])
-                            ->columns(3)
-                            ->addActionLabel('Tambah Varian')
-                            ->collapsible()
-                    ]),
 
                 Section::make('Pengaturan Tambahan')
                     ->schema([
