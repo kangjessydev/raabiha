@@ -97,12 +97,13 @@
                                         <span class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest cursor-pointer underline">SIZE GUIDE</span>
                                     </div>
                                     <div class="flex flex-wrap gap-2" id="size-options-grid">
-                                        @foreach($this->sizes as $size)
+                                        @foreach($this->sizes as $sizeOpt)
+                                            @php $sizeName = $sizeOpt->value; @endphp
                                             <button 
                                                 type="button" 
-                                                wire:click="$set('selectedSize', '{{ $size }}')"
-                                                class="flex-1 py-3 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 {{ $selectedSize === $size ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] hover:border-[#1c1c1a]' }}">
-                                                {{ $size }}
+                                                wire:click="$set('selectedSize', '{{ $sizeName }}')"
+                                                class="flex-1 py-3 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 {{ $selectedSize === $sizeName ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] hover:border-[#1c1c1a]' }}">
+                                                {{ $sizeName }}
                                             </button>
                                         @endforeach
                                     </div>
@@ -112,21 +113,15 @@
                                 <div class="mb-8" id="color-selector-container">
                                     <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Color: <span id="selected-color-label" class="font-normal text-[#615e57]">{{ $selectedColor }}</span></label>
                                     <div class="flex flex-wrap gap-3" id="color-options-grid">
-                                        @php
-                                            $colorMap = [
-                                                'Charcoal' => '#333333',
-                                                'Slate Sand' => '#d9cbb8',
-                                                'Dusty Rose' => '#c09891',
-                                                'Off-White' => '#f2efe8',
-                                                'Green' => '#064e3b'
-                                            ];
-                                        @endphp
-                                        @foreach($this->colors as $color)
-                                            @php $hex = $colorMap[$color] ?? '#333333'; @endphp
+                                        @foreach($this->colors as $colorOpt)
+                                            @php 
+                                                $colorName = $colorOpt->value;
+                                                $hex = $colorOpt->meta ?? '#333333'; 
+                                            @endphp
                                             <button 
                                                 type="button"
-                                                wire:click="$set('selectedColor', '{{ $color }}')"
-                                                class="w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $color ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
+                                                wire:click="$set('selectedColor', '{{ $colorName }}')"
+                                                class="w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $colorName ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
                                                 <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
                                             </button>
                                         @endforeach

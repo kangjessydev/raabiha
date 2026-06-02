@@ -38,7 +38,7 @@ class ProductDetail extends Component
             $q->where('product_id', $this->product->id);
         })->whereHas('attribute', function($q) {
             $q->where('slug', 'warna');
-        })->pluck('value')->toArray();
+        })->get();
     }
 
     public function mount($slug)
