@@ -20,6 +20,7 @@ class ProductsTable
                     ->label('Foto')
                     ->circular()
                     ->stacked()
+                    ->defaultImageUrl(url('/assets/images/gallery-1.png'))
                     ->limit(3),
                 TextColumn::make('category.name')
                     ->searchable()
@@ -52,7 +53,9 @@ class ProductsTable
                 \Filament\Tables\Filters\TernaryFilter::make('is_active'),
             ])
             ->recordActions([
-                EditAction::make(),
+                \Filament\Tables\Actions\ViewAction::make(),
+                \Filament\Tables\Actions\EditAction::make(),
+                \Filament\Tables\Actions\DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
