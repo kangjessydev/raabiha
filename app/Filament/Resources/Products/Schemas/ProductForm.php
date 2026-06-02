@@ -41,12 +41,35 @@ class ProductForm
                             ->label('Deskripsi Produk')
                             ->extraInputAttributes(['style' => 'min-height: 300px;'])
                             ->columnSpanFull(),
+                        \Filament\Forms\Components\Placeholder::make('gallery_css')
+                            ->hiddenLabel()
+                            ->content(new \Illuminate\Support\HtmlString('
+                                <style>
+                                    /* Hack to make Filament FilePond grid horizontally scrollable with 4 items max */
+                                    .horizontal-gallery .filepond--list {
+                                        display: flex !important;
+                                        flex-wrap: nowrap !important;
+                                        overflow-x: auto !important;
+                                        gap: 12px;
+                                        padding-bottom: 15px;
+                                    }
+                                    .horizontal-gallery .filepond--item {
+                                        width: calc(25% - 9px) !important;
+                                        min-width: 150px;
+                                        flex: 0 0 auto !important;
+                                        position: relative !important;
+                                        transform: none !important;
+                                        margin: 0 !important;
+                                    }
+                                </style>
+                            ')),
                         FileUpload::make('images')
                             ->label('Foto Produk (Bisa Pilih Banyak)')
                             ->image()
                             ->multiple()
                             ->panelLayout('grid')
                             ->directory('products')
+                            ->extraAttributes(['class' => 'horizontal-gallery'])
                             ->columnSpanFull(),
                     ])->columns(2),
 
