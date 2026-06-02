@@ -83,7 +83,7 @@
                         
                         <!-- Price -->
                         <div id="main-product-price" class="text-[#615e57] text-lg md:text-3xl font-serif mb-10">
-                            Rp{{ number_format($product->price, 0, ",", ".") }}
+                            Rp{{ number_format($this->currentPrice, 0, ",", ".") }}
                         </div>
 
                         <!-- Product Form (Add to Cart / Variation selectors) -->
