@@ -1,7 +1,7 @@
-<x-layouts.app>
-    <x-slot:header>
+<div>
+    @slot('header')
         <x-global.mobile-subnav title="Detail Produk" backUrl="/shop" transparent="true" :share="true" />
-    </x-slot:header>
+    @endslot
 
     <div id="product-detail-container" class="page-slide-in">
         <main class="bg-[#fcf9f5] min-h-screen pt-0 md:pt-12 pb-20">
@@ -15,7 +15,7 @@
                     <!-- Gallery View (Unified Desktop & Mobile) -->
                     <div class="w-full">
                         <div class="w-[calc(100%+3rem)] -mx-6 md:mx-0 md:w-full aspect-square md:aspect-[4/5] lg:h-[65vh] lg:aspect-auto bg-[#ebebeb] overflow-hidden relative">
-                            <img id="main-gallery-image" src="" alt="Detail Produk" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out opacity-100" onerror="this.onerror=null; this.src='{{ asset('/assets/images/gallery-1.png') }}';">
+                            <img id="main-gallery-image" src="{{ !empty($product->images) ? asset('storage/' . $product->images[0]) : asset('/assets/images/gallery-1.png') }}" alt="{{ $product->name }}" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out opacity-100" onerror="this.onerror=null; this.src='{{ asset('/assets/images/gallery-1.png') }}';">
                             
                             <!-- Badges Container (Inside Image on Mobile, Top Left on Desktop) -->
                             <div class="absolute bottom-4 left-4 md:bottom-auto md:top-6 md:left-6 z-40 flex flex-row md:flex-col gap-2 items-center md:items-start pointer-events-none">
@@ -31,7 +31,13 @@
                         <!-- Thumbnail Wrapper -->
                         <div class="relative w-[calc(100%+3rem)] -mx-6 md:mx-0 md:w-full group mt-4 lg:mt-6">
                             <ol id="gallery-thumbnails" class="flex flex-nowrap overflow-x-auto gap-3 lg:gap-4 p-0 px-6 md:px-0 m-0 list-none scroll-smooth scrollbar-none" style="scrollbar-width: none; -ms-overflow-style: none;">
-                                <!-- Dynamically Rendered -->
+                                @if(!empty($product->images))
+                                    @foreach($product->images as $idx => $img)
+                                        <li class="thumb-item relative shrink-0 cursor-pointer overflow-hidden bg-[#ebebeb] border {{ $idx === 0 ? 'border-[#1c1c1a] active' : 'border-transparent' }} transition-all" style="width: 20%; aspect-ratio: 4/5;">
+                                            <img src="{{ asset('storage/' . $img) }}" alt="Thumb" class="w-full h-full object-cover pointer-events-none">
+                                        </li>
+                                    @endforeach
+                                @endif
                             </ol>
                             
                             <!-- Gallery navigation arrows -->
@@ -55,7 +61,7 @@
                                 <span class="mx-2">/</span>
                                 <a href="shop.html" class="hover:text-[#1c1c1a] transition-colors">KATALOG</a>
                                 <span class="mx-2">/</span>
-                                <span id="breadcrumb-category" class="text-[#1c1c1a]">OUTERWEAR</span>
+                                <span id="breadcrumb-category" class="text-[#1c1c1a]">{{ strtoupper($product->category->name ?? "KATEGORI") }}</span>
                             </nav>
                             
                             <!-- Share Button -->
@@ -72,12 +78,12 @@
                             </button>
                         </div>
                         <h1 id="product-name" class="text-[#1c1c1a] text-2xl lg:text-5xl font-serif font-bold tracking-tight mb-2 mt-0 lg:mt-0 capitalize">
-                            Nama Produk
+                            {{ $product->name }}
                         </h1>
                         
                         <!-- Price -->
                         <div id="main-product-price" class="text-[#615e57] text-lg md:text-3xl font-serif mb-10">
-                            Rp0
+                            Rp{{ number_format($product->price, 0, ",", ".") }}
                         </div>
 
                         <!-- Product Form (Add to Cart / Variation selectors) -->
@@ -91,15 +97,39 @@
                                         <span class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest cursor-pointer underline">SIZE GUIDE</span>
                                     </div>
                                     <div class="flex flex-wrap gap-2" id="size-options-grid">
-                                        <!-- Dynamic sizes -->
+                                        @foreach($this->sizes as $size)
+                                            <button 
+                                                type="button" 
+                                                wire:click="$set('selectedSize', '{{ $size }}')"
+                                                class="flex-1 py-3 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 {{ $selectedSize === $size ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] hover:border-[#1c1c1a]' }}">
+                                                {{ $size }}
+                                            </button>
+                                        @endforeach
                                     </div>
                                 </div>
                                 
                                 <!-- Color Select -->
                                 <div class="mb-8" id="color-selector-container">
-                                    <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Color: <span id="selected-color-label" class="font-normal text-[#615e57]"></span></label>
+                                    <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Color: <span id="selected-color-label" class="font-normal text-[#615e57]">{{ $selectedColor }}</span></label>
                                     <div class="flex flex-wrap gap-3" id="color-options-grid">
-                                        <!-- Dynamic colors -->
+                                        @php
+                                            $colorMap = [
+                                                'Charcoal' => '#333333',
+                                                'Slate Sand' => '#d9cbb8',
+                                                'Dusty Rose' => '#c09891',
+                                                'Off-White' => '#f2efe8',
+                                                'Green' => '#064e3b'
+                                            ];
+                                        @endphp
+                                        @foreach($this->colors as $color)
+                                            @php $hex = $colorMap[$color] ?? '#333333'; @endphp
+                                            <button 
+                                                type="button"
+                                                wire:click="$set('selectedColor', '{{ $color }}')"
+                                                class="w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $color ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
+                                                <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
+                                            </button>
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>
@@ -111,17 +141,17 @@
                                 <div class="hidden md:flex items-center gap-3 w-full h-14">
                                     <!-- QTY -->
                                     <div class="flex items-center border border-[#e5e2de] w-28 shrink-0 h-full">
-                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" onclick="document.getElementById('qty').stepDown()">
+                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" wire:click="decrementQuantity">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                                         </button>
-                                        <input type="number" id="qty" value="1" min="1" class="w-full text-center bg-transparent border-none focus:outline-none text-[#1c1c1a] font-mono text-[13px] appearance-none m-0" style="-moz-appearance: textfield;">
-                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" onclick="document.getElementById('qty').stepUp()">
+                                        <input type="number" id="qty" wire:model.live="quantity" min="1" class="w-full text-center bg-transparent border-none focus:outline-none text-[#1c1c1a] font-mono text-[13px] appearance-none m-0" style="-moz-appearance: textfield;">
+                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" wire:click="incrementQuantity">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                         </button>
                                     </div>
 
                                     <!-- Add to Cart -->
-                                    <button type="button" id="desktop-add-to-cart-btn" class="flex-1 h-full bg-[#064e3b] text-white hover:bg-[#053e2f] flex items-center justify-center gap-3 border-none transition-colors focus:outline-none">
+                                    <button type="button" wire:click="addToCart" id="desktop-add-to-cart-btn" class="flex-1 h-full bg-[#064e3b] text-white hover:bg-[#053e2f] flex items-center justify-center gap-3 border-none transition-colors focus:outline-none">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                                         <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">TAMBAH KE KERANJANG</span>
                                     </button>
@@ -162,7 +192,9 @@
                             <svg class="w-4 h-4 transition-transform duration-300 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div id="accordion-desc" class="mt-6 text-[#1c1c1a] text-[14px] leading-relaxed font-sans accordion-content">
-                            <!-- Dynamic Content -->
+                            <div class="space-y-6">
+                                <p class="leading-relaxed">{!! nl2br(e($product->description)) !!}</p>
+                            </div>
                         </div>
                     </div>
                     
@@ -427,831 +459,7 @@
         </div>
     </main>
         
-        <script>
-        const products = {
-            'asymmetrical-tunic': {
-                id: 'asymmetrical-tunic',
-                name: 'ASYMMETRICAL TUNIC',
-                price_html: 'Rp750.000 - Rp950.000',
-                price_min: 750000,
-                price_max: 950000,
-                badge: 'SALE',
-                badge_bg: '#1c1c1a',
-                badge_color: '#ffffff',
-                images: [
-                    '/assets/images/gallery-3.png',
-                    '/assets/images/prod_wrap_1779445244495.png',
-                    '/assets/images/gallery-4.png',
-                    '/assets/images/gallery-5.png'
-                ],
-                category: 'Gamis',
-                collection: 'FALL/WINTER 2024',
-                description: 'Tunika asimetris premium dengan drapery elegan yang mengalir indah. Dibuat dengan material sutra berkualitas tinggi, potongan asimetris unik di bagian bawah memberikan siluet arsitektural modern yang dinamis namun tetap anggun dan modest.',
-                shipping_care: 'Pengiriman standar memakan waktu 3-5 hari kerja.<br>Hanya dicuci kering (dry clean). Jangan menggunakan mesin pengering.',
-                journal: 'Koleksi ini terinspirasi dari geometri arsitektur brutalist, di mana bentuk-bentuk tegas bertemu dengan kelembutan material drape.',
-                variations: {
-                    colors: ['Charcoal', 'Slate Sand', 'Dusty Rose'],
-                    sizes: ['XS/S', 'M/L', 'Oversized']
-                }
-            },
-            'kimono-structural-parka': {
-                id: 'kimono-structural-parka',
-                name: 'KIMONO STRUCTURAL PARKA',
-                price_html: 'Rp1.499.000',
-                price_min: 1499000,
-                price_max: 1499000,
-                badge: 'NEW',
-                badge_bg: '#e0d6cd',
-                badge_color: '#1c1c1a',
-                images: [
-                    '/assets/images/gallery-1.png',
-                    '/assets/images/prod_outer_1779445195829.png',
-                    '/assets/images/gallery-2.png'
-                ],
-                category: 'Outerwear',
-                collection: 'ESSENTIALS',
-                description: 'Parka berstruktur dengan kerah gaya kimono tradisional Jepang yang diadaptasi untuk tampilan urban modern. Dilengkapi dengan kantong utilitas tak terlihat dan material tahan air ringan.',
-                shipping_care: 'Dicuci dengan tangan menggunakan air dingin.<br>Jangan gunakan pemutih. Setrika suhu rendah jika diperlukan.',
-                journal: 'Eksperimen menyatukan pakaian tradisional Asia Timur dengan fungsionalitas jaket teknis perkotaan.',
-                variations: {
-                    colors: ['Charcoal', 'Slate Sand', 'Off-White'],
-                    sizes: ['M/L', 'Uni-Size']
-                }
-            },
-            'monolith-overcoat': {
-                id: 'monolith-overcoat',
-                name: 'MONOLITH OVERCOAT',
-                price_html: 'Rp2.850.000',
-                price_min: 2850000,
-                price_max: 2850000,
-                badge: 'NEW ARRIVAL',
-                badge_bg: '#1c1c1a',
-                badge_color: '#ffffff',
-                images: [
-                    '/assets/images/blog-coat.png',
-                    '/assets/images/prod_abaya_1779445230398.png',
-                    '/assets/images/gallery-5.png'
-                ],
-                category: 'Outerwear',
-                collection: 'FALL/WINTER 2024',
-                description: 'The Monolith Overcoat is a testament to RAABIHA\'s architectural approach to modesty. Crafted from heavy-weight Boiled Wool, this piece creates a protective yet fluid silhouette that challenges traditional outerwear structures.<br><br>• 100% Premium Boiled Wool construction<br>• Exaggerated structural shoulders<br>• Hidden button placket for a seamless finish<br>• Interior pockets for tech utility<br>• Hand-finished editorial lines and seams',
-                shipping_care: 'Dry clean only.<br>Store using a wide padded suit hanger.',
-                journal: 'Exploring the monolithic concept in modest fashion - a single outer layer of robust yet unassuming protection.',
-                variations: {
-                    colors: ['Charcoal', 'Slate Sand', 'Green'],
-                    sizes: ['M', 'OVERSIZED', 'L']
-                }
-            },
-            'raw-edge-box-tee': {
-                id: 'raw-edge-box-tee',
-                name: 'RAW EDGE BOX TEE',
-                price_html: 'Rp449.000',
-                price_min: 449000,
-                price_max: 449000,
-                badge: 'NEW',
-                badge_bg: '#e0d6cd',
-                badge_color: '#1c1c1a',
-                images: [
-                    '/assets/images/gallery-3.png',
-                    '/assets/images/gallery-4.png'
-                ],
-                category: 'Essential Tees',
-                collection: 'ESSENTIALS',
-                description: 'Kaos bersiluet kotak (boxy fit) dengan detail raw edge di bagian keliman bawah dan lengan. Menggunakan material katun organik 24s heavy-weight yang nyaman dan jatuh dengan sempurna.',
-                shipping_care: 'Cuci dengan mesin dingin dengan warna serupa.<br>Jangan gunakan mesin pengering. Setrika bagian dalam.',
-                journal: 'Menciptakan kaos dasar yang tidak membosankan dengan fokus penuh pada proporsi boxy dan detail jahitan tepi kasar.',
-                variations: {
-                    colors: ['Charcoal', 'Off-White', 'Slate Sand'],
-                    sizes: ['XS/S', 'M/L', 'Oversized']
-                }
-            },
-            'geometric-cargo-pants': {
-                id: 'geometric-cargo-pants',
-                name: 'GEOMETRIC CARGO PANTS',
-                price_html: 'Rp1.120.000',
-                price_min: 1120000,
-                price_max: 1120000,
-                badge: 'NEW',
-                badge_bg: '#e0d6cd',
-                badge_color: '#1c1c1a',
-                images: [
-                    '/assets/images/gallery-2.png',
-                    '/assets/images/gallery-1.png'
-                ],
-                category: 'Modest Bottoms',
-                collection: 'ESSENTIALS',
-                description: 'Celana kargo bersiluet rileks dengan penempatan saku geometris yang unik. Menawarkan kenyamanan bergerak maksimal berkat material kanvas katun lentur berkualitas tinggi.',
-                shipping_care: 'Cuci terbalik menggunakan mesin.<br>Setrika suhu sedang.',
-                journal: 'Memindahkan saku kargo tradisional ke posisi geometris baru yang memecah siluet lurus kaki.',
-                variations: {
-                    colors: ['Charcoal', 'Slate Sand'],
-                    sizes: ['XS/S', 'M/L', 'Uni-Size']
-                }
-            },
-            'column-maxi-dress': {
-                id: 'column-maxi-dress',
-                name: 'COLUMN MAXI DRESS',
-                price_html: 'Rp1.890.000',
-                price_min: 1890000,
-                price_max: 1890000,
-                badge: 'BESTSELLER',
-                badge_bg: '#d9a596',
-                badge_color: '#1c1c1a',
-                images: [
-                    '/assets/images/blog-white-suit.png',
-                    '/assets/images/prod_set_1779445214046.png',
-                    '/assets/images/gallery-5.png'
-                ],
-                category: 'Gamis',
-                collection: 'FALL/WINTER 2024',
-                description: 'Gamis kolom minimalis dengan potongan vertikal bersih yang memperpanjang siluet tubuh. Dibuat dari rajutan viscose premium bertekstur jatuh yang sangat lembut dan sejuk di kulit.',
-                shipping_care: 'Hanya dry clean atau cuci tangan lembut.<br>Jangan diperas keras. Jemur mendatar.',
-                journal: 'Inspirasi pilar kuil klasik Romawi yang dituangkan ke dalam bentuk gaun kolom lurus berbahan jatuh.',
-                variations: {
-                    colors: ['Off-White', 'Dusty Rose', 'Slate Sand'],
-                    sizes: ['XS/S', 'M/L']
-                }
-            },
-            'sculpted-hoodie-02': {
-                id: 'sculpted-hoodie-02',
-                name: 'SCULPTED HOODIE 02',
-                price_html: 'Rp899.000',
-                price_min: 899000,
-                price_max: 899000,
-                badge: 'NEW',
-                badge_bg: '#e0d6cd',
-                badge_color: '#1c1c1a',
-                images: [
-                    '/assets/images/blog-objects.png',
-                    '/assets/images/blog-hero.png'
-                ],
-                category: 'Outerwear',
-                collection: 'ESSENTIALS',
-                description: 'Hoodie bersiluet sculpted (terstruktur melengkung) dengan tudung kepala dobel besar dan detail jahitan panel melingkar. Material fleece premium ultra-soft berpemberat tinggi.',
-                shipping_care: 'Cuci dengan mesin dingin.<br>Balikkan pakaian sebelum dicuci. Hindari pemutih.',
-                journal: 'Mengubah hoodie olahraga biasa menjadi karya seni pakai melalui konstruksi panel 3D melengkung.',
-                variations: {
-                    colors: ['Charcoal', 'Slate Sand', 'Off-White'],
-                    sizes: ['XS/S', 'M/L', 'Oversized']
-                }
-            },
-            'utility-beanie': {
-                id: 'utility-beanie',
-                name: 'UTILITY BEANIE',
-                price_html: 'Rp299.000',
-                price_min: 299000,
-                price_max: 299000,
-                badge: 'NEW',
-                badge_bg: '#e0d6cd',
-                badge_color: '#1c1c1a',
-                images: [
-                    '/assets/images/blog-hero.png',
-                    '/assets/images/gallery-1.png'
-                ],
-                category: 'Headwear',
-                collection: 'ESSENTIALS',
-                description: 'Beanie rajut rib tebal fungsional dengan anyaman benang akrilik premium tahan lama. Memberikan kehangatan sempurna dengan kenyamanan elastisitas kepala yang pas.',
-                shipping_care: 'Cuci dengan tangan lembut.<br>Jangan diperas kencang. Jemur mendatar.',
-                journal: 'Topi rajut serbaguna yang dirancang untuk melengkapi setelan outerwear perkotaan.',
-                variations: {
-                    colors: ['Charcoal', 'Slate Sand', 'Off-White'],
-                    sizes: ['Uni-Size']
-                }
-            },
-            'field-shell-jacket': {
-                id: 'field-shell-jacket',
-                name: 'FIELD SHELL JACKET',
-                price_html: 'Rp2.150.000',
-                price_min: 2150000,
-                price_max: 2150000,
-                badge: 'NEW',
-                badge_bg: '#e0d6cd',
-                badge_color: '#1c1c1a',
-                images: [
-                    '/assets/images/gallery-1.png',
-                    '/assets/images/prod_outer_1779445195829.png'
-                ],
-                category: 'Outerwear',
-                collection: 'ESSENTIALS',
-                description: 'Jaket cangkang pelindung lapangan dengan tudung kepala badai yang bisa dilipat. Terbuat dari kain nilon ripstop tahan lama berpelapis anti-angin dan anti-air ringan.',
-                shipping_care: 'Dicuci dingin secara terpisah.<br>Jangan menggunakan pembutih atau disetrika.',
-                journal: 'Memaksimalkan pertahanan terhadap cuaca ekstrem perkotaan dengan desain cangkang luar minimalis terstruktur.',
-                variations: {
-                    colors: ['Charcoal', 'Slate Sand'],
-                    sizes: ['M/L', 'Oversized', 'Uni-Size']
-                }
-            },
-            'modest-urban-coat': {
-                id: 'modest-urban-coat',
-                name: 'MODEST URBAN COAT',
-                price_html: 'Rp3.100.000',
-                price_min: 3100000,
-                price_max: 3100000,
-                badge: 'BESTSELLER',
-                badge_bg: '#d9a596',
-                badge_color: '#1c1c1a',
-                images: [
-                    '/assets/images/blog-coat.png',
-                    '/assets/images/prod_abaya_1779445230398.png',
-                    '/assets/images/gallery-1.png',
-                    '/assets/images/prod_outer_1779445195829.png',
-                    '/assets/images/blog-hero.png',
-                    '/assets/images/blog-objects.png'
-                ],
-                category: 'Outerwear',
-                collection: 'FALL/WINTER 2024',
-                description: 'Mantel panjang bersiluet longgar elegan yang dirancang khusus untuk mobilitas perkotaan modern yang santun (modest). Menggunakan material wol blend premium super-halus.',
-                shipping_care: 'Hanya dry clean.<br>Gantung dengan benar untuk mempertahankan bentuk bahu.',
-                journal: 'Keseimbangan antara keanggunan siluet draping feminin dan perlindungan mantel tebal perkotaan.',
-                variations: {
-                    colors: ['Charcoal', 'Slate Sand', 'Off-White'],
-                    sizes: ['XS/S', 'M/L', 'Oversized']
-                }
-            }
-        };
-
-        // Current product state
-        let currentProduct = null;
-        let selectedSize = '';
-        let selectedColor = '';
-        let selectedQty = 1;
-
-        // Initialize UI
-        function initProductUI() {
-            const container = document.getElementById('product-detail-container');
-            if (!container || container.dataset.initialized === 'true') return;
-            container.dataset.initialized = 'true';
-
-            // Get slug from Blade variable
-            const productId = "{{ $slug }}" || 'asymmetrical-tunic';
-            currentProduct = products[productId] || products['asymmetrical-tunic'];
-
-            // Setup Page details
-            document.title = `${currentProduct.name} - Raabiha Olshop`;
-            document.getElementById('breadcrumb-category').textContent = currentProduct.category.toUpperCase();
-            document.getElementById('collection-badge').textContent = currentProduct.collection;
-            document.getElementById('product-name').textContent = currentProduct.name;
-            
-            // Set prices
-            updatePriceDisplay();
-
-            // Set Badges
-            const saleBadge = document.getElementById('product-sale-badge');
-            if (currentProduct.badge && currentProduct.badge.trim() !== '') {
-                saleBadge.textContent = currentProduct.badge;
-                saleBadge.style.backgroundColor = currentProduct.badge_bg || '#1c1c1a';
-                saleBadge.style.color = currentProduct.badge_color || '#ffffff';
-                saleBadge.classList.remove('hidden');
-            } else {
-                saleBadge.classList.add('hidden');
-            }
-
-            // Set Description and accordions
-            const descContent = `
-                <div class="space-y-6">
-                    <p class="leading-relaxed">${currentProduct.description}</p>
-                    <div class="border-t border-[#e5e2de] pt-6 mt-6">
-                        <h4 class="text-[10px] font-mono font-bold tracking-widest uppercase text-[#615e57] mb-3">SHIPPING & CARE</h4>
-                        <p class="text-xs text-[#525252] leading-relaxed">${currentProduct.shipping_care}</p>
-                    </div>
-                </div>
-            `;
-            document.getElementById('accordion-desc').innerHTML = descContent;
-
-            // Render sizes options
-            const sizeGrid = document.getElementById('size-options-grid');
-            if (sizeGrid) {
-                sizeGrid.innerHTML = '';
-                currentProduct.variations.sizes.forEach((size, idx) => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'flex-1 py-3 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 ';
-                    if (idx === 0) {
-                        btn.className += 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold';
-                        selectedSize = size;
-                    } else {
-                        btn.className += 'border-[#e5e2de] text-[#1c1c1a] hover:border-[#1c1c1a]';
-                    }
-                    btn.textContent = size;
-                    btn.addEventListener('click', function() {
-                        // Deselect other
-                        sizeGrid.querySelectorAll('button').forEach(x => {
-                            x.className = 'flex-1 py-3 text-[10px] font-mono border border-[#e5e2de] text-[#1c1c1a] uppercase tracking-wider hover:border-[#1c1c1a] transition-all duration-200';
-                        });
-                        // Select current
-                        this.className = 'flex-1 py-3 text-[10px] font-mono border border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold uppercase tracking-wider transition-all duration-200';
-                        selectedSize = size;
-                        updatePriceDisplay();
-                    });
-                    sizeGrid.appendChild(btn);
-                });
-            }
-
-            // Render colors options (Swatches)
-            const colorGrid = document.getElementById('color-options-grid');
-            const colorLabel = document.getElementById('selected-color-label');
-            const colorMap = {
-                'Charcoal': '#333333',
-                'Slate Sand': '#d9cbb8',
-                'Dusty Rose': '#c09891',
-                'Off-White': '#f2efe8',
-                'Green': '#064e3b'
-            };
-
-            if (colorGrid) {
-                colorGrid.innerHTML = '';
-                // If the product doesn't have Green but we want to show mockup, let's inject it for dummy
-                let colors = currentProduct.variations.colors;
-                if(currentProduct.id === 'monolith-overcoat' && !colors.includes('Green')) {
-                    colors.push('Green');
-                }
-
-                colors.forEach((color, idx) => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    // Outer ring for selected state
-                    btn.className = 'w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 ';
-                    
-                    const hex = colorMap[color] || colorMap['Charcoal'];
-                    const innerCircle = `<div class="w-full h-full rounded-full border border-black/10" style="background-color: ${hex}"></div>`;
-                    btn.innerHTML = innerCircle;
-
-                    if (idx === 0) {
-                        btn.className += 'border-[#1c1c1a]'; // Selected ring
-                        selectedColor = color;
-                        if(colorLabel) colorLabel.textContent = color;
-                    } else {
-                        btn.className += 'border-transparent hover:border-gray-300';
-                    }
-                    
-                    btn.addEventListener('click', function() {
-                        // Deselect other
-                        colorGrid.querySelectorAll('button').forEach(x => {
-                            x.className = 'w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 border-transparent hover:border-gray-300';
-                        });
-                        // Select current
-                        this.className = 'w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 border-[#1c1c1a]';
-                        selectedColor = color;
-                        if(colorLabel) colorLabel.textContent = color;
-                    });
-                    colorGrid.appendChild(btn);
-                });
-            }
-
-            // Gallery and thumbnails setup (Unified Desktop and Mobile)
-            const mainImg = document.getElementById('main-gallery-image');
-            if (mainImg && currentProduct.images.length > 0) {
-                mainImg.src = currentProduct.images[0];
-            }
-
-            const thumbsContainer = document.getElementById('gallery-thumbnails');
-            if (thumbsContainer) {
-                thumbsContainer.innerHTML = '';
-                currentProduct.images.forEach((img, idx) => {
-                    const li = document.createElement('li');
-                    li.className = 'thumb-item relative shrink-0 cursor-pointer overflow-hidden bg-[#ebebeb] border border-transparent transition-all ';
-                    li.style.width = '20%';
-                    li.style.aspectRatio = '4/5';
-                    if (idx === 0) li.className += 'border-[#1c1c1a] active';
-                    
-                    li.innerHTML = `<img src="${img}" alt="Thumb" class="w-full h-full object-cover pointer-events-none" onerror="this.onerror=null; this.src='{{ asset('/assets/images/gallery-1.png') }}';">`;
-                    li.addEventListener('click', function() {
-                        thumbsContainer.querySelectorAll('li').forEach(x => {
-                            x.classList.remove('active');
-                            x.classList.remove('border-[#1c1c1a]');
-                        });
-                        this.classList.add('active', 'border-[#1c1c1a]');
-                        
-                        if (mainImg && mainImg.src !== img) {
-                            // Smooth transition
-                            mainImg.classList.remove('opacity-100');
-                            mainImg.classList.add('opacity-0');
-                            
-                            setTimeout(() => {
-                                mainImg.src = img;
-                                mainImg.onload = () => {
-                                    mainImg.classList.remove('opacity-0');
-                                    mainImg.classList.add('opacity-100');
-                                };
-                            }, 300); // matches the duration-300 class
-                        }
-                    });
-                    thumbsContainer.appendChild(li);
-                });
-            }
-
-            // Setup Custom Gallery Navs
-            const thumbPrev = document.getElementById('thumb-prev');
-            const thumbNext = document.getElementById('thumb-next');
-            if (thumbPrev && thumbNext && thumbsContainer) {
-                const updateArrows = () => {
-                    if (thumbsContainer.scrollWidth > thumbsContainer.clientWidth) {
-                        thumbPrev.classList.remove('hidden');
-                        thumbNext.classList.remove('hidden');
-                    } else {
-                        thumbPrev.classList.add('hidden');
-                        thumbNext.classList.add('hidden');
-                    }
-                };
-                
-                thumbPrev.addEventListener('click', () => {
-                    thumbsContainer.scrollBy({ left: -150, behavior: 'smooth' });
-                });
-                thumbNext.addEventListener('click', () => {
-                    thumbsContainer.scrollBy({ left: 150, behavior: 'smooth' });
-                });
-
-                window.addEventListener('resize', updateArrows);
-                setTimeout(updateArrows, 500);
-            }
-
-            // Quantity picker (Desktop)
-            const qtyInput = document.getElementById('quantity-input');
-            const qtyMinus = document.getElementById('qty-minus');
-            const qtyPlus = document.getElementById('qty-plus');
-            if (qtyInput && qtyMinus && qtyPlus) {
-                qtyMinus.addEventListener('click', () => {
-                    let val = parseInt(qtyInput.value);
-                    if (val > 1) {
-                        qtyInput.value = val - 1;
-                        selectedQty = val - 1;
-                    }
-                });
-                qtyPlus.addEventListener('click', () => {
-                    let val = parseInt(qtyInput.value);
-                    if (val < 10) {
-                        qtyInput.value = val + 1;
-                        selectedQty = val + 1;
-                    }
-                });
-                qtyInput.addEventListener('change', () => {
-                    let val = parseInt(qtyInput.value);
-                    if (isNaN(val) || val < 1) val = 1;
-                    if (val > 10) val = 10;
-                    qtyInput.value = val;
-                    selectedQty = val;
-                });
-            }
-
-            // Add To Cart logic (Desktop & Mobile)
-            const desktopAddBtn = document.getElementById('desktop-add-to-cart-btn');
-            const mobileAddBtn = document.getElementById('mobile-add-to-cart-btn');
-            const mobileBuyBtn = document.getElementById('mobile-buy-now-btn');
-
-            function addToCartAction(redirect = false) {
-                // Get existing cart
-                let cart = JSON.parse(localStorage.getItem('raabiha_cart') || '[]');
-                
-                // Check if variation already exists in cart
-                const existingIdx = cart.findIndex(item => item.id === currentProduct.id && item.size === selectedSize && item.color === selectedColor);
-                
-                // Get price for specific variation
-                const finalPrice = getVariationPrice(selectedSize);
-
-                if (existingIdx > -1) {
-                    cart[existingIdx].qty += selectedQty;
-                } else {
-                    cart.push({
-                        id: currentProduct.id,
-                        name: currentProduct.name,
-                        image: currentProduct.images[0],
-                        size: selectedSize,
-                        color: selectedColor,
-                        price: finalPrice,
-                        qty: selectedQty
-                    });
-                }
-
-                localStorage.setItem('raabiha_cart', JSON.stringify(cart));
-                updateCartBadges();
-
-                if (redirect) {
-                    window.location.href = 'cart.html';
-                } else {
-                    alert('Produk berhasil ditambahkan ke keranjang!');
-                }
-            }
-
-            if (desktopAddBtn) desktopAddBtn.addEventListener('click', () => addToCartAction(false));
-
-            // Mobile: CART button → open bottomsheet in "cart" mode
-            if (mobileAddBtn) mobileAddBtn.addEventListener('click', () => openMobileBottomsheet('cart'));
-
-            // Mobile: BELI SEKARANG button
-            if (mobileBuyBtn) mobileBuyBtn.addEventListener('click', () => {
-                const hasVariants = currentProduct.variations &&
-                    ((currentProduct.variations.sizes && currentProduct.variations.sizes.length > 0) ||
-                     (currentProduct.variations.colors && currentProduct.variations.colors.length > 0));
-                if (hasVariants) {
-                    openMobileBottomsheet('buynow');
-                } else {
-                    // No variants: go directly to checkout
-                    window.location.href = '/checkout';
-                }
-            });
-
-            // WA link setup
-            const mobileWaBtn = document.getElementById('mobile-wa-btn');
-            if (mobileWaBtn) {
-                const titleEncoded = encodeURIComponent(currentProduct.name);
-                mobileWaBtn.href = `https://wa.me/6281234567890?text=Halo%20Raabiha%20Olshop%2C%20saya%20tertarik%20dengan%20produk%20${titleEncoded}`;
-            }
-
-            // Accordion logic
-            const accordions = document.querySelectorAll('.product-accordion');
-            accordions.forEach(acc => {
-                const btn = acc.querySelector('button');
-                const content = acc.querySelector('.accordion-content');
-                const icon = btn.querySelector('svg');
-                
-                btn.addEventListener('click', () => {
-                    const isOpen = !content.classList.contains('hidden');
-                    
-                    // Close all
-                    accordions.forEach(a => {
-                        a.querySelector('.accordion-content').classList.add('hidden');
-                        a.querySelector('svg').classList.remove('rotate-180');
-                    });
-                    
-                    // Toggle current
-                    if (!isOpen) {
-                        content.classList.remove('hidden');
-                        icon.classList.add('rotate-180');
-                    }
-                });
-            });
-
-            // Write review toggle form
-            const toggleReviewBtn = document.getElementById('toggle-review-btn');
-            const writeReviewForm = document.getElementById('write-review-form');
-            if (toggleReviewBtn && writeReviewForm) {
-                toggleReviewBtn.addEventListener('click', () => {
-                    writeReviewForm.classList.toggle('hidden');
-                });
-            }
-
-            // Rating stars input interactive styling
-            const starInputContainer = document.getElementById('rating-stars-input');
-            if (starInputContainer) {
-                const stars = starInputContainer.querySelectorAll('button');
-                stars.forEach((star, index) => {
-                    star.addEventListener('click', () => {
-                        stars.forEach((s, idx) => {
-                            if (idx <= index) {
-                                s.classList.add('text-[#064e3b]');
-                                s.classList.remove('text-[#d1cec9]');
-                            } else {
-                                s.classList.remove('text-[#064e3b]');
-                                s.classList.add('text-[#d1cec9]');
-                            }
-                        });
-                    });
-                });
-            }
-
-            // Handle review form submit
-            if (writeReviewForm) {
-                writeReviewForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    alert('Ulasan Anda telah dikirim dan sedang menunggu moderasi. Terima kasih!');
-                    writeReviewForm.reset();
-                    writeReviewForm.classList.add('hidden');
-                    // Reset stars
-                    if (starInputContainer) {
-                        const stars = starInputContainer.querySelectorAll('button');
-                        stars.forEach(s => {
-                            s.classList.remove('text-[#064e3b]');
-                            s.classList.add('text-[#d1cec9]');
-                        });
-                    }
-                });
-            }
-
-            // Initial cart badge update
-            updateCartBadges();
-        }
-
-        document.addEventListener('DOMContentLoaded', initProductUI);
-        document.addEventListener('livewire:navigated', initProductUI);
-
-        // Price formatting helpers
-        function formatRupiah(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        }
-
-        function getVariationPrice(size) {
-            // Simple logic: Asymmetrical tunic price varies by size
-            if (currentProduct.id === 'asymmetrical-tunic') {
-                if (size === 'XS/S') return 750000;
-                if (size === 'M/L') return 850000;
-                if (size === 'Oversized') return 950000;
-            }
-            return currentProduct.price_min;
-        }
-
-        function updatePriceDisplay() {
-            const priceDiv = document.getElementById('main-product-price');
-            if (!priceDiv) return;
-
-            if (currentProduct.price_min === currentProduct.price_max) {
-                priceDiv.innerHTML = `Rp${formatRupiah(currentProduct.price_min)}`;
-            } else {
-                // If variable, show active size price or range
-                if (selectedSize) {
-                    const price = getVariationPrice(selectedSize);
-                    priceDiv.innerHTML = `Rp${formatRupiah(price)}`;
-                } else {
-                    priceDiv.innerHTML = `Rp${formatRupiah(currentProduct.price_min)} - Rp${formatRupiah(currentProduct.price_max)}`;
-                }
-            }
-        }
-
-        function updateCartBadges() {
-            const cart = JSON.parse(localStorage.getItem('raabiha_cart') || '[]');
-            const count = cart.reduce((sum, item) => sum + item.qty, 0);
-            
-            const badges = document.querySelectorAll('.raabiha-cart-count-badge');
-            badges.forEach(badge => {
-                if (count > 0) {
-                    badge.textContent = count;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
-            });
-        }
-
-        // ===== MOBILE BOTTOMSHEET LOGIC =====
-        let bsMode = 'cart'; // 'cart' or 'buynow'
-        let bsSelectedSize = '';
-        let bsSelectedColor = '';
-        let bsQty = 1;
-
-        const colorMapBS = {
-            'Charcoal': '#333333', 'Slate Sand': '#d9cbb8', 'Dusty Rose': '#c09891',
-            'Off-White': '#f2efe8', 'Green': '#064e3b'
-        };
-
-        function openMobileBottomsheet(mode) {
-            bsMode = mode;
-            bsSelectedSize = selectedSize;
-            bsSelectedColor = selectedColor;
-            bsQty = 1;
-
-            const panel = document.getElementById('mobile-bs-panel');
-            const backdrop = document.getElementById('mobile-bs-backdrop');
-            const body = document.getElementById('mobile-bs-body');
-            const confirmBtn = document.getElementById('mobile-bs-confirm');
-
-            if (!panel || !backdrop || !body) return;
-
-            // Fill header info
-            document.getElementById('bs-product-name').textContent = currentProduct.name;
-            document.getElementById('bs-product-price').textContent = currentProduct.price_html;
-
-            // Build body content
-            body.innerHTML = '';
-            const hasVariants = currentProduct.variations &&
-                ((currentProduct.variations.sizes && currentProduct.variations.sizes.length > 0) ||
-                 (currentProduct.variations.colors && currentProduct.variations.colors.length > 0));
-
-            // Size picker
-            if (hasVariants && currentProduct.variations.sizes && currentProduct.variations.sizes.length > 0) {
-                const sizeSection = document.createElement('div');
-                sizeSection.className = 'mb-5';
-                sizeSection.innerHTML = `<div class="text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-3">SELECT SIZE</div>`;
-                const sizeGrid = document.createElement('div');
-                sizeGrid.className = 'flex flex-wrap gap-2';
-                currentProduct.variations.sizes.forEach((size, idx) => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.textContent = size;
-                    const isFirst = idx === 0;
-                    if (!bsSelectedSize && isFirst) bsSelectedSize = size;
-                    const isActive = bsSelectedSize === size;
-                    btn.className = `flex-1 min-w-[70px] py-3 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 ${isActive ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] hover:border-[#1c1c1a]'}`;
-                    btn.addEventListener('click', function() {
-                        sizeGrid.querySelectorAll('button').forEach(b => { b.className = 'flex-1 min-w-[70px] py-3 text-[10px] font-mono border border-[#e5e2de] text-[#1c1c1a] uppercase tracking-wider hover:border-[#1c1c1a] transition-all duration-200'; });
-                        this.className = 'flex-1 min-w-[70px] py-3 text-[10px] font-mono border border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold uppercase tracking-wider transition-all duration-200';
-                        bsSelectedSize = size;
-                    });
-                    sizeGrid.appendChild(btn);
-                });
-                sizeSection.appendChild(sizeGrid);
-                body.appendChild(sizeSection);
-            }
-
-            // Color picker
-            if (hasVariants && currentProduct.variations.colors && currentProduct.variations.colors.length > 0) {
-                const colorSection = document.createElement('div');
-                colorSection.className = 'mb-5';
-                const colorLabelEl = document.createElement('div');
-                colorLabelEl.className = 'text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-3';
-                colorLabelEl.innerHTML = `COLOR: <span id="bs-color-label" class="font-normal text-[#615e57]">${bsSelectedColor || currentProduct.variations.colors[0]}</span>`;
-                colorSection.appendChild(colorLabelEl);
-                const colorRow = document.createElement('div');
-                colorRow.className = 'flex flex-wrap gap-3';
-                currentProduct.variations.colors.forEach((color, idx) => {
-                    if (!bsSelectedColor && idx === 0) bsSelectedColor = color;
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    const hex = colorMapBS[color] || '#333333';
-                    btn.className = `w-9 h-9 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 ${bsSelectedColor === color ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300'}`;
-                    btn.innerHTML = `<div class="w-full h-full rounded-full border border-black/10" style="background-color:${hex}"></div>`;
-                    btn.addEventListener('click', function() {
-                        colorRow.querySelectorAll('button').forEach(b => { b.className = 'w-9 h-9 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 border-transparent hover:border-gray-300'; });
-                        this.className = 'w-9 h-9 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 border-[#1c1c1a]';
-                        bsSelectedColor = color;
-                        const lbl = document.getElementById('bs-color-label');
-                        if (lbl) lbl.textContent = color;
-                    });
-                    colorRow.appendChild(btn);
-                });
-                colorSection.appendChild(colorRow);
-                body.appendChild(colorSection);
-            }
-
-            // QTY picker (only for Cart mode)
-            if (mode === 'cart') {
-                const qtySection = document.createElement('div');
-                qtySection.className = 'mb-2';
-                qtySection.innerHTML = `
-                    <div class="text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-3">QUANTITY</div>
-                    <div class="flex items-center border border-[#e5e2de] w-32 h-11">
-                        <button type="button" id="bs-qty-minus" class="w-10 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
-                        </button>
-                        <span id="bs-qty-display" class="flex-1 text-center font-mono text-sm text-[#1c1c1a]">1</span>
-                        <button type="button" id="bs-qty-plus" class="w-10 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        </button>
-                    </div>`;
-                body.appendChild(qtySection);
-                // Wire qty buttons
-                document.getElementById('bs-qty-minus').addEventListener('click', () => {
-                    if (bsQty > 1) { bsQty--; document.getElementById('bs-qty-display').textContent = bsQty; }
-                });
-                document.getElementById('bs-qty-plus').addEventListener('click', () => {
-                    if (bsQty < 10) { bsQty++; document.getElementById('bs-qty-display').textContent = bsQty; }
-                });
-            }
-
-            // Set confirm button label
-            confirmBtn.textContent = mode === 'buynow' ? 'BELI SEKARANG' : 'TAMBAH KE KERANJANG';
-
-            // Show sheet
-            backdrop.classList.remove('hidden');
-            setTimeout(() => {
-                backdrop.classList.add('opacity-100');
-                backdrop.classList.remove('opacity-0');
-                panel.classList.remove('translate-y-full');
-            }, 10);
-
-            // Close handlers
-            backdrop.onclick = closeMobileBottomsheet;
-            document.getElementById('mobile-bs-close').onclick = closeMobileBottomsheet;
-
-            // Confirm action
-            confirmBtn.onclick = function() {
-                if (mode === 'buynow') {
-                    // Quick buy: go directly to checkout (no cart save)
-                    closeMobileBottomsheet();
-                    window.location.href = '/checkout';
-                } else {
-                    // Add to cart
-                    let cart = JSON.parse(localStorage.getItem('raabiha_cart') || '[]');
-                    const existingIdx = cart.findIndex(item => item.id === currentProduct.id && item.size === bsSelectedSize && item.color === bsSelectedColor);
-                    const finalPrice = getVariationPrice(bsSelectedSize);
-                    if (existingIdx > -1) {
-                        cart[existingIdx].qty += bsQty;
-                    } else {
-                        cart.push({ id: currentProduct.id, name: currentProduct.name, image: currentProduct.images[0], size: bsSelectedSize, color: bsSelectedColor, price: finalPrice, qty: bsQty });
-                    }
-                    localStorage.setItem('raabiha_cart', JSON.stringify(cart));
-                    updateCartBadges();
-                    closeMobileBottomsheet();
-                    // Brief success feedback
-                    const feedbackDiv = document.createElement('div');
-                    feedbackDiv.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-[#064e3b] text-white text-[10px] font-mono tracking-widest uppercase px-5 py-3 z-[200] shadow-lg transition-opacity duration-500';
-                    feedbackDiv.textContent = 'Ditambahkan ke keranjang!';
-                    document.body.appendChild(feedbackDiv);
-                    setTimeout(() => { feedbackDiv.classList.add('opacity-0'); setTimeout(() => feedbackDiv.remove(), 500); }, 2000);
-                }
-            };
-        }
-
-        function closeMobileBottomsheet() {
-            const panel = document.getElementById('mobile-bs-panel');
-            const backdrop = document.getElementById('mobile-bs-backdrop');
-            if (!panel || !backdrop) return;
-            panel.classList.add('translate-y-full');
-            backdrop.classList.remove('opacity-100');
-            backdrop.classList.add('opacity-0');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 300);
-        }
-        // ===== END MOBILE BOTTOMSHEET LOGIC =====
-
-    </script>
+        
     </div>
 
     <!-- Share Modal Popup -->
@@ -1353,4 +561,4 @@
             <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">BELI SEKARANG</span>
         </button>
     </div>
-</x-layouts.app>
+</div>

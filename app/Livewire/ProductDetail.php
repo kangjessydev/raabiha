@@ -6,6 +6,9 @@ use Livewire\Component;
 use App\Models\Product;
 use Livewire\Attributes\Computed;
 
+use Livewire\Attributes\Layout;
+
+#[Layout('components.layouts.app')]
 class ProductDetail extends Component
 {
     public $slug;
@@ -14,10 +17,24 @@ class ProductDetail extends Component
     public $selectedColor = '';
     public $quantity = 1;
 
+    #[Computed]
+    public function sizes()
+    {
+        // Dummy sizes for UI testing if no variants exist
+        return ['XS/S', 'M/L', 'Oversized'];
+    }
+
+    #[Computed]
+    public function colors()
+    {
+        // Dummy colors for UI testing
+        return ['Charcoal', 'Slate Sand', 'Dusty Rose'];
+    }
+
     public function mount($slug)
     {
         $this->slug = $slug;
-        $this->product = Product::with(['variants', 'media'])->where('slug', $slug)->firstOrFail();
+        $this->product = Product::with(['variants'])->where('slug', $slug)->firstOrFail();
     }
 
     public function incrementQuantity()
