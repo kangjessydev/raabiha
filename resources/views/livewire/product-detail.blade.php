@@ -374,6 +374,35 @@
                         </div>
                     </div>
 
+                    <!-- 03. Wholesale & Promo -->
+                    @if(!empty($product->wholesale_pricing) || !empty($product->promo_rules))
+                    <div class="group py-6 product-accordion">
+                        <button class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
+                            03. PROMO & GROSIR
+                            <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div class="mt-6 text-[#1c1c1a] font-sans hidden accordion-content">
+                            @if(!empty($product->wholesale_pricing))
+                            <div class="mb-6">
+                                <h4 class="text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Aturan Harga Grosir</h4>
+                                <div class="text-[14px] leading-relaxed font-sans p-4 bg-[#fcf9f5] border border-[#e5e2de] rounded-sm text-[#615e57]">
+                                    {!! nl2br(e($product->wholesale_pricing)) !!}
+                                </div>
+                            </div>
+                            @endif
+                            
+                            @if(!empty($product->promo_rules))
+                            <div>
+                                <h4 class="text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Aturan Promo</h4>
+                                <div class="text-[14px] leading-relaxed font-sans p-4 bg-[#fcf9f5] border border-[#e5e2de] rounded-sm text-[#615e57]">
+                                    {!! nl2br(e($product->promo_rules)) !!}
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
                 </div>
             </div>
 
