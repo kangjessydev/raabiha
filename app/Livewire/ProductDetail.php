@@ -17,11 +17,30 @@ class ProductDetail extends Component
     public function mount($slug)
     {
         $this->slug = $slug;
+        $this->product = Product::with(['variants', 'media'])->where('slug', $slug)->firstOrFail();
+    }
+
+    public function incrementQuantity()
+    {
+        if ($this->quantity < 10) {
+            $this->quantity++;
+        }
+    }
+
+    public function decrementQuantity()
+    {
+        if ($this->quantity > 1) {
+            $this->quantity--;
+        }
+    }
+
+    public function addToCart()
+    {
+        // To be implemented: actual cart logic (e.g. session, db)
+        // For now, we will dispatch an event that can be caught by a Cart header component
+        $this->dispatch('cart-updated');
         
-        // Let's find the product by slug. Since the db is configured,
-        // we should query the Product model.
-        // For now we will fetch the product eager loading variants and images if any.
-        $this->product = Product::with(['variants.attributeOptions.attribute'])->where('slug', $slug)->firstOrFail();
+        session()->flash('message', 'Produk berhasil ditambahkan ke keranjang!');
     }
 
     public function render()
