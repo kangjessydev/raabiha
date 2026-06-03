@@ -8,7 +8,4 @@ use Awcodes\Curator\Resources\Media\MediaResource as CuratorMediaResource;
 class MediaResource extends CuratorMediaResource
 {
     protected static ?string $cluster = MediaFiles::class;
-    
-    // Maintain the icon
-    protected static ?string $navigationIcon = 'heroicon-o-photo';
 }
