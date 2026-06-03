@@ -152,11 +152,7 @@
                             <!-- Add to Cart Widget -->
                             <div class="woocommerce-variation-add-to-cart variations_button w-full flex flex-col gap-3">
                                 
-                                @if (session()->has('message'))
-                                    <div class="bg-[#064e3b]/10 border border-[#064e3b] text-[#064e3b] px-4 py-3 rounded text-[11px] font-mono tracking-widest mb-2">
-                                        {{ session('message') }}
-                                    </div>
-                                @endif
+                                <!-- Messages will be handled via JS/SweetAlert/Animation -->
 
                                 @if (session()->has('error'))
                                     <div class="bg-red-900/10 border border-red-900 text-red-900 px-4 py-3 rounded text-[11px] font-mono tracking-widest mb-2">
@@ -604,10 +600,10 @@
         </a>
         
         <!-- Cart Icon -->
-        <button type="button" id="mobile-add-to-cart-btn" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
+        <button type="button" id="mobile-add-to-cart-btn" onclick="Livewire.dispatch('open-mini-cart')" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
             <div class="relative">
                 <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                <span class="raabiha-cart-count-badge absolute -top-1 -right-2 bg-[#064e3b] text-white text-[8px] font-bold w-3 h-3 rounded-full flex items-center justify-center hidden">0</span>
+                <livewire:cart-badge />
             </div>
             <span class="text-[8px] font-mono tracking-widest uppercase">Cart</span>
         </button>
@@ -617,4 +613,57 @@
             <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">BELI SEKARANG</span>
         </button>
     </div>
+
+    <script>
+    document.addEventListener('livewire:initialized', () => {
+        Livewire.on('product-added-to-cart', () => {
+            let activeImage = document.querySelector('.thumb-item .opacity-100')?.previousElementSibling;
+            if (!activeImage) {
+                let sliderContainer = document.querySelector('.flex.w-full.h-full.transition-transform');
+                let activeIndex = sliderContainer?.__x?.getUnobservedData()?.activeIndex || 0;
+                activeImage = sliderContainer?.children[activeIndex]?.querySelector('img');
+                if(!activeImage) {
+                    activeImage = document.querySelector('.thumb-item img');
+                }
+            }
+            
+            let targetIcon = window.innerWidth < 768 ? document.querySelector('#mobile-add-to-cart-btn') : document.querySelector('#desktop-cart-icon');
+            
+            if (activeImage && targetIcon) {
+                let imgClone = activeImage.cloneNode();
+                let rect = activeImage.getBoundingClientRect();
+                let targetRect = targetIcon.getBoundingClientRect();
+                
+                imgClone.style.position = 'fixed';
+                imgClone.style.left = rect.left + 'px';
+                imgClone.style.top = rect.top + 'px';
+                imgClone.style.width = rect.width + 'px';
+                imgClone.style.height = rect.height + 'px';
+                imgClone.style.objectFit = 'cover';
+                imgClone.style.zIndex = '9999';
+                imgClone.style.transition = 'all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                imgClone.style.borderRadius = '4px';
+                imgClone.style.opacity = '0.9';
+                
+                document.body.appendChild(imgClone);
+                
+                setTimeout(() => {
+                    imgClone.style.left = (targetRect.left + targetRect.width / 2 - 10) + 'px';
+                    imgClone.style.top = (targetRect.top + targetRect.height / 2 - 10) + 'px';
+                    imgClone.style.width = '20px';
+                    imgClone.style.height = '20px';
+                    imgClone.style.opacity = '0';
+                    imgClone.style.transform = 'scale(0.1) rotate(180deg)';
+                }, 50);
+                
+                setTimeout(() => {
+                    imgClone.remove();
+                    Livewire.dispatch('open-mini-cart');
+                }, 850);
+            } else {
+                Livewire.dispatch('open-mini-cart');
+            }
+        });
+    });
+    </script>
 </div>

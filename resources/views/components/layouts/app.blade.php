@@ -598,6 +598,6 @@ var wc_order_attribution = {"params":{"lifetime":1.00000000000000008180305391403
 //# sourceURL=wc-order-attribution-js-extra
 </script>
 <script id="wc-order-attribution-js" src="{{ asset('wp-content/plugins/woocommerce/assets/js/frontend/order-attribution.min.js') }}"></script>
-@livewireScripts
+    <livewire:mini-cart />
 </body>
 </html>

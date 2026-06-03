@@ -23,11 +23,10 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </button>
                 <!-- Cart -->
-                <a href="{{ url('/cart') }}" wire:navigate class="cart-toggle-btn text-[#1c1c1a] hover:text-[#064e3b] transition-colors relative">
+                <button type="button" onclick="Livewire.dispatch('open-mini-cart')" id="desktop-cart-icon" class="cart-toggle-btn text-[#1c1c1a] hover:text-[#064e3b] transition-colors relative focus:outline-none">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                                            <span class="raabiha-cart-count-badge absolute -top-2 -right-2 bg-[#064e3b] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">
-                            0                        </span>
-                                    </a>
+                    <livewire:cart-badge />
+                </button>
                 <!-- Account/Dashboard -->
                 <div class="relative">
                     <button id="desktop-profile-toggle" class="text-[#1c1c1a] hover:text-[#064e3b] transition-colors flex items-center justify-center w-6 h-6 rounded-full overflow-hidden focus:outline-none">

@@ -176,7 +176,10 @@ class ProductDetail extends Component
 
         $this->dispatch('cart-updated');
         
-        session()->flash('message', 'Produk berhasil ditambahkan ke keranjang!');
+        // Let's also dispatch an event to trigger the flying animation
+        // and optionally open the mini cart right after.
+        $this->dispatch('product-added-to-cart');
+        // $this->dispatch('open-mini-cart'); // Optional if we want it to auto-open, but we'll do flying animation instead
     }
 
     public function render()
