@@ -4,13 +4,13 @@ namespace App\Filament\Clusters\ECommerce;
 
 use Filament\Support\Contracts\HasLabel;
 
-enum ECommerceNavigationGroup implements HasLabel
+enum ECommerceNavigationGroup: string implements HasLabel
 {
-    case Transaksi;
-    case Katalog;
-    case Promosi;
-    case Reseller;
-    case PengaturanToko;
+    case Transaksi = 'Transaksi';
+    case Katalog = 'Katalog';
+    case Promosi = 'Promosi';
+    case Reseller = 'Reseller';
+    case PengaturanToko = 'Pengaturan Toko';
 
     public function getLabel(): string
     {
