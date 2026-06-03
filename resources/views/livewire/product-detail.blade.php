@@ -13,9 +13,12 @@
                 <div class="lg:col-span-7 relative">
                     
                     <!-- Gallery View (Unified Desktop & Mobile) -->
-                    <div class="w-full">
+                    @php
+                        $defaultImage = !empty($galleryUrls) ? $galleryUrls[0] : asset('assets/images/placeholder.png');
+                    @endphp
+                    <div class="w-full" x-data="{ mainImage: '{{ $defaultImage }}', activeIndex: 0 }">
                         <div class="w-[calc(100%+3rem)] -mx-6 md:mx-0 md:w-full aspect-square md:aspect-[4/5] lg:h-[65vh] lg:aspect-auto bg-[#ebebeb] overflow-hidden relative">
-                            <img id="main-gallery-image" src="{{ !empty($product->images) ? asset('storage/' . $product->images[0]) : asset('/assets/images/gallery-1.png') }}" alt="{{ $product->name }}" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out opacity-100" onerror="this.onerror=null; this.src='{{ asset('/assets/images/gallery-1.png') }}';">
+                            <img id="main-gallery-image" :src="mainImage" src="{{ $defaultImage }}" alt="{{ $product->name }}" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out opacity-100" onerror="this.onerror=null; this.src='{{ asset('assets/images/placeholder.png') }}';">
                             
                             <!-- Badges Container (Inside Image on Mobile, Top Left on Desktop) -->
                             <div class="absolute bottom-4 left-4 md:bottom-auto md:top-6 md:left-6 z-40 flex flex-row md:flex-col gap-2 items-center md:items-start pointer-events-none">
@@ -31,12 +34,18 @@
                         <!-- Thumbnail Wrapper -->
                         <div class="relative w-[calc(100%+3rem)] -mx-6 md:mx-0 md:w-full group mt-4 lg:mt-6">
                             <ol id="gallery-thumbnails" class="flex flex-nowrap overflow-x-auto gap-3 lg:gap-4 p-0 px-6 md:px-0 m-0 list-none scroll-smooth scrollbar-none" style="scrollbar-width: none; -ms-overflow-style: none;">
-                                @if(!empty($product->images))
-                                    @foreach($product->images as $idx => $img)
-                                        <li class="thumb-item relative shrink-0 cursor-pointer overflow-hidden bg-[#ebebeb] border {{ $idx === 0 ? 'border-[#1c1c1a] active' : 'border-transparent' }} transition-all" style="width: 20%; aspect-ratio: 4/5;">
-                                            <img src="{{ asset('storage/' . $img) }}" alt="Thumb" class="w-full h-full object-cover pointer-events-none">
+                                @if(!empty($galleryUrls))
+                                    @foreach($galleryUrls as $idx => $img)
+                                        <li @click="mainImage = '{{ $img }}'; activeIndex = {{ $idx }}" 
+                                            :class="activeIndex === {{ $idx }} ? 'border-[#1c1c1a]' : 'border-transparent'"
+                                            class="thumb-item relative shrink-0 cursor-pointer overflow-hidden bg-[#ebebeb] border transition-all" style="width: 20%; aspect-ratio: 4/5;">
+                                            <img src="{{ $img }}" alt="Thumb" class="w-full h-full object-cover pointer-events-none">
                                         </li>
                                     @endforeach
+                                @else
+                                    <li class="thumb-item relative shrink-0 cursor-pointer overflow-hidden bg-[#ebebeb] border border-[#1c1c1a] transition-all" style="width: 20%; aspect-ratio: 4/5;">
+                                        <img src="{{ asset('assets/images/placeholder.png') }}" alt="Placeholder" class="w-full h-full object-cover pointer-events-none">
+                                    </li>
                                 @endif
                             </ol>
                             

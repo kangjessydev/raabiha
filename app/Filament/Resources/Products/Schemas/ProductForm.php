@@ -63,12 +63,9 @@ class ProductForm
                                     }
                                 </style>
                             ')),
-                        FileUpload::make('images')
-                            ->label('Foto Produk (Bisa Pilih Banyak)')
-                            ->image()
+                        \Awcodes\Curator\Components\Forms\CuratorPicker::make('images')
+                            ->label('Foto Produk (Media Library)')
                             ->multiple()
-                            ->panelLayout('grid')
-                            ->directory('products')
                             ->extraAttributes(['class' => 'horizontal-gallery'])
                             ->columnSpanFull(),
                     ])->columns(2),

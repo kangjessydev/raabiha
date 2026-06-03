@@ -43,28 +43,8 @@ Berdasarkan filosofi *TALL stack*, interaktivitas ringan menggunakan Alpine.js d
 3. `components/`: Logika spesifik komponen (misal: slider produk, *carousel*).
 4. `utils/`: Fungsi-fungsi *helper* global (format mata uang, kalkulator ongkir).
 
-## 5. Arsitektur Database Produk & Varian (Wajib Dipahami)
-Untuk mengakomodasi fleksibilitas e-commerce, arsitektur database untuk produk dan varian dirancang dengan aturan mutlak sebagai berikut:
-
-### A. Hirarki Stok & Ketersediaan
-1. **Produk Tanpa Varian (`has_variants = false`):**
-   - Stok fisik dicatat langsung di tabel utama `products` (kolom `stock`).
-   - Total stok produk = `products.stock`.
-2. **Produk Dengan Varian (`has_variants = true`):**
-   - Kolom `products.stock` akan diabaikan/disembunyikan dari antarmuka Admin.
-   - Stok fisik dicatat secara individual pada setiap baris di tabel `product_variants` (kolom `stock`).
-   - Total stok produk adalah akumulasi (SUM) dari seluruh `product_variants.stock` yang terkait.
-
-### B. Hirarki Harga (Pricing Override)
-1. Harga dasar/default dan harga reseller utama selalu dicatat di tabel `products`.
-2. Jika sebuah varian memiliki harga yang sama dengan harga dasar produk, maka *toggle* `is_price_override` diatur ke `false`. Kolom `price` pada tabel `product_variants` dapat dibiarkan kosong (`null`), dan sistem **wajib** mengambil (fallback) harga dari tabel `products`.
-3. Jika sebuah varian memiliki harga yang berbeda (lebih mahal/murah), *toggle* `is_price_override` diatur ke `true`. Sistem wajib membaca harga final dari kolom `price` di tabel `product_variants`.
-
-### C. Logika Kombinasi Atribut (Pivot)
-- Varian adalah **satu kesatuan barang fisik** (memiliki SKU, Stok, Harga).
-- Kombinasi Atribut (seperti "Warna: Merah", "Ukuran: XL") adalah sekadar **Label/Tag** yang menempel pada Varian tersebut.
-- Relasi antara *Varian Fisik* dengan *Opsi Atribut* disambungkan melalui tabel pivot `attribute_option_product_variant` (memiliki primary key `id`).
-- Form input Filament menggunakan metode *Nested Repeater* (Cascading Dropdown) untuk menempelkan Label/Tag pada Varian, tetapi **DILARANG KERAS** memindahkan kolom `stok` atau `harga` ke dalam tabel pivot/kombinasi atribut tersebut. Harga dan stok mutlak milik entitas Varian.
+## 5. Arsitektur Database Produk & Varian
+Semua aturan dan logika hierarki mengenai Stok, Harga, Produk, Varian, serta Kombinasi Atribut (Pivot) telah dipindahkan secara khusus ke dokumen **`.docs/DATABASE_SCHEMA.md`**. AI dan Developer wajib merujuk ke file tersebut.
 
 ## 6. Arsitektur Admin Dashboard (Filament)
 Arsitektur Filament pada proyek ini tidak menggunakan struktur default untuk memastikan User Experience (UX) kelas Enterprise yang rapi, luas, dan modern.

@@ -15,6 +15,7 @@ Dokumen ini berfungsi sebagai instruksi mutlak (System Prompt) bagi setiap model
 - **Riset MCP Server (Wajib):** Sebelum memulai koding untuk framework (seperti Laravel, Filament, Livewire, Tailwind), AI **wajib** memverifikasi sintaks dan dokumentasi terbaru menggunakan **Context7** melalui MCP Server. Hal ini untuk mencegah kode *usang* (*deprecated*).
 - **Eksekusi Bertahap (Iteratif):** Kerjakan satu tugas/file dalam satu waktu. Pastikan CTO menyetujui pengujian sebelum melompat ke tugas berikutnya.
 - **Disiplin Desain:** AI harus secara insting membedakan mana yang merupakan desain operasional staf (Filament Admin) dan mana yang merupakan desain wajah publik (Blade/Tailwind), serta tidak pernah menukar-nukar gaya tersebut.
+- **Kewajiban Update Dokumentasi:** Setiap kali ada penambahan fitur besar, perubahan *Tech Stack*, penambahan tabel *Database*, atau integrasi API baru, AI **wajib secara otomatis** memperbarui file markdown di folder `.docs/` yang relevan (seperti `DATABASE_SCHEMA.md` atau `API_INTEGRATION.md`) untuk memastikan dokumentasi tetap sinkron dengan kode.
 
 ## 3. Resolusi Masalah (Debugging)
 - Jika ada *bug* (seperti gagal render, *timeout*, atau masalah *styling*), investigasi secara terukur (baca log, periksa DOM, cek respons jaringan) sebelum menebak solusinya.

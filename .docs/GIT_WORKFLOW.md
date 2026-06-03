@@ -34,5 +34,7 @@ Setiap kali melakukan perubahan besar (seperti mengubah static JS menjadi Livewi
    git checkout development
    git merge feature/<nama-fitur>
    ```
+6. **Update Dokumentasi (Wajib)**:
+   Setelah fitur yang mengubah struktur *database*, *tech stack*, atau alur bisnis di-*merge*, AI dan Developer **wajib** memperbarui file di `.docs/` (misal `DATABASE_SCHEMA.md` atau `TASKS.md`) agar dokumentasi tidak pernah tertinggal dari kode.
 
 *Aturan ini wajib ditaati oleh AI pada setiap sesi pengembangan untuk mencegah kerusakan kode akibat eksperimen yang gagal (terutama terkait integrasi Livewire/Filament).*

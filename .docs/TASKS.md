@@ -19,8 +19,8 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 #### Phase 2: Frontend Data Integration (In Progress)
 - [x] Konversi `shop.blade.php` ke Livewire (`App\Livewire\Shop`).
 - [x] Binding Search, Filter Kategori, & Sort secara real-time.
-- [ ] Integrasi Halaman Single Product (`product.blade.php`).
-- [ ] Implementasi varian (Ukuran/Warna) ke UI.
+- [x] Integrasi Halaman Single Product (`product.blade.php`).
+- [x] Implementasi varian (Ukuran/Warna) ke UI.
 - [ ] Sistem Keranjang & Checkout: Mengubah form statis menjadi dinamis (Livewire), menghitung total harga, dan menyimpan order ke database.
 
 ## ✅ Selesai (Done)

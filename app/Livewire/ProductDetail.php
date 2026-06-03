@@ -16,6 +16,7 @@ class ProductDetail extends Component
     public $selectedSize = '';
     public $selectedColor = '';
     public $quantity = 1;
+    public $galleryUrls = [];
 
     #[Computed]
     public function sizes()
@@ -69,6 +70,27 @@ class ProductDetail extends Component
     {
         $this->slug = $slug;
         $this->product = Product::with(['variants.attributeOptions.attribute'])->where('slug', $slug)->firstOrFail();
+        
+        // Resolve Curator Media URLs
+        $this->galleryUrls = [];
+        if (!empty($this->product->images) && is_array($this->product->images)) {
+            // Check if it's new Curator ID format or old path format
+            if (is_numeric($this->product->images[0])) {
+                $mediaItems = \Awcodes\Curator\Models\Media::whereIn('id', $this->product->images)->get();
+                // To maintain order
+                foreach ($this->product->images as $id) {
+                    $media = $mediaItems->firstWhere('id', $id);
+                    if ($media) {
+                        $this->galleryUrls[] = $media->url;
+                    }
+                }
+            } else {
+                // Fallback for old strings
+                foreach ($this->product->images as $path) {
+                    $this->galleryUrls[] = asset('storage/' . $path);
+                }
+            }
+        }
     }
 
     public function incrementQuantity()
