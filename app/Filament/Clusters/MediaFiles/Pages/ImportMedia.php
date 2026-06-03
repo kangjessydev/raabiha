@@ -11,7 +11,7 @@ class ImportMedia extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-down-tray';
 
-    protected static string $view = 'filament.clusters.media-files.pages.import-media';
+    protected string $view = 'filament.clusters.media-files.pages.import-media';
 
     protected static ?string $cluster = MediaFiles::class;
     

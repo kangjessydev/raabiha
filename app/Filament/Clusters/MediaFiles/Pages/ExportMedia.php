@@ -11,7 +11,7 @@ class ExportMedia extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-up-tray';
 
-    protected static string $view = 'filament.clusters.media-files.pages.export-media';
+    protected string $view = 'filament.clusters.media-files.pages.export-media';
 
     protected static ?string $cluster = MediaFiles::class;
     
