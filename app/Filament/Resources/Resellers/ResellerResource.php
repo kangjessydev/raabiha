@@ -19,8 +19,10 @@ use Illuminate\Database\Eloquent\Builder;
 class ResellerResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
+    protected static ?int $navigationSort = 41;
+
     protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Reseller;
-    protected static ?int $navigationSort = 1;
+    
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-identification';

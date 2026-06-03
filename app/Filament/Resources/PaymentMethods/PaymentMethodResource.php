@@ -18,8 +18,10 @@ use Filament\Tables\Table;
 class PaymentMethodResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
+    protected static ?int $navigationSort = 52;
+
     protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::PengaturanToko;
-    protected static ?int $navigationSort = 1;
+    
     protected static ?string $model = PaymentMethod::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';

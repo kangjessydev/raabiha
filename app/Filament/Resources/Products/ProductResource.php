@@ -19,6 +19,8 @@ use Filament\Tables\Table;
 class ProductResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
+    protected static ?int $navigationSort = 21;
+
     protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Katalog;
     protected static ?string $model = Product::class;
 
@@ -26,7 +28,7 @@ class ProductResource extends Resource
     protected static ?string $pluralModelLabel = 'Produk';
 
 
-    protected static ?int $navigationSort = 1;
+    
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shopping-bag';
 
     protected static ?string $recordTitleAttribute = 'name';

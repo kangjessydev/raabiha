@@ -19,6 +19,8 @@ class ResellerSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static ?string $cluster = ECommerceCluster::class;
+    protected static ?int $navigationSort = 42;
+
     
     public static function getNavigationIcon(): ?string { return 'heroicon-o-cog-6-tooth'; }
     public static function getNavigationGroup(): string|\BackedEnum|null { return \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Reseller; }

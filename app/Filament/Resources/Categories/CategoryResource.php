@@ -19,6 +19,8 @@ use Filament\Tables\Table;
 class CategoryResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
+    protected static ?int $navigationSort = 22;
+
     protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Katalog;
     protected static ?string $model = Category::class;
 
@@ -26,7 +28,7 @@ class CategoryResource extends Resource
     protected static ?string $pluralModelLabel = 'Kategori';
 
 
-    protected static ?int $navigationSort = 2;
+    
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-tag';
 
     public static function form(Schema $schema): Schema
