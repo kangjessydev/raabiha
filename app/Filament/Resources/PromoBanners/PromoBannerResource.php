@@ -18,7 +18,7 @@ use Filament\Tables\Table;
 class PromoBannerResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Promosi';
+    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Promosi;
     protected static ?int $navigationSort = 2;
     protected static ?string $model = PromoBanner::class;
 

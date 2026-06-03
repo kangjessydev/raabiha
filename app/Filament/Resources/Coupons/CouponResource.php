@@ -18,7 +18,7 @@ use Filament\Tables\Table;
 class CouponResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Promosi';
+    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Promosi;
     protected static ?int $navigationSort = 1;
     protected static ?string $model = Coupon::class;
 

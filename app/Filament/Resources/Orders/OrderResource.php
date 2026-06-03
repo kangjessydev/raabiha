@@ -19,7 +19,7 @@ use Filament\Tables\Table;
 class OrderResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Transaksi';
+    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Transaksi;
     protected static ?string $model = Order::class;
 
     protected static ?string $modelLabel = 'Pesanan';

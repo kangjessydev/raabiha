@@ -19,7 +19,7 @@ use Filament\Tables\Table;
 class CategoryResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Katalog';
+    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Katalog;
     protected static ?string $model = Category::class;
 
     protected static ?string $modelLabel = 'Kategori';

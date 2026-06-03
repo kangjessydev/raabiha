@@ -21,7 +21,7 @@ class ResellerSettings extends Page implements HasForms
     protected static ?string $cluster = ECommerceCluster::class;
     
     public static function getNavigationIcon(): ?string { return 'heroicon-o-cog-6-tooth'; }
-    public static function getNavigationGroup(): ?string { return 'Reseller'; }
+    public static function getNavigationGroup(): string|\BackedEnum|null { return \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Reseller; }
     public static function getNavigationLabel(): string { return 'Pengaturan Reseller'; }
     public function getTitle(): string { return 'Pengaturan Reseller'; }
 

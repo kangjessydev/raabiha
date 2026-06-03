@@ -18,7 +18,7 @@ use Filament\Tables\Table;
 class ProductReviewResource extends Resource
 {
     protected static ?string $cluster = ECommerceCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Katalog';
+    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Katalog;
     protected static ?int $navigationSort = 4;
     protected static ?string $model = ProductReview::class;
 

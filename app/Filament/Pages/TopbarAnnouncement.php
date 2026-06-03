@@ -22,7 +22,7 @@ class TopbarAnnouncement extends Page implements HasForms
     protected static ?string $cluster = ECommerceCluster::class;
                     
     public static function getNavigationIcon(): ?string { return 'heroicon-o-megaphone'; }
-    public static function getNavigationGroup(): ?string { return 'Promosi'; }
+    public static function getNavigationGroup(): string|\BackedEnum|null { return \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Promosi; }
     public static function getNavigationLabel(): string { return 'Pengumuman (Topbar)'; }
     public function getTitle(): string { return 'Pengumuman Topbar'; }
 
