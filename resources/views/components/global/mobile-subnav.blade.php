@@ -17,11 +17,9 @@
     <!-- Right Button/Placeholder -->
     @if($cart)
         <a href="{{ url('/cart') }}" wire:navigate class="flex items-center justify-center w-10 h-10 -mr-2 rounded-full {{ $transparent ? 'bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white active:bg-white/90' : 'hover:bg-black/5 active:bg-black/10' }} transition-colors text-black">
-            <div class="relative">
+            <div class="relative inline-flex">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                <div class="scale-[0.85] origin-top-right">
-                    <livewire:cart-badge />
-                </div>
+                <livewire:cart-badge />
             </div>
         </a>
     @else
