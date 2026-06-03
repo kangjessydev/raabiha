@@ -3,7 +3,7 @@
 Dokumen ini menjelaskan langkah-langkah untuk menyiapkan proyek Raabiha E-Commerce dari awal, baik di lokal maupun di server.
 
 ## 1. Persyaratan Lingkungan (Environment)
-- PHP >= 8.2
+- PHP >= 8.3
 - Composer
 - Node.js & NPM
 - MySQL / MariaDB

@@ -19,4 +19,4 @@ Dokumen ini berfungsi sebagai instruksi mutlak (System Prompt) bagi setiap model
 
 ## 3. Resolusi Masalah (Debugging)
 - Jika ada *bug* (seperti gagal render, *timeout*, atau masalah *styling*), investigasi secara terukur (baca log, periksa DOM, cek respons jaringan) sebelum menebak solusinya.
-- Taati alur kerja pengembangan: Bangun dan uji logika inti di `wp-admin` (Backend) terlebih dahulu, baru buatkan "setir" antarmukanya di `/dashboard` Vue.
+- Taati alur kerja pengembangan: Bangun dan uji logika inti di `Filament Admin` (Backend) terlebih dahulu, baru buatkan "setir" antarmukanya di `Frontend Publik` (Blade/Livewire).
