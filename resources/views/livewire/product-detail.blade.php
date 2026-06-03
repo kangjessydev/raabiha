@@ -1,4 +1,4 @@
-<div>
+<div x-data="{ bsOpen: false, bsMode: 'cart' }">
     @slot('header')
         <x-global.mobile-subnav title="Detail Produk" backUrl="/shop" transparent="true" :cart="true" />
     @endslot
@@ -562,13 +562,29 @@
     </div>
 
     <!-- ===== MOBILE VARIANT BOTTOMSHEET ===== -->
+    <!-- ===== MOBILE VARIANT BOTTOMSHEET ===== -->
     <!-- Backdrop -->
-    <div id="mobile-bs-backdrop" class="md:hidden fixed inset-0 bg-black/50 z-[110] hidden transition-opacity duration-300 opacity-0" onclick="closeBottomSheet()"></div>
+    <div x-show="bsOpen" 
+         x-transition:enter="transition-opacity duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="bsOpen = false" 
+         class="md:hidden fixed inset-0 bg-black/50 z-[110]" style="display: none;"></div>
 
     <!-- Sheet Panel -->
-    <div id="mobile-bs-panel" class="md:hidden fixed bottom-0 left-0 right-0 z-[120] bg-[#fcf9f5] rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] transform translate-y-full transition-transform duration-300">
+    <div x-show="bsOpen" 
+         x-transition:enter="transition-transform duration-300"
+         x-transition:enter-start="translate-y-full"
+         x-transition:enter-end="translate-y-0"
+         x-transition:leave="transition-transform duration-300"
+         x-transition:leave-start="translate-y-0"
+         x-transition:leave-end="translate-y-full"
+         class="md:hidden fixed bottom-0 left-0 right-0 z-[120] bg-[#fcf9f5] rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] transform translate-y-0" style="display: none;">
         <!-- Handle -->
-        <div class="flex justify-center pt-3 pb-2" onclick="closeBottomSheet()">
+        <div class="flex justify-center pt-3 pb-2" @click="bsOpen = false">
             <div class="w-10 h-1 bg-[#e5e2de] rounded-full cursor-pointer"></div>
         </div>
 
@@ -583,7 +599,7 @@
                     <div id="bs-product-price" class="text-[#615e57] text-xs font-mono mt-0.5">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</div>
                 </div>
             </div>
-            <button type="button" onclick="closeBottomSheet()" class="w-8 h-8 flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none self-start">
+            <button type="button" @click="bsOpen = false" class="w-8 h-8 flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none self-start">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
@@ -637,40 +653,15 @@
         </div>
 
         <!-- CTA Footer -->
-        <div class="px-5 pb-6 pt-3 border-t border-[#e5e2de] flex gap-3">
-            <button type="button" wire:click="addToCart" onclick="closeBottomSheet()" id="mobile-bottomsheet-cart-btn" class="w-[60px] shrink-0 h-14 border border-[#1c1c1a] text-[#1c1c1a] flex flex-col items-center justify-center hover:bg-[#f2efe8] transition-colors focus:outline-none">
-                <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+        <div class="px-5 pb-6 pt-3 border-t border-[#e5e2de]">
+            <button x-show="bsMode === 'cart'" type="button" wire:click="addToCart" @click="bsOpen = false" id="mobile-bottomsheet-cart-btn" class="w-full h-14 border border-[#1c1c1a] bg-[#1c1c1a] text-white flex items-center justify-center transition-colors focus:outline-none text-[10px] font-mono font-bold tracking-[0.2em] uppercase hover:bg-black">
+                + KERANJANG
             </button>
-            <button type="button" wire:click="buyNow" onclick="closeBottomSheet()" class="flex-1 h-14 bg-[#09493B] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#07362c] focus:outline-none">
+            <button x-show="bsMode === 'buy'" style="display: none;" type="button" wire:click="buyNow" @click="bsOpen = false" class="w-full h-14 bg-[#09493B] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#07362c] focus:outline-none">
                 BELI SEKARANG
             </button>
         </div>
     </div>
-    
-    <script>
-        function openBottomSheet() {
-            const backdrop = document.getElementById('mobile-bs-backdrop');
-            const panel = document.getElementById('mobile-bs-panel');
-            if (backdrop && panel) {
-                backdrop.classList.remove('hidden');
-                setTimeout(() => {
-                    backdrop.classList.remove('opacity-0');
-                    panel.classList.remove('translate-y-full');
-                }, 10);
-            }
-        }
-        function closeBottomSheet() {
-            const backdrop = document.getElementById('mobile-bs-backdrop');
-            const panel = document.getElementById('mobile-bs-panel');
-            if (backdrop && panel) {
-                backdrop.classList.add('opacity-0');
-                panel.classList.add('translate-y-full');
-                setTimeout(() => {
-                    backdrop.classList.add('hidden');
-                }, 300);
-            }
-        }
-    </script>
     <!-- ===== END MOBILE VARIANT BOTTOMSHEET ===== -->
 
     <!-- MOBILE Sticky Action Bar -->
@@ -682,7 +673,7 @@
         </a>
         
         <!-- Cart Icon -->
-        <button type="button" id="mobile-add-to-cart-btn" onclick="openBottomSheet()" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
+        <button type="button" id="mobile-add-to-cart-btn" @click="bsOpen = true; bsMode = 'cart'" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
             <div class="relative">
                 <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
             </div>
@@ -690,7 +681,7 @@
         </button>
         
         <!-- Buy Now Button -->
-        <button type="button" id="mobile-buy-now-btn" onclick="openBottomSheet()" class="flex-1 h-full bg-[#09493B] text-white flex flex-col items-center justify-center hover:bg-[#07362c] transition-colors focus:outline-none">
+        <button type="button" id="mobile-buy-now-btn" @click="bsOpen = true; bsMode = 'buy'" class="flex-1 h-full bg-[#09493B] text-white flex flex-col items-center justify-center hover:bg-[#07362c] transition-colors focus:outline-none">
             <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">BELI SEKARANG</span>
         </button>
     </div>
