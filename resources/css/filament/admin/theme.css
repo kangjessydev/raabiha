@@ -1,7 +1,9 @@
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
+@import '../../../../vendor/awcodes/filament-curator/resources/css/plugin.css';
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+@source '../../../../vendor/awcodes/filament-curator/resources/**/*.blade.php';
 
 /* Fix Cluster Sidebar to be sticky instead of scrolling with content */
 .fi-page-sub-navigation-sidebar-ctn {
