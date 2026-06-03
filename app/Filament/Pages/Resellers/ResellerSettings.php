@@ -68,16 +68,6 @@ class ResellerSettings extends Page implements HasForms
             ->statePath('data');
     }
 
-    protected function getFormActions(): array
-    {
-        return [
-            Action::make('save')
-                ->label('Simpan Pengaturan')
-                ->submit('save')
-                ->color('primary'),
-        ];
-    }
-
     public function save(): void
     {
         $data = $this->form->getState();
