@@ -654,7 +654,7 @@
 
         <!-- CTA Footer -->
         <div class="px-5 pb-6 pt-3 border-t border-[#e5e2de]">
-            <button x-show="bsMode === 'cart'" type="button" wire:click="addToCart" @click="bsOpen = false" id="mobile-bottomsheet-cart-btn" class="w-full h-14 border border-[#1c1c1a] bg-[#1c1c1a] text-white flex items-center justify-center transition-colors focus:outline-none text-[10px] font-mono font-bold tracking-[0.2em] uppercase hover:bg-black">
+            <button x-show="bsMode === 'cart'" type="button" wire:click="addToCart" @click="bsOpen = false" id="mobile-bottomsheet-cart-btn" class="w-full h-14 bg-[#09493B] text-white flex items-center justify-center transition-colors focus:outline-none text-[10px] font-mono font-bold tracking-[0.2em] uppercase hover:bg-[#07362c]">
                 + KERANJANG
             </button>
             <button x-show="bsMode === 'buy'" style="display: none;" type="button" wire:click="buyNow" @click="bsOpen = false" class="w-full h-14 bg-[#09493B] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#07362c] focus:outline-none">
