@@ -41,6 +41,13 @@ class AdminPanelProvider extends PanelProvider
             ->topNavigation()
             ->maxContentWidth('full')
             ->viteTheme('resources/css/filament/admin/theme.css')
+            ->navigationGroups([
+                'Transaksi',
+                'Katalog',
+                'Promosi',
+                'Reseller',
+                'Pengaturan Toko',
+            ])
             ->pages([
                 Dashboard::class,
             ])
