@@ -182,6 +182,20 @@ class ProductDetail extends Component
         // $this->dispatch('open-mini-cart'); // Optional if we want it to auto-open, but we'll do flying animation instead
     }
 
+    public function buyNow()
+    {
+        // Add to cart first
+        $this->addToCart();
+        
+        // If there's an error (e.g. out of stock, no variant selected), stop
+        if (session()->has('error')) {
+            return;
+        }
+        
+        // Mark as buy_now or just redirect to checkout since we just added it to the cart
+        return redirect()->to('/checkout');
+    }
+
     public function render()
     {
         return view('livewire.product-detail');

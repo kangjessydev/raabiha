@@ -576,7 +576,7 @@
         <div class="flex items-center justify-between px-5 pb-4 border-b border-[#e5e2de]">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-16 bg-[#e5e2de] rounded-sm overflow-hidden shrink-0">
-                    <img src="{{ $this->activeImage ? asset('storage/' . $this->activeImage) : (isset($product->images[0]) ? asset('storage/' . $product->images[0]) : '') }}" class="w-full h-full object-cover">
+                    <img src="{{ $galleryUrls[0] ?? asset('assets/images/placeholder.png') }}" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <div id="bs-product-name" class="text-[#1c1c1a] text-sm font-serif font-bold uppercase leading-tight">{{ $product->name }}</div>
@@ -625,11 +625,11 @@
             <div class="mb-2" id="bs-qty-selector">
                 <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">QUANTITY</label>
                 <div class="flex items-center w-[120px] h-10 border border-[#e5e2de]">
-                    <button type="button" wire:click="decrementQty" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none">
+                    <button type="button" wire:click="decrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                     </button>
-                    <div class="flex-1 h-full flex items-center justify-center font-mono text-[12px] text-[#1c1c1a] bg-transparent">{{ $qty }}</div>
-                    <button type="button" wire:click="incrementQty" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none">
+                    <div class="flex-1 h-full flex items-center justify-center font-mono text-[12px] text-[#1c1c1a] bg-transparent">{{ $quantity }}</div>
+                    <button type="button" wire:click="incrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     </button>
                 </div>
