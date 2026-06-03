@@ -33,9 +33,9 @@ return [
         ],
         'resource' => \App\Filament\Resources\MediaResource::class,
         'pages' => [
-            'create' => Awcodes\Curator\Resources\Media\Pages\CreateMedia::class,
-            'edit' => Awcodes\Curator\Resources\Media\Pages\EditMedia::class,
-            'index' => Awcodes\Curator\Resources\Media\Pages\ListMedia::class,
+            'create' => \App\Filament\Resources\MediaResource\Pages\CreateMedia::class,
+            'edit' => \App\Filament\Resources\MediaResource\Pages\EditMedia::class,
+            'index' => \App\Filament\Resources\MediaResource\Pages\ListMedia::class,
         ],
         'schemas' => [
             'form' => Awcodes\Curator\Resources\Media\Schemas\MediaForm::class,
