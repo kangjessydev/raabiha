@@ -2,34 +2,38 @@
 
 File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar tidak ada iterasi yang berulang dan memastikan sinkronisasi antara Admin Panel dan Frontend Customer.
 
-## 📌 Status Saat Ini: Sprint 2 (Integrasi Fungsional)
+## 📌 Status Saat Ini: Sprint 2 (Integrasi Fungsional & Lengkap)
 
 ### 🏗️ Admin Panel (Filament)
 **✅ Selesai (Done):**
-- Setup RBAC & Spatie Permission.
-- Kustomisasi Form (Select Category, RichEditor, Tipe Data).
-- Kustomisasi Tema Dashboard (Aplikasi `raabiha-card`, Font Poppins, Top Navigation).
-- Manajemen Bahasa (APP_LOCALE Indonesia).
-- **Penataan Cluster E-Commerce:** Pengurutan menu (Transaksi, Katalog, Promosi, Reseller, Pengaturan Toko) menggunakan *native* `$navigationSort` dan `BackedEnum`.
-- **Integrasi Media Library:** Penggunaan `awcodes/filament-curator` dengan *override* kustom untuk bernaung di bawah *Cluster* Media Files.
+- Manajemen Blog (Posts, Kategori Blog, Tag Blog, Komentar).
+- E-Commerce Dasar (Order Transaksi, Metode Pengiriman, Metode Pembayaran).
+- Promosi & Tampilan (Voucher, Banner Promo / Popup Modal, Pengumuman Topbar).
+- Konten (Halaman Statis, Sales Page, Ulasan Produk).
+- List Reseller (Terintegrasi lewat Spatie Roles).
+- Kustomisasi Tema, Cluster, dan Integrasi Media Library (Curator).
 
-**🚧 Sedang Dikerjakan / Belum (In Progress / To Do):**
-- [ ] **Logika Export/Import Media:** Menambahkan fungsi *logic* pada halaman statis `ExportMedia` dan `ImportMedia`.
-- [ ] **Badge Guest Checkout:** Menambahkan filter dan label visual pada `OrderResource` untuk membedakan pesanan Guest vs Registered User (sesuai `DATABASE_SCHEMA.md`).
-- [ ] **Pengaturan Shield & Setting Cluster:** Memastikan konfigurasi Filament Shield bernaung di bawah `SettingsCluster` (sesuai `TECH_SPEC.md`).
+**🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
+- [ ] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
+- [ ] **Galeri CRUD:** Membuat Model dan Resource baru untuk Galeri Publik.
+- [ ] **Dashboard Overview:** Menambahkan Widget statistik (Total Pendapatan, Order Baru, dll) di halaman depan Admin.
+- [ ] **Export & Import Data:** Memasang fungsi/plugin export-import Excel pada resource Produk dan Order.
+- [ ] **Status & Pengaturan Reseller:** Menambahkan kolom status (Pending/Aktif) pada entitas User dan pengaturan diskon *reseller*.
+- [ ] **Badge Guest Checkout:** Menambahkan label visual pada OrderResource untuk membedakan *Guest* vs *Registered*.
+- [ ] **Laporan Transaksi:** Menyempurnakan halaman `TransactionReport` yang sudah ada menjadi grafik/tabel yang informatif.
 
 ### 🛒 Frontend Customer (Blade + Livewire)
 **✅ Selesai (Done):**
-- Slicing Figma (Home, About, Contact, Dasbor Customer, Product Detail).
-- Konversi `shop.blade.php` ke Livewire (`App\Livewire\Shop`) dengan pencarian & filter *real-time*.
-- Halaman Produk Dinamis (`product-detail.blade.php`), termasuk varian ukuran/warna dan rendering HTML untuk deskripsi.
-- Animasi Galeri: Transisi geser (*slide*) gambar galeri utama dan efek transparan Emerald pada *thumbnail* aktif.
-- Refaktor UI: Menyatukan tombol QTY, CTA Cart, dan *Wishlist*, serta membersihkan *MVC Directory*.
+- Slicing UI Utama (Home, About, Contact, Dasbor Customer, Product Detail).
+- Katalog Dinamis (`shop`) dengan filter pencarian.
+- Transisi Galeri & Logika UI Bottom Sheet untuk pemilihan Varian & QTY.
 
-**🚧 Sedang Dikerjakan / Belum (In Progress / To Do):**
-- [ ] **Sistem Keranjang Dinamis:** Mengkonversi operasi Cart ke Livewire (menambah produk, update QTY, hitung total harga sementara) menggunakan Database Storage (Opsi A pada schema).
-- [ ] **Logika "Beli Sekarang":** Checkout independen untuk 1 barang tanpa mengganggu isi *cart* utama.
-- [ ] **Sistem Checkout (Frontend):** Form pengisian alamat dan pemilihan metode pengiriman.
+**🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
+- [ ] **Halaman Pendaftaran Reseller:** Membuat formulir *Livewire* untuk mendaftar sebagai Reseller.
+- [ ] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*).
+- [ ] **Dashboard Customer:** Mengaktifkan panel riwayat pesanan (*My Account*) untuk pengguna reguler.
+- [ ] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
+- [ ] **Dashboard Reseller:** Membuat area khusus (*portal*) untuk Reseller memantau komisi, status diskon, dan histori pembelian (bisa via frontend atau panel Filament baru).
 
 ---
 
