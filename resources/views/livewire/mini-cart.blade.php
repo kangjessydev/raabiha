@@ -58,7 +58,17 @@
                                     @endforeach
                                 </div>
                                 @endif
-                                <div class="font-mono text-[10px] text-[#615e57] mt-auto">Qty: {{ $item->quantity }}</div>
+                                <div class="mt-auto pt-2 flex items-center">
+                                    <div class="border border-[#e5e2de] flex items-center h-[28px]">
+                                        <button type="button" wire:click="decrementQuantity({{ $item->id }})" class="w-8 h-full flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] hover:bg-black/5 transition-colors focus:outline-none">
+                                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+                                        </button>
+                                        <div class="w-8 h-full flex items-center justify-center font-mono text-[10px] text-[#1c1c1a]">{{ $item->quantity }}</div>
+                                        <button type="button" wire:click="incrementQuantity({{ $item->id }})" class="w-8 h-full flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] hover:bg-black/5 transition-colors focus:outline-none">
+                                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <button wire:click="removeItem({{ $item->id }})" class="absolute top-0 right-0 text-[#ba1a1a] hover:text-[#1c1c1a] focus:outline-none">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -76,9 +86,9 @@
                 <span class="font-mono text-[12px] font-bold tracking-[0.1em] text-[#1c1c1a] uppercase">SUBTOTAL</span>
                 <span class="font-serif text-[20px] font-semibold text-[#1c1c1a]">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
             </div>
-            <div class="flex flex-col gap-3">
-                <a href="/cart" wire:navigate wire:click="close" class="w-full border border-[#1c1c1a] text-[#1c1c1a] py-4 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-center hover:bg-[#f2efe8] transition-colors">LIHAT KERANJANG</a>
-                <a href="/checkout" wire:navigate wire:click="close" class="w-full bg-[#064e3b] text-white py-4 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-center hover:bg-[#043326] transition-colors">LANJUT PEMBAYARAN</a>
+            <div class="grid grid-cols-2 gap-3">
+                <a href="/cart" wire:navigate wire:click="close" class="flex items-center justify-center border border-[#1c1c1a] text-[#1c1c1a] py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#f2efe8] transition-colors leading-tight">LIHAT KERANJANG</a>
+                <a href="/checkout" wire:navigate wire:click="close" class="flex items-center justify-center bg-[#064e3b] text-white py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#043326] transition-colors leading-tight">LANJUT PEMBAYARAN</a>
             </div>
         </div>
         @endif

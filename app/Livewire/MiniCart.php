@@ -43,6 +43,26 @@ class MiniCart extends Component
         $this->isOpen = false;
     }
 
+    public function incrementQuantity($itemId)
+    {
+        $item = \App\Models\CartItem::find($itemId);
+        if ($item) {
+            $item->increment('quantity');
+            $this->loadCart();
+            $this->dispatch('cart-updated');
+        }
+    }
+
+    public function decrementQuantity($itemId)
+    {
+        $item = \App\Models\CartItem::find($itemId);
+        if ($item && $item->quantity > 1) {
+            $item->decrement('quantity');
+            $this->loadCart();
+            $this->dispatch('cart-updated');
+        }
+    }
+
     public function removeItem($itemId)
     {
         $item = \App\Models\CartItem::find($itemId);
