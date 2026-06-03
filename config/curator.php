@@ -31,7 +31,7 @@ return [
             'should_register' => true,
             'should_show_badge' => false,
         ],
-        'resource' => Awcodes\Curator\Resources\Media\MediaResource::class,
+        'resource' => \App\Filament\Resources\MediaResource::class,
         'pages' => [
             'create' => Awcodes\Curator\Resources\Media\Pages\CreateMedia::class,
             'edit' => Awcodes\Curator\Resources\Media\Pages\EditMedia::class,
