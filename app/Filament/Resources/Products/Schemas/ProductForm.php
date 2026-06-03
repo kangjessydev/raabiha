@@ -64,9 +64,13 @@ class ProductForm
                                 </style>
                             ')),
                         \Awcodes\Curator\Components\Forms\CuratorPicker::make('images')
-                            ->label('Foto Produk (Media Library)')
+                            ->label('Galeri Produk (Media Library)')
                             ->multiple()
-                            ->extraAttributes(['class' => 'horizontal-gallery'])
+                            ->listDisplay(false)
+                            ->buttonLabel('Jelajahi Media Library & Upload Foto')
+                            ->color('primary')
+                            ->size(\Filament\Support\Enums\Size::Large)
+                            ->extraAttributes(['class' => 'horizontal-gallery', 'style' => 'border: 2px dashed #d1d5db; padding: 1.5rem; border-radius: 0.75rem; background-color: #f9fafb; display: flex; flex-direction: column; align-items: center;'])
                             ->columnSpanFull(),
                     ])->columns(2),
 
