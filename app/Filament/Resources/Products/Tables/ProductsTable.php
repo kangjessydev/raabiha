@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Products\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -16,11 +15,11 @@ class ProductsTable
     {
         return $table
             ->columns([
-                ImageColumn::make('images')
+                \Awcodes\Curator\Components\Tables\CuratorColumn::make('images')
                     ->label('Foto')
                     ->circular()
-                    ->stacked()
-                    ->defaultImageUrl(url('/assets/images/gallery-1.png'))
+                    ->ring(2)
+                    ->overlap(4)
                     ->limit(3),
                 TextColumn::make('category.name')
                     ->searchable()
@@ -53,9 +52,9 @@ class ProductsTable
                 \Filament\Tables\Filters\TernaryFilter::make('is_active'),
             ])
             ->recordActions([
-                \Filament\Tables\Actions\ViewAction::make(),
-                \Filament\Tables\Actions\EditAction::make(),
-                \Filament\Tables\Actions\DeleteAction::make(),
+                \Filament\Actions\ViewAction::make(),
+                \Filament\Actions\EditAction::make(),
+                \Filament\Actions\DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
