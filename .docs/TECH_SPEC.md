@@ -1,10 +1,11 @@
 # Architecture & Technical Specification
 
 ## 1. Stack Teknologi
-- **Core Framework:** Laravel (PHP) untuk mengelola *database*, logika backend, dan arsitektur *e-commerce* custom secara efisien.
+- **Core Framework:** Laravel 13 (PHP ^8.3) untuk mengelola *database*, logika backend, dan arsitektur *e-commerce* custom secara efisien.
 - **Frontend & UI:** 
-  - **Laravel Blade + Tailwind CSS + Alpine.js (TALL Stack):** Digunakan untuk merancang antarmuka publik (katalog, produk, cart, checkout). Pendekatan ini dipilih untuk memaksimalkan kecepatan akses, menjaga sistem tetap ringan, dan menjamin SEO yang 100% sempurna tanpa konfigurasi ekstra.
-- **Admin Dashboard:** Filament (dibangun di atas Livewire & Tailwind CSS) digunakan murni untuk pengelolaan *backend* (produk, pesanan, manajer).
+  - **Laravel Blade + Tailwind CSS v4 + Alpine.js (TALL Stack):** Digunakan untuk merancang antarmuka publik (katalog, produk, cart, checkout). Pendekatan ini dipilih untuk memaksimalkan kecepatan akses, menjaga sistem tetap ringan, dan menjamin SEO yang 100% sempurna tanpa konfigurasi ekstra.
+- **Admin Dashboard:** Filament v5 (dibangun di atas Livewire & Tailwind CSS v4) digunakan murni untuk pengelolaan *backend* (produk, pesanan, manajer).
+- **Media Management:** awcodes/filament-curator v5 terintegrasi langsung dengan Filament untuk sentralisasi *Media Library* berstandar WordPress.
 
 ## 2. Integrasi Layanan Eksternal (Third-Party)
 - **Payment Gateway:** Xendit (Untuk pemrosesan pembayaran otomatis).
