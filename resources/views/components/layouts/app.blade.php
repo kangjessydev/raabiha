@@ -601,17 +601,17 @@ var wc_order_attribution = {"params":{"lifetime":1.00000000000000008180305391403
     document.addEventListener('DOMContentLoaded', function() {
         let lastScrollY = window.scrollY;
         let scrollTimeout;
-        const header = document.querySelector('header.sticky');
+        const header = document.getElementById('smart-navbar');
         
         if (header) {
             window.addEventListener('scroll', () => {
                 clearTimeout(scrollTimeout);
                 
-                if (window.scrollY > lastScrollY && window.scrollY > 80) {
-                    // Scroll down
+                if (window.scrollY > lastScrollY && window.scrollY > 150) {
+                    // Scroll down: hide navbar
                     header.style.transform = 'translateY(-100%)';
                 } else {
-                    // Scroll up
+                    // Scroll up: show navbar
                     header.style.transform = 'translateY(0)';
                 }
                 

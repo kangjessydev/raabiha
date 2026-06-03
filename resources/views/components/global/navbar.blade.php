@@ -1,4 +1,5 @@
-<header class="sticky top-0 z-50 bg-[#fcf9f5] border-b border-[#e5e2de] transition-all duration-300">
+<div class="h-[73px] md:h-[81px] w-full">
+    <header class="fixed top-0 left-0 w-full z-[100] bg-[#fcf9f5] border-b border-[#e5e2de] transition-transform duration-300 transform translate-y-0" id="smart-navbar">
         
         <!-- ==================== DESKTOP LAYOUT ==================== -->
         <div class="hidden md:flex items-center justify-between px-12 py-5 relative z-50 bg-[#fcf9f5]">
@@ -79,3 +80,4 @@
             </div>
         </div>
     </header>
+</div>
