@@ -597,7 +597,34 @@ extensionCartUpdate( {
 var wc_order_attribution = {"params":{"lifetime":1.0000000000000000818030539140313095458623138256371021270751953125e-5,"session":30,"base64":false,"ajaxurl":"index.htmlwp-admin/admin-ajax.php","prefix":"wc_order_attribution_","allowTracking":true},"fields":{"source_type":"current.typ","referrer":"current_add.rf","utm_campaign":"current.cmp","utm_source":"current.src","utm_medium":"current.mdm","utm_content":"current.cnt","utm_id":"current.id","utm_term":"current.trm","utm_source_platform":"current.plt","utm_creative_format":"current.fmt","utm_marketing_tactic":"current.tct","session_entry":"current_add.ep","session_start_time":"current_add.fd","session_pages":"session.pgs","session_count":"udata.vst","user_agent":"udata.uag"}};
 //# sourceURL=wc-order-attribution-js-extra
 </script>
-<script id="wc-order-attribution-js" src="{{ asset('wp-content/plugins/woocommerce/assets/js/frontend/order-attribution.min.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let lastScrollY = window.scrollY;
+        let scrollTimeout;
+        const header = document.querySelector('header.sticky');
+        
+        if (header) {
+            window.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                
+                if (window.scrollY > lastScrollY && window.scrollY > 80) {
+                    // Scroll down
+                    header.style.transform = 'translateY(-100%)';
+                } else {
+                    // Scroll up
+                    header.style.transform = 'translateY(0)';
+                }
+                
+                lastScrollY = window.scrollY;
+                
+                // Show after scroll stops
+                scrollTimeout = setTimeout(() => {
+                    header.style.transform = 'translateY(0)';
+                }, 800);
+            }, { passive: true });
+        }
+    });
+</script>
     <livewire:mini-cart />
 </body>
 </html>
