@@ -15,11 +15,21 @@ class OrdersTable
         return $table
             ->columns([
                 TextColumn::make('order_number')
+                    ->label('ID Pesanan')
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
-                TextColumn::make('user.name')
-                    ->searchable()
+                TextColumn::make('user_type')
+                    ->label('Tipe Pelanggan')
+                    ->badge()
+                    ->color(fn ($record) => $record->user_id ? 'success' : 'warning')
+                    ->state(fn ($record) => $record->user_id ? 'Member' : 'Guest'),
+                TextColumn::make('customer_name')
+                    ->label('Nama Pelanggan')
+                    ->state(function ($record) {
+                        return $record->user_id ? $record->user->name : ($record->shipping_address['name'] ?? 'Guest User');
+                    })
+                    ->searchable(['user.name'])
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
@@ -44,7 +54,16 @@ class OrdersTable
                     ->sortable(),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\TernaryFilter::make('is_member')
+                    ->label('Tipe Pelanggan')
+                    ->placeholder('Semua Pelanggan')
+                    ->trueLabel('Hanya Member')
+                    ->falseLabel('Hanya Guest')
+                    ->queries(
+                        true: fn ($query) => $query->whereNotNull('user_id'),
+                        false: fn ($query) => $query->whereNull('user_id'),
+                        blank: fn ($query) => $query,
+                    )
             ])
             ->recordActions([
                 EditAction::make(),
