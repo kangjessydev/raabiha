@@ -109,8 +109,71 @@ class ProductDetail extends Component
 
     public function addToCart()
     {
-        // To be implemented: actual cart logic (e.g. session, db)
-        // For now, we will dispatch an event that can be caught by a Cart header component
+        // 1. Validation
+        if ($this->product->has_variants) {
+            if (empty($this->selectedSize) || empty($this->selectedColor)) {
+                session()->flash('error', 'Silakan pilih ukuran dan warna terlebih dahulu.');
+                return;
+            }
+        }
+
+        // 2. Find Variant and check stock
+        $variantId = null;
+        if ($this->product->has_variants) {
+            $matchedVariant = $this->product->variants->first(function($variant) {
+                $hasSize = $variant->attributeOptions->contains(function($opt) {
+                    return $opt->value === $this->selectedSize && $opt->attribute->slug === 'ukuran';
+                });
+                $hasColor = $variant->attributeOptions->contains(function($opt) {
+                    return $opt->value === $this->selectedColor && $opt->attribute->slug === 'warna';
+                });
+                return $hasSize && $hasColor;
+            });
+
+            if (!$matchedVariant) {
+                session()->flash('error', 'Kombinasi varian tidak ditemukan atau habis.');
+                return;
+            }
+            $variantId = $matchedVariant->id;
+            
+            if ($matchedVariant->stock < $this->quantity) {
+                session()->flash('error', 'Stok varian tidak mencukupi.');
+                return;
+            }
+        } else {
+            if ($this->product->stock < $this->quantity) {
+                session()->flash('error', 'Stok produk tidak mencukupi.');
+                return;
+            }
+        }
+
+        // 3. Get or Create Cart
+        if (auth()->check()) {
+            $cart = \App\Models\Cart::firstOrCreate(['user_id' => auth()->id(), 'is_buy_now' => false]);
+        } else {
+            // Ensure session is started and persisted
+            session()->put('cart_active', true);
+            $cart = \App\Models\Cart::firstOrCreate(['session_id' => session()->getId(), 'user_id' => null, 'is_buy_now' => false]);
+        }
+
+        // 4. Add or Update Item in Cart
+        $cartItem = \App\Models\CartItem::where('cart_id', $cart->id)
+            ->where('product_id', $this->product->id)
+            ->where('product_variant_id', $variantId)
+            ->first();
+
+        if ($cartItem) {
+            $cartItem->quantity += $this->quantity;
+            $cartItem->save();
+        } else {
+            \App\Models\CartItem::create([
+                'cart_id' => $cart->id,
+                'product_id' => $this->product->id,
+                'product_variant_id' => $variantId,
+                'quantity' => $this->quantity,
+            ]);
+        }
+
         $this->dispatch('cart-updated');
         
         session()->flash('message', 'Produk berhasil ditambahkan ke keranjang!');

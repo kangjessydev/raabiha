@@ -26,12 +26,10 @@ Route::get('/gallery', function () {
 
 Route::get('/product/{slug}', \App\Livewire\ProductDetail::class);
 
+Route::get('/cart', \App\Livewire\Cart::class);
+
 Route::get('/blog/{slug}', function ($slug) {
     return view('blog-detail', ['slug' => $slug]);
-});
-
-Route::get('/cart', function () {
-    return view('cart');
 });
 
 Route::get('/checkout', function () {

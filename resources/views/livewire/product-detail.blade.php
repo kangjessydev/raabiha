@@ -158,6 +158,12 @@
                                     </div>
                                 @endif
 
+                                @if (session()->has('error'))
+                                    <div class="bg-red-900/10 border border-red-900 text-red-900 px-4 py-3 rounded text-[11px] font-mono tracking-widest mb-2">
+                                        {{ session('error') }}
+                                    </div>
+                                @endif
+
                                 <!-- Desktop Single Row: QTY + CTA + Wishlist -->
                                 <div class="hidden md:flex items-center gap-3 w-full h-14">
                                     <!-- QTY -->
