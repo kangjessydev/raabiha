@@ -1,11 +1,11 @@
-<div>
+<div class="hidden md:block">
     <!-- Backdrop -->
     @if($isOpen)
     <div wire:click="close" class="fixed inset-0 bg-black/50 z-[150] transition-opacity backdrop-blur-sm"></div>
     @endif
 
     <!-- Sidebar -->
-    <div class="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-[#fcf9f5] shadow-2xl z-[160] transform transition-transform duration-300 ease-in-out {{ $isOpen ? 'translate-x-0' : 'translate-x-full' }} flex flex-col">
+    <div class="fixed top-0 right-0 h-full w-[400px] bg-[#fcf9f5] shadow-2xl z-[160] transform transition-transform duration-300 ease-in-out {{ $isOpen ? 'translate-x-0' : 'translate-x-full' }} flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-5 border-b border-[#e5e2de]">
             <h2 class="font-serif text-xl font-bold text-[#1c1c1a] tracking-tight uppercase">Keranjang ({{ $count }})</h2>

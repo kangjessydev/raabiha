@@ -600,13 +600,13 @@
         </a>
         
         <!-- Cart Icon -->
-        <button type="button" id="mobile-add-to-cart-btn" onclick="Livewire.dispatch('open-mini-cart')" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
+        <a href="{{ url('/cart') }}" wire:navigate id="mobile-add-to-cart-btn" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
             <div class="relative">
                 <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                 <livewire:cart-badge />
             </div>
             <span class="text-[8px] font-mono tracking-widest uppercase">Cart</span>
-        </button>
+        </a>
         
         <!-- Buy Now Button -->
         <button type="button" id="mobile-buy-now-btn" class="flex-1 h-full bg-[#09493B] text-white flex flex-col items-center justify-center hover:bg-[#07362c] transition-colors focus:outline-none">
