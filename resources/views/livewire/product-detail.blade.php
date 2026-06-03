@@ -1,6 +1,6 @@
 <div>
     @slot('header')
-        <x-global.mobile-subnav title="Detail Produk" backUrl="/shop" transparent="true" :share="true" />
+        <x-global.mobile-subnav title="Detail Produk" backUrl="/shop" transparent="true" :cart="true" />
     @endslot
 
     <div id="product-detail-container" class="page-slide-in">
@@ -92,10 +92,16 @@
                         
                         <div class="lg:hidden flex items-center justify-between mb-2 mt-4">
                             <div class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest" id="collection-badge">FALL/WINTER 2024</div>
-                            <!-- Mobile Wishlist Button -->
-                            <button type="button" class="flex items-center justify-center w-8 h-8 text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                            </button>
+                            <div class="flex items-center gap-1">
+                                <!-- Mobile Share Button -->
+                                <button type="button" onclick="document.getElementById('share-modal').classList.remove('hidden')" class="flex items-center justify-center w-8 h-8 text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                                </button>
+                                <!-- Mobile Wishlist Button -->
+                                <button type="button" class="flex items-center justify-center w-8 h-8 text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                </button>
+                            </div>
                         </div>
                         <h1 id="product-name" class="text-[#1c1c1a] text-2xl lg:text-5xl font-serif font-bold tracking-tight mb-2 mt-0 lg:mt-0 capitalize">
                             {{ $product->name }}
@@ -557,38 +563,114 @@
 
     <!-- ===== MOBILE VARIANT BOTTOMSHEET ===== -->
     <!-- Backdrop -->
-    <div id="mobile-bs-backdrop" class="md:hidden fixed inset-0 bg-black/50 z-[110] hidden transition-opacity duration-300 opacity-0"></div>
+    <div id="mobile-bs-backdrop" class="md:hidden fixed inset-0 bg-black/50 z-[110] hidden transition-opacity duration-300 opacity-0" onclick="closeBottomSheet()"></div>
 
     <!-- Sheet Panel -->
     <div id="mobile-bs-panel" class="md:hidden fixed bottom-0 left-0 right-0 z-[120] bg-[#fcf9f5] rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] transform translate-y-full transition-transform duration-300">
         <!-- Handle -->
-        <div class="flex justify-center pt-3 pb-2">
-            <div class="w-10 h-1 bg-[#e5e2de] rounded-full"></div>
+        <div class="flex justify-center pt-3 pb-2" onclick="closeBottomSheet()">
+            <div class="w-10 h-1 bg-[#e5e2de] rounded-full cursor-pointer"></div>
         </div>
 
         <!-- Header -->
         <div class="flex items-center justify-between px-5 pb-4 border-b border-[#e5e2de]">
-            <div>
-                <div id="bs-product-name" class="text-[#1c1c1a] text-sm font-serif font-bold uppercase leading-tight"></div>
-                <div id="bs-product-price" class="text-[#615e57] text-xs font-mono mt-0.5"></div>
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-16 bg-[#e5e2de] rounded-sm overflow-hidden shrink-0">
+                    <img src="{{ $this->activeImage ? asset('storage/' . $this->activeImage) : (isset($product->images[0]) ? asset('storage/' . $product->images[0]) : '') }}" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <div id="bs-product-name" class="text-[#1c1c1a] text-sm font-serif font-bold uppercase leading-tight">{{ $product->name }}</div>
+                    <div id="bs-product-price" class="text-[#615e57] text-xs font-mono mt-0.5">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</div>
+                </div>
             </div>
-            <button type="button" id="mobile-bs-close" class="w-8 h-8 flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+            <button type="button" onclick="closeBottomSheet()" class="w-8 h-8 flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none self-start">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
-        <!-- Body (Variant selectors injected here by JS) -->
+        <!-- Body -->
         <div id="mobile-bs-body" class="px-5 pt-4 pb-4 overflow-y-auto max-h-[55vh]">
-            <!-- Filled by JS: size, color, qty rows -->
+            @if(count($this->sizes) > 0)
+            <div class="mb-5" id="bs-size-selector">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase">SELECT SIZE</label>
+                    <span class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest cursor-pointer underline">SIZE GUIDE</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    @foreach($this->sizes as $sizeOpt)
+                        @php $sizeName = $sizeOpt->value; @endphp
+                        <button type="button" wire:click="$set('selectedSize', '{{ $sizeName }}')" class="flex-1 py-3 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 {{ $selectedSize === $sizeName ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] hover:border-[#1c1c1a]' }}">{{ $sizeName }}</button>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            @if(count($this->colors) > 0)
+            <div class="mb-6" id="bs-color-selector">
+                <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Color: <span class="font-normal text-[#615e57]">{{ $selectedColor }}</span></label>
+                <div class="flex flex-wrap gap-3">
+                    @foreach($this->colors as $colorOpt)
+                        @php 
+                            $colorName = $colorOpt->value;
+                            $hex = $colorOpt->meta ?? '#333333'; 
+                        @endphp
+                        <button type="button" wire:click="$set('selectedColor', '{{ $colorName }}')" class="w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $colorName ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
+                            <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <div class="mb-2" id="bs-qty-selector">
+                <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">QUANTITY</label>
+                <div class="flex items-center w-[120px] h-10 border border-[#e5e2de]">
+                    <button type="button" wire:click="decrementQty" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                    </button>
+                    <div class="flex-1 h-full flex items-center justify-center font-mono text-[12px] text-[#1c1c1a] bg-transparent">{{ $qty }}</div>
+                    <button type="button" wire:click="incrementQty" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- CTA Footer -->
-        <div class="px-5 pb-6 pt-3 border-t border-[#e5e2de]">
-            <button type="button" id="mobile-bs-confirm" class="w-full h-14 bg-[#09493B] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#07362c] focus:outline-none">
-                KONFIRMASI
+        <div class="px-5 pb-6 pt-3 border-t border-[#e5e2de] flex gap-3">
+            <button type="button" wire:click="addToCart" onclick="closeBottomSheet()" id="mobile-bottomsheet-cart-btn" class="w-[60px] shrink-0 h-14 border border-[#1c1c1a] text-[#1c1c1a] flex flex-col items-center justify-center hover:bg-[#f2efe8] transition-colors focus:outline-none">
+                <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            </button>
+            <button type="button" wire:click="buyNow" onclick="closeBottomSheet()" class="flex-1 h-14 bg-[#09493B] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#07362c] focus:outline-none">
+                BELI SEKARANG
             </button>
         </div>
     </div>
+    
+    <script>
+        function openBottomSheet() {
+            const backdrop = document.getElementById('mobile-bs-backdrop');
+            const panel = document.getElementById('mobile-bs-panel');
+            if (backdrop && panel) {
+                backdrop.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    panel.classList.remove('translate-y-full');
+                }, 10);
+            }
+        }
+        function closeBottomSheet() {
+            const backdrop = document.getElementById('mobile-bs-backdrop');
+            const panel = document.getElementById('mobile-bs-panel');
+            if (backdrop && panel) {
+                backdrop.classList.add('opacity-0');
+                panel.classList.add('translate-y-full');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                }, 300);
+            }
+        }
+    </script>
     <!-- ===== END MOBILE VARIANT BOTTOMSHEET ===== -->
 
     <!-- MOBILE Sticky Action Bar -->
@@ -600,16 +682,15 @@
         </a>
         
         <!-- Cart Icon -->
-        <a href="{{ url('/cart') }}" wire:navigate id="mobile-add-to-cart-btn" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
+        <button type="button" id="mobile-add-to-cart-btn" onclick="openBottomSheet()" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
             <div class="relative">
                 <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                <livewire:cart-badge />
             </div>
             <span class="text-[8px] font-mono tracking-widest uppercase">Cart</span>
-        </a>
+        </button>
         
         <!-- Buy Now Button -->
-        <button type="button" id="mobile-buy-now-btn" class="flex-1 h-full bg-[#09493B] text-white flex flex-col items-center justify-center hover:bg-[#07362c] transition-colors focus:outline-none">
+        <button type="button" id="mobile-buy-now-btn" onclick="openBottomSheet()" class="flex-1 h-full bg-[#09493B] text-white flex flex-col items-center justify-center hover:bg-[#07362c] transition-colors focus:outline-none">
             <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">BELI SEKARANG</span>
         </button>
     </div>
@@ -628,7 +709,7 @@
             }
             
             let targetIcon = window.innerWidth < 768 ? document.querySelector('#mobile-add-to-cart-btn') : document.querySelector('#desktop-cart-icon');
-            let originElement = document.querySelector('#qty'); // QTY input as origin
+            let originElement = window.innerWidth < 768 ? document.querySelector('#bs-qty-selector') : document.querySelector('#qty'); // QTY input as origin
             
             if (activeImage && targetIcon && originElement) {
                 let imgClone = activeImage.cloneNode();
