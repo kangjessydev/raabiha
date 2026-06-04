@@ -43,6 +43,11 @@ class OrdersTable
                         default => 'secondary',
                     })
                     ->searchable(),
+                TextColumn::make('shipping_address.city')
+                    ->label('Kota Tujuan')
+                    ->state(fn ($record) => ($record->shipping_address['city'] ?? '') . ', ' . ($record->shipping_address['province'] ?? ''))
+                    ->searchable(['shipping_address'])
+                    ->toggleable(),
                 TextColumn::make('grand_total')
                     ->money('IDR')
                     ->sortable(),

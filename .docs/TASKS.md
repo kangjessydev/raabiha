@@ -39,7 +39,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 
 ## 🔌 Integrasi API (Fase Berikutnya)
 - [x] **Logistik (RajaOngkir Starter):** Cek ongkir JNE/POS/TIKI menggunakan Dropdown Provinsi & Kota (Sesuai keputusan: versi gratis/manual tanpa map search). Lacak resi dilakukan direct via external.
-- [ ] **Pembayaran (Xendit / Tripay):** Virtual Account, QRIS otomatis dengan Webhook integrasi ke status pesanan.
+- [x] **Pembayaran (Xendit / Tripay):** Virtual Account, QRIS otomatis dengan Webhook integrasi ke status pesanan.
 
 ## 🧊 Backlog / Opsional (Sprint 3 / Fase 2)
 - [ ] *Virtual Fitting Room* dengan avatar kustom.

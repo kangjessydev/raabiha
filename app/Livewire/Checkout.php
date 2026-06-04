@@ -8,6 +8,7 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Lazy;
 
@@ -27,8 +28,18 @@ class Checkout extends Component
     public $postal_code;
     public $notes;
     
+    // Region Dropdown State
+    public $provinces = [];
+    public $cities = [];
+    public $districts = [];
+    
+    public $selectedProvinceId = '';
+    public $selectedCityId = '';
+    public $selectedDistrictId = '';
+    
     // Checkout state
     public $shipping_cost = 20000;
+    public $base_shipping_cost = 20000;
     public $payment_method = 'bank_transfer';
     public $shipping_method = 'jne_reg';
     
@@ -45,6 +56,151 @@ class Checkout extends Component
         }
         
         $this->appliedCoupon = session('applied_coupon', null);
+        
+        // Fetch provinces on load
+        $this->fetchProvinces();
+        
+        $this->generateShippingRates();
+    }
+    
+    public function fetchProvinces()
+    {
+        $response = \Illuminate\Support\Facades\Http::get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json');
+        if ($response->successful()) {
+            $this->provinces = $response->json();
+        }
+    }
+
+    public function updatedSelectedProvinceId($value)
+    {
+        $this->cities = [];
+        $this->districts = [];
+        $this->selectedCityId = '';
+        $this->selectedDistrictId = '';
+        
+        $province = collect($this->provinces)->firstWhere('id', $value);
+        if ($province) {
+            $this->province = $province['name'];
+        }
+        
+        if ($value) {
+            $response = \Illuminate\Support\Facades\Http::get("https://www.emsifa.com/api-wilayah-indonesia/api/regencies/{$value}.json");
+            if ($response->successful()) {
+                $this->cities = $response->json();
+            }
+        }
+    }
+
+    public function updatedSelectedCityId($value)
+    {
+        $this->districts = [];
+        $this->selectedDistrictId = '';
+        
+        $city = collect($this->cities)->firstWhere('id', $value);
+        if ($city) {
+            $this->city = $city['name'];
+        }
+        
+        if ($value) {
+            $response = \Illuminate\Support\Facades\Http::get("https://www.emsifa.com/api-wilayah-indonesia/api/districts/{$value}.json");
+            if ($response->successful()) {
+                $this->districts = $response->json();
+            }
+        }
+    }
+    
+    public function updatedSelectedDistrictId($value)
+    {
+        $district = collect($this->districts)->firstWhere('id', $value);
+        if ($district) {
+            $this->district = $district['name'];
+        }
+        $this->calculateDynamicShipping();
+    }
+    
+    public $shippingRates = [];
+
+    public function calculateDynamicShipping()
+    {
+        if (!$this->selectedProvinceId) {
+            $this->base_shipping_cost = 20000;
+        } else {
+            $provId = (int) $this->selectedProvinceId;
+            $cityId = (int) ($this->selectedCityId ?? 0);
+            
+            $baseCost = 40000; // Default
+            
+            if ($provId == 32) {
+                $baseCost = 10000; // Jabar
+            } elseif ($provId == 31 || $provId == 36) {
+                $baseCost = 15000; // DKI, Banten
+            } elseif ($provId == 33 || $provId == 34) {
+                $baseCost = 20000; // Jateng, DIY
+            } elseif ($provId == 35) {
+                $baseCost = 25000; // Jatim
+            } elseif ($provId >= 51 && $provId <= 53) {
+                $baseCost = 35000; // Bali, NTB, NTT
+            } elseif ($provId >= 11 && $provId <= 19) {
+                $baseCost = 40000; // Sumatera
+            } elseif ($provId >= 61 && $provId <= 76) {
+                $baseCost = 50000; // Kalimantan, Sulawesi
+            } elseif ($provId >= 81) {
+                $baseCost = 80000; // Maluku, Papua
+            }
+            
+            $variance = ($cityId % 10) * 1000;
+            $this->base_shipping_cost = $baseCost + $variance;
+        }
+        
+        $this->generateShippingRates();
+        
+        // Update current shipping cost based on selected method
+        $this->updatedShippingMethod($this->shipping_method);
+    }
+    
+    public function generateShippingRates()
+    {
+        $this->shippingRates = [];
+        
+        if (!$this->selectedDistrictId) {
+            $this->shipping_cost = 0;
+            return;
+        }
+
+        $activeCouriers = \App\Models\ShippingMethod::where('is_active', true)->get();
+        
+        foreach ($activeCouriers as $courier) {
+            $code = strtolower($courier->code);
+            $cName = strtoupper($courier->name);
+            
+            // Reguler Service
+            $this->shippingRates[] = [
+                'id' => $code . '_reg',
+                'courier_name' => $cName,
+                'service_name' => $cName === 'JNE' ? 'Reguler' : 'Reguler',
+                'duration' => '2-3 hari kerja',
+                'price' => $this->base_shipping_cost,
+                'logo' => $courier->logo,
+            ];
+            
+            // Express Service
+            $this->shippingRates[] = [
+                'id' => $code . '_express',
+                'courier_name' => $cName,
+                'service_name' => $cName === 'JNE' ? 'YES' : 'Ekspres',
+                'duration' => '1 hari kerja',
+                'price' => $this->base_shipping_cost + 15000,
+                'logo' => $courier->logo,
+            ];
+        }
+        
+        // Set default shipping method to the first available if not set or invalid
+        if (empty($this->shipping_method) || !collect($this->shippingRates)->contains('id', $this->shipping_method)) {
+            if (count($this->shippingRates) > 0) {
+                $this->shipping_method = $this->shippingRates[0]['id'];
+                $this->updatedShippingMethod($this->shipping_method);
+            }
+        }
     }
 
     public function getCartProperty()
@@ -71,9 +227,16 @@ class Checkout extends Component
             return $cart->items;
         }
         
-        return $cart->items->filter(function($item) use ($selectedIds) {
+        $filtered = $cart->items->filter(function($item) use ($selectedIds) {
             return in_array((string)$item->id, $selectedIds);
         });
+
+        if ($filtered->isEmpty() && !empty($selectedIds)) {
+            session()->forget('checkout_item_ids');
+            return $cart->items;
+        }
+
+        return $filtered;
     }
 
     public function getSubtotalProperty()
@@ -172,10 +335,14 @@ class Checkout extends Component
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'address' => 'required|string',
-            'province' => 'required|string',
-            'city' => 'required|string',
-            'district' => 'required|string',
+            'selectedProvinceId' => 'required',
+            'selectedCityId' => 'required',
+            'selectedDistrictId' => 'required',
             'postal_code' => 'required|string',
+        ], [
+            'selectedProvinceId.required' => 'Silakan pilih provinsi.',
+            'selectedCityId.required' => 'Silakan pilih kota/kabupaten.',
+            'selectedDistrictId.required' => 'Silakan pilih kecamatan.',
         ]);
 
         $items = $this->checkoutItems;
@@ -207,7 +374,7 @@ class Checkout extends Component
                     'postal_code' => $this->postal_code,
                     'notes' => $this->notes,
                 ],
-                'shipping_method' => $this->shipping_method,
+                'courier' => $this->shipping_method,
                 'shipping_cost' => $this->shipping_cost,
                 'payment_method' => $this->payment_method,
                 'subtotal' => $this->subtotal,
@@ -241,10 +408,10 @@ class Checkout extends Component
                     'order_id' => $order->id,
                     'product_id' => $item->product_id,
                     'product_variant_id' => $item->product_variant_id,
+                    'name' => $item->product->name,
+                    'price' => $price,
                     'quantity' => $item->quantity,
-                    'unit_price' => $price,
-                    'subtotal' => $price * $item->quantity,
-                    'attributes' => !empty($attributes) ? $attributes : null,
+                    'total' => $price * $item->quantity,
                 ]);
 
                 // Reduce stock
@@ -263,6 +430,9 @@ class Checkout extends Component
             if ($cart && $cart->items()->count() === 0) {
                 $cart->delete();
             }
+
+            // Clear session to prevent stale items on next visit
+            session()->forget('checkout_item_ids');
 
             DB::commit();
 
@@ -354,10 +524,20 @@ class Checkout extends Component
 
     public function updatedShippingMethod($value)
     {
-        if ($value === 'jne_yes') {
-            $this->shipping_cost = 35000;
+        if (!isset($this->base_shipping_cost)) {
+            $this->base_shipping_cost = 20000;
+        }
+        
+        $rate = collect($this->shippingRates)->firstWhere('id', $value);
+        if ($rate) {
+            $this->shipping_cost = $rate['price'];
         } else {
-            $this->shipping_cost = 20000;
+            // Fallback logic if shippingRates is empty (e.g. before JS init)
+            if (str_ends_with($value, '_express')) {
+                $this->shipping_cost = $this->base_shipping_cost + 15000;
+            } else {
+                $this->shipping_cost = $this->base_shipping_cost;
+            }
         }
     }
 

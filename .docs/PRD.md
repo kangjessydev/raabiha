@@ -13,7 +13,7 @@ Tujuan utamanya adalah meningkatkan margin keuntungan penjualan langsung (Direct
 Fase MVP mengacu pada pembuatan kapabilitas *e-commerce* secara custom dari nol menggunakan Laravel, disesuaikan persis dengan kebutuhan Raabiha agar lebih ringan, cepat, dan mudah di-maintain.
 - **Katalog & Belanja:** Etalase produk lengkap dengan struktur database custom.
 - **Sistem Pengiriman:** Cek ongkir otomatis & fitur gratis ongkir (Integrasi RajaOngkir).
-- **Pembayaran:** *Payment Gateway* yang terotomatisasi (Integrasi Xendit).
+- **Pembayaran:** *Payment Gateway* yang terotomatisasi (Integrasi Tripay / Xendit).
 - **Manajemen Pengguna:** Dasbor pelanggan publik yang SEO-friendly dan ringan.
 - **Dasbor Admin Eksekutif:** Menggunakan **Filament Admin Panel** sebagai pusat komando operasional toko (manajemen pesanan, produk, user, dan laporan) yang terpisah dari area publik.
 

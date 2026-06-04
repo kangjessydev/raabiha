@@ -150,11 +150,30 @@ class OrderForm
 
                 Section::make('Informasi Pengiriman')
                     ->schema([
-                        TextInput::make('courier'),
-                        TextInput::make('awb_number')->label('Resi'),
+                        \Filament\Forms\Components\Fieldset::make('Alamat Pengiriman')
+                            ->schema([
+                                TextInput::make('shipping_address.first_name')->label('Nama Depan')->readOnly(),
+                                TextInput::make('shipping_address.last_name')->label('Nama Belakang')->readOnly(),
+                                TextInput::make('shipping_address.phone')->label('Telepon')->readOnly(),
+                                TextInput::make('shipping_address.email')->label('Email')->readOnly(),
+                                Textarea::make('shipping_address.address')->label('Alamat Lengkap')->readOnly()->columnSpanFull(),
+                                TextInput::make('shipping_address.province')->label('Provinsi')->readOnly(),
+                                TextInput::make('shipping_address.city')->label('Kota/Kabupaten')->readOnly(),
+                                TextInput::make('shipping_address.district')->label('Kecamatan')->readOnly(),
+                                TextInput::make('shipping_address.postal_code')->label('Kode Pos')->readOnly(),
+                            ])->columns(2),
+                        \Filament\Forms\Components\Fieldset::make('Status Kurir')
+                            ->schema([
+                                TextInput::make('courier')
+                                    ->label('Kurir (Layanan)')
+                                    ->required(),
+                                TextInput::make('awb_number')->label('Nomor Resi'),
+                            ])->columns(2),
                         Textarea::make('notes')
-                            ->columnSpanFull(),
-                    ])->columns(2),
+                            ->label('Catatan Pesanan')
+                            ->columnSpanFull()
+                            ->readOnly(),
+                    ])->columns(1),
             ]);
     }
 }
