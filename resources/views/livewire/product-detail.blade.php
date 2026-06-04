@@ -1,4 +1,4 @@
-<div x-data="{ bsOpen: false, bsMode: 'cart' }">
+<div x-data="{ bsOpen: $wire.entangle('bsOpen'), bsMode: $wire.entangle('bsMode') }">
     @slot('header')
         <x-global.mobile-subnav title="Detail Produk" backUrl="/shop" transparent="true" :cart="true" />
     @endslot
@@ -654,10 +654,10 @@
 
         <!-- CTA Footer -->
         <div class="px-5 pb-6 pt-3 border-t border-[#e5e2de]">
-            <button x-show="bsMode === 'cart'" type="button" wire:click="addToCart" @click="bsOpen = false" id="mobile-bottomsheet-cart-btn" class="w-full h-14 bg-[#09493B] text-white flex items-center justify-center transition-colors focus:outline-none text-[10px] font-mono font-bold tracking-[0.2em] uppercase hover:bg-[#07362c]">
+            <button x-show="bsMode === 'cart'" type="button" wire:click="addToCart" id="mobile-bottomsheet-cart-btn" class="w-full h-14 bg-[#064e3b] text-white flex items-center justify-center transition-colors focus:outline-none text-[10px] font-mono font-bold tracking-[0.2em] uppercase hover:bg-[#053e2f]">
                 + KERANJANG
             </button>
-            <button x-show="bsMode === 'buy'" style="display: none;" type="button" wire:click="buyNow" @click="bsOpen = false" class="w-full h-14 bg-[#09493B] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#07362c] focus:outline-none">
+            <button x-show="bsMode === 'buy'" style="display: none;" type="button" wire:click="buyNow" class="w-full h-14 bg-[#064e3b] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#053e2f] focus:outline-none">
                 BELI SEKARANG
             </button>
         </div>
@@ -681,7 +681,7 @@
         </button>
         
         <!-- Buy Now Button -->
-        <button type="button" id="mobile-buy-now-btn" @click="bsOpen = true; bsMode = 'buy'" class="flex-1 h-full bg-[#09493B] text-white flex flex-col items-center justify-center hover:bg-[#07362c] transition-colors focus:outline-none">
+        <button type="button" id="mobile-buy-now-btn" @click="bsOpen = true; bsMode = 'buy'" class="flex-1 h-full bg-[#064e3b] text-white flex flex-col items-center justify-center hover:bg-[#053e2f] transition-colors focus:outline-none">
             <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">BELI SEKARANG</span>
         </button>
     </div>

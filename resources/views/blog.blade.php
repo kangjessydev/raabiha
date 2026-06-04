@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-layouts.app title="Blog">
 <main class="site-main bg-[#fcf9f5] min-h-screen pb-0">
 
     <!-- Hero Featured Article -->

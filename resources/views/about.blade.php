@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-layouts.app title="Tentang Kami">
 <main class="site-main bg-[#fcf9f5] min-h-screen pt-12 md:pt-24 pb-0">
     
     <!-- Hero Section -->

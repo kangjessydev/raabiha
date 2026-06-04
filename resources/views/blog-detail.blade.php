@@ -1,4 +1,8 @@
-<x-layouts.app>
+@php
+    $pageTitle = $post ? ($post->meta_title ?? $post->title) : 'The Geometry of Modesty';
+    $pageDesc = $post ? ($post->meta_description ?? \Illuminate\Support\Str::limit(strip_tags($post->content), 160)) : 'Mengeksplorasi titik temu antara siluet tradisional dan struktur arsitektural modern dalam koleksi terbaru Raabiha.';
+@endphp
+<x-layouts.app :title="$pageTitle" :description="$pageDesc">
     <x-slot:header>
         <x-global.mobile-subnav title="Detail Blog" backUrl="/blog" transparent="true" :share="true" />
     </x-slot:header>

@@ -170,7 +170,7 @@
                     </div>
 
                     <!-- Products Grid -->
-                    <div id="products-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-6 gap-y-12">
+                    <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, sort" class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-6 gap-y-12 w-full">
                         @forelse ($products as $product)
                             <a href="{{ url('/product/' . $product->slug) }}" wire:navigate class="group block">
                                 <div class="aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
@@ -192,6 +192,19 @@
                                 <button wire:click="$set('search', '')" class="border border-[#1c1c1a] px-6 py-3 text-[10px] font-mono font-bold uppercase tracking-widest hover:bg-[#f2efe8] transition-colors">Reset Filter</button>
                             </div>
                         @endforelse
+                    </div>
+
+                    <!-- Skeleton Loading Grid -->
+                    <div wire:loading wire:target="search, selectedCategories, sort" class="w-full">
+                        <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-6 gap-y-12">
+                            @for ($i = 0; $i < 6; $i++)
+                                <div class="animate-pulse block">
+                                    <div class="aspect-[4/5] bg-[#e5e2de] mb-4"></div>
+                                    <div class="h-3 bg-[#e5e2de] w-3/4 mb-2"></div>
+                                    <div class="h-3 bg-[#e5e2de] w-1/4"></div>
+                                </div>
+                            @endfor
+                        </div>
                     </div>
 
                     @if($products->hasPages())

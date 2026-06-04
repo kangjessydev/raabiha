@@ -1,3 +1,4 @@
+@props(['title' => null, 'description' => null, 'image' => null, 'header' => null])
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5,67 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
 
-	<!-- This site is optimized with the Yoast SEO plugin v27.6 - https://yoast.com/product/yoast-seo-wordpress/ -->
-	<title>Raabiha Olshop -</title>
-	<link rel="canonical" href="{{ url('/') }}" />
-	<meta property="og:locale" content="id_ID" />
-	<meta property="og:type" content="website" />
-	<meta property="og:title" content="Raabiha Olshop" />
-	<meta property="og:url" content="index.html" />
-	<meta property="og:site_name" content="Raabiha Olshop" />
-	<meta name="twitter:card" content="summary_large_image" />
-	<script type="application/ld+json" class="yoast-schema-graph">{
-	    "@@context": "https:\/\/schema.org",
-	    "@@graph": [
-	        {
-	            "@@type": "CollectionPage",
-	            "@@id": "http:\/\/localhost\/raabiha\/",
-	            "url": "http:\/\/localhost\/raabiha\/",
-	            "name": "Raabiha Olshop -",
-	            "isPartOf": {
-	                "@@id": "http:\/\/localhost\/raabiha\/#website"
-	            },
-	            "breadcrumb": {
-	                "@@id": "http:\/\/localhost\/raabiha\/#breadcrumb"
-	            },
-	            "inLanguage": "id"
-	        },
-	        {
-	            "@@type": "BreadcrumbList",
-	            "@@id": "http:\/\/localhost\/raabiha\/#breadcrumb",
-	            "itemListElement": [
-	                {
-	                    "@@type": "ListItem",
-	                    "position": 1,
-	                    "name": "Home"
-	                }
-	            ]
-	        },
-	        {
-	            "@@type": "WebSite",
-	            "@@id": "http:\/\/localhost\/raabiha\/#website",
-	            "url": "http:\/\/localhost\/raabiha\/",
-	            "name": "Raabiha Olshop",
-	            "description": "",
-	            "potentialAction": [
-	                {
-	                    "@@type": "SearchAction",
-	                    "target": {
-	                        "@@type": "EntryPoint",
-	                        "urlTemplate": "http:\/\/localhost\/raabiha\/?s={search_term_string}"
-	                    },
-	                    "query-input": {
-	                        "@@type": "PropertyValueSpecification",
-	                        "valueRequired": true,
-	                        "valueName": "search_term_string"
-	                    }
-	                }
-	            ],
-	            "inLanguage": "id"
-	        }
-	    ]
-	}</script>
-	<!-- / Yoast SEO plugin. -->
+    @php
+        $defaultTitle = \App\Models\SiteSetting::where('key', 'site_name')->value('value') ?? 'Raabiha Olshop';
+        $defaultDesc = \App\Models\SiteSetting::where('key', 'site_description')->value('value') ?? 'Modest fashion with modern silhouette and premium quality.';
+        
+        $finalTitle = isset($title) ? $title . ' - ' . $defaultTitle : $defaultTitle;
+        $finalDesc = isset($description) ? $description : $defaultDesc;
+    @endphp
+
+    <title>{{ $finalTitle }}</title>
+    <meta name="description" content="{{ $finalDesc }}">
+    <link rel="canonical" href="{{ url()->current() }}" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ url()->current() }}" />
+    <meta property="og:title" content="{{ $finalTitle }}" />
+    <meta property="og:description" content="{{ $finalDesc }}" />
+    <meta property="og:site_name" content="{{ $defaultTitle }}" />
+    @if(isset($image))
+    <meta property="og:image" content="{{ $image }}" />
+    @endif
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="{{ url()->current() }}" />
+    <meta name="twitter:title" content="{{ $finalTitle }}" />
+    <meta name="twitter:description" content="{{ $finalDesc }}" />
+    @if(isset($image))
+    <meta name="twitter:image" content="{{ $image }}" />
+    @endif
 
 
 <link rel='dns-prefetch' href='//fonts.googleapis.com' />
@@ -150,7 +120,7 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
     </script>
     @livewireStyles
 </head>
-<body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js">
+<body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js" x-data="{ navLoaded: false }">
         
     <!-- Topbar Promo Marquee -->
     <div class="{{ isset($header) ? 'hidden md:block' : '' }} bg-neutral-900 text-neutral-200 text-[10px] tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap">
@@ -460,9 +430,22 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
     </script>
 
 
-    {{ $slot }}
+    <!-- PAGE CONTENT WRAPPER -->
+    <div x-show="!navLoaded" class="animate-pulse pt-[120px] pb-20 px-6 md:px-12 max-w-[1400px] mx-auto w-full min-h-[70vh]">
+        <div class="h-10 w-48 bg-[#e5e2de] rounded mb-12"></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="h-80 bg-[#e5e2de] rounded"></div>
+            <div class="h-80 bg-[#e5e2de] rounded"></div>
+            <div class="h-80 bg-[#e5e2de] rounded"></div>
+            <div class="h-80 bg-[#e5e2de] rounded"></div>
+        </div>
+    </div>
+    
+    <div x-show="navLoaded" style="display: none;" x-transition.opacity.duration.300ms>
+        {{ $slot }}
+    </div>
 
-    @if(!isset($header))
+    @if(!isset($header) && !request()->is('checkout') && !request()->is('cart'))
         <!-- Mobile Newsletter Block (Before Footer) -->
         <div class="md:hidden bg-black text-white px-6 py-16 text-center">
             <div class="text-[9px] font-mono tracking-[0.2em] uppercase mb-4 text-[#a3a3a3]">The Inner Circle</div>
@@ -476,27 +459,27 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
     @endif
     
     <!-- Custom Minimal Footer -->
-    <div class="{{ isset($header) ? 'hidden md:block' : '' }}">
+    <div class="{{ (isset($header) || request()->is('checkout') || request()->is('cart')) ? 'hidden md:block' : '' }}">
         <x-global.footer />
     </div>
 
-    @if(!isset($header))
+    @if(!isset($header) && !request()->is('checkout') && !request()->is('cart'))
         <!-- Fixed Bottom Navigation (Mobile Only) -->
         <div class="md:hidden fixed bottom-0 left-0 right-0 bg-[#fcf9f5] border-t border-[#e5e2de] flex justify-between px-6 py-2 z-50">
-            <a href="{{ url('/') }}" wire:navigate class="flex flex-col items-center text-[#064e3b] bg-[#064e3b]/10 px-4 py-1.5 rounded-2xl transition-all duration-200">
+            <a href="{{ url('/') }}" wire:navigate class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('/') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                <span class="text-[9px] font-mono font-bold">Home</span>
+                <span class="text-[9px] font-mono {{ request()->is('/') ? 'font-bold' : '' }}">Home</span>
             </a>
-            <a href="{{ url('/shop') }}" wire:navigate class="flex flex-col items-center text-[#615e57] px-4 py-1.5 transition-all duration-200">
+            <a href="{{ url('/shop') }}" wire:navigate class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('shop*') || request()->is('product*') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                <span class="text-[9px] font-mono ">Shop</span>
+                <span class="text-[9px] font-mono {{ request()->is('shop*') || request()->is('product*') ? 'font-bold' : '' }}">Shop</span>
             </a>
-            <a href="{{ url('/cart') }}" wire:navigate class="cart-toggle-btn flex flex-col items-center text-[#615e57] px-4 py-1.5 transition-all duration-200 relative">
+            <a href="{{ url('/cart') }}" wire:navigate class="cart-toggle-btn flex flex-col items-center px-4 py-1.5 transition-all duration-200 relative {{ request()->is('cart') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
                 <div class="relative">
                     <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                     <span class="raabiha-cart-count-badge absolute -top-1 -right-2 bg-[#064e3b] text-white text-[9px] font-bold w-3 h-3 rounded-full flex items-center justify-center hidden">0</span>
                 </div>
-                <span class="text-[9px] font-mono ">Cart</span>
+                <span class="text-[9px] font-mono {{ request()->is('cart') ? 'font-bold' : '' }}">Cart</span>
             </a>
             <a href="#wishlist" class="flex flex-col items-center text-[#615e57] px-4 py-1.5 transition-all duration-200">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>

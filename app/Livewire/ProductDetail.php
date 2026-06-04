@@ -7,8 +7,10 @@ use App\Models\Product;
 use Livewire\Attributes\Computed;
 
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Lazy;
 
 #[Layout('components.layouts.app')]
+#[Lazy]
 class ProductDetail extends Component
 {
     public $slug;
@@ -17,6 +19,8 @@ class ProductDetail extends Component
     public $selectedColor = '';
     public $quantity = 1;
     public $galleryUrls = [];
+    public $bsOpen = false;
+    public $bsMode = 'cart';
 
     #[Computed]
     public function sizes()
@@ -175,11 +179,11 @@ class ProductDetail extends Component
         }
 
         $this->dispatch('cart-updated');
+        $this->bsOpen = false;
         
         // Let's also dispatch an event to trigger the flying animation
         // and optionally open the mini cart right after.
         $this->dispatch('product-added-to-cart');
-        // $this->dispatch('open-mini-cart'); // Optional if we want it to auto-open, but we'll do flying animation instead
     }
 
     public function buyNow()
@@ -198,6 +202,35 @@ class ProductDetail extends Component
 
     public function render()
     {
-        return view('livewire.product-detail');
+        $title = $this->product->meta_title ?? $this->product->name;
+        $description = $this->product->meta_description ?? \Illuminate\Support\Str::limit(strip_tags($this->product->description), 160);
+        $image = !empty($this->galleryUrls) ? $this->galleryUrls[0] : null;
+
+        return view('livewire.product-detail')
+            ->layout('components.layouts.app', [
+                'title' => $title,
+                'description' => $description,
+                'image' => $image
+            ]);
+    }
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="max-w-[1440px] mx-auto px-0 md:px-[64px] pb-32 animate-pulse">
+            <div class="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] lg:grid-cols-[1.5fr_1fr] gap-8 md:gap-16 items-start">
+                <div class="w-full h-[60vh] md:h-screen max-h-[800px] bg-[#e5e2de]"></div>
+                <div class="px-6 md:px-0 py-8 sticky top-24">
+                    <div class="h-10 bg-[#e5e2de] w-3/4 mb-4"></div>
+                    <div class="h-6 bg-[#e5e2de] w-1/4 mb-8"></div>
+                    <div class="h-4 bg-[#e5e2de] w-full mb-2"></div>
+                    <div class="h-4 bg-[#e5e2de] w-full mb-2"></div>
+                    <div class="h-4 bg-[#e5e2de] w-3/4 mb-12"></div>
+                    <div class="h-12 bg-[#e5e2de] w-full mb-4"></div>
+                    <div class="h-12 bg-[#e5e2de] w-full"></div>
+                </div>
+            </div>
+        </div>
+        HTML;
     }
 }

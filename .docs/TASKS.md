@@ -29,11 +29,11 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - Transisi Galeri & Logika UI Bottom Sheet untuk pemilihan Varian & QTY.
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
-- [ ] **Halaman Pendaftaran Reseller:** Membuat formulir *Livewire* untuk mendaftar sebagai Reseller.
-- [ ] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*).
-- [ ] **Dashboard Customer:** Mengaktifkan panel riwayat pesanan (*My Account*) untuk pengguna reguler.
-- [ ] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
-- [ ] **Dashboard Reseller:** Membuat area khusus (*portal*) untuk Reseller memantau komisi, status diskon, dan histori pembelian (bisa via frontend atau panel Filament baru).
+- [x] **Halaman Pendaftaran Reseller:** Membuat formulir *Livewire* untuk mendaftar sebagai Reseller.
+- [x] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*).
+- [x] **Dashboard Customer:** Mengaktifkan panel riwayat pesanan (*My Account*) untuk pengguna reguler.
+- [x] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
+- [x] **Dashboard Reseller:** Membuat area khusus (*portal*) untuk Reseller memantau komisi, status diskon, dan histori pembelian (bisa via frontend atau panel Filament baru).
 
 ---
 

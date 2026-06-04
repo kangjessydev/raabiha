@@ -21,6 +21,8 @@ class Order extends Model
         'grand_total',
         'payment_method',
         'payment_status',
+        'payment_id',
+        'payment_url',
         'shipping_address',
         'courier',
         'awb_number',

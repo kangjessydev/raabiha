@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-layouts.app title="Beranda">
 <main class="w-full min-h-screen">
     <!-- Desktop Hero Section -->
     <section class="hidden md:grid grid-cols-2 w-full h-[85vh] min-h-[calc(100vh-80px)] bg-[#fcf9f5]">

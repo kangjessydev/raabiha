@@ -29,16 +29,13 @@ Route::get('/product/{slug}', \App\Livewire\ProductDetail::class);
 Route::get('/cart', \App\Livewire\Cart::class);
 
 Route::get('/blog/{slug}', function ($slug) {
-    return view('blog-detail', ['slug' => $slug]);
+    $post = \App\Models\Post::where('slug', $slug)->first();
+    return view('blog-detail', ['slug' => $slug, 'post' => $post]);
 });
 
-Route::get('/checkout', function () {
-    return view('checkout');
-});
+Route::get('/checkout', \App\Livewire\Checkout::class);
 
-Route::get('/account', function () {
-    return view('account');
-});
+Route::get('/account', \App\Livewire\Account::class);
 
 Route::get('/order-success', function () {
     return view('order-success');
@@ -56,6 +53,12 @@ Route::get('/register', function () {
     return view('register');
 });
 
+Route::get('/reseller-register', \App\Livewire\ResellerRegister::class);
+Route::get('/reseller-dashboard', \App\Livewire\ResellerDashboard::class);
+
 Route::get('/promo', function () {
     return view('promo');
 });
+
+// Webhooks
+Route::post('/webhook/tripay', [\App\Http\Controllers\Webhook\TripayWebhookController::class, 'handle']);
