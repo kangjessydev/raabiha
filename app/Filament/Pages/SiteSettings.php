@@ -89,6 +89,17 @@ class SiteSettings extends Page implements HasForms
                             ->placeholder('Deskripsi singkat website untuk pencarian Google (Maks 160 karakter)')
                             ->columnSpanFull(),
                     ])->columns(2),
+
+                Section::make('Pengaturan Reseller')
+                    ->schema([
+                        TextInput::make('global_reseller_discount')
+                            ->label('Diskon Global Reseller (%)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
+                            ->placeholder('Contoh: 15')
+                            ->helperText('Diskon persentase yang berlaku untuk semua produk jika harga khusus reseller (reseller_price) pada produk tidak diisi.'),
+                    ])->columns(1),
             ])
             ->statePath('data');
     }

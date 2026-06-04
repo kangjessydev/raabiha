@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Order;
 use Filament\Widgets\ChartWidget;
 
 class RevenueChart extends ChartWidget
@@ -11,11 +12,23 @@ class RevenueChart extends ChartWidget
 
     protected function getData(): array
     {
+        $monthlyRevenue = array_fill(0, 12, 0);
+
+        $revenues = Order::selectRaw('MONTH(created_at) as month, SUM(grand_total) as total')
+            ->whereYear('created_at', now()->year)
+            ->where('payment_status', 'paid')
+            ->groupBy('month')
+            ->get();
+
+        foreach ($revenues as $revenue) {
+            $monthlyRevenue[$revenue->month - 1] = $revenue->total;
+        }
+
         return [
             'datasets' => [
                 [
-                    'label' => 'Omset (Rp Juta)',
-                    'data' => [25, 32, 28, 45, 42, 58, 65, 60, 75, 82, 90, 110],
+                    'label' => 'Omset (Rp)',
+                    'data' => $monthlyRevenue,
                     'backgroundColor' => '#10b981',
                     'borderColor' => '#10b981',
                 ],

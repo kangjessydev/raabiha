@@ -16,4 +16,12 @@ class TransactionReport extends Page
     public function getTitle(): string { return 'Laporan Transaksi'; }
 
     protected string $view = 'filament.pages.transaction-report';
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\RevenueChart::class,
+            \App\Filament\Widgets\OrdersChart::class,
+        ];
+    }
 }
