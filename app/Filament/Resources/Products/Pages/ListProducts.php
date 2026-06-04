@@ -13,6 +13,10 @@ class ListProducts extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            \Filament\Actions\ExportAction::make()
+                ->exporter(\App\Filament\Exports\ProductExporter::class),
+            \Filament\Actions\ImportAction::make()
+                ->importer(\App\Filament\Imports\ProductImporter::class),
             CreateAction::make(),
         ];
     }

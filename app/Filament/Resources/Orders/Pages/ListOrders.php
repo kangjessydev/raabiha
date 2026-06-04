@@ -13,6 +13,10 @@ class ListOrders extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            \Filament\Actions\ExportAction::make()
+                ->exporter(\App\Filament\Exports\OrderExporter::class),
+            \Filament\Actions\ImportAction::make()
+                ->importer(\App\Filament\Imports\OrderImporter::class),
             CreateAction::make(),
         ];
     }

@@ -16,8 +16,8 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
 - [x] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
 - [x] **Galeri CRUD:** Membuat Model dan Resource baru untuk Galeri Publik.
-- [ ] **Dashboard Overview:** Menambahkan Widget statistik (Total Pendapatan, Order Baru, dll) di halaman depan Admin.
-- [ ] **Export & Import Data:** Memasang fungsi/plugin export-import Excel pada resource Produk dan Order.
+- [x] **Dashboard Overview:** Menambahkan Widget statistik (Total Pendapatan, Order Baru, dll) di halaman depan Admin.
+- [x] **Export & Import Data:** Memasang fungsi/plugin export-import Excel pada resource Produk dan Order.
 - [ ] **Status & Pengaturan Reseller:** Menambahkan kolom status (Pending/Aktif) pada entitas User dan pengaturan diskon *reseller*.
 - [ ] **Badge Guest Checkout:** Menambahkan label visual pada OrderResource untuk membedakan *Guest* vs *Registered*.
 - [ ] **Laporan Transaksi:** Menyempurnakan halaman `TransactionReport` yang sudah ada menjadi grafik/tabel yang informatif.
