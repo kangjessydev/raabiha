@@ -105,6 +105,19 @@ class ProductForm
 
 
 
+                Section::make('Search Engine Optimization (SEO)')
+                    ->schema([
+                        TextInput::make('meta_title')
+                            ->label('Meta Title')
+                            ->maxLength(60)
+                            ->placeholder('Judul SEO (Maks 60 karakter)'),
+                        Textarea::make('meta_description')
+                            ->label('Meta Description')
+                            ->maxLength(160)
+                            ->placeholder('Deskripsi singkat untuk pencarian Google (Maks 160 karakter)')
+                            ->columnSpanFull(),
+                    ])->columns(2),
+
                 Section::make('Pengaturan Tambahan')
                     ->schema([
                         Textarea::make('wholesale_pricing')

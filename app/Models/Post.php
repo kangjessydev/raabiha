@@ -20,6 +20,8 @@ class Post extends Model
         'content',
         'image',
         'is_published',
+        'meta_title',
+        'meta_description',
         'published_at',
     ];
 

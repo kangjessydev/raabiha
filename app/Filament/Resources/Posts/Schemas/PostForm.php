@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Posts\Schemas;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
@@ -36,6 +37,18 @@ class PostForm
                                         RichEditor::make('content')
                                             ->label('Isi Artikel')
                                             ->required()
+                                            ->columnSpanFull(),
+                                    ]),
+                                Section::make('Search Engine Optimization (SEO)')
+                                    ->schema([
+                                        TextInput::make('meta_title')
+                                            ->label('Meta Title')
+                                            ->maxLength(60)
+                                            ->placeholder('Judul SEO (Maks 60 karakter)'),
+                                        Textarea::make('meta_description')
+                                            ->label('Meta Description')
+                                            ->maxLength(160)
+                                            ->placeholder('Deskripsi singkat untuk pencarian Google (Maks 160 karakter)')
                                             ->columnSpanFull(),
                                     ]),
                             ])

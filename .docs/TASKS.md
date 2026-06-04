@@ -14,8 +14,8 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - Kustomisasi Tema, Cluster, dan Integrasi Media Library (Curator).
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
-- [ ] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
-- [ ] **Galeri CRUD:** Membuat Model dan Resource baru untuk Galeri Publik.
+- [x] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
+- [x] **Galeri CRUD:** Membuat Model dan Resource baru untuk Galeri Publik.
 - [ ] **Dashboard Overview:** Menambahkan Widget statistik (Total Pendapatan, Order Baru, dll) di halaman depan Admin.
 - [ ] **Export & Import Data:** Memasang fungsi/plugin export-import Excel pada resource Produk dan Order.
 - [ ] **Status & Pengaturan Reseller:** Menambahkan kolom status (Pending/Aktif) pada entitas User dan pengaturan diskon *reseller*.

@@ -76,6 +76,19 @@ class SiteSettings extends Page implements HasForms
                             ->label('TikTok URL')
                             ->url(),
                     ])->columns(3),
+
+                Section::make('Search Engine Optimization (Beranda)')
+                    ->schema([
+                        TextInput::make('home_meta_title')
+                            ->label('Meta Title Beranda')
+                            ->maxLength(60)
+                            ->placeholder('Judul SEO Beranda (Maks 60 karakter)'),
+                        Textarea::make('home_meta_description')
+                            ->label('Meta Description Beranda')
+                            ->maxLength(160)
+                            ->placeholder('Deskripsi singkat website untuk pencarian Google (Maks 160 karakter)')
+                            ->columnSpanFull(),
+                    ])->columns(2),
             ])
             ->statePath('data');
     }

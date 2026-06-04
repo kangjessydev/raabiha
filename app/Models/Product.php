@@ -22,6 +22,8 @@ class Product extends Model
         'stock',
         'weight',
         'has_variants',
+        'meta_title',
+        'meta_description',
         'wholesale_pricing',
         'promo_rules',
         'is_active',
