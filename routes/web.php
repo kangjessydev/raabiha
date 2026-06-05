@@ -64,11 +64,25 @@ Route::get('/promo', function () {
 // Webhooks
 Route::post('/webhook/tripay', [\App\Http\Controllers\Webhook\TripayWebhookController::class, 'handle']);
 
-// Halaman Statis (Catch-all route)
+// Dynamic Pages (Catch-all route)
 Route::get('/{slug}', function ($slug) {
-    $page = \App\Models\StaticPage::where('slug', $slug)
+    // Cek di Halaman Statis
+    $staticPage = \App\Models\StaticPage::where('slug', $slug)
         ->where('is_active', true)
-        ->firstOrFail();
+        ->first();
 
-    return view('static-page', compact('page'));
+    if ($staticPage) {
+        return view('static-page', ['page' => $staticPage]);
+    }
+
+    // Cek di Sales Page
+    $salesPage = \App\Models\SalesPage::where('slug', $slug)
+        ->where('is_active', true)
+        ->first();
+
+    if ($salesPage) {
+        return view('sales-page', ['page' => $salesPage]);
+    }
+
+    abort(404);
 });
