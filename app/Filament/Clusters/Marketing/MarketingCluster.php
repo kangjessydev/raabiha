@@ -14,6 +14,7 @@ class MarketingCluster extends Cluster
     }
     protected static ?string $navigationLabel = 'Konten';
     protected static ?string $clusterBreadcrumb = 'Konten';
+    protected static ?string $slug = 'konten';
     protected static ?int $navigationSort = 3;
 
 }
