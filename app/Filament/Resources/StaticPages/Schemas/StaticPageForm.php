@@ -29,7 +29,7 @@ class StaticPageForm
                 \Filament\Forms\Components\Toggle::make('is_active')
                     ->label('Aktif & Terpublikasi')
                     ->default(true),
-                \Filament\Forms\Components\Section::make('SEO Settings')
+                \Filament\Schemas\Components\Section::make('SEO Settings')
                     ->description('Pengaturan Meta Data untuk Mesin Pencari')
                     ->collapsed()
                     ->schema([
