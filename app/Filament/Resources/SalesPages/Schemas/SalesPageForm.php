@@ -21,8 +21,8 @@ class SalesPageForm
                     ->required()
                     ->unique(\App\Models\SalesPage::class, 'slug', ignoreRecord: true)
                     ->maxLength(255),
-                \Filament\Forms\Components\Actions::make([
-                    \Filament\Forms\Components\Actions\Action::make('load_template')
+                \Filament\Schemas\Components\Actions::make([
+                    \Filament\Actions\Action::make('load_template')
                         ->label('Load Template Promo')
                         ->icon('heroicon-m-sparkles')
                         ->color('success')
