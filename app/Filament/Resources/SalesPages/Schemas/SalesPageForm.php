@@ -15,7 +15,7 @@ class SalesPageForm
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn (string $operation, $state, \Filament\Forms\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
+                    ->afterStateUpdated(fn (string $operation, $state, \Filament\Schemas\Components\Utilities\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
                 \Filament\Forms\Components\TextInput::make('slug')
                     ->label('URL Slug')
                     ->required()
@@ -29,7 +29,7 @@ class SalesPageForm
                         ->requiresConfirmation()
                         ->modalHeading('Gunakan Template Promo?')
                         ->modalDescription('Tindakan ini akan menimpa isi Builder saat ini dengan struktur template bawaan (Hero, Features, Testimonial, FAQ, CTA). Apakah Anda yakin?')
-                        ->action(function (\Filament\Forms\Set $set) {
+                        ->action(function (\Filament\Schemas\Components\Utilities\Set $set) {
                             $set('content', [
                                 [
                                     'type' => 'hero',
