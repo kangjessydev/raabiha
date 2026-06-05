@@ -15,7 +15,8 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
 - [x] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
-- [x] **Galeri CRUD:** Membuat Model dan Resource baru untuk Galeri Publik.
+- [x] **Kategori Publik:** Mengatur hierarki kategori dan slug yang diakses lewat `/collections/{slug}`.
+- [x] **Galeri Builder:** Membuat Single Page Settings menggunakan Filament Builder untuk Galeri Publik (menggantikan sistem CRUD lama) agar lebih dinamis dan modular.
 - [x] **Dashboard Overview:** Menambahkan Widget statistik (Total Pendapatan, Order Baru, dll) di halaman depan Admin.
 - [x] **Export & Import Data:** Memasang fungsi/plugin export-import Excel pada resource Produk dan Order.
 - [x] **Status & Pengaturan Reseller:** Menambahkan kolom status (Pending/Aktif) pada entitas User dan pengaturan diskon *reseller*.
@@ -39,7 +40,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
 - [x] **Dashboard Reseller:** Membuat area khusus (*portal*) untuk Reseller memantau komisi, status diskon, dan histori pembelian (bisa via frontend atau panel Filament baru).
 - [x] **Global UI Binding:** Menghubungkan data *Site Settings* (Logo, Navbar, Footer, Nomor Kontak) ke komponen *Frontend* secara dinamis.
-- [ ] **Refactoring Hardcode Pages:** Mengoptimalkan halaman Home, About, Lokasi & Kontak, dan Galeri agar berpadu dengan data dinamis tanpa bergantung pada CMS Editor.
+- [x] **Refactoring Hardcode Pages:** Mengoptimalkan halaman Home, About, Lokasi & Kontak agar berpadu dengan data dinamis (Galeri sudah di-refactor menggunakan Builder).
 - [ ] **Dynamic Page Rendering:** Membuat *routing* dan *views* untuk me-render *Halaman Statis* (`/page/{slug}`) dan *Sales Page* (`/promo/{slug}`).
 
 ---
