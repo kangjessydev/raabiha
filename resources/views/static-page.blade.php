@@ -1,4 +1,9 @@
-<x-layouts.app :title="$page->title">
+@php
+    $metaTitle = $page->meta_title ?: $page->title;
+    $metaDescription = $page->meta_description ?: '';
+@endphp
+
+<x-layouts.app :title="$metaTitle" :description="$metaDescription">
 <main class="site-main bg-[#fcf9f5] min-h-screen pt-24 pb-20">
     
     <!-- Page Header -->

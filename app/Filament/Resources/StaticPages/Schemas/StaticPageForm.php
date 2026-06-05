@@ -29,6 +29,21 @@ class StaticPageForm
                 \Filament\Forms\Components\Toggle::make('is_active')
                     ->label('Aktif & Terpublikasi')
                     ->default(true),
+                \Filament\Forms\Components\Section::make('SEO Settings')
+                    ->description('Pengaturan Meta Data untuk Mesin Pencari')
+                    ->collapsed()
+                    ->schema([
+                        \Filament\Forms\Components\TextInput::make('meta_title')
+                            ->label('Meta Title')
+                            ->maxLength(255)
+                            ->placeholder('Optimal: 50-60 karakter'),
+                        \Filament\Forms\Components\Textarea::make('meta_description')
+                            ->label('Meta Description')
+                            ->rows(3)
+                            ->maxLength(160)
+                            ->placeholder('Optimal: 150-160 karakter'),
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 }

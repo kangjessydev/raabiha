@@ -14,6 +14,8 @@ class StaticPage extends Model
         'slug',
         'content',
         'is_active',
+        'meta_title',
+        'meta_description',
     ];
 
     protected $casts = [
