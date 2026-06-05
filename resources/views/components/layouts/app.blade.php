@@ -119,6 +119,58 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
       }
     </script>
     @livewireStyles
+    @php
+        $gaId = \App\Models\SiteSetting::where('key', 'google_analytics_id')->value('value');
+        $metaId = \App\Models\SiteSetting::where('key', 'meta_pixel_id')->value('value');
+        $tiktokId = \App\Models\SiteSetting::where('key', 'tiktok_pixel_id')->value('value');
+        $scriptsHeader = \App\Models\SiteSetting::where('key', 'scripts_header')->value('value');
+    @endphp
+
+    @if($gaId)
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gaId }}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '{{ $gaId }}');
+    </script>
+    @endif
+
+    @if($metaId)
+    <!-- Meta Pixel Code -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '{{ $metaId }}');
+      fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id={{ $metaId }}&ev=PageView&noscript=1"
+    /></noscript>
+    @endif
+
+    @if($tiktokId)
+    <!-- TikTok Pixel Code Start -->
+    <script>
+    !function (w, d, t) {
+      w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+      ttq.load('{{ $tiktokId }}');
+      ttq.page();
+    }(window, document, 'ttq');
+    </script>
+    <!-- TikTok Pixel Code End -->
+    @endif
+
+    @if($scriptsHeader)
+    {!! $scriptsHeader !!}
+    @endif
 </head>
 <body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js" x-data="{ navLoaded: false }">
         
@@ -332,13 +384,19 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
                 </button>
             </div>
             <div class="flex-1 overflow-y-auto p-6">
+                @php
+                    $rawNavbarLinks = \App\Models\SiteSetting::where('key', 'navbar_links')->value('value');
+                    $navbarLinks = $rawNavbarLinks ? json_decode($rawNavbarLinks, true) : [];
+                    if (!is_array($navbarLinks)) $navbarLinks = [];
+                @endphp
                 <ul class="flex flex-col gap-6 font-mono text-[11px] uppercase tracking-widest text-[#615e57]">
-                    <li><a href="{{ url('/') }}" wire:navigate class="block hover:text-[#064e3b] transition-colors {{ request()->is('/') ? 'text-[#064e3b] font-bold' : '' }}">Beranda</a></li>
-                    <li><a href="{{ url('/about') }}" wire:navigate class="block hover:text-[#064e3b] transition-colors {{ request()->is('about') ? 'text-[#064e3b] font-bold' : '' }}">Tentang Kami</a></li>
-                    <li><a href="{{ url('/contact') }}" wire:navigate class="block hover:text-[#064e3b] transition-colors {{ request()->is('contact') ? 'text-[#064e3b] font-bold' : '' }}">Lokasi & Kontak</a></li>
-                    <li><a href="{{ url('/gallery') }}" wire:navigate class="block hover:text-[#064e3b] transition-colors {{ request()->is('gallery') ? 'text-[#064e3b] font-bold' : '' }}">Galeri</a></li>
-                    <li><a href="{{ url('/blog') }}" wire:navigate class="block hover:text-[#064e3b] transition-colors {{ request()->is('blog*') ? 'text-[#064e3b] font-bold' : '' }}">Blog</a></li>
-                    <li><a href="{{ url('/shop') }}" wire:navigate class="block hover:text-[#064e3b] transition-colors {{ request()->is('shop*') || request()->is('product*') ? 'text-[#064e3b] font-bold' : '' }}">Katalog</a></li>
+                    @foreach($navbarLinks as $link)
+                        @php
+                            $path = ltrim(parse_url($link['url'], PHP_URL_PATH) ?? '', '/');
+                            $isActive = $path === '' ? request()->is('/') : (request()->is($path) || request()->is($path . '/*') || ($path === 'shop' && request()->is('product*')));
+                        @endphp
+                        <li><a href="{{ url($link['url']) }}" wire:navigate class="block hover:text-[#064e3b] transition-colors {{ $isActive ? 'text-[#064e3b] font-bold' : '' }}">{{ $link['label'] }}</a></li>
+                    @endforeach
                 </ul>
             </div>
         </div>
@@ -656,5 +714,11 @@ var wc_order_attribution = {"params":{"lifetime":1.00000000000000008180305391403
     });
 </script>
     <livewire:mini-cart />
+    @php
+        $scriptsFooter = \App\Models\SiteSetting::where('key', 'scripts_footer')->value('value');
+    @endphp
+    @if($scriptsFooter)
+        {!! $scriptsFooter !!}
+    @endif
 </body>
 </html>

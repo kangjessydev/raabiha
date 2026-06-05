@@ -1,36 +1,70 @@
 <footer class="bg-[#fcf9f5] md:bg-[#262626] text-[#1c1c1a] md:text-[#d4d4d4] pt-12 md:pt-20 pb-24 md:pb-8 px-6 md:px-16 mt-auto">
+        @php
+            $footerDesc = \App\Models\SiteSetting::where('key', 'footer_description')->value('value') ?? "Architectural modesty for the modern intellectual.<br />Bridging high-fashion editorial with raw urban energy.";
+            $ig = \App\Models\SiteSetting::where('key', 'social_instagram')->value('value');
+            $tiktok = \App\Models\SiteSetting::where('key', 'social_tiktok')->value('value');
+            $copyright = \App\Models\SiteSetting::where('key', 'footer_copyright')->value('value') ?? '&copy; ' . date('Y') . ' RAABIHA. ARCHITECTURAL MODESTY.';
+            
+            $rawFooterLinks = \App\Models\SiteSetting::where('key', 'footer_links')->value('value');
+            $footerLinks = $rawFooterLinks ? json_decode($rawFooterLinks, true) : [];
+            if (!is_array($footerLinks)) $footerLinks = [];
+            
+            $rawShopLinks = \App\Models\SiteSetting::where('key', 'footer_shop_links')->value('value');
+            $shopLinks = $rawShopLinks ? json_decode($rawShopLinks, true) : [];
+            if (!is_array($shopLinks)) $shopLinks = [];
+
+            $rawBrandLinks = \App\Models\SiteSetting::where('key', 'footer_brand_links')->value('value');
+            $brandLinks = $rawBrandLinks ? json_decode($rawBrandLinks, true) : [];
+            if (!is_array($brandLinks)) $brandLinks = [];
+
+            $kolom1Title = \App\Models\SiteSetting::where('key', 'footer_kolom1_title')->value('value') ?: 'Shop';
+            $kolom2Title = \App\Models\SiteSetting::where('key', 'footer_kolom2_title')->value('value') ?: 'Brand';
+        @endphp
+        
         <!-- Desktop Grid (Hidden on Mobile) -->
         <div class="hidden md:grid max-w-[1400px] mx-auto grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1.5fr] gap-8 md:gap-12 mb-16">
             <div>
                 <div class="font-serif text-3xl font-semibold tracking-widest text-[#f5f5f5] mb-6">RAABIHA</div>
                 <p class="font-inter text-[13px] leading-relaxed text-[#a3a3a3] max-w-[320px] mb-8">
-                    Architectural modesty for the modern intellectual.<br />
-Bridging high-fashion editorial with raw urban energy.                </p>
+                    {!! nl2br(e($footerDesc)) !!}
+                </p>
                 <div class="flex gap-6">
-                                        <a href="#" target="_blank" class="text-[#a3a3a3] hover:text-white transition-colors text-[11px] font-medium uppercase tracking-[0.1em]">Instagram</a>
-                    
-                                        <a href="#" target="_blank" class="text-[#a3a3a3] hover:text-white transition-colors text-[11px] font-medium uppercase tracking-[0.1em]">TikTok</a>
-                    
-                                        <a href="#" target="_blank" class="text-[#a3a3a3] hover:text-white transition-colors text-[11px] font-medium uppercase tracking-[0.1em]">Pinterest</a>
+                    @if($ig)
+                        <a href="{{ $ig }}" target="_blank" class="text-[#a3a3a3] hover:text-white transition-colors text-[11px] font-medium uppercase tracking-[0.1em]">Instagram</a>
+                    @endif
+                    @if($tiktok)
+                        <a href="{{ $tiktok }}" target="_blank" class="text-[#a3a3a3] hover:text-white transition-colors text-[11px] font-medium uppercase tracking-[0.1em]">TikTok</a>
+                    @endif
+                    @if(!$ig && !$tiktok)
+                        <span class="text-[#a3a3a3] text-[11px] font-medium uppercase tracking-[0.1em]">Belum ada sosial media diset.</span>
+                    @endif
                 </div>
             </div>
             <div>
-                <h4 class="font-inter text-[10px] tracking-widest uppercase text-[#d4d4d4] mb-6">Shop</h4>
+                <h4 class="font-inter text-[10px] tracking-widest uppercase text-[#d4d4d4] mb-6">{{ $kolom1Title }}</h4>
                 <ul class="flex flex-col gap-4 font-inter text-[13px] text-[#a3a3a3]">
-                    <li><a href="#" class="hover:text-white transition-colors">New Arrivals</a></li>
-                    <li><a href="#" class="hover:text-white transition-colors">Gamis</a></li>
-                    <li><a href="#" class="hover:text-white transition-colors">Outerwear</a></li>
-                    <li><a href="#" class="hover:text-white transition-colors">Sets</a></li>
-                    <li><a href="#" class="hover:text-white transition-colors">Hijabs</a></li>
+                    @forelse($shopLinks as $link)
+                        <li><a href="{{ url($link['url']) }}" class="hover:text-white transition-colors">{{ $link['label'] }}</a></li>
+                    @empty
+                        <li><a href="{{ url('/shop') }}" class="hover:text-white transition-colors">New Arrivals</a></li>
+                        <li><a href="{{ url('/shop') }}" class="hover:text-white transition-colors">Gamis</a></li>
+                        <li><a href="{{ url('/shop') }}" class="hover:text-white transition-colors">Outerwear</a></li>
+                        <li><a href="{{ url('/shop') }}" class="hover:text-white transition-colors">Sets</a></li>
+                        <li><a href="{{ url('/shop') }}" class="hover:text-white transition-colors">Hijabs</a></li>
+                    @endforelse
                 </ul>
             </div>
             <div>
-                <h4 class="font-inter text-[10px] tracking-widest uppercase text-[#d4d4d4] mb-6">Brand</h4>
+                <h4 class="font-inter text-[10px] tracking-widest uppercase text-[#d4d4d4] mb-6">{{ $kolom2Title }}</h4>
                 <ul class="flex flex-col gap-4 font-inter text-[13px] text-[#a3a3a3]">
-                    <li><a href="#" class="hover:text-white transition-colors">Our Story</a></li>
-                    <li><a href="#" class="hover:text-white transition-colors">Journal</a></li>
-                    <li><a href="#" class="hover:text-white transition-colors">Reseller</a></li>
-                    <li><a href="#" class="hover:text-white transition-colors">Sustainability</a></li>
+                    @forelse($brandLinks as $link)
+                        <li><a href="{{ url($link['url']) }}" class="hover:text-white transition-colors">{{ $link['label'] }}</a></li>
+                    @empty
+                        <li><a href="{{ url('/about') }}" class="hover:text-white transition-colors">Our Story</a></li>
+                        <li><a href="{{ url('/blog') }}" class="hover:text-white transition-colors">Journal</a></li>
+                        <li><a href="{{ url('/contact') }}" class="hover:text-white transition-colors">Reseller</a></li>
+                        <li><a href="{{ url('/about') }}" class="hover:text-white transition-colors">Sustainability</a></li>
+                    @endforelse
                 </ul>
             </div>
             <div>
@@ -49,19 +83,27 @@ Bridging high-fashion editorial with raw urban energy.                </p>
         <div class="md:hidden flex flex-col items-center text-center">
             <div class="font-serif text-3xl font-semibold tracking-widest text-black mb-6">RAABIHA</div>
             <div class="flex gap-6 mb-8 text-[9px] font-mono tracking-widest text-[#615e57] uppercase">
-                <a href="#" class="hover:text-black">Privacy</a>
-                <a href="#" class="hover:text-black">Terms</a>
-                <a href="#" class="hover:text-black">Shipping</a>
+                @forelse($footerLinks as $link)
+                    <a href="{{ url($link['url']) }}" class="hover:text-black">{{ $link['label'] }}</a>
+                @empty
+                    <a href="#" class="hover:text-black">Privacy</a>
+                    <a href="#" class="hover:text-black">Terms</a>
+                    <a href="#" class="hover:text-black">Shipping</a>
+                @endforelse
             </div>
-            <div class="text-[9px] font-mono tracking-widest text-[#615e57] uppercase">&copy; 2026 RAABIHA. MODESTY.</div>
+            <div class="text-[9px] font-mono tracking-widest text-[#615e57] uppercase">{!! $copyright !!}</div>
         </div>
 
         <!-- Desktop Footer Bottom -->
         <div class="hidden md:flex max-w-[1400px] mx-auto flex-col md:flex-row justify-between pt-8 border-t border-[#404040] font-inter text-[9px] text-[#737373] uppercase tracking-widest">
-            <div>&copy; 2026 RAABIHA. ARCHITECTURAL MODESTY.</div>
+            <div>{!! $copyright !!}</div>
             <div class="flex gap-8 mt-4 md:mt-0">
-                <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
-                <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                @forelse($footerLinks as $link)
+                    <a href="{{ url($link['url']) }}" class="hover:text-white transition-colors">{{ $link['label'] }}</a>
+                @empty
+                    <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+                @endforelse
             </div>
         </div>
     </footer>

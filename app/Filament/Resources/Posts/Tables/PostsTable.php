@@ -19,6 +19,7 @@ class PostsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->poll('5s')
             ->columns([
                 CuratorColumn::make('image')
                     ->label('Sampul')

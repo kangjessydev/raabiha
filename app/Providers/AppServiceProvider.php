@@ -32,5 +32,10 @@ class AppServiceProvider extends ServiceProvider
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'text/csv',
         ])->maxSize(10240); // 10MB limit
+
+        // Implicitly grant "Super Admin" role all permissions
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            return $user->hasRole('super_admin') ? true : null;
+        });
     }
 }

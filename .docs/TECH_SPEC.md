@@ -55,7 +55,10 @@ Arsitektur Filament pada proyek ini tidak menggunakan struktur default untuk mem
 2. **Lebar Layar Penuh (Full Width):** Menggunakan `->maxContentWidth('full')` agar tabel data tidak terperangkap di tengah layar dan memaksimalkan ruang horizontal.
 3. **Tipografi Modern:** Font default telah diubah menjadi **Poppins** (`->font('Poppins')`) untuk menghilangkan kesan kaku dan memberikan nuansa *startup/Gen-Z* yang empuk dan bersahabat. Tema CSS tambahan (Custom Theme) dapat disuntikkan tanpa memodifikasi core vendor.
 
-### B. Hierarki Menu (Sistem Cluster)
+### B. Real-Time Interactivity (Auto-Polling)
+Tabel data krusial yang membutuhkan pemantauan langsung (*real-time*) seperti **Produk**, **Artikel Blog**, dan **Komentar Blog** dikonfigurasi dengan fitur `->poll('5s')`. Fitur ini berbasis Livewire untuk memperbarui data (*refresh*) otomatis setiap 5 detik tanpa perlu me-reload halaman browser secara penuh, memastikan tim admin selalu melihat aliran data terbaru tanpa disrupsi UI.
+
+### C. Hierarki Menu (Sistem Cluster)
 Semua menu *Resource* dan *Page* dikelompokkan menggunakan **Filament Clusters** agar tidak menumpuk:
 1. **Cluster E-Commerce:**
    - *Katalog:* Produk, Kategori, Atribut, Ulasan Produk

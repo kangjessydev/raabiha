@@ -32,14 +32,20 @@
                 </div>
                 
                 <!-- Nav Menu -->
+                @php
+                    $rawNavbarLinks = \App\Models\SiteSetting::where('key', 'navbar_links')->value('value');
+                    $navbarLinks = $rawNavbarLinks ? json_decode($rawNavbarLinks, true) : [];
+                    if (!is_array($navbarLinks)) $navbarLinks = [];
+                @endphp
                 <nav class="flex gap-8"><ul id="menu-main-menu" class="flex gap-8 m-0 p-0 list-none">
-<li class="group"><a href="{{ url('/') }}" wire:navigate class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ request()->is('/') ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">Beranda</a></li>
-<li class="group"><a href="{{ url('/about') }}" wire:navigate class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ request()->is('about') ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">Tentang Kami</a></li>
-<li class="group"><a href="{{ url('/contact') }}" wire:navigate class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ request()->is('contact') ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">Lokasi &#038; Kontak</a></li>
-<li class="group"><a href="{{ url('/gallery') }}" wire:navigate class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ request()->is('gallery') ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">Galeri</a></li>
-<li class="group"><a href="{{ url('/blog') }}" wire:navigate class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ request()->is('blog*') ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">Blog</a></li>
-<li class="group"><a href="{{ url('/shop') }}" wire:navigate class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ request()->is('shop*') || request()->is('product*') ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">Katalog</a></li>
-</ul></nav>            
+                @foreach($navbarLinks as $link)
+                    @php
+                        $path = ltrim(parse_url($link['url'], PHP_URL_PATH) ?? '', '/');
+                        $isActive = $path === '' ? request()->is('/') : (request()->is($path) || request()->is($path . '/*') || ($path === 'shop' && request()->is('product*')));
+                    @endphp
+                    <li class="group"><a href="{{ url($link['url']) }}" wire:navigate class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ $isActive ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">{{ $link['label'] }}</a></li>
+                @endforeach
+                </ul></nav>            
                 <div class="flex items-center gap-5 w-[180px] justify-end shrink-0">
                     <!-- Search -->
                     <button class="search-toggle-btn text-[#1c1c1a] hover:text-[#064e3b] transition-colors focus:outline-none">

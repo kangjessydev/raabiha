@@ -16,9 +16,7 @@ Route::get('/contact', function () {
 
 Route::get('/shop', \App\Livewire\Shop::class);
 
-Route::get('/blog', function () {
-    return view('blog');
-});
+Route::get('/blog', \App\Livewire\Blog::class);
 
 Route::get('/gallery', function () {
     return view('gallery');
@@ -28,10 +26,7 @@ Route::get('/product/{slug}', \App\Livewire\ProductDetail::class);
 
 Route::get('/cart', \App\Livewire\Cart::class);
 
-Route::get('/blog/{slug}', function ($slug) {
-    $post = \App\Models\Post::where('slug', $slug)->first();
-    return view('blog-detail', ['slug' => $slug, 'post' => $post]);
-});
+Route::get('/blog/{slug}', \App\Livewire\BlogDetail::class);
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/checkout', \App\Livewire\Checkout::class)->name('checkout');

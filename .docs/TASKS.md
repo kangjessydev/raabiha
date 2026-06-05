@@ -21,6 +21,9 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Status & Pengaturan Reseller:** Menambahkan kolom status (Pending/Aktif) pada entitas User dan pengaturan diskon *reseller*.
 - [x] **Badge Guest Checkout:** Menambahkan label visual pada OrderResource untuk membedakan *Guest* vs *Registered*.
 - [x] **Laporan Transaksi:** Menyempurnakan halaman `TransactionReport` yang sudah ada menjadi grafik/tabel yang informatif.
+- [x] **Pengaturan Global (Site Settings):** Membuat halaman manajemen terpusat untuk Identitas Toko, Menu Navbar Dinamis (Repeater), Footer, Kontak, dan Integrasi Skrip Eksternal.
+- [ ] **Halaman Statis (CMS):** Membuat Resource untuk halaman legal/dokumen (T&C, Privacy Policy) lengkap dengan dukungan *SEO Fields*.
+- [ ] **Sales Page Builder:** Membangun *Filament Builder* modular (Hero, Features, Testimonial) untuk membuat *Landing Page* dinamis.
 
 ### 🛒 Frontend Customer (Blade + Livewire)
 **✅ Selesai (Done):**
@@ -28,12 +31,16 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - Katalog Dinamis (`shop`) dengan filter pencarian.
 - Transisi Galeri & Logika UI Bottom Sheet untuk pemilihan Varian & QTY.
 - Dashboard Customer Ekstensif (Riwayat Pesanan, Detail Invoice, Manajemen Alamat, Voucher, Statistik).
+- Sistem Blog Dinamis & Komentar interaktif dengan dukungan *Nested Replies* dan *Auto-Polling Moderation*.
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
 - [x] **Halaman Pendaftaran Reseller:** Membuat formulir *Livewire* untuk mendaftar sebagai Reseller.
 - [x] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*).
 - [x] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
 - [x] **Dashboard Reseller:** Membuat area khusus (*portal*) untuk Reseller memantau komisi, status diskon, dan histori pembelian (bisa via frontend atau panel Filament baru).
+- [x] **Global UI Binding:** Menghubungkan data *Site Settings* (Logo, Navbar, Footer, Nomor Kontak) ke komponen *Frontend* secara dinamis.
+- [ ] **Refactoring Hardcode Pages:** Mengoptimalkan halaman Home, About, Lokasi & Kontak, dan Galeri agar berpadu dengan data dinamis tanpa bergantung pada CMS Editor.
+- [ ] **Dynamic Page Rendering:** Membuat *routing* dan *views* untuk me-render *Halaman Statis* (`/page/{slug}`) dan *Sales Page* (`/promo/{slug}`).
 
 ---
 

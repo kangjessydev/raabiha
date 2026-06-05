@@ -39,10 +39,18 @@ Berdasarkan keputusan CTO, keranjang belanja wajib menggunakan pendekatan **Data
 - **Primary Address:** Menggunakan boolean `is_primary` untuk menandai alamat utama. Sistem harus memastikan hanya ada maksimal 1 alamat utama per user (jika alamat baru diset utama, yang lama harus di-set `false`).
 - Alamat ini hanya berlaku untuk *User Login* dan dipersiapkan untuk fitur *autofill* saat Checkout. Guest tidak menggunakan tabel ini.
 
-## 7. Arsitektur Media & Gambar (Filament Curator)
+## 7. Arsitektur Komentar Blog
+- **Tabel `post_comments`:** Digunakan untuk menyimpan interaksi diskusi pada setiap artikel (`post_id`).
+- **Autentikasi Dinamis:** Mendukung *Registered User* (menggunakan `user_id`) dan *Guest* (menggunakan `guest_name` dan `guest_email`).
+- **Diskusi Bersarang (Nested Replies):** Menggunakan `parent_id` untuk menghubungkan komentar balasan (*reply*) ke komentar induk. Saat ini mendukung hierarki dasar satu tingkat.
+- **Moderasi & Transparansi Edit:**
+  - `is_approved`: Secara *default* diset `true` (langsung tayang) agar tidak mematikan *engagement*, namun tetap bisa ditolak/dihapus (*Reject/Delete*) dari panel admin.
+  - `is_edited_by_admin` & `admin_edit_reason`: Jika admin menyensor atau mengubah isi teks komentar pengunjung, sistem wajib melacaknya dan menampilkan alasan pengubahan (*Edit Reason*) tersebut di *frontend* secara transparan.
+
+## 8. Arsitektur Media & Gambar (Filament Curator)
 - Pengelolaan gambar (seperti foto produk) menggunakan **Filament Curator**.
 - Kolom `images` pada tabel `products` menggunakan tipe `json`, tetapi isinya adalah **Array of Integers (Media IDs)** yang berelasi ke tabel `media` milik Curator.
 - Pada tampilan *Front End*, URL gambar harus di-*resolve* secara manual dari model `Media` berdasarkan ID yang ada di kolom JSON tersebut, dengan *fallback* untuk format *string path* lama agar kompatibel dengan data sebelum migrasi Curator.
 
-## 7. Rencana Pengembangan Skema (Masa Depan)
+## 9. Rencana Pengembangan Skema (Masa Depan)
 *Dokumentasi ini wajib diperbarui setiap kali ada penambahan tabel atau perubahan struktur, seperti sistem ongkir (Shipping) dan Pembayaran (Payments).*

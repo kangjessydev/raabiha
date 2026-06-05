@@ -14,6 +14,7 @@ class ProductsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->poll('5s')
             ->columns([
                 \Awcodes\Curator\Components\Tables\CuratorColumn::make('images')
                     ->label('Foto')
