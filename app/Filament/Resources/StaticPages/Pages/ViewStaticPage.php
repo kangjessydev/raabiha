@@ -16,4 +16,13 @@ class ViewStaticPage extends ViewRecord
             EditAction::make(),
         ];
     }
+
+    public function getSubNavigation(): array
+    {
+        if (filled($cluster = static::getCluster()) && $cluster::shouldRegisterSubNavigation()) {
+            return $this->generateNavigationItems($cluster::getClusteredComponents());
+        }
+
+        return [];
+    }
 }

@@ -18,4 +18,13 @@ class EditStaticPage extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    public function getSubNavigation(): array
+    {
+        if (filled($cluster = static::getCluster()) && $cluster::shouldRegisterSubNavigation()) {
+            return $this->generateNavigationItems($cluster::getClusteredComponents());
+        }
+
+        return [];
+    }
 }
