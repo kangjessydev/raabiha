@@ -27,11 +27,11 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - Slicing UI Utama (Home, About, Contact, Dasbor Customer, Product Detail).
 - Katalog Dinamis (`shop`) dengan filter pencarian.
 - Transisi Galeri & Logika UI Bottom Sheet untuk pemilihan Varian & QTY.
+- Dashboard Customer Ekstensif (Riwayat Pesanan, Detail Invoice, Manajemen Alamat, Voucher, Statistik).
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
 - [x] **Halaman Pendaftaran Reseller:** Membuat formulir *Livewire* untuk mendaftar sebagai Reseller.
 - [x] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*).
-- [x] **Dashboard Customer:** Mengaktifkan panel riwayat pesanan (*My Account*) untuk pengguna reguler.
 - [x] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
 - [x] **Dashboard Reseller:** Membuat area khusus (*portal*) untuk Reseller memantau komisi, status diskon, dan histori pembelian (bisa via frontend atau panel Filament baru).
 

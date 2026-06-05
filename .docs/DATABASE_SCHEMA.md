@@ -34,7 +34,12 @@ Berdasarkan keputusan CTO, keranjang belanja wajib menggunakan pendekatan **Data
 - **Pembedaan Admin Panel:** Di Filament Admin, tabel/resource Orders **wajib** memiliki *badge* atau filter visual untuk membedakan secara jelas mana transaksi "User Terdaftar" dan mana transaksi "Guest".
 - **Pelacakan (Tracking):** User yang login dapat melihat riwayat di Dasbor Pelanggan. Guest akan melacak pesanan menggunakan kombinasi "ID Pesanan" dan "Email" secara manual di halaman publik "Track Order".
 
-## 6. Arsitektur Media & Gambar (Filament Curator)
+## 6. Manajemen Alamat Pelanggan (Address Book)
+- Pelanggan (User) dapat memiliki banyak alamat yang disimpan dalam tabel `user_addresses`.
+- **Primary Address:** Menggunakan boolean `is_primary` untuk menandai alamat utama. Sistem harus memastikan hanya ada maksimal 1 alamat utama per user (jika alamat baru diset utama, yang lama harus di-set `false`).
+- Alamat ini hanya berlaku untuk *User Login* dan dipersiapkan untuk fitur *autofill* saat Checkout. Guest tidak menggunakan tabel ini.
+
+## 7. Arsitektur Media & Gambar (Filament Curator)
 - Pengelolaan gambar (seperti foto produk) menggunakan **Filament Curator**.
 - Kolom `images` pada tabel `products` menggunakan tipe `json`, tetapi isinya adalah **Array of Integers (Media IDs)** yang berelasi ke tabel `media` milik Curator.
 - Pada tampilan *Front End*, URL gambar harus di-*resolve* secara manual dari model `Media` berdasarkan ID yang ada di kolom JSON tersebut, dengan *fallback* untuk format *string path* lama agar kompatibel dengan data sebelum migrasi Curator.
