@@ -30,6 +30,12 @@ class PostsTable
                     ->searchable()
                     ->sortable()
                     ->wrap(),
+                TextColumn::make('slug')
+                    ->label('Slug')
+                    ->searchable()
+                    ->url(fn (\App\Models\Post $record): string => url('/blog/' . $record->slug))
+                    ->openUrlInNewTab()
+                    ->color('primary'),
                 TextColumn::make('category.name')
                     ->label('Kategori')
                     ->searchable()

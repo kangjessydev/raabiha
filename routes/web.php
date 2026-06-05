@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
+
 Route::get('/', function () {
     return view('home');
 });
@@ -62,3 +63,12 @@ Route::get('/promo', function () {
 
 // Webhooks
 Route::post('/webhook/tripay', [\App\Http\Controllers\Webhook\TripayWebhookController::class, 'handle']);
+
+// Halaman Statis (Catch-all route)
+Route::get('/{slug}', function ($slug) {
+    $page = \App\Models\StaticPage::where('slug', $slug)
+        ->where('is_active', true)
+        ->firstOrFail();
+
+    return view('static-page', compact('page'));
+});

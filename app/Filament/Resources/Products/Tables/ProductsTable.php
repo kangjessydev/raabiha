@@ -27,6 +27,12 @@ class ProductsTable
                     ->sortable(),
                 TextColumn::make('name')
                     ->searchable(),
+                TextColumn::make('slug')
+                    ->label('Slug')
+                    ->searchable()
+                    ->url(fn (\App\Models\Product $record): string => url('/product/' . $record->slug))
+                    ->openUrlInNewTab()
+                    ->color('primary'),
                 TextColumn::make('price')
                     ->money('IDR')
                     ->sortable(),

@@ -2,12 +2,7 @@
 
 namespace App\Filament\Resources\StaticPages\Schemas;
 
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Str;
 
 class StaticPageForm
 {
@@ -15,25 +10,25 @@ class StaticPageForm
     {
         return $schema
             ->components([
-                Section::make('Detail Halaman Statis')
-                    ->schema([
-                        TextInput::make('title')
-                            ->label('Judul Halaman')
-                            ->required()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(fn ($state, \Filament\Schemas\Components\Utilities\Set $set) => $set('slug', Str::slug($state))),
-                        TextInput::make('slug')
-                            ->label('Slug')
-                            ->required()
-                            ->unique(ignoreRecord: true),
-                        RichEditor::make('content')
-                            ->label('Konten Halaman')
-                            ->columnSpanFull(),
-                        Toggle::make('is_active')
-                            ->label('Aktif')
-                            ->default(true)
-                            ->required(),
-                    ])->columns(2),
+                \Filament\Forms\Components\TextInput::make('title')
+                    ->label('Judul Halaman')
+                    ->required()
+                    ->maxLength(255)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn (string $operation, $state, \Filament\Forms\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
+                \Filament\Forms\Components\TextInput::make('slug')
+                    ->label('URL Slug')
+                    ->required()
+                    ->unique(\App\Models\StaticPage::class, 'slug', ignoreRecord: true)
+                    ->maxLength(255),
+                \Filament\Forms\Components\RichEditor::make('content')
+                    ->label('Konten (HTML)')
+                    ->required()
+                    ->columnSpanFull()
+                    ->disableToolbarButtons(['attachFiles']),
+                \Filament\Forms\Components\Toggle::make('is_active')
+                    ->label('Aktif & Terpublikasi')
+                    ->default(true),
             ]);
     }
 }
