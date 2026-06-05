@@ -33,25 +33,30 @@ Route::get('/blog/{slug}', function ($slug) {
     return view('blog-detail', ['slug' => $slug, 'post' => $post]);
 });
 
-Route::get('/checkout', \App\Livewire\Checkout::class);
-
-Route::get('/account', \App\Livewire\Account::class);
+Route::middleware(['auth'])->group(function () {
+    Route::get('/checkout', \App\Livewire\Checkout::class)->name('checkout');
+    Route::get('/account', \App\Livewire\Account::class)->name('account');
+    Route::get('/order-detail', \App\Livewire\OrderDetail::class)->name('order.detail');
+    
+    Route::post('/logout', function (\Illuminate\Http\Request $request) {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/login');
+    })->name('logout');
+});
 
 Route::get('/order-success', function () {
     return view('order-success');
 });
 
-Route::get('/order-detail', function () {
-    return view('order-detail');
-});
-
 Route::get('/login', function () {
     return view('login');
-});
+})->name('login');
 
 Route::get('/register', function () {
     return view('register');
-});
+})->name('register');
 
 Route::get('/reseller-register', \App\Livewire\ResellerRegister::class);
 Route::get('/reseller-dashboard', \App\Livewire\ResellerDashboard::class);
