@@ -20,10 +20,12 @@ class StaticPagesTable
                 TextColumn::make('title')
                     ->label('Judul')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->limit(40),
                 TextColumn::make('slug')
                     ->label('Slug')
                     ->searchable()
+                    ->limit(30)
                     ->url(fn (\App\Models\StaticPage $record): string => url('/' . ltrim($record->slug, '/')))
                     ->openUrlInNewTab()
                     ->color('primary'),

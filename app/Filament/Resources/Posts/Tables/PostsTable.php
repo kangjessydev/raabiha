@@ -29,10 +29,11 @@ class PostsTable
                     ->label('Judul')
                     ->searchable()
                     ->sortable()
-                    ->wrap(),
+                    ->limit(40),
                 TextColumn::make('slug')
                     ->label('Slug')
                     ->searchable()
+                    ->limit(30)
                     ->url(fn (\App\Models\Post $record): string => url('/blog/' . $record->slug))
                     ->openUrlInNewTab()
                     ->color('primary'),

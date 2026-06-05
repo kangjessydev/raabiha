@@ -26,10 +26,12 @@ class ProductsTable
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->limit(40),
                 TextColumn::make('slug')
                     ->label('Slug')
                     ->searchable()
+                    ->limit(30)
                     ->url(fn (\App\Models\Product $record): string => url('/product/' . $record->slug))
                     ->openUrlInNewTab()
                     ->color('primary'),
