@@ -53,13 +53,33 @@
                     <!-- Account/Dashboard -->
                     <div class="relative">
                         <button id="desktop-profile-toggle" class="text-[#1c1c1a] hover:text-[#064e3b] transition-colors flex items-center justify-center w-6 h-6 rounded-full overflow-hidden focus:outline-none">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            @auth
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=064e3b&color=fff" alt="Profile" class="w-full h-full object-cover">
+                            @else
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            @endauth
                         </button>
                         <!-- Dropdown -->
                         <div id="desktop-profile-dropdown" class="absolute right-0 mt-3 w-48 bg-[#fcf9f5] border border-[#e5e2de] shadow-lg rounded-sm py-2 opacity-0 pointer-events-none transform -translate-y-2 transition-all duration-200 z-50">
-                            <a href="/account" wire:navigate class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Akun Saya</a>
-                            <a href="/login" wire:navigate class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Log In</a>
-                            <a href="/register" wire:navigate class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Daftar Akun</a>
+                            @auth
+                                <div class="px-4 py-2 border-b border-[#e5e2de] mb-1">
+                                    <span class="block text-xs font-mono font-bold uppercase tracking-widest text-[#1c1c1a]">{{ auth()->user()->name }}</span>
+                                </div>
+                                <a href="/account" wire:navigate class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Dasbor Pelanggan</a>
+                                @if(auth()->user()->hasRole('super_admin'))
+                                    <a href="/admin" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Admin Panel</a>
+                                @elseif(auth()->user()->hasRole('reseller'))
+                                    <a href="/reseller-dashboard" wire:navigate class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Portal Reseller</a>
+                                @endif
+                                <a href="/cart" wire:navigate class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Keranjang Saya</a>
+                                <form method="POST" action="{{ route('logout') }}" class="block m-0">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm font-sans text-red-600 hover:bg-[#f0ede9] transition-colors">Keluar (Logout)</button>
+                                </form>
+                            @else
+                                <a href="/login" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Log In</a>
+                                <a href="/register" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Daftar Akun</a>
+                            @endauth
                         </div>
                     </div>
                 </div>

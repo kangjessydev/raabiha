@@ -22,6 +22,7 @@ class Post extends Model
         'is_published',
         'meta_title',
         'meta_description',
+        'focus_keyword',
         'published_at',
     ];
 

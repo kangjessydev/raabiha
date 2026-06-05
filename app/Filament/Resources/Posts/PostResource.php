@@ -39,6 +39,11 @@ class PostResource extends Resource
         return PostsTable::configure($table);
     }
 
+    public static function infolist(\Filament\Schemas\Schema $schema): \Filament\Schemas\Schema
+    {
+        return \App\Filament\Resources\Posts\Schemas\PostInfolist::configure($schema);
+    }
+
     public static function getRelations(): array
     {
         return [
