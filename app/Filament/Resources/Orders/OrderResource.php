@@ -56,4 +56,11 @@ class OrderResource extends Resource
             'edit' => EditOrder::route('/{record}/edit'),
         ];
     }
+
+    public static function getWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\OrderResource\Widgets\OrderStatsWidget::class,
+        ];
+    }
 }
