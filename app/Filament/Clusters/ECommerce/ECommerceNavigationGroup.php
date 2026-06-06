@@ -10,7 +10,7 @@ enum ECommerceNavigationGroup: string implements HasLabel
     case Katalog = 'Katalog';
     case Promosi = 'Promosi';
     case Reseller = 'Reseller';
-    case PengaturanToko = 'Pengaturan Toko';
+    case PengaturanToko = 'Pengaturan Checkout';
 
     public function getLabel(): string
     {
@@ -19,7 +19,7 @@ enum ECommerceNavigationGroup: string implements HasLabel
             self::Katalog => 'Katalog',
             self::Promosi => 'Promosi',
             self::Reseller => 'Reseller',
-            self::PengaturanToko => 'Pengaturan Toko',
+            self::PengaturanToko => 'Pengaturan Checkout',
         };
     }
 }
