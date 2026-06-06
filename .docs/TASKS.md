@@ -16,6 +16,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [ ] **Perbaikan Pengumuman Topbar:** Memperbaiki bug tidak muncul di frontend. Mengubah input menjadi *Rich Editor* terbatas (hanya bold/italic/link) dengan indikator batas karakter maksimal. Jika teks terlalu panjang, aplikasikan efek *marquee* (teks berjalan) khusus di layar kecil.
 - [ ] **Logika Banner Promosi (Popup):** Menambahkan fitur *Single Active Toggle* (satu aktif, lainnya otomatis mati). Menambahkan dropdown penempatan (*Semua Halaman, Home, Katalog*).
 - [ ] **Sistem Voucher Lanjutan:** Mengembangkan database voucher dengan kolom: Tipe Diskon (Nominal/%), Syarat Min. Belanja, Max Diskon, Spesifik User (Email JSON), Free Gift Item, dan Kuota Maksimal Penggunaan.
+- [ ] **Logika Ulasan Produk:** Menonaktifkan tombol 'Create' di Filament Admin (Hanya bisa dibaca/dimoderasi). Membuat tombol 'Beri Ulasan' di Dasbor Customer untuk pesanan yang sudah selesai, serta menampilkannya di Detail Produk.
 - [x] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
 - [x] **Kategori Publik:** Mengatur hierarki kategori dan slug yang diakses lewat `/collections/{slug}`.
 - [x] **Galeri Builder:** Membuat Single Page Settings menggunakan Filament Builder untuk Galeri Publik (menggantikan sistem CRUD lama) agar lebih dinamis dan modular.
