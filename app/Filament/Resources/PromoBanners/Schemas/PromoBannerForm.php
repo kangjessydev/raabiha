@@ -15,9 +15,11 @@ class PromoBannerForm
             ->components([
                 TextInput::make('title')
                     ->required(),
-                FileUpload::make('image')
-                    ->image()
-                    ->directory('banners')
+                \Awcodes\Curator\Components\Forms\CuratorPicker::make('image')
+                    ->label('Banner Image')
+                    ->buttonLabel('Pilih Media / Unggah')
+                    ->color('primary')
+                    ->size(\Filament\Support\Enums\Size::Medium)
                     ->required(),
                 TextInput::make('link')
                     ->label('Link URL')

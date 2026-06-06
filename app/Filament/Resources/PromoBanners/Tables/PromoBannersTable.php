@@ -18,7 +18,8 @@ class PromoBannersTable
             ->columns([
                 TextColumn::make('title')
                     ->searchable(),
-                ImageColumn::make('image'),
+                \Awcodes\Curator\Components\Tables\CuratorColumn::make('image')
+                    ->size(40),
                 TextColumn::make('placement')
                     ->label('Penempatan')
                     ->badge()
