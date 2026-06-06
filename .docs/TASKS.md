@@ -23,7 +23,8 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Export & Import Data:** Memasang fungsi/plugin export-import Excel pada resource Produk dan Order.
 - [x] **Status & Pengaturan Reseller:** Menambahkan kolom status (Pending/Aktif) pada entitas User dan pengaturan diskon *reseller*.
 - [x] **Badge Guest Checkout:** Menambahkan label visual pada OrderResource untuk membedakan *Guest* vs *Registered*.
-- [x] **Laporan Transaksi:** Menyempurnakan halaman `TransactionReport` yang sudah ada menjadi grafik/tabel yang informatif.
+- [ ] **Widgets Laporan Pesanan:** Menghapus menu *Laporan Transaksi* yang redundan dan menggantinya dengan *Header Widgets* (Total Pending, Pendapatan Hari Ini) langsung di atas tabel Pesanan.
+- [ ] **Mode Libur & Jadwal Toko:** Menambahkan pengaturan "Tutup Toko / Mode Libur" di *Site Settings* yang akan memunculkan peringatan otomatis di *frontend* agar pembeli tahu kapan barang dikirim.
 - [x] **Pengaturan Global (Site Settings):** Membuat halaman manajemen terpusat untuk Identitas Toko, Menu Navbar Dinamis (Repeater), Footer, Kontak, dan Integrasi Skrip Eksternal.
 - [x] **Halaman Statis (CMS):** Membuat Resource untuk halaman legal/dokumen (T&C, Privacy Policy) lengkap dengan dukungan *SEO Fields*.
 - [x] **Sales Page Builder:** Membangun *Filament Builder* modular (Hero, Features, Testimonial) untuk membuat *Landing Page* dinamis.
