@@ -61,7 +61,31 @@ class TopbarAnnouncement extends Page implements HasForms
                                 'italic',
                                 'link',
                             ])
-                            ->helperText('Gunakan teks singkat (Maks disarankan 100 karakter). Jika teks terlalu panjang, akan otomatis menjadi efek berjalan (Marquee) di HP.')
+                            ->live(debounce: 500)
+                            ->helperText(function ($state) {
+                                $text = strip_tags($state ?? '');
+                                // replace &nbsp; that RichEditor might insert
+                                $text = str_replace('&nbsp;', ' ', $text);
+                                $count = mb_strlen(html_entity_decode($text));
+                                $remaining = 100 - $count;
+                                
+                                if ($remaining < 0) {
+                                    return new \Illuminate\Support\HtmlString('<span style="color:red; font-weight:bold;">Teks terlalu panjang! Karakter: ' . $count . '/100 (Sisa: ' . $remaining . '). Harap kurangi teks agar bisa disimpan.</span>');
+                                }
+                                
+                                return new \Illuminate\Support\HtmlString('Gunakan teks singkat. Karakter: <strong>' . $count . '/100</strong>. Jika teks menyentuh batas 100, akan otomatis menjadi efek berjalan (Marquee) di HP.');
+                            })
+                            ->rules([
+                                function () {
+                                    return function (string $attribute, $value, \Closure $fail) {
+                                        $text = strip_tags($value ?? '');
+                                        $text = str_replace('&nbsp;', ' ', $text);
+                                        if (mb_strlen(html_entity_decode($text)) > 100) {
+                                            $fail('Teks pengumuman tidak boleh lebih dari 100 karakter (tanpa menghitung kode HTML).');
+                                        }
+                                    };
+                                },
+                            ])
                             ->required()
                             ->columnSpanFull(),
                         ColorPicker::make('bg_color')

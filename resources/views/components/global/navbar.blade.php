@@ -1,5 +1,5 @@
-<div class="h-[73px] md:h-[81px] w-full" x-init="setTimeout(() => { if($refs.desktopLogo && $refs.desktopLogo.complete) navLoaded = true; }, 50)">
-    <header class="fixed top-0 left-0 w-full z-[100] bg-[#fcf9f5] border-b border-[#e5e2de] transition-transform duration-300 transform translate-y-0" id="smart-navbar">
+<div class="w-full z-[100] sticky top-0" x-init="setTimeout(() => { if($refs.desktopLogo && $refs.desktopLogo.complete) navLoaded = true; }, 50)">
+    <header class="w-full bg-[#fcf9f5] border-b border-[#e5e2de] transition-transform duration-300 transform translate-y-0" id="smart-navbar">
         
         <!-- ==================== DESKTOP (Hidden on Mobile) ==================== -->
         <div class="hidden md:block">

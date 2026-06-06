@@ -175,10 +175,10 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
 <body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js" x-data="{ navLoaded: false }">
         
     @php
-        $topbar = \App\Models\TopbarAnnouncement::where('is_active', true)->first();
+        $topbar = \App\Models\TopbarAnnouncement::first();
     @endphp
 
-    @if($topbar)
+    @if($topbar && $topbar->is_active)
     <!-- Topbar Promo Marquee -->
     <div class="{{ isset($header) ? 'hidden md:block' : '' }} text-[10px] tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap" style="background-color: {{ $topbar->bg_color ?? '#000000' }}; color: {{ $topbar->text_color ?? '#ffffff' }};">
         <div class="inline-block md:w-full md:text-center animate-[marquee_20s_linear_infinite] md:animate-none pl-[100%] md:pl-0">
