@@ -13,7 +13,7 @@ class ListProductReviews extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            //
         ];
     }
 }
