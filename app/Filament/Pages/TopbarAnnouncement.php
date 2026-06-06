@@ -53,14 +53,17 @@ class TopbarAnnouncement extends Page implements HasForms
             ->components([
                 Section::make('Konfigurasi Bilah Pengumuman')
                     ->schema([
-                        TextInput::make('text')
+                        \Filament\Forms\Components\RichEditor::make('text')
                             ->label('Teks Pengumuman')
                             ->placeholder('e.g. Dapatkan gratis ongkir dengan minimum pembelian Rp 150.000!')
-                            ->required(),
-                        TextInput::make('link')
-                            ->label('Link URL (Opsional)')
-                            ->url()
-                            ->placeholder('https://example.com/promo'),
+                            ->toolbarButtons([
+                                'bold',
+                                'italic',
+                                'link',
+                            ])
+                            ->helperText('Gunakan teks singkat (Maks disarankan 100 karakter). Jika teks terlalu panjang, akan otomatis menjadi efek berjalan (Marquee) di HP.')
+                            ->required()
+                            ->columnSpanFull(),
                         ColorPicker::make('bg_color')
                             ->label('Warna Background')
                             ->default('#000000'),

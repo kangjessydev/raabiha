@@ -174,15 +174,19 @@ var woocommerce_params = {"ajax_url":"#","wc_ajax_url":"/raabiha/?wc-ajax=%%endp
 </head>
 <body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js" x-data="{ navLoaded: false }">
         
+    @php
+        $topbar = \App\Models\TopbarAnnouncement::where('is_active', true)->first();
+    @endphp
+
+    @if($topbar)
     <!-- Topbar Promo Marquee -->
-    <div class="{{ isset($header) ? 'hidden md:block' : '' }} bg-neutral-900 text-neutral-200 text-[10px] tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap">
-        <div class="inline-block animate-[marquee_20s_linear_infinite]">
-            <span class="mr-8">FREE SHIPPING ON ORDERS OVER 500K</span>
-            <span class="mr-8">FREE SHIPPING ON ORDERS OVER 500K</span>
-            <span class="mr-8">FREE SHIPPING ON ORDERS OVER 500K</span>
-            <span class="mr-8">FREE SHIPPING ON ORDERS OVER 500K</span>
+    <div class="{{ isset($header) ? 'hidden md:block' : '' }} text-[10px] tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap" style="background-color: {{ $topbar->bg_color ?? '#000000' }}; color: {{ $topbar->text_color ?? '#ffffff' }};">
+        <div class="inline-block md:w-full md:text-center animate-[marquee_20s_linear_infinite] md:animate-none pl-[100%] md:pl-0">
+            <span class="[&_a]:underline [&_a]:font-bold [&_strong]:font-bold [&_em]:italic mr-8 md:mr-0">{!! strip_tags($topbar->text, '<strong><em><a>') !!}</span>
+            <span class="[&_a]:underline [&_a]:font-bold [&_strong]:font-bold [&_em]:italic mr-8 md:hidden">{!! strip_tags($topbar->text, '<strong><em><a>') !!}</span>
         </div>
     </div>
+    @endif
     <style>
     @@keyframes marquee {
         0% { transform: translateX(0%); }
