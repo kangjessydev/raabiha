@@ -15,7 +15,7 @@ class GlobalSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-globe-alt';
-    protected static \UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan';
     protected static ?string $navigationLabel = 'Pengaturan Global';
     protected static ?string $title = 'Pengaturan Global';
     protected static ?string $cluster = \App\Filament\Clusters\Settings\SettingsCluster::class;
@@ -29,7 +29,7 @@ class GlobalSettings extends Page implements HasForms
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
         
         // Decode JSON arrays for repeaters
-        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links'] as $jsonKey) {
+        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'social_links'] as $jsonKey) {
             if (isset($settings[$jsonKey])) {
                 $decoded = json_decode($settings[$jsonKey], true);
                 $settings[$jsonKey] = is_array($decoded) ? $decoded : [];
@@ -76,12 +76,26 @@ class GlobalSettings extends Page implements HasForms
                                     ->email(),
                                 Forms\Components\Textarea::make('contact_address')
                                     ->label('Alamat Toko (Fisik)'),
-                                Forms\Components\TextInput::make('social_instagram')
-                                    ->label('Link Instagram')
-                                    ->url(),
-                                Forms\Components\TextInput::make('social_tiktok')
-                                    ->label('Link TikTok')
-                                    ->url(),
+                                Forms\Components\Repeater::make('social_links')
+                                    ->label('Daftar Sosial Media')
+                                    ->components([
+                                        Forms\Components\Select::make('platform')
+                                            ->label('Platform')
+                                            ->options([
+                                                'instagram' => 'Instagram',
+                                                'tiktok' => 'TikTok',
+                                                'facebook' => 'Facebook',
+                                                'twitter' => 'Twitter / X',
+                                                'youtube' => 'YouTube',
+                                            ])
+                                            ->required(),
+                                        Forms\Components\TextInput::make('url')
+                                            ->label('URL / Link Profil')
+                                            ->url()
+                                            ->required(),
+                                    ])
+                                    ->columns(2)
+                                    ->defaultItems(0),
                             ]),
                         \Filament\Schemas\Components\Tabs\Tab::make('Navbar')
                             ->components([
