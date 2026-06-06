@@ -8,12 +8,14 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 **✅ Selesai (Done):**
 - Manajemen Blog (Posts, Kategori Blog, Tag Blog, Komentar).
 - E-Commerce Dasar (Order Transaksi, Metode Pengiriman, Metode Pembayaran).
-- Promosi & Tampilan (Voucher, Banner Promo / Popup Modal, Pengumuman Topbar).
-- Konten (Halaman Statis, Sales Page, Ulasan Produk).
 - List Reseller (Terintegrasi lewat Spatie Roles).
+- Konten (Halaman Statis, Sales Page, Ulasan Produk).
 - Kustomisasi Tema, Cluster, dan Integrasi Media Library (Curator).
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
+- [ ] **Perbaikan Pengumuman Topbar:** Memperbaiki topbar yang tidak muncul di frontend, menghapus efek teks berjalan (marquee), dan mengubah input teks menjadi *Rich Editor*.
+- [ ] **Logika Banner Promosi (Popup):** Menambahkan fitur *Single Active Toggle* (jika satu diaktifkan, yang lain otomatis mati) dan konfigurasi penempatan halaman tampilnya.
+- [ ] **Sistem Voucher Lanjutan:** Mengembangkan fitur Voucher dengan aturan kompleks: Diskon Nominal/Persentase, Spesifik User (Email), Minimal Pembelian, dan Bonus Item (Free Gift).
 - [x] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
 - [x] **Kategori Publik:** Mengatur hierarki kategori dan slug yang diakses lewat `/collections/{slug}`.
 - [x] **Galeri Builder:** Membuat Single Page Settings menggunakan Filament Builder untuk Galeri Publik (menggantikan sistem CRUD lama) agar lebih dinamis dan modular.
