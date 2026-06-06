@@ -13,9 +13,9 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - Kustomisasi Tema, Cluster, dan Integrasi Media Library (Curator).
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
-- [ ] **Perbaikan Pengumuman Topbar:** Memperbaiki topbar yang tidak muncul di frontend, menghapus efek teks berjalan (marquee), dan mengubah input teks menjadi *Rich Editor*.
-- [ ] **Logika Banner Promosi (Popup):** Menambahkan fitur *Single Active Toggle* (jika satu diaktifkan, yang lain otomatis mati) dan konfigurasi penempatan halaman tampilnya.
-- [ ] **Sistem Voucher Lanjutan:** Mengembangkan fitur Voucher dengan aturan kompleks: Diskon Nominal/Persentase, Spesifik User (Email), Minimal Pembelian, dan Bonus Item (Free Gift).
+- [ ] **Perbaikan Pengumuman Topbar:** Memperbaiki bug tidak muncul di frontend. Mengubah input menjadi *Rich Editor* terbatas (hanya bold/italic/link) dengan indikator batas karakter maksimal. Jika teks terlalu panjang, aplikasikan efek *marquee* (teks berjalan) khusus di layar kecil.
+- [ ] **Logika Banner Promosi (Popup):** Menambahkan fitur *Single Active Toggle* (satu aktif, lainnya otomatis mati). Menambahkan dropdown penempatan (*Semua Halaman, Home, Katalog*).
+- [ ] **Sistem Voucher Lanjutan:** Mengembangkan database voucher dengan kolom: Tipe Diskon (Nominal/%), Syarat Min. Belanja, Max Diskon, Spesifik User (Email JSON), Free Gift Item, dan Kuota Maksimal Penggunaan.
 - [x] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
 - [x] **Kategori Publik:** Mengatur hierarki kategori dan slug yang diakses lewat `/collections/{slug}`.
 - [x] **Galeri Builder:** Membuat Single Page Settings menggunakan Filament Builder untuk Galeri Publik (menggantikan sistem CRUD lama) agar lebih dinamis dan modular.
