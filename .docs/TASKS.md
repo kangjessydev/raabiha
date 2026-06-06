@@ -50,5 +50,6 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Pembayaran (Xendit / Tripay):** Virtual Account, QRIS otomatis dengan Webhook integrasi ke status pesanan.
 
 ## 🧊 Backlog / Opsional (Sprint 3 / Fase 2)
+- [ ] *Google Analytics / Looker Studio Embed:* Menambahkan halaman iframe Analytics di Filament Dashboard.
 - [ ] *Virtual Fitting Room* dengan avatar kustom.
 - [ ] *Script* Backup Database otomatis di VPS CloudPanel.
