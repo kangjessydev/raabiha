@@ -18,6 +18,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [ ] **Sistem Voucher Lanjutan:** Mengembangkan database voucher dengan kolom: Tipe Diskon (Nominal/%), Syarat Min. Belanja, Max Diskon, Spesifik User (Email JSON), Free Gift Item, dan Kuota Maksimal Penggunaan.
 - [ ] **Logika Ulasan Produk:** Menonaktifkan tombol 'Create' di Filament Admin (Hanya bisa dibaca/dimoderasi). Membuat tombol 'Beri Ulasan' di Dasbor Customer untuk pesanan yang sudah selesai, serta menampilkannya di Detail Produk.
 - [ ] **Sistem Kontak Hybrid (Inquiries):** Membuat tabel `inquiries` untuk menampung pesan *Contact Us*. Di *frontend*, pembeli bisa memilih metode kirim (Radio: *via Email* atau *via WhatsApp*). Di *Site Settings*, admin bisa mengatur daftar Subjek beserta *toggle* apakah subjek tersebut wajib disimpan ke *database* atau langsung dialihkan (otomatis filterable di Filament).
+- [ ] **Notifikasi Real-time (Lonceng):** Mengaktifkan fitur *Database Notifications* bawaan Filament di *navbar* atas. Setiap ada pesanan masuk, pesan kontak baru, atau ulasan, admin akan mendapat notifikasi instan.
 - [x] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
 - [x] **Kategori Publik:** Mengatur hierarki kategori dan slug yang diakses lewat `/collections/{slug}`.
 - [x] **Galeri Builder:** Membuat Single Page Settings menggunakan Filament Builder untuk Galeri Publik (menggantikan sistem CRUD lama) agar lebih dinamis dan modular.
