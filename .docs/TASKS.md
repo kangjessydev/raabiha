@@ -24,7 +24,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Galeri Builder:** Membuat Single Page Settings menggunakan Filament Builder untuk Galeri Publik (menggantikan sistem CRUD lama) agar lebih dinamis dan modular.
 - [x] **Dashboard Overview:** Menambahkan Widget statistik (Total Pendapatan, Order Baru, dll) di halaman depan Admin.
 - [x] **Export & Import Data:** Memasang fungsi/plugin export-import Excel pada resource Produk dan Order.
-- [x] **Status & Pengaturan Reseller:** Menambahkan kolom status (Pending/Aktif) pada entitas User dan pengaturan diskon *reseller*.
+- [ ] **Manajemen Reseller (B2B):** Membuat *Tabs* filter (Semua, Aktif, Pending) di Daftar Reseller. Proses *Approval* manual oleh Admin. Mengatur nilai diskon *flat percentage* untuk semua reseller aktif di *Site Settings*.
 - [x] **Badge Guest Checkout:** Menambahkan label visual pada OrderResource untuk membedakan *Guest* vs *Registered*.
 - [ ] **Widgets Laporan Pesanan:** Menghapus menu *Laporan Transaksi* yang redundan dan menggantinya dengan *Header Widgets* (Total Pending, Pendapatan Hari Ini) langsung di atas tabel Pesanan.
 - [ ] **Mode Libur & Jadwal Toko:** Menambahkan pengaturan "Tutup Toko / Mode Libur" di *Site Settings* yang akan memunculkan peringatan otomatis di *frontend* agar pembeli tahu kapan barang dikirim.
@@ -42,9 +42,9 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
 - [x] **Halaman Pendaftaran Reseller:** Membuat formulir *Livewire* untuk mendaftar sebagai Reseller.
-- [x] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*).
+- [ ] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*), lengkap dengan perhitungan otomatis Diskon Reseller jika pembeli adalah reseller aktif.
 - [x] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
-- [x] **Dashboard Reseller:** Membuat area khusus (*portal*) untuk Reseller memantau komisi, status diskon, dan histori pembelian (bisa via frontend atau panel Filament baru).
+- [ ] **Integrasi Dashboard Reseller:** Menggabungkan profil Reseller ke dalam *Dashboard Customer* standar. Menambahkan *Badge* (Lencana) Reseller dan tab Laporan Pembelian Khusus Reseller.
 - [x] **Global UI Binding:** Menghubungkan data *Site Settings* (Logo, Navbar, Footer, Nomor Kontak) ke komponen *Frontend* secara dinamis.
 - [x] **Refactoring Hardcode Pages:** Mengoptimalkan halaman Home, About, Lokasi & Kontak agar berpadu dengan data dinamis (Galeri sudah di-refactor menggunakan Builder).
 - [x] **Dynamic Page Rendering:** Membuat *routing* dan *views* untuk me-render *Halaman Statis* dan *Sales Page* di bawah satu Catch-all route (`/{slug}`).
