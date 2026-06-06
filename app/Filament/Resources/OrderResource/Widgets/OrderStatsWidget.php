@@ -14,7 +14,7 @@ class OrderStatsWidget extends BaseWidget
         $today = Carbon::today();
         
         $totalOrdersToday = Order::whereDate('created_at', $today)->count();
-        $revenueToday = Order::whereDate('created_at', $today)->where('payment_status', 'PAID')->sum('total_price');
+        $revenueToday = Order::whereDate('created_at', $today)->where('payment_status', 'PAID')->sum('grand_total');
         $pendingOrders = Order::where('status', 'PENDING')->count();
 
         return [
