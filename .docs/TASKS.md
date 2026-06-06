@@ -49,7 +49,11 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Logistik (RajaOngkir Starter):** Cek ongkir JNE/POS/TIKI menggunakan Dropdown Provinsi & Kota (Sesuai keputusan: versi gratis/manual tanpa map search). Lacak resi dilakukan direct via external.
 - [x] **Pembayaran (Xendit / Tripay):** Virtual Account, QRIS otomatis dengan Webhook integrasi ke status pesanan.
 
-## 🧊 Backlog / Opsional (Sprint 3 / Fase 2)
-- [ ] *Google Analytics / Looker Studio Embed:* Menambahkan halaman iframe Analytics di Filament Dashboard.
+## 🧊 Backlog / Ekstensi Bisnis (Sprint 3 / Fase 3)
+- [ ] **Google Analytics Embed:** Menambahkan halaman *iframe* Looker Studio di Filament untuk metrik kunjungan lengkap (Traffic Source, Pageviews) dengan 0% beban server.
+- [ ] **Kasir Sederhana (POS Manual):** Menyempurnakan form *Create Order* di Admin Panel agar kasir *offline* bisa menginput pesanan secara cepat dan otomatis menjumlahkan harga.
+- [ ] **Buku Kas (Cashflow):** Membuat tabel tunggal pencatatan *Cash In* (Otomatis dari pesanan lunas) dan *Cash Out* (Input manual biaya operasional).
+- [ ] **Quick Edit & Log Stok:** Membuat halaman khusus untuk mengetik/mengubah jumlah stok secara langsung (*editable column*) dilengkapi tabel *Log Keluar-Masuk* barang yang ringan.
+- [ ] **Dashboard Metrik Lanjutan:** Menambahkan kumpulan *Widget* statistik di *Homepage* Admin (Total Penjualan Hari Ini, Pesanan Masuk, Pengeluaran, Laba Bersih Harian) yang diolah secara *real-time* dari data pesanan & buku kas.
 - [ ] *Virtual Fitting Room* dengan avatar kustom.
 - [ ] *Script* Backup Database otomatis di VPS CloudPanel.
