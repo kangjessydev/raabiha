@@ -724,5 +724,37 @@ var wc_order_attribution = {"params":{"lifetime":1.00000000000000008180305391403
     @if($scriptsFooter)
         {!! $scriptsFooter !!}
     @endif
+    @php
+        $currentPlacement = 'all';
+        if (request()->is('/')) {
+            $currentPlacement = 'home';
+        } elseif (request()->is('shop*') || request()->is('product*') || request()->is('katalog*')) {
+            $currentPlacement = 'catalog';
+        }
+        
+        $promoBanner = \App\Models\PromoBanner::where('is_active', true)
+            ->whereIn('placement', ['all', $currentPlacement])
+            ->first();
+    @endphp
+
+    @if($promoBanner)
+        <div x-data="{ showPromo: false }" x-init="setTimeout(() => showPromo = true, 1500)" x-show="showPromo" class="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-6" style="display: none;">
+            <div x-show="showPromo" x-transition.opacity class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showPromo = false"></div>
+            
+            <div x-show="showPromo" x-transition.scale.origin.center.duration.300ms class="relative z-10 w-full max-w-md bg-[#fcf9f5] shadow-2xl rounded-sm overflow-hidden">
+                <button @click="showPromo = false" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white/80 backdrop-blur text-black rounded-full hover:bg-white transition-colors z-20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+                
+                @if($promoBanner->link)
+                <a href="{{ $promoBanner->link }}" class="block">
+                @endif
+                    <img src="{{ Storage::url($promoBanner->image) }}" alt="{{ $promoBanner->title }}" class="w-full h-auto object-cover max-h-[75vh]">
+                @if($promoBanner->link)
+                </a>
+                @endif
+            </div>
+        </div>
+    @endif
 </body>
 </html>

@@ -20,7 +20,17 @@ class PromoBannerForm
                     ->directory('banners')
                     ->required(),
                 TextInput::make('link')
+                    ->label('Link URL')
                     ->default(null),
+                \Filament\Forms\Components\Select::make('placement')
+                    ->label('Penempatan Banner')
+                    ->options([
+                        'all' => 'Semua Halaman',
+                        'home' => 'Halaman Utama (Home)',
+                        'catalog' => 'Halaman Katalog / Shop',
+                    ])
+                    ->default('all')
+                    ->required(),
                 TextInput::make('sort_order')
                     ->required()
                     ->numeric()

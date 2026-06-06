@@ -13,6 +13,7 @@ class PromoBanner extends Model
         'title',
         'image',
         'link',
+        'placement',
         'sort_order',
         'is_active',
     ];
@@ -21,4 +22,16 @@ class PromoBanner extends Model
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($banner) {
+            if ($banner->is_active) {
+                // Deactivate all other banners
+                static::where('id', '!=', $banner->id ?? 0)->update(['is_active' => false]);
+            }
+        });
+    }
 }

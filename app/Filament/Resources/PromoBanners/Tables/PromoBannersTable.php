@@ -19,6 +19,21 @@ class PromoBannersTable
                 TextColumn::make('title')
                     ->searchable(),
                 ImageColumn::make('image'),
+                TextColumn::make('placement')
+                    ->label('Penempatan')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'all' => 'success',
+                        'home' => 'warning',
+                        'catalog' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'all' => 'Semua Halaman',
+                        'home' => 'Halaman Utama',
+                        'catalog' => 'Halaman Katalog',
+                        default => $state,
+                    }),
                 TextColumn::make('link')
                     ->searchable(),
                 TextColumn::make('sort_order')
