@@ -56,6 +56,7 @@ class PromoBannerForm
                                                 'catalog' => 'Halaman Katalog / Shop',
                                             ])
                                             ->default('all')
+                                            ->native(false)
                                             ->required(),
                                         TextInput::make('sort_order')
                                             ->label('Urutan')
