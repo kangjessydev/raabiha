@@ -11,5 +11,5 @@ class DashboardCluster extends Cluster
     public static function getNavigationIcon(): ?string { return 'heroicon-o-home'; }
     protected static ?string $navigationLabel = 'Dasbor';
     protected static ?string $clusterBreadcrumb = 'Dasbor';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = -2;
 }

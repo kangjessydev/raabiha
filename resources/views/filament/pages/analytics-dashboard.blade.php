@@ -1,7 +1,7 @@
 <x-filament-panels::page>
-    <div class="fi-ta-content bg-white ring-1 ring-gray-950/5 rounded-xl shadow-sm overflow-hidden dark:bg-gray-900 dark:ring-white/10 w-full min-h-[700px] flex flex-col">
+    <x-filament::section>
         @if(empty($lookerStudioUrl))
-            <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+            <div class="flex flex-col items-center justify-center p-8 text-center min-h-[400px]">
                 <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                     <x-heroicon-o-chart-bar class="w-8 h-8 text-gray-500 dark:text-gray-400" />
                 </div>
@@ -14,7 +14,7 @@
                 </x-filament::button>
             </div>
         @else
-            <div class="flex-1 w-full h-full min-h-[700px] relative">
+            <div class="w-full min-h-[700px] relative rounded-lg overflow-hidden">
                 <iframe 
                     src="{{ $lookerStudioUrl }}" 
                     class="absolute inset-0 w-full h-full border-0" 
@@ -23,5 +23,5 @@
                 ></iframe>
             </div>
         @endif
-    </div>
+    </x-filament::section>
 </x-filament-panels::page>
