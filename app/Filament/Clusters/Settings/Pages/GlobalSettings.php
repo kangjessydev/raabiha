@@ -23,6 +23,8 @@ class GlobalSettings extends Page implements HasForms
     protected string $view = 'filament.clusters.settings.pages.global-settings';
 
     public ?array $data = [];
+    public bool $unlockedXendit = false;
+    public bool $unlockedRajaOngkir = false;
 
     public function mount(): void
     {
@@ -219,21 +221,66 @@ class GlobalSettings extends Page implements HasForms
                             ]),
                         \Filament\Schemas\Components\Tabs\Tab::make('Integrasi & API')
                             ->components([
-                                Forms\Components\Fieldset::make('API & Payment Gateway')
+                                \Filament\Schemas\Components\Section::make('API & Payment Gateway')
                                     ->schema([
                                         Forms\Components\TextInput::make('xendit_secret_key')
                                             ->label('Xendit Secret Key (Live / Test)')
                                             ->password()
                                             ->helperText('API Key dari dashboard Xendit untuk menerima pembayaran otomatis (dimulai dengan xnd_...).')
+                                            ->readOnly(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedXendit)
+                                            ->suffixAction(
+                                                \Filament\Actions\Action::make('unlock_xendit')
+                                                    ->icon('heroicon-m-lock-closed')
+                                                    ->color('danger')
+                                                    ->visible(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedXendit)
+                                                    ->requiresConfirmation()
+                                                    ->modalHeading('Otorisasi Keamanan Xendit')
+                                                    ->modalDescription('Masukkan password akun Anda untuk mengedit API Key ini.')
+                                                    ->form([
+                                                        Forms\Components\TextInput::make('password')
+                                                            ->label('Password Anda')
+                                                            ->password()
+                                                            ->required()
+                                                            ->currentPassword()
+                                                    ])
+                                                    ->action(function (\Livewire\Component $livewire) {
+                                                        $livewire->unlockedXendit = true;
+                                                    })
+                                            )
                                             ->columnSpanFull(),
                                         Forms\Components\TextInput::make('rajaongkir_api_key')
                                             ->label('API Key Ekspedisi (Komerce / RajaOngkir)')
                                             ->password()
                                             ->helperText('API Key untuk mengecek ongkos kirim otomatis.')
+                                            ->readOnly(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedRajaOngkir)
+                                            ->suffixAction(
+                                                \Filament\Actions\Action::make('unlock_rajaongkir')
+                                                    ->icon('heroicon-m-lock-closed')
+                                                    ->color('danger')
+                                                    ->visible(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedRajaOngkir)
+                                                    ->requiresConfirmation()
+                                                    ->modalHeading('Otorisasi Keamanan RajaOngkir')
+                                                    ->modalDescription('Masukkan password akun Anda untuk mengedit API Key ini.')
+                                                    ->form([
+                                                        Forms\Components\TextInput::make('password')
+                                                            ->label('Password Anda')
+                                                            ->password()
+                                                            ->required()
+                                                            ->currentPassword()
+                                                    ])
+                                                    ->action(function (\Livewire\Component $livewire) {
+                                                        $livewire->unlockedRajaOngkir = true;
+                                                    })
+                                            )
                                             ->columnSpanFull(),
                                     ]),
-                                Forms\Components\Fieldset::make('Tracking & Analytics')
+                                \Filament\Schemas\Components\Section::make('Tracking & Analytics')
                                     ->schema([
+                                        Forms\Components\TextInput::make('looker_studio_embed_url')
+                                            ->label('URL Embed Looker Studio')
+                                            ->placeholder('Contoh: https://lookerstudio.google.com/embed/reporting/...')
+                                            ->helperText('URL ini akan ditampilkan di menu Analitik Pengunjung.')
+                                            ->columnSpanFull(),
                                         Forms\Components\TextInput::make('google_analytics_id')
                                             ->label('ID Google Analytics (GA4)')
                                             ->placeholder('Contoh: G-XXXXXXXXXX'),
@@ -244,7 +291,7 @@ class GlobalSettings extends Page implements HasForms
                                             ->label('ID TikTok Pixel')
                                             ->placeholder('Contoh: C123456...'),
                                     ])->columns(3),
-                                Forms\Components\Fieldset::make('Custom Scripts')
+                                \Filament\Schemas\Components\Section::make('Custom Scripts')
                                     ->schema([
                                         Forms\Components\Textarea::make('scripts_header')
                                             ->label('Custom Scripts Lainnya (Header)')
