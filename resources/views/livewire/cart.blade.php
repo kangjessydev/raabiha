@@ -150,9 +150,15 @@
                                     <span class="text-[#1c1c1a] font-sans text-[14px]">Subtotal ({{ count($selectedItems) }} Produk)</span>
                                     <span>Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
                                 </div>
+                                @if(isset($resellerDiscount) && $resellerDiscount > 0)
+                                <div class="flex justify-between py-0 mt-3 text-[#064e3b]">
+                                    <span class="font-sans text-[14px]">Diskon Reseller</span>
+                                    <span>-Rp{{ number_format($resellerDiscount, 0, ',', '.') }}</span>
+                                </div>
+                                @endif
                                 @if($discountAmount > 0)
                                 <div class="flex justify-between py-0 mt-3 text-[#064e3b]">
-                                    <span class="font-sans text-[14px]">Diskon ({{ $appliedCoupon['code'] ?? '' }})</span>
+                                    <span class="font-sans text-[14px]">Diskon ({{ $appliedVoucher['code'] ?? '' }})</span>
                                     <span>-Rp{{ number_format($discountAmount, 0, ',', '.') }}</span>
                                 </div>
                                 @endif
@@ -163,13 +169,13 @@
                             <!-- Promo Code -->
                             <div class="mb-10 py-0">
                                 <label class="font-mono text-[9px] font-semibold tracking-[0.2em] text-[#615e57] uppercase mb-4 block">Kode Promo / Voucher</label>
-                                @if($appliedCoupon)
+                                @if($appliedVoucher)
                                 <div class="w-full border py-3 px-4 flex justify-between items-center text-left bg-[#f0ede9] border-[#064e3b]">
                                     <div class="flex flex-col">
-                                        <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold text-[#064e3b]">{{ $appliedCoupon['code'] }}</span>
+                                        <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold text-[#064e3b]">{{ $appliedVoucher['code'] }}</span>
                                         <span class="font-sans text-[11px] text-[#064e3b] mt-0.5">Voucher diterapkan</span>
                                     </div>
-                                    <button type="button" wire:click="removeCoupon" class="text-[#ba1a1a] hover:text-black focus:outline-none p-1">
+                                    <button type="button" wire:click="removeVoucher" class="text-[#ba1a1a] hover:text-black focus:outline-none p-1">
                                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
                                 </div>
@@ -222,13 +228,13 @@
             </div>
         @endif
         <!-- Voucher -->
-        @if($appliedCoupon)
+        @if($appliedVoucher)
         <div class="w-full px-5 py-3.5 border-b border-[#e5e2de] flex justify-between items-center bg-[#f0ede9]">
             <div class="flex flex-col">
-                <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold text-[#064e3b]">{{ $appliedCoupon['code'] }}</span>
+                <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold text-[#064e3b]">{{ $appliedVoucher['code'] }}</span>
                 <span class="font-sans text-[10px] text-[#064e3b] mt-0.5">Berhasil diterapkan</span>
             </div>
-            <button type="button" wire:click="removeCoupon" class="text-[#ba1a1a] p-2 hover:bg-red-50 rounded-full focus:outline-none">
+            <button type="button" wire:click="removeVoucher" class="text-[#ba1a1a] p-2 hover:bg-red-50 rounded-full focus:outline-none">
                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
@@ -285,39 +291,39 @@
             
             <!-- Body -->
             <div class="p-5 overflow-y-auto">
-                @if (session()->has('coupon_error'))
+                @if (session()->has('voucher_error'))
                     <div class="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-sm mb-4 text-xs font-sans">
-                        {{ session('coupon_error') }}
+                        {{ session('voucher_error') }}
                     </div>
                 @endif
                 <div class="flex gap-2 mb-6">
-                    <input type="text" wire:model="couponCode" placeholder="Masukkan Kode Voucher" class="flex-1 bg-transparent border border-[#e5e2de] px-4 h-12 font-mono text-[11px] uppercase focus:outline-none focus:border-[#064e3b]">
-                    <button type="button" wire:click="applyCoupon" class="bg-[#1c1c1a] text-white px-4 font-mono text-[10px] font-bold tracking-widest uppercase hover:bg-black transition-colors">
-                        <span wire:loading.remove wire:target="applyCoupon">TERAPKAN</span>
-                        <span wire:loading wire:target="applyCoupon">...</span>
+                    <input type="text" wire:model="voucherCode" placeholder="Masukkan Kode Voucher" class="flex-1 bg-transparent border border-[#e5e2de] px-4 h-12 font-mono text-[11px] uppercase focus:outline-none focus:border-[#064e3b]">
+                    <button type="button" wire:click="applyVoucher" class="bg-[#1c1c1a] text-white px-4 font-mono text-[10px] font-bold tracking-widest uppercase hover:bg-black transition-colors">
+                        <span wire:loading.remove wire:target="applyVoucher">TERAPKAN</span>
+                        <span wire:loading wire:target="applyVoucher">...</span>
                     </button>
                 </div>
                 
-                @if($availableCoupons && $availableCoupons->count() > 0)
+                @if($availableVouchers && $availableVouchers->count() > 0)
                     <div class="flex flex-col gap-4 pb-12">
                         <div class="font-sans text-xs font-semibold text-[#1c1c1a] mb-2">Voucher Tersedia:</div>
-                        @foreach($availableCoupons as $coupon)
-                            <div wire:click="selectCoupon('{{ $coupon->code }}')" class="cursor-pointer border border-[#e5e2de] p-4 flex flex-col gap-2 transition-colors hover:border-[#064e3b] {{ $appliedCoupon && $appliedCoupon['code'] === $coupon->code ? 'border-[#064e3b] bg-[#f0ede9]' : 'bg-white' }}">
+                        @foreach($availableVouchers as $voucher)
+                            <div wire:click="selectVoucher('{{ $voucher->code }}')" class="cursor-pointer border border-[#e5e2de] p-4 flex flex-col gap-2 transition-colors hover:border-[#064e3b] {{ $appliedVoucher && $appliedVoucher['code'] === $voucher->code ? 'border-[#064e3b] bg-[#f0ede9]' : 'bg-white' }}">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <div class="font-mono text-[12px] font-bold tracking-widest uppercase text-[#064e3b] mb-1">{{ $coupon->code }}</div>
+                                        <div class="font-mono text-[12px] font-bold tracking-widest uppercase text-[#064e3b] mb-1">{{ $voucher->code }}</div>
                                         <div class="font-sans text-[13px] font-semibold text-[#1c1c1a]">
-                                            Diskon {{ $coupon->discount_type === 'percentage' ? rtrim(rtrim(number_format($coupon->discount_value, 2, ',', '.'), '0'), ',') . '%' : 'Rp' . number_format($coupon->discount_value, 0, ',', '.') }}
+                                            Diskon {{ $voucher->discount_type === 'percent' ? rtrim(rtrim(number_format($voucher->discount_amount, 2, ',', '.'), '0'), ',') . '%' : 'Rp' . number_format($voucher->discount_amount, 0, ',', '.') }}
                                         </div>
                                     </div>
-                                    @if($appliedCoupon && $appliedCoupon['code'] === $coupon->code)
+                                    @if($appliedVoucher && $appliedVoucher['code'] === $voucher->code)
                                         <span class="bg-[#064e3b] text-white text-[9px] font-mono uppercase tracking-widest px-2 py-1">TERPAKAI</span>
                                     @endif
                                 </div>
                                 <div class="font-sans text-[11px] text-[#615e57] mt-1">
-                                    Min. belanja Rp{{ number_format($coupon->min_spend, 0, ',', '.') }}
-                                    @if($coupon->max_discount > 0)
-                                        | Maks. diskon Rp{{ number_format($coupon->max_discount, 0, ',', '.') }}
+                                    Min. belanja Rp{{ number_format($voucher->min_purchase, 0, ',', '.') }}
+                                    @if($voucher->max_discount > 0)
+                                        | Maks. diskon Rp{{ number_format($voucher->max_discount, 0, ',', '.') }}
                                     @endif
                                 </div>
                             </div>

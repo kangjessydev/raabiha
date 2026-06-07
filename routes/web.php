@@ -11,9 +11,7 @@ Route::get('/about', function () {
     return view('about');
 });
 
-Route::get('/contact', function () {
-    return view('contact');
-});
+Route::get('/contact', \App\Livewire\ContactPage::class);
 
 Route::get('/shop', \App\Livewire\Shop::class);
 
@@ -55,6 +53,7 @@ Route::get('/register', function () {
 })->name('register');
 
 Route::get('/reseller-register', \App\Livewire\ResellerRegister::class);
+Route::get('/reseller-welcome', \App\Livewire\ResellerWelcome::class);
 Route::get('/reseller-dashboard', \App\Livewire\ResellerDashboard::class);
 
 Route::get('/promo', function () {

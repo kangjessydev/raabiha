@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\Coupons\Pages;
+namespace App\Filament\Resources\Inquiries\Pages;
 
-use App\Filament\Resources\Coupons\CouponResource;
+use App\Filament\Resources\Inquiries\InquiryResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
-class ListCoupons extends ListRecords
+class ListInquiries extends ListRecords
 {
-    protected static string $resource = CouponResource::class;
+    protected static string $resource = InquiryResource::class;
 
     protected function getHeaderActions(): array
     {

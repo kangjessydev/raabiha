@@ -34,7 +34,7 @@ class ResellerRegister extends Component
 
         Auth::login($user);
 
-        return redirect()->to('/account');
+        return redirect()->to('/reseller-welcome');
     }
 
     public function render()

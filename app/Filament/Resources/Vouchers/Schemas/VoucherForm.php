@@ -22,42 +22,68 @@ class VoucherForm
                             ->schema([
                                 Section::make('Informasi Dasar')
                                     ->schema([
+                                        TextInput::make('name')
+                                            ->label('Nama Voucher')
+                                            ->required()
+                                            ->maxLength(255),
                                         TextInput::make('code')
                                             ->label('Kode Voucher')
                                             ->required()
-                                            ->unique(ignoreRecord: true)
-                                            ->columnSpanFull(),
-                                        \Filament\Forms\Components\Select::make('discount_type')
+                                            ->unique(ignoreRecord: true),
+                                        \Filament\Forms\Components\Radio::make('discount_type')
                                             ->label('Tipe Diskon')
                                             ->options([
                                                 'fixed' => 'Nominal (Rp)',
                                                 'percent' => 'Persentase (%)',
                                             ])
                                             ->default('fixed')
-                                            ->native(false)
+                                            ->inline()
                                             ->live()
                                             ->required(),
                                         TextInput::make('discount_amount')
                                             ->label('Jumlah Diskon')
                                             ->required()
                                             ->numeric()
-                                            ->prefix(fn (\Filament\Forms\Get $get) => $get('discount_type') === 'percent' ? null : 'Rp')
-                                            ->suffix(fn (\Filament\Forms\Get $get) => $get('discount_type') === 'percent' ? '%' : null),
+                                            ->prefix(fn ($get) => $get('discount_type') === 'percent' ? null : 'Rp')
+                                            ->suffix(fn ($get) => $get('discount_type') === 'percent' ? '%' : null),
+                                        Toggle::make('is_shipping_voucher')
+                                            ->label('Ini adalah Voucher Potongan Ongkir')
+                                            ->helperText('Jika aktif, diskon akan memotong biaya pengiriman, bukan total produk. Bisa digabung dengan diskon produk.')
+                                            ->columnSpanFull(),
                                         TextInput::make('min_purchase')
                                             ->label('Minimal Belanja')
                                             ->numeric()
                                             ->default(0)
                                             ->prefix('Rp'),
+                                        TextInput::make('min_items')
+                                            ->label('Minimal Jumlah Item')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->helperText('Minimal qty barang di keranjang'),
                                         TextInput::make('max_discount')
                                             ->label('Maksimal Diskon')
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->helperText('Hanya berlaku untuk tipe persentase')
-                                            ->visible(fn (\Filament\Forms\Get $get) => $get('discount_type') === 'percent'),
-                                        \Filament\Forms\Components\TagsInput::make('specific_users')
+                                            ->visible(fn ($get) => $get('discount_type') === 'percent'),
+                                        \Filament\Forms\Components\Select::make('specific_users')
                                             ->label('Spesifik Pengguna (Email)')
-                                            ->placeholder('Masukkan email pengguna, tekan enter')
+                                            ->multiple()
+                                            ->searchable()
+                                            ->getSearchResultsUsing(fn (string $search): array => \App\Models\User::where('email', 'like', "%{$search}%")->limit(50)->pluck('email', 'email')->toArray())
+                                            ->getOptionLabelsUsing(fn (array $values): array => \App\Models\User::whereIn('email', $values)->pluck('email', 'email')->toArray())
+                                            ->placeholder('Cari email pengguna...')
                                             ->helperText('Kosongkan jika voucher berlaku untuk semua orang')
+                                            ->columnSpanFull(),
+                                        Toggle::make('exclude_resellers')
+                                            ->label('Larang Reseller Menggunakan Voucher Ini')
+                                            ->default(true)
+                                            ->helperText('Direkomendasikan Aktif: karena reseller sudah mendapat potongan harga grosir otomatis.')
+                                            ->columnSpanFull(),
+                                        Toggle::make('is_stackable')
+                                            ->label('Izinkan Gabung (Stackable) dengan Voucher Lain')
+                                            ->default(false)
+                                            ->helperText('Jika aktif, voucher ini bisa digunakan bersamaan dengan voucher lain yang juga aktif stackable-nya.')
                                             ->columnSpanFull(),
                                         \Filament\Forms\Components\Select::make('free_gift_product_id')
                                             ->label('Produk Hadiah Gratis')

@@ -44,8 +44,8 @@ class Checkout extends Component
     public $shipping_method = 'jne_reg';
     
     // Coupon state
-    public $couponCode = '';
-    public $appliedCoupon = null;
+    public $voucherCode = '';
+    public $appliedVoucher = null;
     public $discountAmount = 0;
     
     public function mount()
@@ -55,7 +55,7 @@ class Checkout extends Component
             $this->payment_method = $firstMethod->code;
         }
         
-        $this->appliedCoupon = session('applied_coupon', null);
+        $this->appliedVoucher = session('applied_voucher', null);
         
         // Fetch provinces on load
         $this->fetchProvinces();
@@ -245,86 +245,127 @@ class Checkout extends Component
         
         $total = 0;
         foreach ($items as $item) {
-            $price = $item->variant && $item->variant->price !== null 
-                ? $item->variant->price 
-                : $item->product->price;
+            $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
                 
             $total += $price * $item->quantity;
         }
         return $total;
     }
-    
+    public function getResellerDiscountProperty()
+    {
+        if (auth()->check() && auth()->user()->hasRole('reseller') && auth()->user()->reseller_status === 'active') {
+            $discountPercent = \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 0;
+            return $this->subtotal * ($discountPercent / 100);
+        }
+        return 0;
+    }
+
     public function getTotalProperty()
     {
         $this->calculateDiscount();
-        return max(0, $this->subtotal - $this->discountAmount) + $this->shipping_cost;
+        $baseForTotal = max(0, $this->subtotal - $this->reseller_discount);
+        return max(0, $baseForTotal - $this->discountAmount) + $this->shipping_cost;
     }
     
     public function calculateDiscount()
     {
         $this->discountAmount = 0;
-        if ($this->appliedCoupon) {
-            if ($this->appliedCoupon['min_spend'] > 0 && $this->subtotal < $this->appliedCoupon['min_spend']) {
-                $this->removeCoupon();
-                session()->flash('coupon_error', 'Total belanja tidak memenuhi syarat minimum voucher.');
+        $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
+
+        if ($this->appliedVoucher) {
+            if ($this->appliedVoucher['min_purchase'] > 0 && $baseTotalForVoucher < $this->appliedVoucher['min_purchase']) {
+                $this->removeVoucher();
+                session()->flash('voucher_error', 'Total belanja tidak memenuhi syarat minimum voucher.');
             } else {
-                if ($this->appliedCoupon['discount_type'] === 'fixed') {
-                    $this->discountAmount = $this->appliedCoupon['discount_value'];
+                if ($this->appliedVoucher['is_shipping_voucher']) {
+                    // Logika jika voucher ongkir: max diskon sebesar biaya pengiriman
+                    $discountValue = $this->appliedVoucher['discount_type'] === 'fixed' 
+                        ? $this->appliedVoucher['discount_amount'] 
+                        : $this->shipping_cost * ($this->appliedVoucher['discount_amount'] / 100);
+                    
+                    if ($this->appliedVoucher['max_discount'] > 0 && $discountValue > $this->appliedVoucher['max_discount']) {
+                        $discountValue = $this->appliedVoucher['max_discount'];
+                    }
+                    
+                    // Maksimal potongan adalah seharga ongkir itu sendiri
+                    $this->discountAmount = min($discountValue, $this->shipping_cost);
                 } else {
-                    $this->discountAmount = $this->subtotal * ($this->appliedCoupon['discount_value'] / 100);
-                    if ($this->appliedCoupon['max_discount'] > 0 && $this->discountAmount > $this->appliedCoupon['max_discount']) {
-                        $this->discountAmount = $this->appliedCoupon['max_discount'];
+                    if ($this->appliedVoucher['discount_type'] === 'fixed') {
+                        $this->discountAmount = $this->appliedVoucher['discount_amount'];
+                    } else {
+                        $this->discountAmount = $baseTotalForVoucher * ($this->appliedVoucher['discount_amount'] / 100);
+                        if ($this->appliedVoucher['max_discount'] > 0 && $this->discountAmount > $this->appliedVoucher['max_discount']) {
+                            $this->discountAmount = $this->appliedVoucher['max_discount'];
+                        }
                     }
                 }
             }
         }
     }
     
-    public function removeCoupon()
+    public function removeVoucher()
     {
-        $this->appliedCoupon = null;
+        $this->appliedVoucher = null;
         $this->discountAmount = 0;
-        session()->forget('applied_coupon');
+        session()->forget('applied_voucher');
     }
     
-    public function applyCoupon()
+    public function applyVoucher()
     {
-        if (empty($this->couponCode)) {
-            session()->flash('coupon_error', 'Masukkan kode voucher terlebih dahulu.');
+        if (empty($this->voucherCode)) {
+            session()->flash('voucher_error', 'Masukkan kode voucher terlebih dahulu.');
             return;
         }
 
-        $coupon = \App\Models\Coupon::where('code', $this->couponCode)
+        $voucher = \App\Models\Voucher::where('code', $this->voucherCode)
             ->where('is_active', true)
             ->where(function($query) {
-                $query->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
             ->where(function($query) {
-                $query->whereNull('valid_from')->orWhere('valid_from', '<=', now());
+                $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->first();
 
-        if (!$coupon) {
-            session()->flash('coupon_error', 'Kode voucher tidak valid atau sudah kadaluarsa.');
+        if (!$voucher) {
+            session()->flash('voucher_error', 'Kode voucher tidak valid atau sudah kadaluarsa.');
             return;
         }
 
-        if ($coupon->usage_limit > 0 && $coupon->used_count >= $coupon->usage_limit) {
-            session()->flash('coupon_error', 'Kode voucher sudah melewati batas penggunaan.');
+        if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
+            session()->flash('voucher_error', 'Kode voucher sudah melewati batas penggunaan.');
             return;
         }
 
-        $this->appliedCoupon = $coupon->toArray();
-        session(['applied_coupon' => $this->appliedCoupon]);
-        $this->couponCode = '';
+        $cartQuantity = $this->checkoutItems->sum('quantity');
+        if ($voucher->min_items > 0 && $cartQuantity < $voucher->min_items) {
+            session()->flash('voucher_error', 'Minimal jumlah belanja tidak terpenuhi (' . $voucher->min_items . ' item).');
+            return;
+        }
+        
+        if ($voucher->exclude_resellers && auth()->check() && auth()->user()->hasRole('reseller')) {
+            session()->flash('voucher_error', 'Maaf, voucher ini tidak berlaku untuk mitra Reseller.');
+            return;
+        }
+
+        if (!empty($voucher->specific_users) && auth()->check()) {
+            if (!in_array(auth()->user()->email, $voucher->specific_users)) {
+                session()->flash('voucher_error', 'Voucher ini tidak berlaku untuk akun Anda.');
+                return;
+            }
+        }
+
+        $this->appliedVoucher = $voucher->toArray();
+        session(['applied_voucher' => $this->appliedVoucher]);
+        $this->voucherCode = '';
         
         $this->dispatch('close-voucher-sheet');
     }
 
-    public function selectCoupon($code)
+    public function selectVoucher($code)
     {
-        $this->couponCode = $code;
-        $this->applyCoupon();
+        $this->voucherCode = $code;
+        $this->applyVoucher();
     }
 
     public function processCheckout()
@@ -378,24 +419,22 @@ class Checkout extends Component
                 'shipping_cost' => $this->shipping_cost,
                 'payment_method' => $this->payment_method,
                 'subtotal' => $this->subtotal,
-                'discount' => $this->discountAmount,
+                'discount_total' => $this->discountAmount + $this->reseller_discount,
                 'grand_total' => $this->total,
                 'notes' => $this->notes,
             ]);
             
-            // Mark coupon as used if applied
-            if ($this->appliedCoupon) {
-                $couponModel = \App\Models\Coupon::where('code', $this->appliedCoupon['code'])->first();
-                if ($couponModel) {
-                    $couponModel->increment('used_count');
+            // Mark voucher as used if applied
+            if ($this->appliedVoucher) {
+                $voucherModel = \App\Models\Voucher::where('code', $this->appliedVoucher['code'])->first();
+                if ($voucherModel) {
+                    $voucherModel->increment('used_count');
                 }
-                session()->forget('applied_coupon');
+                session()->forget('applied_voucher');
             }
 
             foreach ($items as $item) {
-                $price = $item->variant && $item->variant->price !== null 
-                    ? $item->variant->price 
-                    : $item->product->price;
+                $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
 
                 $attributes = [];
                 if ($item->variant) {
@@ -460,9 +499,7 @@ class Checkout extends Component
                 // Format order items for Tripay
                 $orderItems = [];
                 foreach ($cart->items as $item) {
-                    $price = $item->variant && $item->variant->price !== null 
-                        ? $item->variant->price 
-                        : $item->product->price;
+                    $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
                         
                     $orderItems[] = [
                         'sku' => $item->variant ? ($item->variant->sku ?? 'SKU-'.$item->id) : ($item->product->sku ?? 'SKU-'.$item->id),
@@ -546,18 +583,18 @@ class Checkout extends Component
         $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)->get();
         $this->calculateDiscount(); // Ensure discount is calculated before render
         
-        $availableCoupons = \App\Models\Coupon::where('is_active', true)
+        $availableVouchers = \App\Models\Voucher::where('is_active', true)
             ->where(function($query) {
-                $query->whereNull('valid_until')->orWhere('valid_until', '>=', now());
+                $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
             ->where(function($query) {
-                $query->whereNull('valid_from')->orWhere('valid_from', '<=', now());
+                $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->get();
         
         return view('livewire.checkout', [
             'paymentMethods' => $paymentMethods,
-            'availableCoupons' => $availableCoupons
+            'availableVouchers' => $availableVouchers
         ])->title('Checkout');
     }
 

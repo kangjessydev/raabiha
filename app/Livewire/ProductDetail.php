@@ -21,6 +21,12 @@ class ProductDetail extends Component
     public $galleryUrls = [];
     public $bsOpen = false;
     public $bsMode = 'cart';
+    
+    // Review Properties
+    public $reviewRating = 0;
+    public $reviewName = '';
+    public $reviewComment = '';
+    public $showReviewForm = false;
 
     #[Computed]
     public function sizes()
@@ -70,6 +76,43 @@ class ProductDetail extends Component
         return $price * $this->quantity;
     }
 
+    #[Computed]
+    public function canReview()
+    {
+        if (!auth()->check()) return false;
+        
+        return \App\Models\Order::where('user_id', auth()->id())
+            ->where('status', 'completed')
+            ->whereHas('items', function($q) {
+                $q->where('product_id', $this->product->id);
+            })->exists();
+    }
+
+    #[Computed]
+    public function hasReviewed()
+    {
+        if (!auth()->check()) return false;
+        return \App\Models\ProductReview::where('user_id', auth()->id())
+            ->where('product_id', $this->product->id)
+            ->exists();
+    }
+
+    #[Computed]
+    public function reviews()
+    {
+        if (!isset($this->product)) return collect();
+        return \App\Models\ProductReview::where('product_id', $this->product->id)
+            ->where('is_approved', true)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    #[Computed]
+    public function averageRating()
+    {
+        return $this->reviews->avg('rating') ?? 0;
+    }
+
     public function mount($slug)
     {
         $this->slug = $slug;
@@ -94,6 +137,10 @@ class ProductDetail extends Component
                     $this->galleryUrls[] = asset('storage/' . $path);
                 }
             }
+        }
+        
+        if (auth()->check()) {
+            $this->reviewName = auth()->user()->name;
         }
     }
 
@@ -179,6 +226,7 @@ class ProductDetail extends Component
         }
 
         $this->dispatch('cart-updated');
+        session()->flash('success', 'Produk berhasil ditambahkan ke keranjang.');
         $this->bsOpen = false;
         
         // Let's also dispatch an event to trigger the flying animation
@@ -198,6 +246,43 @@ class ProductDetail extends Component
         
         // Mark as buy_now or just redirect to checkout since we just added it to the cart
         return redirect()->to('/checkout');
+    }
+
+    public function submitReview()
+    {
+        if (!auth()->check()) {
+            session()->flash('review_error', 'Anda harus login untuk memberikan ulasan.');
+            return;
+        }
+
+        if (!$this->canReview) {
+            session()->flash('review_error', 'Anda hanya dapat memberikan ulasan untuk produk yang telah Anda beli dan pesanan selesai.');
+            return;
+        }
+
+        if ($this->hasReviewed) {
+            session()->flash('review_error', 'Anda sudah memberikan ulasan untuk produk ini.');
+            return;
+        }
+
+        $this->validate([
+            'reviewRating' => 'required|integer|min:1|max:5',
+            'reviewName' => 'required|string|max:255',
+            'reviewComment' => 'required|string|min:10',
+        ]);
+
+        \App\Models\ProductReview::create([
+            'product_id' => $this->product->id,
+            'user_id' => auth()->id(),
+            'customer_name' => $this->reviewName,
+            'customer_email' => auth()->user()->email,
+            'rating' => $this->reviewRating,
+            'comment' => $this->reviewComment,
+            'is_approved' => false,
+        ]);
+
+        $this->reset(['reviewRating', 'reviewComment', 'showReviewForm']);
+        session()->flash('review_success', 'Terima kasih! Ulasan Anda telah dikirim dan sedang menunggu persetujuan.');
     }
 
     public function render()

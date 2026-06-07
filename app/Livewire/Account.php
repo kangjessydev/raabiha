@@ -214,6 +214,21 @@ class Account extends Component
             ->get();
     }
 
+    public function getResellerStatsProperty()
+    {
+        if (!Auth::user()->hasRole('reseller')) return [];
+        $orders = Order::where('user_id', Auth::id())->whereIn('status', ['paid', 'packed', 'sent', 'completed'])->get();
+        
+        $discountPercent = \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 0;
+        
+        // As a simple stat, let's show total purchases and total "hemat" (savings)
+        return [
+            'total_spent' => $orders->sum('grand_total'),
+            'total_savings' => $orders->sum('discount_total'), // Or calculated based on logic
+            'discount_percent' => $discountPercent
+        ];
+    }
+
     public function getVouchersProperty()
     {
         // Simple logic to get global valid vouchers for now

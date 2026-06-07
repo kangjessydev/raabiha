@@ -230,7 +230,7 @@
                     <!-- 02. Reviews & Ratings -->
                     <div class="group py-6 product-accordion" x-data="{ open: false }">
                         <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
-                            02. REVIEWS & RATINGS (4.9 ★)
+                            02. REVIEWS & RATINGS ({{ number_format($this->averageRating, 1) }} ★)
                             <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-collapse style="display: none;" class="mt-6 text-[#1c1c1a] font-sans accordion-content">
@@ -239,14 +239,12 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 pb-8 border-b border-[#e5e2de]">
                                 <!-- Overall Rating -->
                                 <div class="flex flex-col items-center justify-center text-center p-6 bg-[#fcf9f5] border border-[#e5e2de]">
-                                    <span class="text-5xl font-serif text-[#1c1c1a] mb-2">4.9</span>
+                                    <span class="text-5xl font-serif text-[#1c1c1a] mb-2">{{ number_format($this->averageRating, 1) }}</span>
                                     <div class="flex gap-1 text-[#064e3b] mb-1">
                                         <!-- 5 Stars -->
-                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <svg class="w-4 h-4 {{ $i <= round($this->averageRating) ? 'fill-current' : 'text-[#d1cec9] fill-current' }}" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                        @endfor
                                     </div>
                                     <span class="text-[10px] font-mono tracking-widest text-[#615e57] uppercase">Berdasarkan 18 Ulasan</span>
                                 </div>
@@ -308,96 +306,80 @@
 
                             <!-- List of Reviews -->
                             <div class="space-y-6">
-                                <!-- Review Item 1 -->
-                                <div class="border-b border-[#e5e2de] pb-6 last:border-b-0">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full bg-[#e5e2de] flex items-center justify-center text-[#1c1c1a] font-mono font-bold text-xs uppercase">
-                                                SH
+                                @forelse($this->reviews as $review)
+                                    <div class="border-b border-[#e5e2de] pb-6 last:border-b-0">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full bg-[#e5e2de] flex items-center justify-center text-[#1c1c1a] font-mono font-bold text-xs uppercase">
+                                                    {{ substr($review->customer_name, 0, 2) }}
+                                                </div>
+                                                <div>
+                                                    <h4 class="text-xs font-semibold text-[#1c1c1a]">{{ $review->customer_name }}</h4>
+                                                    <p class="text-[9px] text-[#615e57] font-mono">{{ $review->created_at->format('d M Y') }}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h4 class="text-xs font-semibold text-[#1c1c1a]">Siti Humaira</h4>
-                                                <p class="text-[9px] text-[#615e57] font-mono">28 Mei 2026</p>
+                                            <div class="flex gap-0.5">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <svg class="w-3 h-3 {{ $i <= $review->rating ? 'text-[#064e3b] fill-current' : 'text-[#d1cec9] fill-current' }}" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                                @endfor
                                             </div>
                                         </div>
-                                        <div class="flex text-[#064e3b] gap-0.5">
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </div>
+                                        <p class="text-xs text-[#525252] leading-relaxed pl-11">
+                                            {{ $review->comment }}
+                                        </p>
                                     </div>
-                                    <p class="text-xs text-[#525252] leading-relaxed pl-11">
-                                        Bahannya luar biasa premium, sangat adem dan jahitannya super rapi. Potongannya asimetris dan pas sekali dipakai untuk acara formal maupun santai. Sangat *recommended*!
-                                    </p>
-                                </div>
-
-                                <!-- Review Item 2 -->
-                                <div class="border-b border-[#e5e2de] pb-6 last:border-b-0">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-8 h-8 rounded-full bg-[#e5e2de] flex items-center justify-center text-[#1c1c1a] font-mono font-bold text-xs uppercase">
-                                                RA
-                                            </div>
-                                            <div>
-                                                <h4 class="text-xs font-semibold text-[#1c1c1a]">Rina Amalia</h4>
-                                                <p class="text-[9px] text-[#615e57] font-mono">15 Mei 2026</p>
-                                            </div>
-                                        </div>
-                                        <div class="flex text-[#064e3b] gap-0.5">
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </div>
-                                    </div>
-                                    <p class="text-xs text-[#525252] leading-relaxed pl-11">
-                                        Desainnya sangat elegan dan modern. Meskipun longgar (*modest*), siluetnya tetap terlihat rapi dan berkelas. Sangat puas dengan kualitasnya.
-                                    </p>
-                                </div>
+                                @empty
+                                    <p class="text-xs text-[#525252] font-mono">Belum ada ulasan untuk produk ini.</p>
+                                @endforelse
                             </div>
 
                             <!-- Write a Review Form -->
                             <div class="mt-8 pt-8 border-t border-[#e5e2de]">
-                                <button type="button" id="toggle-review-btn" class="border border-[#1c1c1a] px-6 py-3 text-[10px] font-mono font-bold uppercase tracking-[0.2em] hover:bg-[#f2efe8] text-[#1c1c1a] transition-colors focus:outline-none">
-                                    TULIS ULASAN
-                                </button>
                                 
-                                <form id="write-review-form" class="hidden mt-10 space-y-10 max-w-lg">
-                                    <div class="flex flex-col">
-                                        <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold block">RATING ANDA</label>
-                                        <div class="flex gap-2 text-[#d1cec9]" id="rating-stars-input">
-                                            <button type="button" data-rating="1" class="focus:outline-none transition-transform hover:scale-110 text-[#d1cec9] flex items-center justify-center">
-                                                <svg class="w-6 h-6 fill-current pointer-events-none" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            </button>
-                                            <button type="button" data-rating="2" class="focus:outline-none transition-transform hover:scale-110 text-[#d1cec9] flex items-center justify-center">
-                                                <svg class="w-6 h-6 fill-current pointer-events-none" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            </button>
-                                            <button type="button" data-rating="3" class="focus:outline-none transition-transform hover:scale-110 text-[#d1cec9] flex items-center justify-center">
-                                                <svg class="w-6 h-6 fill-current pointer-events-none" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            </button>
-                                            <button type="button" data-rating="4" class="focus:outline-none transition-transform hover:scale-110 text-[#d1cec9] flex items-center justify-center">
-                                                <svg class="w-6 h-6 fill-current pointer-events-none" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            </button>
-                                            <button type="button" data-rating="5" class="focus:outline-none transition-transform hover:scale-110 text-[#d1cec9] flex items-center justify-center">
-                                                <svg class="w-6 h-6 fill-current pointer-events-none" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                            </button>
-                                        </div>
+                                @if (session()->has('review_success'))
+                                    <div class="bg-[#064e3b]/10 border border-[#064e3b]/20 text-[#064e3b] px-4 py-3 text-[11px] font-mono tracking-widest mb-4">
+                                        {{ session('review_success') }}
                                     </div>
-                                    <div class="flex flex-col">
-                                        <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold block">NAMA LENGKAP</label>
-                                        <input type="text" placeholder="ENTER YOUR NAME" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none font-mono uppercase text-xs" required>
+                                @elseif (session()->has('review_error'))
+                                    <div class="bg-red-900/10 border border-red-900/20 text-red-900 px-4 py-3 text-[11px] font-mono tracking-widest mb-4">
+                                        {{ session('review_error') }}
                                     </div>
-                                    <div class="flex flex-col">
-                                        <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold block">KOMENTAR / ULASAN</label>
-                                        <textarea rows="4" placeholder="WRITE YOUR REVIEW" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors resize-none rounded-none font-mono uppercase text-xs" required></textarea>
-                                    </div>
-                                    <button type="submit" class="w-full bg-[#064e3b] text-white text-[11px] font-mono uppercase tracking-[0.2em] py-5 hover:bg-[#1c1c1a] transition-colors mt-4">
-                                        KIRIM ULASAN
+                                @endif
+
+                                @if($this->canReview && !$this->hasReviewed)
+                                    <button type="button" wire:click="$toggle('showReviewForm')" class="border border-[#1c1c1a] px-6 py-3 text-[10px] font-mono font-bold uppercase tracking-[0.2em] hover:bg-[#f2efe8] text-[#1c1c1a] transition-colors focus:outline-none">
+                                        {{ $showReviewForm ? 'BATALKAN' : 'TULIS ULASAN' }}
                                     </button>
-                                </form>
+                                    
+                                    @if($showReviewForm)
+                                        <form wire:submit="submitReview" class="mt-10 space-y-10 max-w-lg">
+                                            <div class="flex flex-col">
+                                                <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold block">RATING ANDA</label>
+                                                <div class="flex gap-2">
+                                                    @for($i = 1; $i <= 5; $i++)
+                                                        <button type="button" wire:click="$set('reviewRating', {{ $i }})" class="focus:outline-none transition-transform hover:scale-110 {{ $reviewRating >= $i ? 'text-[#064e3b]' : 'text-[#d1cec9]' }} flex items-center justify-center">
+                                                            <svg class="w-6 h-6 fill-current pointer-events-none" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                                        </button>
+                                                    @endfor
+                                                </div>
+                                                @error('reviewRating') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold block">NAMA LENGKAP</label>
+                                                <input type="text" wire:model="reviewName" placeholder="ENTER YOUR NAME" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none font-mono uppercase text-xs" required>
+                                                @error('reviewName') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold block">KOMENTAR / ULASAN</label>
+                                                <textarea rows="4" wire:model="reviewComment" placeholder="WRITE YOUR REVIEW" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors resize-none rounded-none font-mono uppercase text-xs" required></textarea>
+                                                @error('reviewComment') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                                            </div>
+                                            <button type="submit" class="w-full bg-[#064e3b] text-white text-[11px] font-mono uppercase tracking-[0.2em] py-5 hover:bg-[#1c1c1a] transition-colors mt-4">
+                                                KIRIM ULASAN
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -414,7 +396,7 @@
                             <div class="mb-6">
                                 <h4 class="text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Aturan Harga Grosir</h4>
                                 <div class="text-[14px] leading-relaxed font-sans p-4 bg-[#fcf9f5] border border-[#e5e2de] rounded-sm text-[#615e57]">
-                                    {!! nl2br(e($product->wholesale_pricing)) !!}
+                                    {!! nl2br(e(is_array($product->wholesale_pricing) ? json_encode($product->wholesale_pricing) : $product->wholesale_pricing)) !!}
                                 </div>
                             </div>
                             @endif
@@ -423,7 +405,7 @@
                             <div>
                                 <h4 class="text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Aturan Promo</h4>
                                 <div class="text-[14px] leading-relaxed font-sans p-4 bg-[#fcf9f5] border border-[#e5e2de] rounded-sm text-[#615e57]">
-                                    {!! nl2br(e($product->promo_rules)) !!}
+                                    {!! nl2br(e(is_array($product->promo_rules) ? json_encode($product->promo_rules) : $product->promo_rules)) !!}
                                 </div>
                             </div>
                             @endif

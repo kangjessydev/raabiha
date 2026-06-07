@@ -13,6 +13,7 @@ class ResellersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->poll('5s')
             ->columns([
                 TextColumn::make('name')
                     ->label('Nama')
@@ -51,7 +52,19 @@ class ResellersTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                \Filament\Actions\Action::make('approve')
+                    ->label('Setujui')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->action(fn ($record) => $record->update(['reseller_status' => 'active']))
+                    ->visible(fn ($record) => $record->reseller_status === 'pending'),
+                \Filament\Actions\Action::make('reject')
+                    ->label('Tolak')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->action(fn ($record) => $record->update(['reseller_status' => 'rejected']))
+                    ->visible(fn ($record) => $record->reseller_status === 'pending'),
+                \Filament\Actions\EditAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

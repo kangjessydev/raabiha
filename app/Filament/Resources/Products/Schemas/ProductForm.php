@@ -82,7 +82,8 @@ class ProductForm
                             ->numeric()
                             ->prefix('Rp'),
                         TextInput::make('reseller_price')
-                            ->label('Harga Reseller')
+                            ->label('Harga Reseller Khusus')
+                            ->helperText('Secara bawaan sistem sudah memotong harga normal sebesar 20% (atau sesuai pengaturan Global Reseller). Isi kolom ini HANYA jika ingin menggunakan harga flat khusus untuk produk ini.')
                             ->numeric()
                             ->prefix('Rp'),
                         TextInput::make('weight')

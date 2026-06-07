@@ -16,12 +16,16 @@ class VouchersTable
     {
         return $table
             ->columns([
+                TextColumn::make('name')
+                    ->label('Nama Voucher')
+                    ->searchable()
+                    ->sortable()
+                    ->weight(\Filament\Support\Enums\FontWeight::Bold),
                 TextColumn::make('code')
                     ->label('Kode Voucher')
                     ->searchable()
                     ->sortable()
-                    ->copyable()
-                    ->weight(\Filament\Support\Enums\FontWeight::Bold),
+                    ->copyable(),
                 TextColumn::make('discount_type')
                     ->label('Tipe')
                     ->badge()
@@ -30,7 +34,7 @@ class VouchersTable
                         'percent' => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state, $record): string => $record->is_shipping_voucher ? 'Diskon Ongkir' : match ($state) {
                         'fixed' => 'Nominal',
                         'percent' => 'Persen',
                         default => $state,

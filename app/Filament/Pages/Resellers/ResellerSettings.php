@@ -36,13 +36,17 @@ class ResellerSettings extends Page implements HasForms
         $settings = SiteSetting::whereIn('key', [
             'reseller_min_deposit',
             'reseller_discount_percent',
-            'reseller_terms'
+            'reseller_terms',
+            'reseller_banks',
+            'reseller_whatsapp_payment'
         ])->pluck('value', 'key')->toArray();
 
         $this->form->fill([
             'reseller_min_deposit' => $settings['reseller_min_deposit'] ?? 100000,
             'reseller_discount_percent' => $settings['reseller_discount_percent'] ?? 10,
             'reseller_terms' => $settings['reseller_terms'] ?? '',
+            'reseller_banks' => isset($settings['reseller_banks']) ? json_decode($settings['reseller_banks'], true) : [],
+            'reseller_whatsapp_payment' => $settings['reseller_whatsapp_payment'] ?? '',
         ]);
     }
 
@@ -66,6 +70,32 @@ class ResellerSettings extends Page implements HasForms
                             ->label('Syarat & Ketentuan Reseller')
                             ->columnSpanFull(),
                     ])->columns(2),
+                
+                Section::make('Informasi Pembayaran (Bank)')
+                    ->schema([
+                        \Filament\Forms\Components\Repeater::make('reseller_banks')
+                            ->label('Daftar Rekening Bank')
+                            ->schema([
+                                TextInput::make('bank_name')
+                                    ->label('Nama Bank (contoh: BCA, Mandiri)')
+                                    ->required(),
+                                TextInput::make('account_number')
+                                    ->label('Nomor Rekening')
+                                    ->required(),
+                                TextInput::make('account_name')
+                                    ->label('Atas Nama')
+                                    ->required(),
+                            ])
+                            ->columns(3)
+                            ->columnSpanFull()
+                            ->defaultItems(1),
+                        TextInput::make('reseller_whatsapp_payment')
+                            ->label('Nomor WhatsApp Admin (Untuk Konfirmasi)')
+                            ->placeholder('Contoh: 6281234567890')
+                            ->helperText('Nomor ini akan digunakan sebagai link untuk tombol Kirim Bukti Pembayaran.')
+                            ->required()
+                            ->columnSpanFull(),
+                    ])
             ])
             ->statePath('data');
     }
@@ -74,9 +104,10 @@ class ResellerSettings extends Page implements HasForms
     {
         $data = $this->form->getState();
         foreach ($data as $key => $value) {
+            $valueToSave = is_array($value) ? json_encode($value) : $value;
             SiteSetting::updateOrCreate(
                 ['key' => $key],
-                ['value' => $value]
+                ['value' => $valueToSave]
             );
         }
 

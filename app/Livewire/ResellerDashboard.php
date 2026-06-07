@@ -17,7 +17,7 @@ class ResellerDashboard extends Component
     public function mount()
     {
         if (!Auth::check() || Auth::user()->role !== 'reseller') {
-            return redirect()->to('/login');
+            return redirect()->to('/reseller-register');
         }
     }
 

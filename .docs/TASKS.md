@@ -15,19 +15,19 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
 - [x] **Logika Banner Promosi (Popup):** Menambahkan fitur *Single Active Toggle* (satu aktif, lainnya otomatis mati). Menambahkan dropdown penempatan (*Semua Halaman, Home, Katalog*).
-- [ ] **Sistem Voucher Lanjutan:** Mengembangkan database voucher dengan kolom: Tipe Diskon (Nominal/%), Syarat Min. Belanja, Max Diskon, Spesifik User (Email JSON), Free Gift Item, dan Kuota Maksimal Penggunaan.
-- [ ] **Logika Ulasan Produk:** Menonaktifkan tombol 'Create' di Filament Admin (Hanya bisa dibaca/dimoderasi). Membuat tombol 'Beri Ulasan' di Dasbor Customer untuk pesanan yang sudah selesai, serta menampilkannya di Detail Produk.
-- [ ] **Sistem Kontak Hybrid (Inquiries):** Membuat tabel `inquiries` untuk menampung pesan *Contact Us*. Di *frontend*, pembeli bisa memilih metode kirim (Radio: *via Email* atau *via WhatsApp*). Di *Site Settings*, admin bisa mengatur daftar Subjek beserta *toggle* apakah subjek tersebut wajib disimpan ke *database* atau langsung dialihkan (otomatis filterable di Filament).
-- [ ] **Notifikasi Real-time (Lonceng & Suara):** Mengaktifkan fitur *Database Notifications* bawaan Filament di *navbar* atas, dan menyisipkan *script* Alpine.js untuk memutar suara (mp3/wav) saat ada notifikasi baru masuk.
+- [x] **Sistem Voucher Lanjutan:** Mengembangkan database voucher dengan kolom: Tipe Diskon (Nominal/%), Syarat Min. Belanja, Minimal Item, Max Diskon, Spesifik User (Email JSON), Free Gift Item, Aturan Ongkir (Stacking), Aturan Reseller, dan Kuota Maksimal Penggunaan.
+- [x] **Logika Ulasan Produk:** Menonaktifkan tombol 'Create' di Filament Admin (Hanya bisa dibaca/dimoderasi). Membuat tombol 'Beri Ulasan' di Dasbor Customer untuk pesanan yang sudah selesai, serta menampilkannya di Detail Produk.
+- [x] **Sistem Kontak Hybrid (Inquiries):** Membuat tabel `inquiries` untuk menampung pesan *Contact Us*. Di *frontend*, pembeli bisa memilih metode kirim (Radio: *via Email* atau *via WhatsApp*). Di *Site Settings*, admin bisa mengatur daftar Subjek beserta *toggle* apakah subjek tersebut wajib disimpan ke *database* atau langsung dialihkan (otomatis filterable di Filament).
+- [x] **Notifikasi Real-time (Lonceng & Suara):** Mengaktifkan fitur *Database Notifications* bawaan Filament di *navbar* atas, dan menyisipkan *script* Alpine.js untuk memutar suara (mp3/wav) saat ada notifikasi baru masuk.
 - [x] **SEO Fields (Blog SEO, Produk SEO, Home SEO):** Menambahkan field *Meta Title & Description* di Resource Post, Product, dan SiteSettings.
 - [x] **Kategori Publik:** Mengatur hierarki kategori dan slug yang diakses lewat `/collections/{slug}`.
 - [x] **Galeri Builder:** Membuat Single Page Settings menggunakan Filament Builder untuk Galeri Publik (menggantikan sistem CRUD lama) agar lebih dinamis dan modular.
 - [x] **Dashboard Overview:** Menambahkan Widget statistik (Total Pendapatan, Order Baru, dll) di halaman depan Admin.
 - [x] **Export & Import Data:** Memasang fungsi/plugin export-import Excel pada resource Produk dan Order.
-- [ ] **Manajemen Reseller (B2B):** Membuat *Tabs* filter (Semua, Aktif, Pending) di Daftar Reseller. Proses *Approval* manual oleh Admin. Mengatur nilai diskon *flat percentage* untuk semua reseller aktif di *Site Settings*.
+- [x] **Manajemen Reseller (B2B):** Membuat *Tabs* filter (Semua, Aktif, Pending) di Daftar Reseller. Proses *Approval* manual oleh Admin. Mengatur nilai diskon *flat percentage* untuk semua reseller aktif di *Site Settings*.
 - [x] **Badge Guest Checkout:** Menambahkan label visual pada OrderResource untuk membedakan *Guest* vs *Registered*.
 - [x] **Widgets Laporan Pesanan:** Menghapus menu *Laporan Transaksi* yang redundan dan menggantinya dengan *Header Widgets* (Total Pending, Pendapatan Hari Ini) langsung di atas tabel Pesanan.
-- [ ] **Mode Libur & Jadwal Toko:** Menambahkan pengaturan "Tutup Toko / Mode Libur" di *Site Settings* yang akan memunculkan peringatan otomatis di *frontend* agar pembeli tahu kapan barang dikirim.
+- [x] **Mode Libur & Jadwal Toko:** Menambahkan pengaturan "Tutup Toko / Mode Libur" di *Site Settings* yang akan memunculkan peringatan otomatis di *frontend* agar pembeli tahu kapan barang dikirim.
 - [x] **Pengaturan Global (Site Settings):** Membuat halaman manajemen terpusat untuk Identitas Toko, Menu Navbar Dinamis (Repeater), Footer, Kontak, dan Integrasi Skrip Eksternal.
 - [x] **Halaman Statis (CMS):** Membuat Resource untuk halaman legal/dokumen (T&C, Privacy Policy) lengkap dengan dukungan *SEO Fields*.
 - [x] **Sales Page Builder:** Membangun *Filament Builder* modular (Hero, Features, Testimonial) untuk membuat *Landing Page* dinamis.
@@ -42,9 +42,9 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 
 **🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
 - [x] **Halaman Pendaftaran Reseller:** Membuat formulir *Livewire* untuk mendaftar sebagai Reseller.
-- [ ] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*), lengkap dengan perhitungan otomatis Diskon Reseller jika pembeli adalah reseller aktif.
+- [x] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*), lengkap dengan perhitungan otomatis Diskon Reseller jika pembeli adalah reseller aktif.
 - [x] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
-- [ ] **Integrasi Dashboard Reseller:** Menggabungkan profil Reseller ke dalam *Dashboard Customer* standar. Menambahkan *Badge* (Lencana) Reseller dan tab Laporan Pembelian Khusus Reseller.
+- [x] **Integrasi Dashboard Reseller:** Menggabungkan profil Reseller ke dalam *Dashboard Customer* standar. Menambahkan *Badge* (Lencana) Reseller dan tab Laporan Pembelian Khusus Reseller.
 - [x] **Global UI Binding:** Menghubungkan data *Site Settings* (Logo, Navbar, Footer, Nomor Kontak) ke komponen *Frontend* secara dinamis.
 - [x] **Refactoring Hardcode Pages:** Mengoptimalkan halaman Home, About, Lokasi & Kontak agar berpadu dengan data dinamis (Galeri sudah di-refactor menggunakan Builder).
 - [x] **Dynamic Page Rendering:** Membuat *routing* dan *views* untuk me-render *Halaman Statis* dan *Sales Page* di bawah satu Catch-all route (`/{slug}`).

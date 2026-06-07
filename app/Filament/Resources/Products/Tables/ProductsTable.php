@@ -61,7 +61,12 @@ class ProductsTable
                 \Filament\Tables\Filters\TernaryFilter::make('is_active'),
             ])
             ->recordActions([
-                \Filament\Actions\ViewAction::make(),
+                \Filament\Actions\Action::make('view_frontend')
+                    ->label('Lihat di Toko')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (\App\Models\Product $record): string => url('/product/' . $record->slug))
+                    ->openUrlInNewTab()
+                    ->color('info'),
                 \Filament\Actions\EditAction::make(),
                 \Filament\Actions\DeleteAction::make(),
             ])

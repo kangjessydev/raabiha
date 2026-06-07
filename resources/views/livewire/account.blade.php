@@ -28,6 +28,14 @@
                         <button wire:click="setTab('pesanan')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'pesanan' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pesanan Saya</button>
                         <button wire:click="setTab('alamat')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'alamat' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Alamat Tersimpan</button>
                         <button wire:click="setTab('voucher')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'voucher' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Voucher Saya</button>
+                        <button wire:click="setTab('reseller')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors flex justify-between items-center {{ $activeTab === 'reseller' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">
+                            Portal Reseller
+                            @if(auth()->user()->reseller_status === 'active')
+                                <span class="bg-[#064e3b] text-white text-[8px] px-1.5 py-0.5 rounded-sm ml-2">AKTIF</span>
+                            @elseif(auth()->user()->reseller_status === 'pending')
+                                <span class="bg-[#ca8a04] text-white text-[8px] px-1.5 py-0.5 rounded-sm ml-2">PENDING</span>
+                            @endif
+                        </button>
                         <button wire:click="setTab('akun')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'akun' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pengaturan Akun</button>
                         <form method="POST" action="{{ route('logout') }}" class="m-0 p-0">
                             @csrf
@@ -470,6 +478,102 @@
                                     </button>
                                 </form>
                             </div>
+                        @elseif($activeTab === 'reseller')
+                            <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Laporan Pembelian Reseller</h2>
+                            
+                            @if(auth()->user()->reseller_status === 'active')
+                                <div class="bg-[#064e3b] text-white p-6 md:p-8 flex flex-col items-start gap-4 mb-6">
+                                    <div class="p-3 bg-white/20 rounded-sm">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    </div>
+                                    <div>
+                                        <p class="font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#a3b8b0] mb-1">Diskon Aktif Anda</p>
+                                        <p class="font-serif text-[32px] font-bold text-white leading-none">{{ $this->reseller_stats['discount_percent'] ?? 0 }}%</p>
+                                    </div>
+                                    <div class="font-sans text-[12px] text-[#a3b8b0] mt-2">
+                                        Berlaku untuk semua pembelian produk tanpa batas.
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div class="bg-[#fcf9f5] border border-[#e5e2de] p-6 flex flex-col items-start gap-3">
+                                        <p class="font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57]">Total Pembelian Reseller</p>
+                                        <p class="font-sans text-[20px] font-bold text-[#1c1c1a]">Rp{{ number_format($this->reseller_stats['total_spent'] ?? 0, 0, ',', '.') }}</p>
+                                    </div>
+                                    <div class="bg-[#fcf9f5] border border-[#e5e2de] p-6 flex flex-col items-start gap-3">
+                                        <p class="font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57]">Total Hemat / Keuntungan</p>
+                                        <p class="font-sans text-[20px] font-bold text-[#064e3b]">Rp{{ number_format($this->reseller_stats['total_savings'] ?? 0, 0, ',', '.') }}</p>
+                                    </div>
+                                </div>
+                            @elseif(auth()->user()->reseller_status === 'pending')
+                                <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-6 flex items-start gap-4">
+                                    <svg class="w-6 h-6 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <div>
+                                        <h3 class="font-sans font-bold text-[16px] mb-1">Status Pengajuan Pending</h3>
+                                        <p class="font-sans text-[13px]">Pengajuan akun reseller Anda sedang kami tinjau. Kami akan menghubungi Anda segera melalui WhatsApp atau Email untuk proses verifikasi. Harap tunggu!</p>
+                                    </div>
+                                </div>
+                                @php
+                                    $settings = \App\Models\SiteSetting::whereIn('key', ['reseller_min_deposit', 'reseller_banks', 'reseller_whatsapp_payment'])->pluck('value', 'key');
+                                    $depositFee = $settings['reseller_min_deposit'] ?? 0;
+                                    $banksData = $settings['reseller_banks'] ?? '[]';
+                                    $banks = json_decode($banksData, true) ?? [];
+                                    $whatsapp = $settings['reseller_whatsapp_payment'] ?? '';
+                                @endphp
+                                @if($depositFee > 0)
+                                <div class="mt-4 bg-[#fcf9f5] border border-[#e5e2de] p-6 flex flex-col items-start gap-4">
+                                    <p class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Tindakan Diperlukan</p>
+                                    <div class="w-full">
+                                        <p class="font-sans text-[16px] font-bold text-[#1c1c1a]">Pembayaran Deposit Awal: Rp{{ number_format($depositFee, 0, ',', '.') }}</p>
+                                        <p class="font-sans text-[13px] text-[#615e57] mt-1 mb-4">Sistem mendeteksi bahwa Anda belum melakukan pembayaran. Silakan transfer ke rekening admin dan konfirmasi via WhatsApp untuk mengaktifkan diskon Anda.</p>
+                                        
+                                        @if(count($banks) > 0)
+                                        <div class="bg-white border border-[#e5e2de] p-4 mb-4">
+                                            <p class="font-mono text-[9px] uppercase tracking-widest text-[#1c1c1a] font-bold mb-3 border-b border-[#e5e2de] pb-2">Tujuan Transfer</p>
+                                            <div class="flex flex-col gap-3">
+                                                @foreach($banks as $bank)
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="font-sans text-[13px] font-bold text-[#1c1c1a] uppercase">{{ $bank['bank_name'] ?? '' }}</span>
+                                                    <span class="font-mono text-[14px] text-[#064e3b] font-bold tracking-wider">{{ $bank['account_number'] ?? '' }}</span>
+                                                    <span class="font-sans text-[11px] text-[#615e57] uppercase">A.N {{ $bank['account_name'] ?? '' }}</span>
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        @if($whatsapp)
+                                        @php
+                                            $waMsg = "Halo Admin Raabiha, saya ingin mengkonfirmasi pembayaran pendaftaran akun Reseller dengan rincian sebagai berikut:%0A%0ANama: " . auth()->user()->name . "%0AEmail: " . auth()->user()->email . "%0ATanggal: " . now()->format('d M Y');
+                                        @endphp
+                                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $whatsapp) }}?text={{ $waMsg }}" target="_blank" class="w-full bg-[#25D366] text-white px-6 py-3 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-[#128C7E] transition-colors inline-flex justify-center items-center gap-2">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                                            Kirim Bukti Pembayaran ke WhatsApp
+                                        </a>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
+                            @elseif(auth()->user()->reseller_status === 'rejected')
+                                <div class="bg-red-50 border border-red-200 text-red-800 p-6 flex items-start gap-4">
+                                    <svg class="w-6 h-6 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <div>
+                                        <h3 class="font-sans font-bold text-[16px] mb-1">Status Pengajuan Ditolak</h3>
+                                        <p class="font-sans text-[13px]">Mohon maaf, pengajuan akun reseller Anda tidak dapat kami proses saat ini. Silakan hubungi admin kami untuk informasi lebih lanjut.</p>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="bg-[#f0ede9] p-6 flex flex-col items-center text-center gap-4 py-12">
+                                    <svg class="w-12 h-12 text-[#064e3b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    <div>
+                                        <h3 class="font-serif font-bold text-[20px] text-[#1c1c1a] mb-2">Tingkatkan Keuntungan Anda!</h3>
+                                        <p class="font-sans text-[13px] text-[#615e57] max-w-md mx-auto">Gabung menjadi mitra reseller Raabiha dan dapatkan potongan harga eksklusif untuk setiap pembelian tanpa minimal order. Daftarkan diri Anda sekarang!</p>
+                                    </div>
+                                    <a href="/reseller-register" wire:navigate class="mt-2 inline-block bg-[#064e3b] text-white px-6 py-3 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-colors">
+                                        Daftar Menjadi Reseller
+                                    </a>
+                                </div>
+                            @endif
                         @endif
                 </div>
             </div>

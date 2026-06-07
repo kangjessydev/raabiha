@@ -29,7 +29,7 @@ class GlobalSettings extends Page implements HasForms
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
         
         // Decode JSON arrays for repeaters
-        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'social_links'] as $jsonKey) {
+        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'social_links', 'contact_subjects'] as $jsonKey) {
             if (isset($settings[$jsonKey])) {
                 $decoded = json_decode($settings[$jsonKey], true);
                 $settings[$jsonKey] = is_array($decoded) ? $decoded : [];
@@ -66,6 +66,18 @@ class GlobalSettings extends Page implements HasForms
                                     ->helperText('Deskripsi singkat website untuk hasil pencarian Google (Maks 160 karakter).')
                                     ->rows(3),
                             ]),
+                        \Filament\Schemas\Components\Tabs\Tab::make('Mode Libur')
+                            ->components([
+                                Forms\Components\Toggle::make('store_holiday_mode')
+                                    ->label('Aktifkan Mode Libur (Tutup Toko)')
+                                    ->helperText('Jika diaktifkan, sebuah spanduk peringatan akan muncul di atas halaman website.')
+                                    ->default(false),
+                                Forms\Components\Textarea::make('store_holiday_message')
+                                    ->label('Pesan Pengumuman Libur')
+                                    ->helperText('Contoh: "Toko sedang libur Lebaran. Pesanan akan dikirim mulai tanggal 15 Mei."')
+                                    ->default('Mohon maaf, toko kami sedang libur. Semua pesanan yang masuk akan diproses dan dikirim setelah kami kembali beroperasi.')
+                                    ->rows(3),
+                            ]),
                         \Filament\Schemas\Components\Tabs\Tab::make('Kontak & Sosmed')
                             ->components([
                                 Forms\Components\TextInput::make('contact_phone')
@@ -96,6 +108,19 @@ class GlobalSettings extends Page implements HasForms
                                     ])
                                     ->columns(2)
                                     ->defaultItems(0),
+                                Forms\Components\Repeater::make('contact_subjects')
+                                    ->label('Daftar Subjek Pesan (Contact Us)')
+                                    ->components([
+                                        Forms\Components\TextInput::make('subject')
+                                            ->label('Subjek')
+                                            ->required(),
+                                        Forms\Components\Toggle::make('save_to_db')
+                                            ->label('Simpan ke Database?')
+                                            ->default(true)
+                                            ->helperText('Jika mati, pesan akan langsung dialihkan ke WhatsApp/Email tanpa disimpan.'),
+                                    ])
+                                    ->columns(2)
+                                    ->defaultItems(1),
                             ]),
                         \Filament\Schemas\Components\Tabs\Tab::make('Navbar')
                             ->components([

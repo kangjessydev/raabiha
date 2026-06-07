@@ -90,44 +90,86 @@
 
             <!-- Right Column: Inquiries -->
             <div>
-                <h2 class="text-4xl font-serif text-[#1c1c1a] mb-12">Inquiries</h2>
+                <h2 class="text-4xl font-serif text-[#1c1c1a] mb-8">Inquiries</h2>
                 
-                <form class="space-y-10">
+                @if (session()->has('success'))
+                    <div class="bg-[#064e3b]/10 border border-[#064e3b]/20 text-[#064e3b] px-6 py-4 mb-8">
+                        <p class="font-sans text-sm">{{ session('success') }}</p>
+                    </div>
+                @endif
+
+                @if (session()->has('error'))
+                    <div class="bg-red-900/10 border border-red-900/20 text-red-900 px-6 py-4 mb-8">
+                        <p class="font-sans text-sm">{{ session('error') }}</p>
+                    </div>
+                @endif
+                
+                <form wire:submit="submit" class="space-y-10">
                     <!-- Name -->
                     <div class="flex flex-col">
                         <label for="name" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Full Name</label>
-                        <input type="text" id="name" placeholder="ENTER YOUR NAME" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
+                        <input type="text" id="name" wire:model="name" placeholder="ENTER YOUR NAME" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
+                        @error('name') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
                     </div>
                     
-                    <!-- Email -->
-                    <div class="flex flex-col">
-                        <label for="email" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Email Address</label>
-                        <input type="email" id="email" placeholder="EMAIL@@EXAMPLE.COM" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <!-- Email -->
+                        <div class="flex flex-col">
+                            <label for="email" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Email Address</label>
+                            <input type="email" id="email" wire:model="email" placeholder="EMAIL@EXAMPLE.COM" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
+                            @error('email') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="flex flex-col">
+                            <label for="phone" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">WhatsApp Number</label>
+                            <input type="text" id="phone" wire:model="phone" placeholder="+62..." class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
+                            @error('phone') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                        </div>
                     </div>
                     
                     <!-- Subject -->
                     <div class="flex flex-col relative">
                         <label for="subject" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Subject</label>
-                        <select id="subject" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] transition-colors appearance-none rounded-none cursor-pointer">
-                            <option>GENERAL INQUIRY</option>
-                            <option>WHOLESALE</option>
-                            <option>PRESS & MEDIA</option>
+                        <select id="subject" wire:model="subject" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] transition-colors appearance-none rounded-none cursor-pointer">
+                            <option value="">SELECT SUBJECT</option>
+                            @foreach($subjects as $s)
+                                <option value="{{ $s }}">{{ $s }}</option>
+                            @endforeach
                         </select>
-                        <!-- Custom Select Arrow -->
                         <div class="absolute right-0 bottom-4 pointer-events-none text-[#615e57]">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/></svg>
                         </div>
+                        @error('subject') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
                     </div>
                     
                     <!-- Message -->
                     <div class="flex flex-col">
                         <label for="message" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Message</label>
-                        <textarea id="message" rows="4" placeholder="HOW CAN WE ASSIST YOU?" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors resize-none rounded-none"></textarea>
+                        <textarea id="message" wire:model="message" rows="4" placeholder="HOW CAN WE ASSIST YOU?" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors resize-none rounded-none"></textarea>
+                        @error('message') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Channel / Reply Method -->
+                    <div class="flex flex-col">
+                        <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Balas Melalui</label>
+                        <div class="flex gap-6">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" wire:model="channel" value="email" class="w-4 h-4 text-[#064e3b] border-[#e5e2de] focus:ring-[#064e3b]">
+                                <span class="text-sm font-sans text-[#1c1c1a]">Email</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" wire:model="channel" value="whatsapp" class="w-4 h-4 text-[#064e3b] border-[#e5e2de] focus:ring-[#064e3b]">
+                                <span class="text-sm font-sans text-[#1c1c1a]">WhatsApp (Langsung Chat)</span>
+                            </label>
+                        </div>
+                        @error('channel') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
                     </div>
                     
                     <!-- Submit -->
-                    <button type="button" class="w-full bg-[#064e3b] text-white text-[11px] font-mono uppercase tracking-[0.2em] py-5 hover:bg-[#1c1c1a] transition-colors mt-4">
-                        Kirim Pesan
+                    <button type="submit" class="w-full bg-[#064e3b] text-white text-[11px] font-mono uppercase tracking-[0.2em] py-5 hover:bg-[#1c1c1a] transition-colors mt-4">
+                        <span wire:loading.remove wire:target="submit">Kirim Pesan</span>
+                        <span wire:loading wire:target="submit">Memproses...</span>
                     </button>
                 </form>
             </div>

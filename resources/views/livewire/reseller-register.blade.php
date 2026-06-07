@@ -1,4 +1,4 @@
-<x-layouts.app>
+<div>
     <x-slot:header>
         <x-global.mobile-subnav title="Daftar Reseller" backUrl="/account" />
     </x-slot:header>
@@ -50,4 +50,4 @@
             </div>
         </main>
     </div>
-</x-layouts.app>
+</div>

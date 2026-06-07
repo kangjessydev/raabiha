@@ -48,4 +48,22 @@ class Product extends Model
     {
         return $this->hasMany(ProductVariant::class);
     }
+
+    public function getEffectivePriceAttribute()
+    {
+        $price = $this->price;
+        
+        if (auth()->check() && auth()->user()->hasRole('reseller')) {
+            // Check if there is a specific reseller price for this product
+            if ($this->reseller_price !== null && $this->reseller_price > 0) {
+                return $this->reseller_price;
+            }
+            
+            // Apply flat global discount
+            $discountPercent = \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 20;
+            return $price * (1 - ($discountPercent / 100));
+        }
+
+        return $price;
+    }
 }

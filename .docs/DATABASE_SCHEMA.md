@@ -52,5 +52,14 @@ Berdasarkan keputusan CTO, keranjang belanja wajib menggunakan pendekatan **Data
 - Kolom `images` pada tabel `products` menggunakan tipe `json`, tetapi isinya adalah **Array of Integers (Media IDs)** yang berelasi ke tabel `media` milik Curator.
 - Pada tampilan *Front End*, URL gambar harus di-*resolve* secara manual dari model `Media` berdasarkan ID yang ada di kolom JSON tersebut, dengan *fallback* untuk format *string path* lama agar kompatibel dengan data sebelum migrasi Curator.
 
-## 9. Rencana Pengembangan Skema (Masa Depan)
+## 9. Arsitektur Voucher & Promosi
+Tabel `vouchers` dikembangkan dengan logika berlapis untuk mencegah kerugian toko (double discount):
+- **Tipe Diskon:** Mendukung potongan nominal tetap (`fixed`) dan persentase (`percent`) dengan batas maksimal (`max_discount`).
+- **Batasan Minimal:** Bisa disyaratkan berdasarkan nominal transaksi (`min_purchase`) maupun jumlah barang fisik di keranjang (`min_items`).
+- **Target Potongan (Stacking Rules):** 
+  - Secara bawaan, sebuah pesanan hanya boleh menggunakan maksimal **1 voucher diskon belanja**.
+  - Terdapat fitur `is_shipping_voucher`. Jika `true`, voucher ini memotong biaya logistik (ongkir). Voucher ini **diizinkan digabung (stackable)** dengan 1 voucher diskon belanja biasa.
+- **Proteksi Reseller:** Terdapat toggle `exclude_resellers` (default `true`). Jika aktif, pelanggan dengan role Reseller **tidak diizinkan** menggunakan voucher ini, mengingat mereka sudah menerima sistem diskon persentase bawaan dari `Site Settings`.
+
+## 10. Rencana Pengembangan Skema (Masa Depan)
 *Dokumentasi ini wajib diperbarui setiap kali ada penambahan tabel atau perubahan struktur, seperti sistem ongkir (Shipping) dan Pembayaran (Payments).*

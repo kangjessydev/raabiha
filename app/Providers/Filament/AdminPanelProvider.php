@@ -41,6 +41,8 @@ class AdminPanelProvider extends PanelProvider
             ->topNavigation()
             ->maxContentWidth('full')
             ->viteTheme('resources/css/filament/admin/theme.css')
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->navigationGroups([
                 'Transaksi',
                 'Katalog',
