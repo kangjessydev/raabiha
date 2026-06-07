@@ -39,15 +39,13 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - Transisi Galeri & Logika UI Bottom Sheet untuk pemilihan Varian & QTY.
 - Dashboard Customer Ekstensif (Riwayat Pesanan, Detail Invoice, Manajemen Alamat, Voucher, Statistik).
 - Sistem Blog Dinamis & Komentar interaktif dengan dukungan *Nested Replies* dan *Auto-Polling Moderation*.
-
-**🚧 Belum (To Do - Urutan pengerjaan *Rough Development*, dari termudah/tercepat):**
-- [x] **Halaman Pendaftaran Reseller:** Membuat formulir *Livewire* untuk mendaftar sebagai Reseller.
-- [x] **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung (*Buy Now*), lengkap dengan perhitungan otomatis Diskon Reseller jika pembeli adalah reseller aktif.
-- [x] **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
-- [x] **Integrasi Dashboard Reseller:** Menggabungkan profil Reseller ke dalam *Dashboard Customer* standar. Menambahkan *Badge* (Lencana) Reseller dan tab Laporan Pembelian Khusus Reseller.
-- [x] **Global UI Binding:** Menghubungkan data *Site Settings* (Logo, Navbar, Footer, Nomor Kontak) ke komponen *Frontend* secara dinamis.
-- [x] **Refactoring Hardcode Pages:** Mengoptimalkan halaman Home, About, Lokasi & Kontak agar berpadu dengan data dinamis (Galeri sudah di-refactor menggunakan Builder).
-- [x] **Dynamic Page Rendering:** Membuat *routing* dan *views* untuk me-render *Halaman Statis* dan *Sales Page* di bawah satu Catch-all route (`/{slug}`).
+- **Halaman Pendaftaran Reseller & Welcome Onboarding:** Membuat formulir *Livewire* dan sistem deposit awal.
+- **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung, dengan perhitungan Diskon Reseller otomatis.
+- **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
+- **Integrasi Dashboard Reseller:** Menggabungkan profil Reseller ke dalam *Dashboard Customer* standar.
+- **Global UI Binding:** Menghubungkan data *Site Settings* (Logo, Navbar, Footer, Nomor Kontak) ke komponen *Frontend* secara dinamis.
+- **Refactoring Hardcode Pages:** Mengoptimalkan halaman Home, About, Lokasi & Kontak.
+- **Dynamic Page Rendering:** Membuat *routing* untuk me-render *Halaman Statis* dan *Sales Page* (`/{slug}`).
 
 ---
 
