@@ -28,20 +28,19 @@ class Checkout extends Component
     public $postal_code;
     public $notes;
     
-    // Region Dropdown State
-    public $provinces = [];
-    public $cities = [];
-    public $districts = [];
-    
-    public $selectedProvinceId = '';
-    public $selectedCityId = '';
-    public $selectedDistrictId = '';
+    // Region Dropdown State removed, handled by Komerce Autocomplete
     
     // Checkout state
     public $shipping_cost = 20000;
     public $base_shipping_cost = 20000;
     public $payment_method = 'bank_transfer';
     public $shipping_method = 'jne_reg';
+    
+    // Komerce Integration (Direct Autocomplete)
+    public $searchLocation = '';
+    public $destinationOptions = [];
+    public $selectedDestinationId = '';
+    public $selectedDestinationLabel = '';
     
     // Coupon state
     public $voucherCode = '';
@@ -57,141 +56,139 @@ class Checkout extends Component
         
         $this->appliedVoucher = session('applied_voucher', null);
         
-        // Fetch provinces on load
-        $this->fetchProvinces();
+        // Fetch rates if selectedDestinationId already exists (unlikely on fresh load)
+        $this->generateShippingRates();
+    }
+    
+
+    
+    // Direct Autocomplete Logic
+    public function updatedSearchLocation($value)
+    {
+        if (strlen($value) < 3) {
+            $this->destinationOptions = [];
+            return;
+        }
+
+        $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
+        if (!$apiKey) return;
+
+        $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
+            ->get('https://rajaongkir.komerce.id/api/v1/destination/domestic-destination', [
+                'search' => $value
+            ]);
+            
+        if ($response->successful()) {
+            $this->destinationOptions = $response->json('data') ?? [];
+        }
+    }
+
+    public function selectDestination($id, $label)
+    {
+        $this->selectedDestinationId = $id;
+        $this->selectedDestinationLabel = $label;
+        $this->searchLocation = '';
+        $this->destinationOptions = [];
         
         $this->generateShippingRates();
     }
     
-    public function fetchProvinces()
+    public function updatedAddressMode($value)
     {
-        $response = \Illuminate\Support\Facades\Http::get('https://www.emsifa.com/api-wilayah-indonesia/api/provinces.json');
-        if ($response->successful()) {
-            $this->provinces = $response->json();
-        }
-    }
-
-    public function updatedSelectedProvinceId($value)
-    {
-        $this->cities = [];
-        $this->districts = [];
-        $this->selectedCityId = '';
-        $this->selectedDistrictId = '';
-        
-        $province = collect($this->provinces)->firstWhere('id', $value);
-        if ($province) {
-            $this->province = $province['name'];
-        }
-        
-        if ($value) {
-            $response = \Illuminate\Support\Facades\Http::get("https://www.emsifa.com/api-wilayah-indonesia/api/regencies/{$value}.json");
-            if ($response->successful()) {
-                $this->cities = $response->json();
-            }
-        }
-    }
-
-    public function updatedSelectedCityId($value)
-    {
-        $this->districts = [];
-        $this->selectedDistrictId = '';
-        
-        $city = collect($this->cities)->firstWhere('id', $value);
-        if ($city) {
-            $this->city = $city['name'];
-        }
-        
-        if ($value) {
-            $response = \Illuminate\Support\Facades\Http::get("https://www.emsifa.com/api-wilayah-indonesia/api/districts/{$value}.json");
-            if ($response->successful()) {
-                $this->districts = $response->json();
-            }
-        }
-    }
-    
-    public function updatedSelectedDistrictId($value)
-    {
-        $district = collect($this->districts)->firstWhere('id', $value);
-        if ($district) {
-            $this->district = $district['name'];
-        }
-        $this->calculateDynamicShipping();
+        $this->generateShippingRates();
     }
     
     public $shippingRates = [];
 
     public function calculateDynamicShipping()
     {
-        if (!$this->selectedProvinceId) {
-            $this->base_shipping_cost = 20000;
-        } else {
-            $provId = (int) $this->selectedProvinceId;
-            $cityId = (int) ($this->selectedCityId ?? 0);
-            
-            $baseCost = 40000; // Default
-            
-            if ($provId == 32) {
-                $baseCost = 10000; // Jabar
-            } elseif ($provId == 31 || $provId == 36) {
-                $baseCost = 15000; // DKI, Banten
-            } elseif ($provId == 33 || $provId == 34) {
-                $baseCost = 20000; // Jateng, DIY
-            } elseif ($provId == 35) {
-                $baseCost = 25000; // Jatim
-            } elseif ($provId >= 51 && $provId <= 53) {
-                $baseCost = 35000; // Bali, NTB, NTT
-            } elseif ($provId >= 11 && $provId <= 19) {
-                $baseCost = 40000; // Sumatera
-            } elseif ($provId >= 61 && $provId <= 76) {
-                $baseCost = 50000; // Kalimantan, Sulawesi
-            } elseif ($provId >= 81) {
-                $baseCost = 80000; // Maluku, Papua
-            }
-            
-            $variance = ($cityId % 10) * 1000;
-            $this->base_shipping_cost = $baseCost + $variance;
-        }
-        
+        // Just call generateShippingRates, base_shipping_cost calculation is now dynamic from Komerce
         $this->generateShippingRates();
-        
-        // Update current shipping cost based on selected method
-        $this->updatedShippingMethod($this->shipping_method);
     }
     
     public function generateShippingRates()
     {
         $this->shippingRates = [];
         
-        if (!$this->selectedDistrictId) {
+        if (!$this->selectedDestinationId) {
             $this->shipping_cost = 0;
             return;
         }
 
-        $activeCouriers = \App\Models\ShippingMethod::where('is_active', true)->get();
+        $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
+        $originCity = \App\Models\SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
         
+        if (!$apiKey || !$originCity) return;
+        
+        $activeCouriers = \App\Models\ShippingMethod::where('is_active', true)->get();
+        if ($activeCouriers->isEmpty()) {
+            return;
+        }
+        
+        // Calculate total weight
+        $totalWeight = 0;
+        $cart = $this->cart;
+        if ($cart) {
+            foreach ($cart->items as $item) {
+                $itemWeight = $item->product->weight > 0 ? $item->product->weight : 1000;
+                $totalWeight += ($itemWeight * $item->quantity);
+            }
+        }
+        if ($totalWeight == 0) $totalWeight = 1000;
+
         foreach ($activeCouriers as $courier) {
-            $code = strtolower($courier->code);
-            $cName = strtoupper($courier->name);
+            $courierCode = $courier->code;
+            $courierConfig = $courier->config ?? [];
+            $allowedServices = [];
             
-            // Reguler Service
-            $this->shippingRates[] = [
-                'id' => $code . '_reg',
-                'courier_name' => $cName,
-                'service_name' => $cName === 'JNE' ? 'Reguler' : 'Reguler',
-                'duration' => '2-3 hari kerja',
-                'price' => $this->base_shipping_cost,
-                'logo' => $courier->logo,
-            ];
-            
-            // Express Service
-            $this->shippingRates[] = [
-                'id' => $code . '_express',
-                'courier_name' => $cName,
-                'service_name' => $cName === 'JNE' ? 'YES' : 'Ekspres',
-                'duration' => '1 hari kerja',
-                'price' => $this->base_shipping_cost + 15000,
-                'logo' => $courier->logo,
-            ];
+            // Parse allowed services if configured
+            if (!empty($courierConfig['allowed_services'])) {
+                if (is_array($courierConfig['allowed_services'])) {
+                    $allowedServices = array_map('strtoupper', array_map('trim', $courierConfig['allowed_services']));
+                } else {
+                    $allowedServices = array_map('trim', explode(',', strtoupper($courierConfig['allowed_services'])));
+                }
+            }
+
+            try {
+                $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
+                    ->asForm()
+                    ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
+                        'origin' => $originCity,
+                        'destination' => $this->selectedDestinationId,
+                        'weight' => $totalWeight,
+                        'courier' => $courierCode
+                    ]);
+
+                if ($response->successful()) {
+                    $results = $response->json('data');
+                    if (!empty($results)) {
+                        foreach ($results as $cost) {
+                            $courierName = $cost['name'];
+                            $serviceName = strtoupper($cost['service']);
+                            
+                            // Filter by allowed_services if defined
+                            if (!empty($allowedServices) && !in_array($serviceName, $allowedServices)) {
+                                continue;
+                            }
+                            
+                            $price = $cost['cost'] ?? 0;
+                            $etd = $cost['etd'] ?? '';
+                            
+                            $this->shippingRates[] = [
+                                'id' => $courierCode . '_' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $serviceName)),
+                                'courier_name' => $courierName,
+                                'service_name' => $serviceName,
+                                'duration' => $etd,
+                                'price' => $price,
+                                'logo' => $courier->logo,
+                            ];
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // Log or ignore courier error
+            }
         }
         
         // Set default shipping method to the first available if not set or invalid
@@ -199,6 +196,9 @@ class Checkout extends Component
             if (count($this->shippingRates) > 0) {
                 $this->shipping_method = $this->shippingRates[0]['id'];
                 $this->updatedShippingMethod($this->shipping_method);
+            } else {
+                $this->shipping_cost = 0;
+                $this->shipping_method = '';
             }
         }
     }
@@ -376,14 +376,10 @@ class Checkout extends Component
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'address' => 'required|string',
-            'selectedProvinceId' => 'required',
-            'selectedCityId' => 'required',
-            'selectedDistrictId' => 'required',
+            'selectedDestinationId' => 'required',
             'postal_code' => 'required|string',
         ], [
-            'selectedProvinceId.required' => 'Silakan pilih provinsi.',
-            'selectedCityId.required' => 'Silakan pilih kota/kabupaten.',
-            'selectedDistrictId.required' => 'Silakan pilih kecamatan.',
+            'selectedDestinationId.required' => 'Silakan pilih lokasi tujuan pengiriman (Kecamatan/Kota).',
         ]);
 
         $items = $this->checkoutItems;
@@ -398,23 +394,24 @@ class Checkout extends Component
             // Generate order number
             $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
 
+            $shippingAddressData = [
+                'first_name' => $this->first_name,
+                'last_name' => $this->last_name,
+                'phone' => $this->phone,
+                'email' => $this->email,
+                'address' => $this->address,
+                'destination_id' => $this->selectedDestinationId,
+                'destination_label' => $this->selectedDestinationLabel,
+                'postal_code' => $this->postal_code,
+                'notes' => $this->notes,
+            ];
+
             $order = Order::create([
                 'user_id' => auth()->id() ?? null,
                 'order_number' => $orderNumber,
                 'status' => 'pending',
                 'payment_status' => 'pending',
-                'shipping_address' => [
-                    'first_name' => $this->first_name,
-                    'last_name' => $this->last_name,
-                    'phone' => $this->phone,
-                    'email' => $this->email,
-                    'address' => $this->address,
-                    'province' => $this->province,
-                    'city' => $this->city,
-                    'district' => $this->district,
-                    'postal_code' => $this->postal_code,
-                    'notes' => $this->notes,
-                ],
+                'shipping_address' => $shippingAddressData,
                 'courier' => $this->shipping_method,
                 'shipping_cost' => $this->shipping_cost,
                 'payment_method' => $this->payment_method,
@@ -475,79 +472,68 @@ class Checkout extends Component
 
             DB::commit();
 
-            // Create Tripay Transaction
-            $apiKey = env('TRIPAY_API_KEY');
-            $privateKey = env('TRIPAY_PRIVATE_KEY');
-            $merchantCode = env('TRIPAY_MERCHANT_CODE');
-            $isProduction = env('TRIPAY_MODE', 'sandbox') === 'production';
+            // Create Payment Transaction (Xendit)
+            $apiKey = \App\Models\SiteSetting::where('key', 'xendit_secret_key')->value('value') ?: env('XENDIT_SECRET_KEY');
             
-            if ($apiKey && $privateKey && $merchantCode) {
-                $endpoint = $isProduction 
-                    ? 'https://tripay.co.id/api/transaction/create'
-                    : 'https://tripay.co.id/api-sandbox/transaction/create';
-
-                // Tripay requires a specific payment method code (e.g. BRIVA, QRIS)
-                // We map our form selection to a default Tripay code for testing if needed
-                // But ideally, the form should send the exact Tripay method code.
-                $method = $this->payment_method;
+            if ($apiKey && $this->payment_method != 'bank_transfer' && $this->payment_method != 'cod') {
+                $endpoint = 'https://api.xendit.co/v2/invoices';
                 
                 $merchantRef = $order->order_number;
                 $amount = $order->grand_total;
                 
-                $signature = hash_hmac('sha256', $merchantCode . $merchantRef . $amount, $privateKey);
-                
-                // Format order items for Tripay
+                // Format order items for Xendit
                 $orderItems = [];
-                foreach ($cart->items as $item) {
+                // Refresh cart relation to be safe
+                $cartItems = \App\Models\CartItem::whereIn('id', session('checkout_item_ids', []))->get();
+                foreach ($cartItems as $item) {
                     $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
                         
                     $orderItems[] = [
-                        'sku' => $item->variant ? ($item->variant->sku ?? 'SKU-'.$item->id) : ($item->product->sku ?? 'SKU-'.$item->id),
-                        'name' => $item->product->name,
-                        'price' => $price,
+                        'name' => mb_substr($item->product->name, 0, 255), // Xendit item name limit
+                        'price' => (int) $price,
                         'quantity' => $item->quantity,
-                        'product_url' => url('/product/' . $item->product->slug),
-                        'image_url' => asset('assets/images/placeholder.png'), // Simplified
                     ];
                 }
                 
                 // Add shipping as an item
                 if ($this->shipping_cost > 0) {
                     $orderItems[] = [
-                        'sku' => 'SHIPPING',
                         'name' => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
-                        'price' => $this->shipping_cost,
+                        'price' => (int) $this->shipping_cost,
                         'quantity' => 1,
                     ];
                 }
 
                 $data = [
-                    'method'         => $method,
-                    'merchant_ref'   => $merchantRef,
-                    'amount'         => $amount,
-                    'customer_name'  => $this->first_name . ' ' . $this->last_name,
-                    'customer_email' => $this->email,
-                    'customer_phone' => $this->phone,
-                    'order_items'    => $orderItems,
-                    'return_url'     => url('/order-success?order=' . $merchantRef),
-                    'expired_time'   => (time() + (24 * 60 * 60)), // 24 hours
-                    'signature'      => $signature
+                    'external_id'      => $merchantRef,
+                    'amount'           => (int) $amount,
+                    'description'      => 'Pembayaran Pesanan ' . $merchantRef,
+                    'invoice_duration' => 86400, // 24 hours
+                    'customer' => [
+                        'given_names'   => $this->first_name,
+                        'surname'       => $this->last_name,
+                        'email'         => $this->email,
+                        'mobile_number' => $this->phone,
+                    ],
+                    'success_redirect_url' => url('/order-success?order=' . $merchantRef),
+                    'failure_redirect_url' => url('/checkout'),
+                    'items' => $orderItems
                 ];
 
-                $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
+                $response = \Illuminate\Support\Facades\Http::withBasicAuth($apiKey, '')
                     ->post($endpoint, $data);
 
-                if ($response->successful() && $response->json('success') === true) {
-                    $tripayData = $response->json('data');
+                if ($response->successful()) {
+                    $xenditData = $response->json();
                     $order->update([
-                        'payment_id' => $tripayData['reference'],
-                        'payment_url' => $tripayData['checkout_url']
+                        'payment_id' => $xenditData['id'],
+                        'payment_url' => $xenditData['invoice_url']
                     ]);
                     
-                    return redirect()->away($tripayData['checkout_url']);
+                    return redirect()->away($xenditData['invoice_url']);
                 } else {
-                    Log::error('Tripay Create Transaction Error', ['response' => $response->json()]);
-                    throw new \Exception('Gagal membuat transaksi pembayaran: ' . $response->json('message'));
+                    Log::error('Xendit Create Invoice Error', ['response' => $response->json()]);
+                    throw new \Exception('Gagal membuat transaksi pembayaran: ' . ($response->json('message') ?? 'Internal Error'));
                 }
             }
 

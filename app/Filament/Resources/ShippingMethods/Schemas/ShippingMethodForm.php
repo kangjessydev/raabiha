@@ -39,12 +39,23 @@ class ShippingMethodForm
                             ->required(),
                     ])->columns(2),
 
-                Section::make('Konfigurasi API / Ongkir')
+                Section::make('Filter Layanan (Opsional)')
+                    ->description('Secara bawaan, semua layanan pengiriman (REG, YES, Kargo, dll) akan ditampilkan ke pembeli. Jika Anda hanya ingin mengaktifkan layanan tertentu, ketik kode layanannya di bawah ini lalu tekan Enter.')
                     ->schema([
-                        KeyValue::make('config')
-                            ->label('Parameter Konfigurasi (Key-Value)')
-                            ->keyLabel('Nama Parameter')
-                            ->valueLabel('Nilai')
+                        \Filament\Forms\Components\TagsInput::make('config.allowed_services')
+                            ->label('Layanan yang Diizinkan')
+                            ->placeholder('Pilih atau ketik kode layanan...')
+                            ->suggestions([
+                                'REG', 'YES', 'JTR', 'OKE',
+                                'Pos Reguler', 'Paket Kilat Khusus', 'Express',
+                                'ECO', 'ONS', 'TDS'
+                            ])
+                            ->helperText(new \Illuminate\Support\HtmlString('
+                                <div class="flex flex-col gap-1 mt-1 text-xs text-gray-500">
+                                    <p><strong>Contoh Kode Umum:</strong> JNE (REG, YES, JTR, OKE), POS (Pos Reguler, Paket Kilat Khusus), TIKI (REG, ECO, ONS).</p>
+                                    <p><em>Tips: Jika layanan baru tidak ada di daftar saran, Anda bisa mencari kodenya dari resi / website cek ongkir resmi ekspedisi, lalu ketik manual di atas dan tekan <strong>Enter</strong>. Kosongkan jika ingin menampilkan semua layanan.</em></p>
+                                </div>
+                            '))
                             ->columnSpanFull(),
                     ]),
             ]);

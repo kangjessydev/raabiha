@@ -28,9 +28,8 @@ class ShippingMethodsTable
                     ->searchable()
                     ->sortable()
                     ->badge(),
-                IconColumn::make('is_active')
+                \Filament\Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Aktif')
-                    ->boolean()
                     ->sortable(),
                 TextColumn::make('created_at')
                     ->label('Dibuat')

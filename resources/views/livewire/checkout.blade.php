@@ -58,113 +58,41 @@
                                     <textarea rows="3" wire:model="address" class="w-full bg-transparent border border-[#e5e2de] p-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors" placeholder="Nama Jalan, Gedung, No. Rumah"></textarea>
                                     @error('address') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
-                                <div class="flex flex-col gap-2">
-                                    <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Provinsi *</label>
+                                
+                                <div class="flex flex-col gap-2 relative z-20 md:col-span-2">
+                                    <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kecamatan / Kota Tujuan *</label>
                                     <div x-data="{
                                         open: false,
-                                        search: '',
-                                        get filteredOptions() {
-                                            if (this.search === '') return $wire.provinces;
-                                            return $wire.provinces.filter(i => i.name.toLowerCase().includes(this.search.toLowerCase()));
-                                        },
-                                        get selectedName() {
-                                            if (!$wire.selectedProvinceId) return 'Pilih Provinsi';
-                                            let option = $wire.provinces.find(o => o.id == $wire.selectedProvinceId);
-                                            return option ? option.name : 'Pilih Provinsi';
+                                        get options() {
+                                            return $wire.destinationOptions;
                                         }
-                                    }" class="relative z-30">
-                                        <div @click="open = !open" class="w-full h-12 bg-transparent border border-[#e5e2de] px-4 font-sans text-sm flex items-center justify-between cursor-pointer focus:border-[#064e3b] transition-colors" :class="open ? 'border-[#064e3b]' : ''">
-                                            <span x-text="selectedName" :class="$wire.selectedProvinceId ? 'text-[#1c1c1a]' : 'text-gray-400'"></span>
-                                            <svg class="w-4 h-4 text-[#1c1c1a] transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                        </div>
-                                        
-                                        <div x-show="open" @click.outside="open = false" style="display: none;" class="absolute z-50 w-full mt-1 bg-[#fcf9f5] border border-[#e5e2de] shadow-xl max-h-60 flex flex-col">
-                                            <div class="p-2 border-b border-[#e5e2de]">
-                                                <input type="text" x-model="search" placeholder="Cari provinsi..." class="w-full h-10 bg-white border border-[#e5e2de] px-3 font-sans text-sm focus:outline-none focus:border-[#064e3b]" autocomplete="off">
-                                            </div>
+                                    }">
+                                        <input type="text" 
+                                               wire:model.live.debounce.500ms="searchLocation" 
+                                               @focus="open = true"
+                                               @click.outside="open = false"
+                                               placeholder="Ketik minimal 3 huruf kecamatan/kota..." 
+                                               class="w-full h-12 bg-transparent border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors" autocomplete="off">
+                                               
+                                        <div x-show="open && options.length > 0" class="absolute z-50 w-full mt-1 bg-[#fcf9f5] border border-[#e5e2de] shadow-xl max-h-60 flex flex-col">
                                             <ul class="overflow-y-auto flex-1">
-                                                <template x-for="option in filteredOptions" :key="option.id">
-                                                    <li @click="$wire.set('selectedProvinceId', option.id); open = false; search = ''" 
+                                                <template x-for="option in options" :key="option.id">
+                                                    <li @click="$wire.selectDestination(option.id, option.label); open = false" 
                                                         class="px-4 py-3 cursor-pointer hover:bg-[#f0ede9] border-b border-[#e5e2de] last:border-0 font-sans text-[13px] text-[#1c1c1a]"
-                                                        x-text="option.name"></li>
+                                                        x-text="option.label"></li>
                                                 </template>
-                                                <li x-show="filteredOptions.length === 0" class="px-4 py-3 text-center text-sm text-gray-500 font-sans">Tidak ditemukan</li>
                                             </ul>
                                         </div>
                                     </div>
-                                    @error('selectedProvinceId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kota / Kabupaten *</label>
-                                    <div x-data="{
-                                        open: false,
-                                        search: '',
-                                        get filteredOptions() {
-                                            if (this.search === '') return $wire.cities;
-                                            return $wire.cities.filter(i => i.name.toLowerCase().includes(this.search.toLowerCase()));
-                                        },
-                                        get selectedName() {
-                                            if (!$wire.selectedCityId) return 'Pilih Kota/Kabupaten';
-                                            let option = $wire.cities.find(o => o.id == $wire.selectedCityId);
-                                            return option ? option.name : 'Pilih Kota/Kabupaten';
-                                        }
-                                    }" class="relative z-20">
-                                        <div @click="$wire.cities.length > 0 ? open = !open : null" class="w-full h-12 bg-transparent border border-[#e5e2de] px-4 font-sans text-sm flex items-center justify-between transition-colors" :class="{ 'cursor-pointer focus:border-[#064e3b] hover:border-[#1c1c1a]': $wire.cities.length > 0, 'opacity-50 cursor-not-allowed bg-gray-50': $wire.cities.length === 0, 'border-[#064e3b]': open }">
-                                            <span x-text="selectedName" :class="$wire.selectedCityId ? 'text-[#1c1c1a]' : 'text-gray-400'"></span>
-                                            <svg class="w-4 h-4 text-[#1c1c1a] transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    @if($selectedDestinationLabel)
+                                        <div class="mt-2 text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-[#f0ede9] p-3 rounded">
+                                            <span class="truncate">{{ $selectedDestinationLabel }}</span>
+                                            <button type="button" @click="$wire.set('selectedDestinationId', ''); $wire.set('selectedDestinationLabel', ''); $wire.set('shipping_cost', 0)" class="text-red-500 hover:text-red-700 ml-2 shrink-0">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            </button>
                                         </div>
-                                        
-                                        <div x-show="open" @click.outside="open = false" style="display: none;" class="absolute z-50 w-full mt-1 bg-[#fcf9f5] border border-[#e5e2de] shadow-xl max-h-60 flex flex-col">
-                                            <div class="p-2 border-b border-[#e5e2de]">
-                                                <input type="text" x-model="search" placeholder="Cari kota/kabupaten..." class="w-full h-10 bg-white border border-[#e5e2de] px-3 font-sans text-sm focus:outline-none focus:border-[#064e3b]" autocomplete="off">
-                                            </div>
-                                            <ul class="overflow-y-auto flex-1">
-                                                <template x-for="option in filteredOptions" :key="option.id">
-                                                    <li @click="$wire.set('selectedCityId', option.id); open = false; search = ''" 
-                                                        class="px-4 py-3 cursor-pointer hover:bg-[#f0ede9] border-b border-[#e5e2de] last:border-0 font-sans text-[13px] text-[#1c1c1a]"
-                                                        x-text="option.name"></li>
-                                                </template>
-                                                <li x-show="filteredOptions.length === 0" class="px-4 py-3 text-center text-sm text-gray-500 font-sans">Tidak ditemukan</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    @error('selectedCityId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kecamatan *</label>
-                                    <div x-data="{
-                                        open: false,
-                                        search: '',
-                                        get filteredOptions() {
-                                            if (this.search === '') return $wire.districts;
-                                            return $wire.districts.filter(i => i.name.toLowerCase().includes(this.search.toLowerCase()));
-                                        },
-                                        get selectedName() {
-                                            if (!$wire.selectedDistrictId) return 'Pilih Kecamatan';
-                                            let option = $wire.districts.find(o => o.id == $wire.selectedDistrictId);
-                                            return option ? option.name : 'Pilih Kecamatan';
-                                        }
-                                    }" class="relative z-10">
-                                        <div @click="$wire.districts.length > 0 ? open = !open : null" class="w-full h-12 bg-transparent border border-[#e5e2de] px-4 font-sans text-sm flex items-center justify-between transition-colors" :class="{ 'cursor-pointer focus:border-[#064e3b] hover:border-[#1c1c1a]': $wire.districts.length > 0, 'opacity-50 cursor-not-allowed bg-gray-50': $wire.districts.length === 0, 'border-[#064e3b]': open }">
-                                            <span x-text="selectedName" :class="$wire.selectedDistrictId ? 'text-[#1c1c1a]' : 'text-gray-400'"></span>
-                                            <svg class="w-4 h-4 text-[#1c1c1a] transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                        </div>
-                                        
-                                        <div x-show="open" @click.outside="open = false" style="display: none;" class="absolute z-50 w-full mt-1 bg-[#fcf9f5] border border-[#e5e2de] shadow-xl max-h-60 flex flex-col">
-                                            <div class="p-2 border-b border-[#e5e2de]">
-                                                <input type="text" x-model="search" placeholder="Cari kecamatan..." class="w-full h-10 bg-white border border-[#e5e2de] px-3 font-sans text-sm focus:outline-none focus:border-[#064e3b]" autocomplete="off">
-                                            </div>
-                                            <ul class="overflow-y-auto flex-1">
-                                                <template x-for="option in filteredOptions" :key="option.id">
-                                                    <li @click="$wire.set('selectedDistrictId', option.id); open = false; search = ''" 
-                                                        class="px-4 py-3 cursor-pointer hover:bg-[#f0ede9] border-b border-[#e5e2de] last:border-0 font-sans text-[13px] text-[#1c1c1a]"
-                                                        x-text="option.name"></li>
-                                                </template>
-                                                <li x-show="filteredOptions.length === 0" class="px-4 py-3 text-center text-sm text-gray-500 font-sans">Tidak ditemukan</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    @error('selectedDistrictId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    @endif
+                                    @error('selectedDestinationId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kode Pos *</label>

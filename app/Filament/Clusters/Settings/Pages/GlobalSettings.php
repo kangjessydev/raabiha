@@ -88,6 +88,37 @@ class GlobalSettings extends Page implements HasForms
                                     ->email(),
                                 Forms\Components\Textarea::make('contact_address')
                                     ->label('Alamat Toko (Fisik)'),
+                                Forms\Components\Select::make('rajaongkir_origin_city')
+                                    ->label('Kecamatan Asal Pengiriman (Otomatis untuk Ekspedisi)')
+                                    ->helperText('Pastikan Anda mencari dan memilih kecamatan asal toko agar API Ekspedisi (RajaOngkir) bisa mengkalkulasi ongkir. Ketik minimal 3 huruf.')
+                                    ->searchable()
+                                    ->getSearchResultsUsing(function (string $search): array {
+                                        if (strlen($search) < 3) return [];
+                                        
+                                        $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
+                                        if (!$apiKey) return [];
+                                        
+                                        $response = \Illuminate\Support\Facades\Http::withHeaders([
+                                            'key' => $apiKey
+                                        ])->get('https://rajaongkir.komerce.id/api/v1/destination/domestic-destination', [
+                                            'search' => $search
+                                        ]);
+                                        
+                                        if ($response->successful()) {
+                                            return collect($response->json('data'))->mapWithKeys(function ($item) {
+                                                return [$item['id'] => $item['label']];
+                                            })->toArray();
+                                        }
+                                        
+                                        return [];
+                                    })
+                                    ->getOptionLabelUsing(function ($value): ?string {
+                                        // Try to fetch label by ID, but Komerce API doesn't have a direct /id endpoint,
+                                        // so we rely on what is saved in the DB, or we just show the ID.
+                                        // Since we don't store the label separately in settings, we can just return a placeholder or try to hit search again.
+                                        return $value ? 'Kecamatan Terpilih (ID: ' . $value . ')' : null;
+                                    })
+                                    ->required(),
                                 Forms\Components\Repeater::make('social_links')
                                     ->label('Daftar Sosial Media')
                                     ->components([
@@ -186,25 +217,44 @@ class GlobalSettings extends Page implements HasForms
                                             ]),
                                     ])
                             ]),
-                        \Filament\Schemas\Components\Tabs\Tab::make('Integrasi')
+                        \Filament\Schemas\Components\Tabs\Tab::make('Integrasi & API')
                             ->components([
-                                Forms\Components\TextInput::make('google_analytics_id')
-                                    ->label('ID Google Analytics (GA4)')
-                                    ->placeholder('Contoh: G-XXXXXXXXXX'),
-                                Forms\Components\TextInput::make('meta_pixel_id')
-                                    ->label('ID Meta Pixel')
-                                    ->placeholder('Contoh: 1234567890'),
-                                Forms\Components\TextInput::make('tiktok_pixel_id')
-                                    ->label('ID TikTok Pixel')
-                                    ->placeholder('Contoh: C123456...'),
-                                Forms\Components\Textarea::make('scripts_header')
-                                    ->label('Custom Scripts Lainnya (Header)')
-                                    ->helperText('Jika ada script tambahan yang wajib ditaruh di <head>. Pastikan menggunakan tag <script>...</script>')
-                                    ->rows(4),
-                                Forms\Components\Textarea::make('scripts_footer')
-                                    ->label('Custom Scripts Lainnya (Footer)')
-                                    ->helperText('Taruh script berat seperti Widget Live Chat di sini agar website tidak lambat.')
-                                    ->rows(4),
+                                Forms\Components\Fieldset::make('API & Payment Gateway')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('xendit_secret_key')
+                                            ->label('Xendit Secret Key (Live / Test)')
+                                            ->password()
+                                            ->helperText('API Key dari dashboard Xendit untuk menerima pembayaran otomatis (dimulai dengan xnd_...).')
+                                            ->columnSpanFull(),
+                                        Forms\Components\TextInput::make('rajaongkir_api_key')
+                                            ->label('API Key Ekspedisi (Komerce / RajaOngkir)')
+                                            ->password()
+                                            ->helperText('API Key untuk mengecek ongkos kirim otomatis.')
+                                            ->columnSpanFull(),
+                                    ]),
+                                Forms\Components\Fieldset::make('Tracking & Analytics')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('google_analytics_id')
+                                            ->label('ID Google Analytics (GA4)')
+                                            ->placeholder('Contoh: G-XXXXXXXXXX'),
+                                        Forms\Components\TextInput::make('meta_pixel_id')
+                                            ->label('ID Meta Pixel')
+                                            ->placeholder('Contoh: 1234567890'),
+                                        Forms\Components\TextInput::make('tiktok_pixel_id')
+                                            ->label('ID TikTok Pixel')
+                                            ->placeholder('Contoh: C123456...'),
+                                    ])->columns(3),
+                                Forms\Components\Fieldset::make('Custom Scripts')
+                                    ->schema([
+                                        Forms\Components\Textarea::make('scripts_header')
+                                            ->label('Custom Scripts Lainnya (Header)')
+                                            ->helperText('Jika ada script tambahan yang wajib ditaruh di <head>. Pastikan menggunakan tag <script>...</script>')
+                                            ->rows(4),
+                                        Forms\Components\Textarea::make('scripts_footer')
+                                            ->label('Custom Scripts Lainnya (Footer)')
+                                            ->helperText('Taruh script berat seperti Widget Live Chat di sini agar website tidak lambat.')
+                                            ->rows(4),
+                                    ])->columns(1),
                             ]),
                     ])
                     ->columnSpanFull()
