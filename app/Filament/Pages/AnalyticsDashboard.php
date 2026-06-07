@@ -11,7 +11,7 @@ class AnalyticsDashboard extends Page
 
     protected string $view = 'filament.pages.analytics-dashboard';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Dasbor';
+    protected static ?string $cluster = \App\Filament\Clusters\Dashboard\DashboardCluster::class;
     
     protected static ?string $navigationLabel = 'Analitik Pengunjung';
 
