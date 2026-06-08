@@ -51,7 +51,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 
 ## 🔌 Integrasi API (Fase Berikutnya)
 - [x] **Logistik (RajaOngkir by Komerce):** Menggunakan API *Shipping Cost* Komerce untuk cek ongkir (JNE/POS/TIKI). Termasuk pembuatan antarmuka di `Pengaturan Checkout` untuk *Origin City* dan kurir aktif.
-- [ ] **Pembayaran (Xendit / Tripay):** Virtual Account, QRIS otomatis dengan Webhook integrasi ke status pesanan.
+- [x] **Pembayaran (Xendit / Tripay):** Sinkronisasi Virtual Account, QRIS, e-Wallet otomatis dengan *Webhook* integrasi ke status pesanan, serta *Dual-Gateway Switcher* di Admin Panel.
 
 ## 🧊 Backlog / Ekstensi Bisnis (Sprint 3 / Fase 3)
 - [x] **Google Analytics Embed:** Menambahkan halaman *iframe* Looker Studio di Filament untuk metrik kunjungan lengkap (Traffic Source, Pageviews) dengan 0% beban server.
