@@ -7,6 +7,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Select;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -37,6 +38,21 @@ class PaymentMethodForm
                             ->label('Aktif')
                             ->default(true)
                             ->required(),
+                        Select::make('availability')
+                            ->label('Tampil Di Mana?')
+                            ->options([
+                                'both'    => 'Semua (Online & Offline)',
+                                'online'  => 'Khusus Website (Online)',
+                                'offline' => 'Khusus Kasir (Offline)',
+                            ])
+                            ->default('both')
+                            ->required()
+                            ->afterStateHydrated(function (Select $component, $record) {
+                                if ($record) {
+                                    $config = is_array($record->config) ? $record->config : [];
+                                    $component->state($config['availability'] ?? 'both');
+                                }
+                            }),
                     ])->columns(2),
 
                 Section::make('Konfigurasi API / Kredensial')

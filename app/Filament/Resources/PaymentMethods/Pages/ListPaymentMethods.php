@@ -18,8 +18,18 @@ class ListPaymentMethods extends ListRecords
                 ->icon('heroicon-o-arrow-path')
                 ->color('success')
                 ->action(function () {
-                    $apiKey = env('TRIPAY_API_KEY');
-                    $isProduction = env('TRIPAY_MODE', 'sandbox') === 'production';
+                    $apiKey = \App\Models\SiteSetting::where('key', 'tripay_api_key')->value('value') ?: env('TRIPAY_API_KEY');
+                    $isProduction = (\App\Models\SiteSetting::where('key', 'tripay_mode')->value('value') ?: env('TRIPAY_MODE', 'sandbox')) === 'production';
+                    
+                    if (!$apiKey) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Gagal menarik data')
+                            ->body('API Key Tripay belum dikonfigurasi di Pengaturan Global.')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+                    
                     $endpoint = $isProduction 
                         ? 'https://tripay.co.id/api/merchant/payment-channel' 
                         : 'https://tripay.co.id/api-sandbox/merchant/payment-channel';
@@ -39,14 +49,22 @@ class ListPaymentMethods extends ListRecords
                                 if ($iconContent) {
                                     \Illuminate\Support\Facades\Storage::disk('public')->put($iconName, $iconContent);
                                 }
+
+                                $config = [
+                                    'availability' => 'both',
+                                    'group'        => $channel['group'],
+                                    'fee_merchant' => $channel['fee_merchant'] ?? ['flat' => 0, 'percent' => 0],
+                                    'fee_customer' => $channel['fee_customer'] ?? ['flat' => 0, 'percent' => 0],
+                                ];
                                 
                                 \App\Models\PaymentMethod::updateOrCreate(
                                     ['code' => $channel['code']],
                                     [
-                                        'name' => $channel['name'],
+                                        'name'        => $channel['name'],
                                         'description' => 'Grup: ' . $channel['group'],
-                                        'logo' => $iconContent ? $iconName : null,
-                                        'is_active' => true,
+                                        'logo'        => $iconContent ? $iconName : null,
+                                        'is_active'   => false,
+                                        'config'      => $config,
                                     ]
                                 );
                             }

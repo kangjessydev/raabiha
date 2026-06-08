@@ -16,4 +16,22 @@ class EditPaymentMethod extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $config = is_array($data['config'] ?? null) ? $data['config'] : [];
+        $data['availability'] = $config['availability'] ?? 'both';
+        unset($config['availability']);
+        $data['config'] = $config;
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $config = is_array($data['config'] ?? null) ? $data['config'] : [];
+        $config['availability'] = $data['availability'] ?? 'both';
+        unset($data['availability']);
+        $data['config'] = $config;
+        return $data;
+    }
 }

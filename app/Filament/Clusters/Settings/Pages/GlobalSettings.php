@@ -23,6 +23,7 @@ class GlobalSettings extends Page implements HasForms
     protected string $view = 'filament.clusters.settings.pages.global-settings';
 
     public ?array $data = [];
+    public bool $unlockedTripay = false;
     public bool $unlockedXendit = false;
     public bool $unlockedRajaOngkir = false;
 
@@ -108,17 +109,19 @@ class GlobalSettings extends Page implements HasForms
                                         
                                         if ($response->successful()) {
                                             return collect($response->json('data'))->mapWithKeys(function ($item) {
-                                                return [$item['id'] => $item['label']];
+                                                $key = $item['id'] . '::' . $item['label'];
+                                                return [$key => $item['label']];
                                             })->toArray();
                                         }
                                         
                                         return [];
                                     })
                                     ->getOptionLabelUsing(function ($value): ?string {
-                                        // Try to fetch label by ID, but Komerce API doesn't have a direct /id endpoint,
-                                        // so we rely on what is saved in the DB, or we just show the ID.
-                                        // Since we don't store the label separately in settings, we can just return a placeholder or try to hit search again.
-                                        return $value ? 'Kecamatan Terpilih (ID: ' . $value . ')' : null;
+                                        if (!$value) return null;
+                                        if (strpos($value, '::') !== false) {
+                                            return explode('::', $value)[1];
+                                        }
+                                        return 'Kecamatan Terpilih (ID: ' . $value . ')';
                                     })
                                     ->required(),
                                 Forms\Components\Repeater::make('social_links')
@@ -223,31 +226,92 @@ class GlobalSettings extends Page implements HasForms
                             ->components([
                                 \Filament\Schemas\Components\Section::make('API & Payment Gateway')
                                     ->schema([
-                                        Forms\Components\TextInput::make('xendit_secret_key')
-                                            ->label('Xendit Secret Key (Live / Test)')
-                                            ->password()
-                                            ->helperText('API Key dari dashboard Xendit untuk menerima pembayaran otomatis (dimulai dengan xnd_...).')
-                                            ->readOnly(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedXendit)
-                                            ->suffixAction(
-                                                \Filament\Actions\Action::make('unlock_xendit')
-                                                    ->icon('heroicon-m-lock-closed')
-                                                    ->color('danger')
-                                                    ->visible(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedXendit)
-                                                    ->requiresConfirmation()
-                                                    ->modalHeading('Otorisasi Keamanan Xendit')
-                                                    ->modalDescription('Masukkan password akun Anda untuk mengedit API Key ini.')
-                                                    ->form([
-                                                        Forms\Components\TextInput::make('password')
-                                                            ->label('Password Anda')
-                                                            ->password()
-                                                            ->required()
-                                                            ->currentPassword()
-                                                    ])
-                                                    ->action(function (\Livewire\Component $livewire) {
-                                                        $livewire->unlockedXendit = true;
-                                                    })
-                                            )
+                                        Forms\Components\Radio::make('active_payment_gateway')
+                                            ->label('Payment Gateway Aktif')
+                                            ->options([
+                                                'tripay' => 'Tripay',
+                                                'xendit' => 'Xendit',
+                                            ])
+                                            ->default('tripay')
+                                            ->inline()
+                                            ->live()
+                                            ->required()
                                             ->columnSpanFull(),
+                                        \Filament\Schemas\Components\Group::make([
+                                            Forms\Components\Select::make('tripay_mode')
+                                                ->label('Tripay Environment Mode')
+                                                ->options([
+                                                    'sandbox' => 'Sandbox (Testing)',
+                                                    'production' => 'Production (Live)'
+                                                ])
+                                                ->default('sandbox')
+                                                ->required()
+                                                ->columnSpanFull(),
+                                            Forms\Components\TextInput::make('tripay_merchant_code')
+                                                ->label('Tripay Merchant Code')
+                                                ->helperText('Kode merchant dari dashboard Tripay (contoh: T11314)')
+                                                ->required()
+                                                ->columnSpanFull(),
+                                            Forms\Components\TextInput::make('tripay_api_key')
+                                                ->label('Tripay API Key')
+                                                ->password()
+                                                ->helperText('API Key dari dashboard Tripay.')
+                                                ->readOnly(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedTripay)
+                                                ->suffixAction(
+                                                    \Filament\Actions\Action::make('unlock_tripay')
+                                                        ->icon('heroicon-m-lock-closed')
+                                                        ->color('danger')
+                                                        ->visible(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedTripay)
+                                                        ->requiresConfirmation()
+                                                        ->modalHeading('Otorisasi Keamanan Tripay')
+                                                        ->modalDescription('Masukkan password akun Anda untuk mengedit kredensial ini.')
+                                                        ->form([
+                                                            Forms\Components\TextInput::make('password')
+                                                                ->label('Password Anda')
+                                                                ->password()
+                                                                ->required()
+                                                                ->currentPassword()
+                                                        ])
+                                                        ->action(function (\Livewire\Component $livewire) {
+                                                            $livewire->unlockedTripay = true;
+                                                        })
+                                                )
+                                                ->columnSpanFull(),
+                                            Forms\Components\TextInput::make('tripay_private_key')
+                                                ->label('Tripay Private Key')
+                                                ->password()
+                                                ->helperText('Private Key untuk memverifikasi Webhook.')
+                                                ->readOnly(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedTripay)
+                                                ->columnSpanFull(),
+                                        ])->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('active_payment_gateway') === 'tripay'),
+                                        
+                                        \Filament\Schemas\Components\Group::make([
+                                            Forms\Components\TextInput::make('xendit_secret_key')
+                                                ->label('Xendit Secret Key (Live / Test)')
+                                                ->password()
+                                                ->helperText('API Key dari dashboard Xendit untuk menerima pembayaran otomatis (dimulai dengan xnd_...).')
+                                                ->readOnly(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedXendit)
+                                                ->suffixAction(
+                                                    \Filament\Actions\Action::make('unlock_xendit')
+                                                        ->icon('heroicon-m-lock-closed')
+                                                        ->color('danger')
+                                                        ->visible(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedXendit)
+                                                        ->requiresConfirmation()
+                                                        ->modalHeading('Otorisasi Keamanan Xendit')
+                                                        ->modalDescription('Masukkan password akun Anda untuk mengedit API Key ini.')
+                                                        ->form([
+                                                            Forms\Components\TextInput::make('password')
+                                                                ->label('Password Anda')
+                                                                ->password()
+                                                                ->required()
+                                                                ->currentPassword()
+                                                        ])
+                                                        ->action(function (\Livewire\Component $livewire) {
+                                                            $livewire->unlockedXendit = true;
+                                                        })
+                                                )
+                                                ->columnSpanFull(),
+                                        ])->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('active_payment_gateway') === 'xendit'),
                                         Forms\Components\TextInput::make('rajaongkir_api_key')
                                             ->label('API Key Ekspedisi (Komerce / RajaOngkir)')
                                             ->password()

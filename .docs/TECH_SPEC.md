@@ -8,7 +8,7 @@
 - **Media Management:** awcodes/filament-curator v5 terintegrasi langsung dengan Filament untuk sentralisasi *Media Library* berstandar WordPress.
 
 ## 2. Integrasi Layanan Eksternal (Third-Party)
-- **Payment Gateway:** Xendit (Untuk pemrosesan pembayaran otomatis).
+- **Payment Gateway:** Tripay (Untuk pemrosesan pembayaran otomatis seperti Virtual Account, QRIS, Retail).
 - **Pengiriman (Logistik):** RajaOngkir (Untuk perhitungan ongkos kirim otomatis).
 - **Analytics & Marketing:**
   - TikTok Pixel

@@ -15,6 +15,8 @@ class Order extends Model
         'user_id',
         'order_number',
         'status',
+        'source',
+        'voucher_id',
         'subtotal',
         'shipping_cost',
         'discount_total',
@@ -40,6 +42,11 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function voucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class);
     }
 
     public function items(): HasMany

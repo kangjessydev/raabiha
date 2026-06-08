@@ -28,10 +28,9 @@ Route::get('/cart', \App\Livewire\Cart::class);
 Route::get('/blog/{slug}', \App\Livewire\BlogDetail::class);
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/checkout', \App\Livewire\Checkout::class)->name('checkout');
     Route::get('/account', \App\Livewire\Account::class)->name('account');
     Route::get('/order-detail', \App\Livewire\OrderDetail::class)->name('order.detail');
-    
+
     Route::post('/logout', function (\Illuminate\Http\Request $request) {
         auth()->logout();
         $request->session()->invalidate();
@@ -39,6 +38,8 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/login');
     })->name('logout');
 });
+
+Route::get('/checkout', \App\Livewire\Checkout::class)->name('checkout');
 
 Route::get('/order-success', function () {
     return view('order-success');

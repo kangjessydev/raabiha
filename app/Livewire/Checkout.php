@@ -47,9 +47,33 @@ class Checkout extends Component
     public $appliedVoucher = null;
     public $discountAmount = 0;
     
+    // Guest checkout state: null = undecided, true = continue as guest, false = logged in
+    public $guest_mode = null;
+
     public function mount()
     {
-        $firstMethod = \App\Models\PaymentMethod::where('is_active', true)->first();
+        if (auth()->check()) {
+            $this->guest_mode = false;
+            $user = auth()->user();
+            $this->email = $user->email;
+            $this->first_name = explode(' ', $user->name, 2)[0] ?? '';
+            $this->last_name = explode(' ', $user->name, 2)[1] ?? '';
+            // Pre-fill from primary address if exists
+            $address = $user->addresses()->where('is_primary', true)->first() ?? $user->addresses()->first();
+            if ($address) {
+                $this->phone = $address->phone ?? '';
+                $this->address = $address->full_address ?? '';
+            }
+        } else {
+            $this->guest_mode = null; // Show the choice screen
+        }
+        $firstMethod = \App\Models\PaymentMethod::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('config->availability')
+                    ->orWhere('config->availability', 'both')
+                    ->orWhere('config->availability', 'online');
+            })
+            ->first();
         if ($firstMethod) {
             $this->payment_method = $firstMethod->code;
         }
@@ -116,9 +140,9 @@ class Checkout extends Component
         }
 
         $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
-        $originCity = \App\Models\SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
-        
-        if (!$apiKey || !$originCity) return;
+        $originCityRaw = \App\Models\SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
+        if (!$apiKey || !$originCityRaw) return;
+        $originCity = explode('::', $originCityRaw)[0];
         
         $activeCouriers = \App\Models\ShippingMethod::where('is_active', true)->get();
         if ($activeCouriers->isEmpty()) {
@@ -260,11 +284,27 @@ class Checkout extends Component
         return 0;
     }
 
+    public function getPaymentFeeProperty(): int
+    {
+        if (!$this->payment_method) return 0;
+        $pm = \App\Models\PaymentMethod::where('code', $this->payment_method)->first();
+        if (!$pm || !$pm->config) return 0;
+        
+        $feeCustomer = $pm->config['fee_customer'] ?? ['flat' => 0, 'percent' => 0];
+        $flat    = (int) ($feeCustomer['flat'] ?? 0);
+        $percent = (float) ($feeCustomer['percent'] ?? 0);
+        
+        $base = max(0, $this->subtotal - $this->reseller_discount - $this->discountAmount) + $this->shipping_cost;
+        $percentFee = $percent > 0 ? (int) ceil($base * ($percent / 100)) : 0;
+        
+        return $flat + $percentFee;
+    }
+
     public function getTotalProperty()
     {
         $this->calculateDiscount();
         $baseForTotal = max(0, $this->subtotal - $this->reseller_discount);
-        return max(0, $baseForTotal - $this->discountAmount) + $this->shipping_cost;
+        return max(0, $baseForTotal - $this->discountAmount) + $this->shipping_cost + $this->paymentFee;
     }
     
     public function calculateDiscount()
@@ -371,16 +411,20 @@ class Checkout extends Component
     public function processCheckout()
     {
         $this->validate([
-            'email' => 'required|email',
-            'phone' => 'required|string',
+            'email' => 'nullable|email',
+            'phone' => 'nullable|string',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'address' => 'required|string',
             'selectedDestinationId' => 'required',
-            'postal_code' => 'required|string',
         ], [
             'selectedDestinationId.required' => 'Silakan pilih lokasi tujuan pengiriman (Kecamatan/Kota).',
         ]);
+
+        if (empty($this->email) && empty($this->phone)) {
+            $this->addError('email', 'Isi salah satu: Email atau No. WhatsApp.');
+            return;
+        }
 
         $items = $this->checkoutItems;
         if ($items->count() === 0) {
@@ -472,32 +516,48 @@ class Checkout extends Component
 
             DB::commit();
 
-            // Create Payment Transaction (Xendit)
-            $apiKey = \App\Models\SiteSetting::where('key', 'xendit_secret_key')->value('value') ?: env('XENDIT_SECRET_KEY');
-            
-            if ($apiKey && $this->payment_method != 'bank_transfer' && $this->payment_method != 'cod') {
-                $endpoint = 'https://api.xendit.co/v2/invoices';
-                
+            // Check Active Payment Gateway
+            $activeGateway = \App\Models\SiteSetting::where('key', 'active_payment_gateway')->value('value') ?: 'tripay';
+
+            if ($this->payment_method != 'tunai') {
+                if ($activeGateway === 'tripay') {
+                    // Create Payment Transaction (Tripay)
+                    $apiKey = \App\Models\SiteSetting::where('key', 'tripay_api_key')->value('value') ?: env('TRIPAY_API_KEY');
+                    $privateKey = \App\Models\SiteSetting::where('key', 'tripay_private_key')->value('value') ?: env('TRIPAY_PRIVATE_KEY');
+                    $merchantCode = \App\Models\SiteSetting::where('key', 'tripay_merchant_code')->value('value') ?: env('TRIPAY_MERCHANT_CODE');
+                    $mode = \App\Models\SiteSetting::where('key', 'tripay_mode')->value('value') ?: env('TRIPAY_MODE', 'sandbox');
+                    
+                    if ($apiKey && $privateKey && $merchantCode) {
+                        $endpoint = $mode === 'production' 
+                            ? 'https://tripay.co.id/api/transaction/create'
+                            : 'https://tripay.co.id/api-sandbox/transaction/create';
+
+                $method = $this->payment_method;
                 $merchantRef = $order->order_number;
                 $amount = $order->grand_total;
                 
-                // Format order items for Xendit
+                $signature = hash_hmac('sha256', $merchantCode . $merchantRef . $amount, $privateKey);
+                
+                // Format order items for Tripay
                 $orderItems = [];
-                // Refresh cart relation to be safe
                 $cartItems = \App\Models\CartItem::whereIn('id', session('checkout_item_ids', []))->get();
                 foreach ($cartItems as $item) {
                     $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
                         
                     $orderItems[] = [
-                        'name' => mb_substr($item->product->name, 0, 255), // Xendit item name limit
+                        'sku' => $item->variant ? ($item->variant->sku ?? 'SKU-'.$item->id) : ($item->product->sku ?? 'SKU-'.$item->id),
+                        'name' => mb_substr($item->product->name, 0, 50),
                         'price' => (int) $price,
                         'quantity' => $item->quantity,
+                        'product_url' => url('/product/' . $item->product->slug),
+                        'image_url' => asset('assets/images/placeholder.png'),
                     ];
                 }
                 
                 // Add shipping as an item
                 if ($this->shipping_cost > 0) {
                     $orderItems[] = [
+                        'sku' => 'SHIPPING',
                         'name' => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
                         'price' => (int) $this->shipping_cost,
                         'quantity' => 1,
@@ -505,35 +565,93 @@ class Checkout extends Component
                 }
 
                 $data = [
-                    'external_id'      => $merchantRef,
-                    'amount'           => (int) $amount,
-                    'description'      => 'Pembayaran Pesanan ' . $merchantRef,
-                    'invoice_duration' => 86400, // 24 hours
-                    'customer' => [
-                        'given_names'   => $this->first_name,
-                        'surname'       => $this->last_name,
-                        'email'         => $this->email,
-                        'mobile_number' => $this->phone,
-                    ],
-                    'success_redirect_url' => url('/order-success?order=' . $merchantRef),
-                    'failure_redirect_url' => url('/checkout'),
-                    'items' => $orderItems
+                    'method'         => $method,
+                    'merchant_ref'   => $merchantRef,
+                    'amount'         => (int) $amount,
+                    'customer_name'  => trim($this->first_name . ' ' . $this->last_name) ?: 'Guest',
+                    'customer_email' => $this->email ?: 'noemail@example.com',
+                    'customer_phone' => $this->phone ?: '080000000000',
+                    'order_items'    => $orderItems,
+                    'return_url'     => url('/order-success?order=' . $merchantRef),
+                    'expired_time'   => (time() + (24 * 60 * 60)), // 24 hours
+                    'signature'      => $signature
                 ];
 
-                $response = \Illuminate\Support\Facades\Http::withBasicAuth($apiKey, '')
+                $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
                     ->post($endpoint, $data);
 
-                if ($response->successful()) {
-                    $xenditData = $response->json();
-                    $order->update([
-                        'payment_id' => $xenditData['id'],
-                        'payment_url' => $xenditData['invoice_url']
-                    ]);
+                        if ($response->successful() && $response->json('success')) {
+                            $tripayData = $response->json('data');
+                            $order->update([
+                                'payment_id' => $tripayData['reference'],
+                                'payment_url' => $tripayData['checkout_url']
+                            ]);
+                            
+                            return redirect()->away($tripayData['checkout_url']);
+                        } else {
+                            Log::error('Tripay Create Transaction Error', ['response' => $response->json()]);
+                            throw new \Exception('Gagal membuat transaksi Tripay: ' . ($response->json('message') ?? 'Internal Error'));
+                        }
+                    }
+                } elseif ($activeGateway === 'xendit') {
+                    // Create Payment Transaction (Xendit)
+                    $apiKey = \App\Models\SiteSetting::where('key', 'xendit_secret_key')->value('value') ?: env('XENDIT_SECRET_KEY');
                     
-                    return redirect()->away($xenditData['invoice_url']);
-                } else {
-                    Log::error('Xendit Create Invoice Error', ['response' => $response->json()]);
-                    throw new \Exception('Gagal membuat transaksi pembayaran: ' . ($response->json('message') ?? 'Internal Error'));
+                    if ($apiKey) {
+                        $endpoint = 'https://api.xendit.co/v2/invoices';
+                        $merchantRef = $order->order_number;
+                        $amount = $order->grand_total;
+                        
+                        // Format order items for Xendit
+                        $orderItems = [];
+                        $cartItems = \App\Models\CartItem::whereIn('id', session('checkout_item_ids', []))->get();
+                        foreach ($cartItems as $item) {
+                            $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
+                            $orderItems[] = [
+                                'name' => mb_substr($item->product->name, 0, 255),
+                                'price' => (int) $price,
+                                'quantity' => $item->quantity,
+                            ];
+                        }
+                        
+                        if ($this->shipping_cost > 0) {
+                            $orderItems[] = [
+                                'name' => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
+                                'price' => (int) $this->shipping_cost,
+                                'quantity' => 1,
+                            ];
+                        }
+
+                        $data = [
+                            'external_id'      => $merchantRef,
+                            'amount'           => (int) $amount,
+                            'description'      => 'Pembayaran Pesanan ' . $merchantRef,
+                            'invoice_duration' => 86400,
+                            'customer' => [
+                                'given_names'   => trim($this->first_name . ' ' . $this->last_name) ?: 'Guest',
+                                'email'         => $this->email ?: 'noemail@example.com',
+                                'mobile_number' => $this->phone ?: '080000000000',
+                            ],
+                            'success_redirect_url' => url('/order-success?order=' . $merchantRef),
+                            'failure_redirect_url' => url('/checkout'),
+                            'items' => $orderItems
+                        ];
+
+                        $response = \Illuminate\Support\Facades\Http::withBasicAuth($apiKey, '')
+                            ->post($endpoint, $data);
+
+                        if ($response->successful()) {
+                            $xenditData = $response->json();
+                            $order->update([
+                                'payment_id' => $xenditData['id'],
+                                'payment_url' => $xenditData['invoice_url']
+                            ]);
+                            return redirect()->away($xenditData['invoice_url']);
+                        } else {
+                            Log::error('Xendit Create Invoice Error', ['response' => $response->json()]);
+                            throw new \Exception('Gagal membuat transaksi Xendit: ' . ($response->json('message') ?? 'Internal Error'));
+                        }
+                    }
                 }
             }
 
@@ -566,10 +684,16 @@ class Checkout extends Component
 
     public function render()
     {
-        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)->get();
+        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('config->availability')
+                    ->orWhere('config->availability', 'both')
+                    ->orWhere('config->availability', 'online');
+            })
+            ->get();
         $this->calculateDiscount(); // Ensure discount is calculated before render
         
-        $availableVouchers = \App\Models\Voucher::where('is_active', true)
+        $vouchers = \App\Models\Voucher::where('is_active', true)
             ->where(function($query) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
@@ -577,6 +701,41 @@ class Checkout extends Component
                 $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->get();
+            
+        $availableVouchers = collect();
+        $cartQuantity = $this->checkoutItems->sum('quantity');
+        $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
+        $user = auth()->user();
+        
+        foreach ($vouchers as $voucher) {
+            // Cek voucher khusus user tertentu
+            if (!empty($voucher->specific_users)) {
+                if (!$user || !in_array($user->email, $voucher->specific_users)) {
+                    continue; // Jangan tampilkan sama sekali
+                }
+            }
+            
+            $isEligible = true;
+            $reason = '';
+            
+            if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
+                $isEligible = false;
+                $reason = 'Sudah melewati batas penggunaan maksimal.';
+            } elseif ($voucher->min_items > 0 && $cartQuantity < $voucher->min_items) {
+                $isEligible = false;
+                $reason = 'Minimal belanja ' . $voucher->min_items . ' item.';
+            } elseif ($voucher->min_purchase > 0 && $baseTotalForVoucher < $voucher->min_purchase) {
+                $isEligible = false;
+                $reason = 'Minimal transaksi Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.';
+            } elseif ($voucher->exclude_resellers && $user && $user->hasRole('reseller')) {
+                $isEligible = false;
+                $reason = 'Tidak berlaku untuk mitra Reseller.';
+            }
+            
+            $voucher->is_eligible = $isEligible;
+            $voucher->ineligibility_reason = $reason;
+            $availableVouchers->push($voucher);
+        }
         
         return view('livewire.checkout', [
             'paymentMethods' => $paymentMethods,

@@ -147,8 +147,11 @@
                                             <button 
                                                 type="button"
                                                 wire:click="$set('selectedColor', '{{ $colorName }}')"
-                                                class="w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $colorName ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
-                                                <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
+                                                class="flex flex-col items-center gap-1.5 group transition-all duration-200">
+                                                <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $colorName ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
+                                                    <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
+                                                </div>
+                                                <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $selectedColor === $colorName ? 'text-[#1c1c1a] font-bold' : 'text-[#a09e99] group-hover:text-[#615e57]' }}">{{ $colorName }}</span>
                                             </button>
                                         @endforeach
                                     </div>
@@ -612,8 +615,11 @@
                             $colorName = $colorOpt->value;
                             $hex = $colorOpt->meta ?? '#333333'; 
                         @endphp
-                        <button type="button" wire:click="$set('selectedColor', '{{ $colorName }}')" class="w-8 h-8 rounded-full border flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $colorName ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
-                            <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
+                        <button type="button" wire:click="$set('selectedColor', '{{ $colorName }}')" class="flex flex-col items-center gap-1.5 group transition-all duration-200">
+                            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $colorName ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
+                                <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
+                            </div>
+                            <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $selectedColor === $colorName ? 'text-[#1c1c1a] font-bold' : 'text-[#a09e99] group-hover:text-[#615e57]' }}">{{ $colorName }}</span>
                         </button>
                     @endforeach
                 </div>

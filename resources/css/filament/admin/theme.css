@@ -25,3 +25,10 @@
     background-color: #cbd5e1;
     border-radius: 20px;
 }
+
+/* Fix for Filament native(false) Select custom HTML options overflowing */
+.fi-select-input-btn > div {
+    min-width: 0;
+    flex: 1;
+}
+
