@@ -2,6 +2,12 @@
 
 namespace App\Filament\Resources\Cashflows\Schemas;
 
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class CashflowForm
@@ -10,55 +16,56 @@ class CashflowForm
     {
         return $schema
             ->components([
-                \Filament\Schemas\Components\Section::make('Informasi Transaksi')
+                Section::make('Informasi Transaksi')
                     ->schema([
-                        \Filament\Schemas\Components\DatePicker::make('transaction_date')
+                        DatePicker::make('transaction_date')
                             ->label('Tanggal')
                             ->required()
                             ->default(now()),
-                        \Filament\Schemas\Components\Select::make('type')
+                        Select::make('type')
                             ->label('Jenis Arus Kas')
                             ->options([
-                                'in' => 'Uang Masuk (Cash In)',
+                                'in'  => 'Uang Masuk (Cash In)',
                                 'out' => 'Uang Keluar (Cash Out)',
                             ])
                             ->required()
                             ->live(),
-                        \Filament\Schemas\Components\Select::make('category')
+                        Select::make('category')
                             ->label('Kategori')
-                            ->options(function (\Filament\Schemas\Get $get) {
+                            ->options(function (Get $get) {
                                 $type = $get('type');
                                 if ($type === 'in') {
                                     return [
-                                        'Sales' => 'Penjualan / Pendapatan Pesanan',
-                                        'Deposit' => 'Deposit / Top Up',
+                                        'Sales'    => 'Penjualan / Pendapatan Pesanan',
+                                        'Deposit'  => 'Deposit / Top Up',
                                         'Other_In' => 'Pemasukan Lainnya',
                                     ];
                                 }
                                 return [
                                     'Operational' => 'Operasional (Listrik, Internet, dll)',
-                                    'Marketing' => 'Marketing & Iklan (Ads)',
-                                    'Packaging' => 'Packaging (Kardus, Lakban, dll)',
-                                    'Salary' => 'Gaji Pegawai',
-                                    'Shipping' => 'Biaya Kurir / Ekspedisi',
-                                    'Other_Out' => 'Pengeluaran Lainnya',
+                                    'Marketing'   => 'Marketing & Iklan (Ads)',
+                                    'Packaging'   => 'Packaging (Kardus, Lakban, dll)',
+                                    'Salary'      => 'Gaji Pegawai',
+                                    'Shipping'    => 'Biaya Kurir / Ekspedisi',
+                                    'Other_Out'   => 'Pengeluaran Lainnya',
                                 ];
                             })
                             ->required(),
-                        \Filament\Schemas\Components\TextInput::make('amount')
+                        TextInput::make('amount')
                             ->label('Nominal (Rp)')
                             ->required()
                             ->numeric()
                             ->prefix('Rp'),
-                        \Filament\Schemas\Components\Select::make('order_id')
+                        Select::make('order_id')
                             ->label('Terkait Pesanan (Opsional)')
                             ->relationship('order', 'order_number')
                             ->searchable()
                             ->nullable(),
-                        \Filament\Schemas\Components\Textarea::make('description')
+                        Textarea::make('description')
                             ->label('Catatan / Keterangan')
                             ->columnSpanFull(),
                     ])->columns(2),
             ]);
     }
 }
+
