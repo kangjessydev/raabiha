@@ -102,6 +102,95 @@ class StockManagementTable
                         ]);
                     })
                     ->successNotificationTitle('Stok berhasil diperbarui dan log tersimpan!'),
+
+                Action::make('adjust_variant_stock')
+                    ->label('Edit Stok Varian')
+                    ->icon('heroicon-o-bars-3-bottom-left')
+                    ->color('info')
+                    ->visible(fn ($record) => $record->has_variants)
+                    ->form(function ($record) {
+                        $schema = [];
+                        
+                        // Load variants for this product
+                        $variants = $record->variants()->get();
+                        
+                        foreach ($variants as $variant) {
+                            $schema[] = \Filament\Forms\Components\Fieldset::make($variant->name . ' (' . $variant->sku . ')')
+                                ->schema([
+                                    TextInput::make('variant_' . $variant->id . '_current')
+                                        ->label('Stok Saat Ini')
+                                        ->disabled()
+                                        ->default($variant->stock)
+                                        ->columnSpan(1),
+                                    TextInput::make('variant_' . $variant->id . '_new')
+                                        ->label('Stok Baru')
+                                        ->required()
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->default($variant->stock)
+                                        ->columnSpan(1),
+                                ])->columns(2);
+                        }
+                        
+                        $schema[] = Select::make('reason')
+                            ->label('Alasan Perubahan (Berlaku untuk semua varian yang diubah)')
+                            ->required()
+                            ->options([
+                                'Restock'   => 'Restock / Barang Masuk',
+                                'Retur'     => 'Retur dari Pembeli',
+                                'Koreksi'   => 'Koreksi / Inventarisasi Fisik',
+                                'Rusak'     => 'Barang Rusak / Cacat',
+                                'Lainnya'   => 'Lainnya',
+                            ]);
+                            
+                        $schema[] = Textarea::make('notes')
+                            ->label('Catatan (Opsional)');
+                            
+                        return $schema;
+                    })
+                    ->action(function (array $data, $record) {
+                        $variants = $record->variants()->get();
+                        $changesCount = 0;
+                        
+                        foreach ($variants as $variant) {
+                            $newStockKey = 'variant_' . $variant->id . '_new';
+                            if (!isset($data[$newStockKey])) continue;
+                            
+                            $before = (int) $variant->stock;
+                            $after  = (int) $data[$newStockKey];
+                            
+                            if ($before !== $after) {
+                                $change = $after - $before;
+                                
+                                $variant->update(['stock' => $after]);
+                                
+                                StockLog::create([
+                                    'product_id'         => $record->id,
+                                    'product_variant_id' => $variant->id,
+                                    'type'               => $change >= 0 ? 'in' : 'out',
+                                    'quantity_before'    => $before,
+                                    'quantity_change'    => $change,
+                                    'quantity_after'     => $after,
+                                    'reason'             => $data['reason'],
+                                    'notes'              => $data['notes'] ?? null,
+                                    'user_id'            => auth()->id(),
+                                ]);
+                                
+                                $changesCount++;
+                            }
+                        }
+                        
+                        if ($changesCount === 0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Tidak ada perubahan stok')
+                                ->warning()
+                                ->send();
+                            
+                            // Halt execution to prevent default success notification if we handle it
+                            throw new \Filament\Support\Exceptions\Halt();
+                        }
+                    })
+                    ->successNotificationTitle('Stok varian berhasil diperbarui dan log tersimpan!'),
             ])
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('has_variants')
