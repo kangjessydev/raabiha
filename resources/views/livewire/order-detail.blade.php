@@ -56,10 +56,22 @@
                         <div class="md:text-right">
                             <div class="font-mono text-[10px] font-bold tracking-widest uppercase text-[#615e57] mb-1">Alamat Pengiriman</div>
                             <div class="font-sans text-[13px] text-[#1c1c1a] font-medium mb-1">{{ $order->shipping_address ?? 'Tidak ada data' }}</div>
-                            <div class="font-sans text-[13px] text-[#615e57]">
+                            <div class="font-sans text-[13px] text-[#615e57] mb-4">
                                 {{ $order->shipping_city ?? '' }} {{ $order->shipping_postal_code ?? '' }}<br>
                                 {{ $order->shipping_province ?? '' }}
                             </div>
+
+                            @if($order->courier)
+                                <div class="font-mono text-[10px] font-bold tracking-widest uppercase text-[#615e57] mb-1">Kurir Pengiriman</div>
+                                <div class="font-sans text-[13px] text-[#1c1c1a] font-medium uppercase mb-4">{{ $order->courier }}</div>
+                            @endif
+
+                            @if($order->awb_number)
+                                <div class="font-mono text-[10px] font-bold tracking-widest uppercase text-[#615e57] mb-1">Nomor Resi</div>
+                                <div class="font-sans text-[13px] text-[#064e3b] font-medium font-mono bg-[#064e3b]/10 px-2 py-1 inline-block border border-[#064e3b]/20">
+                                    {{ $order->awb_number }}
+                                </div>
+                            @endif
                         </div>
                     </div>
 
