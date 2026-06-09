@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use Awcodes\Curator\Facades\Curator;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Daftarkan Observer Order untuk auto-record Buku Kas
+        Order::observe(OrderObserver::class);
+
         Curator::acceptedFileTypes([
             'image/jpeg',
             'image/png',
