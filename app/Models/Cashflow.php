@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Cashflow extends Model
 {
@@ -13,15 +14,27 @@ class Cashflow extends Model
         'amount',
         'description',
         'order_id',
+        'source',
+        'is_reversed',
+        'reversal_note',
     ];
 
     protected $casts = [
         'transaction_date' => 'date',
-        'amount' => 'decimal:2',
+        'amount'           => 'decimal:2',
+        'is_reversed'      => 'boolean',
     ];
 
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * Scope: hanya entri yang aktif (belum di-reverse)
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_reversed', false);
     }
 }
