@@ -10,7 +10,7 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Resources\Pages\ListRecords\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Support\Facades\Cache;
 
 class ListCashflows extends ListRecords
