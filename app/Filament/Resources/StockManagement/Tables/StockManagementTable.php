@@ -115,7 +115,7 @@ class StockManagementTable
                         $variants = $record->variants()->get();
                         
                         foreach ($variants as $variant) {
-                            $schema[] = \Filament\Forms\Components\Fieldset::make($variant->name . ' (' . $variant->sku . ')')
+                            $schema[] = \Filament\Schemas\Components\Fieldset::make($variant->name . ' (' . $variant->sku . ')')
                                 ->schema([
                                     TextInput::make('variant_' . $variant->id . '_current')
                                         ->label('Stok Saat Ini')
