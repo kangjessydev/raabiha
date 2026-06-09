@@ -82,7 +82,72 @@ class CashflowsTable
                     }),
             ])
             ->recordActions([
-                EditAction::make(),
+                // View — tersedia untuk semua entri
+                \Filament\Actions\ViewAction::make()
+                    ->modalHeading(fn ($record) => 'Detail Transaksi — ' . $record->transaction_date->format('d M Y'))
+                    ->infolist([
+                        \Filament\Infolists\Components\Section::make('Informasi Transaksi')
+                            ->schema([
+                                \Filament\Infolists\Components\TextEntry::make('transaction_date')
+                                    ->label('Tanggal')
+                                    ->date('d F Y'),
+                                \Filament\Infolists\Components\TextEntry::make('type')
+                                    ->label('Jenis')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state) => $state === 'in' ? 'Cash In (Masuk)' : 'Cash Out (Keluar)')
+                                    ->color(fn ($state) => $state === 'in' ? 'success' : 'danger'),
+                                \Filament\Infolists\Components\TextEntry::make('source')
+                                    ->label('Sumber')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state) => $state === 'order' ? 'Dari Pesanan (Otomatis)' : 'Input Manual')
+                                    ->color(fn ($state) => $state === 'order' ? 'info' : 'gray'),
+                                \Filament\Infolists\Components\TextEntry::make('category')
+                                    ->label('Kategori'),
+                                \Filament\Infolists\Components\TextEntry::make('amount')
+                                    ->label('Nominal')
+                                    ->money('IDR')
+                                    ->weight('bold'),
+                                \Filament\Infolists\Components\TextEntry::make('is_reversed')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state) => $state ? 'Dibatalkan (Reversed)' : 'Aktif')
+                                    ->color(fn ($state) => $state ? 'danger' : 'success'),
+                            ])->columns(3),
+
+                        \Filament\Infolists\Components\Section::make('Terkait Pesanan')
+                            ->schema([
+                                \Filament\Infolists\Components\TextEntry::make('order.order_number')
+                                    ->label('Nomor Pesanan')
+                                    ->fontFamily('mono')
+                                    ->copyable(),
+                                \Filament\Infolists\Components\TextEntry::make('order.status')
+                                    ->label('Status Pesanan')
+                                    ->badge(),
+                                \Filament\Infolists\Components\TextEntry::make('order.grand_total')
+                                    ->label('Total Pesanan')
+                                    ->money('IDR'),
+                            ])->columns(3)
+                            ->visible(fn ($record) => $record->order_id !== null),
+
+                        \Filament\Infolists\Components\Section::make('Catatan')
+                            ->schema([
+                                \Filament\Infolists\Components\TextEntry::make('description')
+                                    ->label('Keterangan')
+                                    ->columnSpanFull(),
+                                \Filament\Infolists\Components\TextEntry::make('reversal_note')
+                                    ->label('Catatan Pembatalan')
+                                    ->columnSpanFull()
+                                    ->visible(fn ($record) => !empty($record->reversal_note)),
+                            ]),
+                    ]),
+
+                // Edit — hanya untuk entri manual
+                EditAction::make()
+                    ->visible(fn ($record) => $record->source === 'manual'),
+
+                // Delete — hanya untuk entri manual
+                \Filament\Actions\DeleteAction::make()
+                    ->visible(fn ($record) => $record->source === 'manual'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -91,3 +156,4 @@ class CashflowsTable
             ]);
     }
 }
+
