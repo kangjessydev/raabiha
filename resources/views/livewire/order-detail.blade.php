@@ -81,16 +81,17 @@
                         <div class="flex flex-col gap-6">
                             @foreach($order->items as $item)
                                 @php
-                                    $image = $item->product->images && count($item->product->images) > 0 ? Storage::url($item->product->images[0]) : asset('assets/images/placeholder.png');
-                                    $variantText = '';
-                                    if ($item->attributes) {
-                                        $options = [];
-                                        foreach ($item->attributes as $key => $val) {
-                                            $options[] = $val;
+                                    $imageId = is_array($item->product->images) ? ($item->product->images[0] ?? null) : null;
+                                    $image = asset('assets/images/placeholder.png');
+                                    if ($imageId) {
+                                        if (is_numeric($imageId)) {
+                                            $media = \Awcodes\Curator\Models\Media::find($imageId);
+                                            if ($media) $image = $media->url;
+                                        } else {
+                                            $image = Storage::url($imageId);
                                         }
-                                        $variantText = implode(' / ', $options);
                                     }
-                                @endphp
+                                    $variantText = '';
                                 <div class="flex flex-row gap-4 items-center">
                                     <div class="w-16 h-16 md:w-20 md:h-20 bg-[#e5e2de] shrink-0 border border-[#e5e2de]">
                                         <img src="{{ $image }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover">
@@ -100,10 +101,10 @@
                                         <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-1">
                                             {{ $variantText }}
                                         </p>
-                                        <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Qty: {{ $item->quantity }} x Rp{{ number_format($item->unit_price, 0, ',', '.') }}</p>
+                                        <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Qty: {{ $item->quantity }} x Rp{{ number_format($item->price, 0, ',', '.') }}</p>
                                     </div>
                                     <div class="font-sans text-[14px] md:text-[15px] font-semibold text-[#1c1c1a] text-right shrink-0">
-                                        Rp{{ number_format($item->subtotal, 0, ',', '.') }}
+                                        Rp{{ number_format($item->total, 0, ',', '.') }}
                                     </div>
                                 </div>
                             @endforeach

@@ -199,16 +199,17 @@
                                         <!-- Order Items -->
                                         @foreach($order->items as $item)
                                             @php
-                                                $image = $item->product->images && count($item->product->images) > 0 ? Storage::url($item->product->images[0]) : asset('assets/images/placeholder.png');
-                                                $variantText = '';
-                                                if ($item->attributes) {
-                                                    $options = [];
-                                                    foreach ($item->attributes as $key => $val) {
-                                                        $options[] = $val;
+                                                $imageId = is_array($item->product->images) ? ($item->product->images[0] ?? null) : null;
+                                                $image = asset('assets/images/placeholder.png');
+                                                if ($imageId) {
+                                                    if (is_numeric($imageId)) {
+                                                        $media = \Awcodes\Curator\Models\Media::find($imageId);
+                                                        if ($media) $image = $media->url;
+                                                    } else {
+                                                        $image = Storage::url($imageId);
                                                     }
-                                                    $variantText = implode(' / ', $options);
                                                 }
-                                            @endphp
+                                                $variantText = '';
                                             <div class="p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 md:items-center {{ !$loop->last ? 'border-b border-[#e5e2de]' : '' }}">
                                                 <div class="w-20 h-24 bg-[#e5e2de] shrink-0">
                                                     <img src="{{ $image }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover {{ $isInactive ? 'grayscale opacity-80' : '' }}">
@@ -216,7 +217,7 @@
                                                 <div class="flex-1">
                                                     <h3 class="font-serif text-[16px] md:text-[18px] font-semibold text-[#1c1c1a] leading-tight mb-1">{{ $item->product->name }}</h3>
                                                     <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">
-                                                        {{ $variantText ? $variantText . ' | ' : '' }}Rp{{ number_format($item->unit_price, 0, ',', '.') }}
+                                                        {{ $variantText ? $variantText . ' | ' : '' }}Rp{{ number_format($item->price, 0, ',', '.') }}
                                                     </p>
                                                     <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] mt-1">Qty: {{ $item->quantity }}</p>
                                                 </div>
