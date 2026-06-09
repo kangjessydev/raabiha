@@ -522,11 +522,38 @@ class Checkout extends Component
                     'total' => $price * $item->quantity,
                 ]);
 
-                // Reduce stock
+                // Reduce stock & Log it
                 if ($item->variant) {
+                    $before = $item->variant->stock;
                     $item->variant->decrement('stock', $item->quantity);
+                    $after = $before - $item->quantity;
+
+                    \App\Models\StockLog::create([
+                        'product_id'         => $item->product_id,
+                        'product_variant_id' => $item->product_variant_id,
+                        'type'               => 'out',
+                        'quantity_before'    => $before,
+                        'quantity_change'    => -$item->quantity,
+                        'quantity_after'     => $after,
+                        'reason'             => 'Sales',
+                        'notes'              => 'Penjualan pesanan #' . $orderNumber,
+                        'user_id'            => auth()->id(),
+                    ]);
                 } else {
+                    $before = $item->product->stock;
                     $item->product->decrement('stock', $item->quantity);
+                    $after = $before - $item->quantity;
+
+                    \App\Models\StockLog::create([
+                        'product_id'      => $item->product_id,
+                        'type'            => 'out',
+                        'quantity_before' => $before,
+                        'quantity_change' => -$item->quantity,
+                        'quantity_after'  => $after,
+                        'reason'          => 'Sales',
+                        'notes'           => 'Penjualan pesanan #' . $orderNumber,
+                        'user_id'         => auth()->id(),
+                    ]);
                 }
                 
                 // Delete the checkout item from cart
