@@ -55,11 +55,35 @@
                         </div>
                         <div class="md:text-right">
                             <div class="font-mono text-[10px] font-bold tracking-widest uppercase text-[#615e57] mb-1">Alamat Pengiriman</div>
-                            <div class="font-sans text-[13px] text-[#1c1c1a] font-medium mb-1">{{ $order->shipping_address ?? 'Tidak ada data' }}</div>
-                            <div class="font-sans text-[13px] text-[#615e57] mb-4">
-                                {{ $order->shipping_city ?? '' }} {{ $order->shipping_postal_code ?? '' }}<br>
-                                {{ $order->shipping_province ?? '' }}
-                            </div>
+                            @php
+                                $addr = is_array($order->shipping_address) ? $order->shipping_address : [];
+                                $isPickup = $addr['is_pickup'] ?? false;
+                                $name = trim(($addr['first_name'] ?? '') . ' ' . ($addr['last_name'] ?? ''));
+                                $phone = $addr['phone'] ?? '';
+                                $addressLine = $addr['address'] ?? '';
+                                
+                                $districtStr = '';
+                                if (isset($addr['district']) && str_contains($addr['district'], '::')) {
+                                    $parts = explode('::', $addr['district']);
+                                    $districtStr = $parts[1] ?? '';
+                                } else {
+                                    $districtStr = trim(($addr['city'] ?? '') . ' ' . ($addr['province'] ?? ''));
+                                }
+                            @endphp
+                            
+                            @if($isPickup)
+                                <div class="font-sans text-[13px] text-[#1c1c1a] font-medium mb-1">Ambil di Toko (Pickup)</div>
+                                <div class="font-sans text-[13px] text-[#615e57] mb-4">
+                                    {{ $name }} - {{ $phone }}
+                                </div>
+                            @else
+                                <div class="font-sans text-[13px] text-[#1c1c1a] font-medium mb-1">{{ $name ?: 'Tidak ada data' }}</div>
+                                <div class="font-sans text-[13px] text-[#615e57] mb-4">
+                                    @if($phone) {{ $phone }}<br> @endif
+                                    @if($addressLine) {{ $addressLine }}<br> @endif
+                                    @if($districtStr) {{ $districtStr }} @endif
+                                </div>
+                            @endif
 
                             @if($order->courier)
                                 <div class="font-mono text-[10px] font-bold tracking-widest uppercase text-[#615e57] mb-1">Kurir Pengiriman</div>
