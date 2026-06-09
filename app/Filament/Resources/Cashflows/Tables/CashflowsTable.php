@@ -53,8 +53,8 @@ class CashflowsTable
                 \Filament\Tables\Filters\SelectFilter::make('type')
                     ->label('Jenis Arus Kas')
                     ->options([
-                        'in'  => '💰 Cash In (Masuk)',
-                        'out' => '💸 Cash Out (Keluar)',
+                        'in'  => 'Cash In (Masuk)',
+                        'out' => 'Cash Out (Keluar)',
                     ]),
                 \Filament\Tables\Filters\SelectFilter::make('category')
                     ->label('Kategori')

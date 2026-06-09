@@ -9,7 +9,7 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class StockLogWidget extends BaseWidget
 {
-    protected static ?string $heading = '📋 Log Perubahan Stok Terbaru';
+    protected static ?string $heading = 'Log Perubahan Stok Terbaru';
     protected int|string|array $columnSpan = 'full';
     protected static ?int $sort = 1;
 
@@ -39,9 +39,9 @@ class StockLogWidget extends BaseWidget
                     ->label('Jenis')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'in'         => '▲ Masuk',
-                        'out'        => '▼ Keluar',
-                        'adjustment' => '⇄ Koreksi',
+                        'in'         => 'Masuk',
+                        'out'        => 'Keluar',
+                        'adjustment' => 'Koreksi',
                         default      => $state,
                     })
                     ->color(fn (string $state): string => match ($state) {

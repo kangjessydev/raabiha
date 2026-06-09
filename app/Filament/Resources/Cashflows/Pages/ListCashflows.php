@@ -21,7 +21,8 @@ class ListCashflows extends ListRecords
         return [
             // Tombol "Tarik Data Transaksi"
             Action::make('sync_orders')
-                ->label('🔄 Tarik Data Transaksi')
+                ->label('Tarik Data Transaksi')
+                ->icon('heroicon-o-arrow-path')
                 ->color('info')
                 ->requiresConfirmation()
                 ->modalHeading('Tarik Data dari Pesanan Lunas')
@@ -65,7 +66,7 @@ class ListCashflows extends ListRecords
                         ->send();
                 }),
 
-            CreateAction::make()->label('+ Catat Pengeluaran'),
+            CreateAction::make()->label('Catat Pengeluaran')->icon('heroicon-o-plus'),
         ];
     }
 
