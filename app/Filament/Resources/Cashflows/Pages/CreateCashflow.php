@@ -24,4 +24,12 @@ class CreateCashflow extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
+    public function getSubNavigation(): array
+    {
+        if (filled($cluster = static::getCluster()) && $cluster::shouldRegisterSubNavigation()) {
+            return $this->generateNavigationItems($cluster::getClusteredComponents());
+        }
+        return [];
+    }
 }
