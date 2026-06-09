@@ -92,6 +92,7 @@
                                         }
                                     }
                                     $variantText = '';
+                                @endphp
                                 <div class="flex flex-row gap-4 items-center">
                                     <div class="w-16 h-16 md:w-20 md:h-20 bg-[#e5e2de] shrink-0 border border-[#e5e2de]">
                                         <img src="{{ $image }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover">

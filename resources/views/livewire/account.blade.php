@@ -210,6 +210,7 @@
                                                     }
                                                 }
                                                 $variantText = '';
+                                            @endphp
                                             <div class="p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 md:items-center {{ !$loop->last ? 'border-b border-[#e5e2de]' : '' }}">
                                                 <div class="w-20 h-24 bg-[#e5e2de] shrink-0">
                                                     <img src="{{ $image }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover {{ $isInactive ? 'grayscale opacity-80' : '' }}">
