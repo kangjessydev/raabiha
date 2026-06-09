@@ -188,6 +188,26 @@ class OrderForm
                                     ->prefix('Rp')
                                     ->readOnly()
                                     ->default(0),
+                                TextInput::make('amount_received')
+                                    ->label('Uang Diterima (Cash)')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->dehydrated(false)
+                                    ->visible(fn(Get $get) => $get('source') === 'offline')
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                        $grandTotal = floatval($get('grand_total') ?? 0);
+                                        $received = floatval($state ?? 0);
+                                        $set('change_amount', max(0, $received - $grandTotal));
+                                    }),
+                                TextInput::make('change_amount')
+                                    ->label('Kembalian')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->readOnly()
+                                    ->dehydrated(false)
+                                    ->visible(fn(Get $get) => $get('source') === 'offline')
+                                    ->default(0),
                             ])->columns(2),
                     ])->columnSpan(['lg' => 1]),
 
@@ -257,7 +277,14 @@ class OrderForm
                                     ->default('offline')
                                     ->required()
                                     ->native(false)
-                                    ->live(),
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Set $set) {
+                                        if ($state === 'offline') {
+                                            $set('status', 'completed');
+                                            $set('payment_status', 'paid');
+                                            $set('shipping_address.is_pickup', true);
+                                        }
+                                    }),
                                 Select::make('status')
                                     ->label('Status Pesanan')
                                     ->options([
@@ -269,7 +296,7 @@ class OrderForm
                                         'cancelled' => 'Dibatalkan',
                                     ])
                                     ->required()
-                                    ->default('pending')
+                                    ->default('completed')
                                     ->native(false),
                                 \Filament\Forms\Components\Radio::make('payment_status')
                                     ->label('Status Pembayaran')
@@ -280,7 +307,7 @@ class OrderForm
                                     ])
                                     ->required()
                                     ->inline()
-                                    ->default('pending'),
+                                    ->default('paid'),
                                 Select::make('payment_method')
                                     ->label('Metode Pembayaran')
                                     ->native(false)
@@ -353,6 +380,7 @@ class OrderForm
                                     ->schema([
                                         \Filament\Forms\Components\Toggle::make('shipping_address.is_pickup')
                                             ->label('Ambil di Toko? (Tidak perlu pengiriman)')
+                                            ->default(true)
                                             ->live()
                                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                                 if ($state) {
@@ -577,6 +605,14 @@ class OrderForm
         $shipping = floatval($get($prefix . 'shipping_cost') ?? 0);
         $discount = floatval($get($prefix . 'discount_total') ?? 0);
 
-        $set($prefix . 'grand_total', $subtotal + $shipping - $discount);
+        $grandTotal = $subtotal + $shipping - $discount;
+        $set($prefix . 'grand_total', $grandTotal);
+
+        $received = floatval($get($prefix . 'amount_received') ?? 0);
+        if ($received > 0) {
+            $set($prefix . 'change_amount', max(0, $received - $grandTotal));
+        } else {
+            $set($prefix . 'change_amount', 0);
+        }
     }
 }
