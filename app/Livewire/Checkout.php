@@ -189,10 +189,20 @@ class Checkout extends Component
                     if (!empty($results)) {
                         foreach ($results as $cost) {
                             $courierName = $cost['name'];
-                            $serviceName = strtoupper($cost['service']);
+                            $rawServiceName = strtoupper($cost['service']);
+                            
+                            $serviceName = $rawServiceName;
+                            if (!empty($courierConfig['service_aliases']) && is_array($courierConfig['service_aliases'])) {
+                                foreach ($courierConfig['service_aliases'] as $rawCode => $alias) {
+                                    if (strtoupper($rawCode) === $rawServiceName) {
+                                        $serviceName = $alias;
+                                        break;
+                                    }
+                                }
+                            }
                             
                             // Filter by allowed_services if defined
-                            if (!empty($allowedServices) && !in_array($serviceName, $allowedServices)) {
+                            if (!empty($allowedServices) && !in_array($rawServiceName, $allowedServices)) {
                                 continue;
                             }
                             
@@ -200,7 +210,7 @@ class Checkout extends Component
                             $etd = $cost['etd'] ?? '';
                             
                             $this->shippingRates[] = [
-                                'id' => $courierCode . '_' . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $serviceName)),
+                                'id' => $courierCode . '|' . $rawServiceName . '|' . $price,
                                 'courier_name' => $courierName,
                                 'service_name' => $serviceName,
                                 'duration' => $etd,
@@ -438,7 +448,22 @@ class Checkout extends Component
             // Generate order number
             $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
 
+            $districtValue = $this->selectedDestinationId && $this->selectedDestinationLabel 
+                ? $this->selectedDestinationId . '::' . $this->selectedDestinationLabel 
+                : null;
+            
+            $city = '';
+            $province = '';
+            if ($this->selectedDestinationLabel) {
+                $parts = explode(', ', $this->selectedDestinationLabel);
+                if (count($parts) >= 4) {
+                    $city = $parts[2] ?? '';
+                    $province = $parts[3] ?? '';
+                }
+            }
+
             $shippingAddressData = [
+                'name' => trim($this->first_name . ' ' . $this->last_name),
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
                 'phone' => $this->phone,
@@ -446,6 +471,9 @@ class Checkout extends Component
                 'address' => $this->address,
                 'destination_id' => $this->selectedDestinationId,
                 'destination_label' => $this->selectedDestinationLabel,
+                'district' => $districtValue,
+                'city' => $city,
+                'province' => $province,
                 'postal_code' => $this->postal_code,
                 'notes' => $this->notes,
             ];
@@ -534,20 +562,17 @@ class Checkout extends Component
 
                 $method = $this->payment_method;
                 $merchantRef = $order->order_number;
-                $amount = $order->grand_total;
+                $amount = (int) $order->grand_total; // Cast ke int agar cocok dengan payload & signature
                 
                 $signature = hash_hmac('sha256', $merchantCode . $merchantRef . $amount, $privateKey);
                 
                 // Format order items for Tripay
                 $orderItems = [];
-                $cartItems = \App\Models\CartItem::whereIn('id', session('checkout_item_ids', []))->get();
-                foreach ($cartItems as $item) {
-                    $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
-                        
+                foreach ($order->items as $item) {
                     $orderItems[] = [
                         'sku' => $item->variant ? ($item->variant->sku ?? 'SKU-'.$item->id) : ($item->product->sku ?? 'SKU-'.$item->id),
                         'name' => mb_substr($item->product->name, 0, 50),
-                        'price' => (int) $price,
+                        'price' => (int) $item->price,
                         'quantity' => $item->quantity,
                         'product_url' => url('/product/' . $item->product->slug),
                         'image_url' => asset('assets/images/placeholder.png'),
@@ -557,9 +582,25 @@ class Checkout extends Component
                 // Add shipping as an item
                 if ($this->shipping_cost > 0) {
                     $orderItems[] = [
-                        'sku' => 'SHIPPING',
-                        'name' => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
-                        'price' => (int) $this->shipping_cost,
+                        'sku'      => 'SHIPPING',
+                        'name'     => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
+                        'price'    => (int) $order->shipping_cost,
+                        'quantity' => 1,
+                    ];
+                }
+
+                // Add payment fee as an item if applicable
+                // grand_total = subtotal - discount + shipping + paymentFee
+                $paymentFee = (int) $order->grand_total
+                    - (int) $order->subtotal
+                    + (int) ($order->discount_total ?? 0)
+                    - (int) $order->shipping_cost;
+
+                if ($paymentFee > 0) {
+                    $orderItems[] = [
+                        'sku'      => 'PAYMENT-FEE',
+                        'name'     => 'Biaya Layanan Pembayaran',
+                        'price'    => $paymentFee,
                         'quantity' => 1,
                     ];
                 }

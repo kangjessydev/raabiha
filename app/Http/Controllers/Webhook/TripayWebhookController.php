@@ -63,7 +63,7 @@ class TripayWebhookController extends Controller
 
         if ($status === 'PAID') {
             $order->update([
-                'status' => 'paid',
+                'status' => 'packed',
                 'payment_status' => 'paid',
             ]);
             Log::info('Order paid via Tripay', ['order_id' => $order->id, 'reference' => $tripayReference]);

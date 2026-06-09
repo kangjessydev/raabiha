@@ -42,8 +42,23 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/checkout', \App\Livewire\Checkout::class)->name('checkout');
 
 Route::get('/order-success', function () {
-    return view('order-success');
+    $orderNumber = request('order');
+    $order = null;
+    if ($orderNumber) {
+        $order = \App\Models\Order::with('items.product')
+            ->where('order_number', $orderNumber)
+            ->first();
+    }
+    return view('order-success', compact('order'));
 });
+
+Route::get('/invoice/{orderNumber}', function ($orderNumber) {
+    $order = \App\Models\Order::with('items.product')
+        ->where('order_number', $orderNumber)
+        ->firstOrFail();
+    
+    return view('invoice', compact('order'));
+})->name('invoice');
 
 Route::get('/login', function () {
     return view('login');

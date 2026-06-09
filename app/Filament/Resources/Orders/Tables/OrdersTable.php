@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Orders\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -20,15 +22,20 @@ class OrdersTable
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
-                TextColumn::make('user_type')
-                    ->label('Tipe Pelanggan')
-                    ->badge()
-                    ->color(fn ($record) => $record->user_id ? 'success' : 'warning')
-                    ->state(fn ($record) => $record->user_id ? 'Member' : 'Guest'),
                 TextColumn::make('customer_name')
                     ->label('Nama Pelanggan')
                     ->state(function ($record) {
                         return $record->user_id ? $record->user->name : ($record->shipping_address['name'] ?? 'Guest User');
+                    })
+                    ->description(function ($record) {
+                        $isGuest = !$record->user_id;
+                        $label   = $isGuest ? 'Guest' : 'Member';
+                        $classes = $isGuest
+                            ? 'bg-warning-100 text-warning-700 ring-warning-400/30'
+                            : 'bg-success-100 text-success-700 ring-success-400/30';
+                        return new \Illuminate\Support\HtmlString(
+                            "<span class='inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {$classes}'>{$label}</span>"
+                        );
                     })
                     ->searchable(['user.name'])
                     ->sortable(),
@@ -44,19 +51,15 @@ class OrdersTable
                         default => 'secondary',
                     })
                     ->searchable(),
-                TextColumn::make('shipping_address.city')
-                    ->label('Kota Tujuan')
-                    ->state(fn ($record) => ($record->shipping_address['city'] ?? '') . ', ' . ($record->shipping_address['province'] ?? ''))
-                    ->searchable(['shipping_address'])
-                    ->toggleable(),
-                TextColumn::make('grand_total')
-                    ->money('IDR')
-                    ->sortable(),
                 TextColumn::make('payment_status')
                     ->badge()
                     ->searchable(),
+                TextColumn::make('grand_total')
+                    ->money('IDR')
+                    ->sortable(),
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Dibuat Pada')
+                    ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
             ->filters([
@@ -72,7 +75,19 @@ class OrdersTable
                     )
             ])
             ->recordActions([
-                EditAction::make(),
+                ViewAction::make()
+                    ->slideOver()
+                    ->icon('heroicon-o-eye')
+                    ->iconButton()
+                    ->tooltip('Lihat Detail'),
+                EditAction::make()
+                    ->icon('heroicon-o-pencil-square')
+                    ->iconButton()
+                    ->tooltip('Ubah'),
+                DeleteAction::make()
+                    ->icon('heroicon-o-trash')
+                    ->iconButton()
+                    ->tooltip('Hapus'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

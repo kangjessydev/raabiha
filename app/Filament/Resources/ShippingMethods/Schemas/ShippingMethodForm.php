@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ShippingMethods\Schemas;
 
+use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
@@ -48,7 +49,7 @@ class ShippingMethodForm
                             ->suggestions([
                                 'REG', 'YES', 'JTR', 'OKE',
                                 'Pos Reguler', 'Paket Kilat Khusus', 'Express',
-                                'ECO', 'ONS', 'TDS'
+                                'ECO', 'ONS', 'TDS', 'CTC', 'CTCYES'
                             ])
                             ->helperText(new \Illuminate\Support\HtmlString('
                                 <div class="flex flex-col gap-1 mt-1 text-xs text-gray-500">
@@ -56,6 +57,43 @@ class ShippingMethodForm
                                     <p><em>Tips: Jika layanan baru tidak ada di daftar saran, Anda bisa mencari kodenya dari resi / website cek ongkir resmi ekspedisi, lalu ketik manual di atas dan tekan <strong>Enter</strong>. Kosongkan jika ingin menampilkan semua layanan.</em></p>
                                 </div>
                             '))
+                            ->columnSpanFull(),
+                        
+                        KeyValue::make('config.service_aliases')
+                            ->label('Ubah Nama Layanan (Alias)')
+                            ->keyLabel('Kode Asli dari RajaOngkir (Contoh: CTC)')
+                            ->valueLabel('Nama yang Ingin Ditampilkan (Contoh: Reguler Lokal)')
+                            ->addActionLabel('Tambah Alias Baru')
+                            ->helperText('Gunakan fitur ini jika Anda ingin mengubah nama layanan dari RajaOngkir agar lebih mudah dipahami pembeli. (Misal: CTC diubah menjadi JNE Reguler).')
+                            ->hintAction(
+                                Action::make('generateAliases')
+                                    ->label('Generate Otomatis')
+                                    ->icon('heroicon-m-sparkles')
+                                    ->action(function ($set, $get) {
+                                        $allowedServices = $get('config.allowed_services') ?? [];
+                                        $aliases = $get('config.service_aliases') ?? [];
+                                        
+                                        $commonMappings = [
+                                            'CTC' => 'Reguler (Lokal)',
+                                            'CTCYES' => 'YES (Lokal)',
+                                            'JTR' => 'Kargo (Trucking)',
+                                            'REG' => 'Reguler',
+                                            'YES' => 'Besok Sampai (YES)',
+                                            'OKE' => 'Ekonomi (OKE)',
+                                            'EZ' => 'Reguler',
+                                            'ECO' => 'Ekonomi'
+                                        ];
+
+                                        foreach ($allowedServices as $service) {
+                                            $service = strtoupper(trim($service));
+                                            if (!isset($aliases[$service])) {
+                                                $aliases[$service] = $commonMappings[$service] ?? $service;
+                                            }
+                                        }
+                                        
+                                        $set('config.service_aliases', $aliases);
+                                    })
+                            )
                             ->columnSpanFull(),
                     ]),
             ]);

@@ -274,13 +274,13 @@ class OrderForm
                                 \Filament\Forms\Components\Radio::make('payment_status')
                                     ->label('Status Pembayaran')
                                     ->options([
-                                        'unpaid' => 'Belum Lunas',
+                                        'pending' => 'Belum Lunas',
                                         'paid' => 'Lunas',
                                         'failed' => 'Gagal',
                                     ])
                                     ->required()
                                     ->inline()
-                                    ->default('unpaid'),
+                                    ->default('pending'),
                                 Select::make('payment_method')
                                     ->label('Metode Pembayaran')
                                     ->native(false)
@@ -456,20 +456,31 @@ class OrderForm
                                             ->native(false)
                                             ->options(function (Get $get) {
                                                 $districtRaw = $get('shipping_address.district');
-                                                if (!$districtRaw || strpos($districtRaw, '::') === false)
-                                                    return [];
+                                                $currentCourier = $get('courier');
+                                                $options = [];
+
+                                                if (!$districtRaw || strpos($districtRaw, '::') === false) {
+                                                    if ($currentCourier) {
+                                                        $options[$currentCourier] = $currentCourier;
+                                                    }
+                                                    return $options;
+                                                }
 
                                                 $destinationId = explode('::', $districtRaw)[0];
                                                 $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
                                                 $originCityRaw = \App\Models\SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
-                                                if (!$apiKey || !$originCityRaw)
-                                                    return [];
+                                                if (!$apiKey || !$originCityRaw) {
+                                                    if ($currentCourier) $options[$currentCourier] = $currentCourier;
+                                                    return $options;
+                                                }
 
                                                 $originCityId = explode('::', $originCityRaw)[0];
 
                                                 $activeCouriers = \App\Models\ShippingMethod::where('is_active', true)->get();
-                                                if ($activeCouriers->isEmpty())
-                                                    return [];
+                                                if ($activeCouriers->isEmpty()) {
+                                                    if ($currentCourier) $options[$currentCourier] = $currentCourier;
+                                                    return $options;
+                                                }
 
                                                 $items = $get('items') ?? [];
                                                 $totalWeight = 0;
@@ -481,7 +492,6 @@ class OrderForm
                                                 if ($totalWeight == 0)
                                                     $totalWeight = 1000;
 
-                                                $options = [];
                                                 foreach ($activeCouriers as $courier) {
                                                     $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
                                                         ->asForm()
@@ -504,18 +514,33 @@ class OrderForm
                                                         }
 
                                                         foreach ($response->json('data') as $cost) {
-                                                            $serviceName = strtoupper($cost['service']);
+                                                            $rawServiceName = strtoupper($cost['service']);
 
-                                                            if (!empty($allowedServices) && !in_array($serviceName, $allowedServices)) {
+                                                            if (!empty($allowedServices) && !in_array($rawServiceName, $allowedServices)) {
                                                                 continue;
                                                             }
 
+                                                            $serviceName = $rawServiceName;
+                                                            if (!empty($courierConfig['service_aliases']) && is_array($courierConfig['service_aliases'])) {
+                                                                foreach ($courierConfig['service_aliases'] as $rawCode => $alias) {
+                                                                    if (strtoupper($rawCode) === $rawServiceName) {
+                                                                        $serviceName = $alias;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+
                                                             $price = $cost['cost'] ?? 0;
-                                                            $key = $courier->code . '|' . $serviceName . '|' . $price;
+                                                            $key = $courier->code . '|' . $rawServiceName . '|' . $price;
                                                             $options[$key] = "{$cost['name']} - {$serviceName} (Rp " . number_format($price, 0, ',', '.') . ")";
                                                         }
                                                     }
                                                 }
+                                                
+                                                if ($currentCourier && !isset($options[$currentCourier])) {
+                                                    $options[$currentCourier] = $currentCourier;
+                                                }
+                                                
                                                 return $options;
                                             })
                                             ->live()
