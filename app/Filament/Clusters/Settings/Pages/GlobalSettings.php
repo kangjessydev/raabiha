@@ -123,7 +123,7 @@ class GlobalSettings extends Page implements HasForms
                                         }
                                         return 'Kecamatan Terpilih (ID: ' . $value . ')';
                                     })
-                                    ->required(),
+                                    ->nullable(),
                                 Forms\Components\Repeater::make('social_links')
                                     ->label('Daftar Sosial Media')
                                     ->components([
