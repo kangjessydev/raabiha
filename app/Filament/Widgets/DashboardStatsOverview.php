@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 class DashboardStatsOverview extends StatsOverviewWidget
 {
     // Polling setiap 60 detik agar ringan di VPS 2GB
-    protected static ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '60s';
 
     protected function getStats(): array
     {
