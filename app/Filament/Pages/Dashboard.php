@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\DashboardStatsOverview;
+
 class Dashboard extends \Filament\Pages\Dashboard
 {
     protected static ?string $cluster = \App\Filament\Clusters\Dashboard\DashboardCluster::class;
@@ -16,4 +18,17 @@ class Dashboard extends \Filament\Pages\Dashboard
     {
         return 'filament.' . ($panel ? $panel->getId() : filament()->getCurrentPanel()->getId()) . '.dashboard.pages.dashboard';
     }
+
+    public function getWidgets(): array
+    {
+        return [
+            DashboardStatsOverview::class,
+        ];
+    }
+
+    public function getColumns(): int | string | array
+    {
+        return 2;
+    }
 }
+
