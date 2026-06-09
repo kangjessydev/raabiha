@@ -86,7 +86,7 @@ class CashflowsTable
                 \Filament\Actions\ViewAction::make()
                     ->modalHeading(fn ($record) => 'Detail Transaksi — ' . $record->transaction_date->format('d M Y'))
                     ->infolist([
-                        \Filament\Infolists\Components\Section::make('Informasi Transaksi')
+                        \Filament\Schemas\Components\Section::make('Informasi Transaksi')
                             ->schema([
                                 \Filament\Infolists\Components\TextEntry::make('transaction_date')
                                     ->label('Tanggal')
@@ -114,7 +114,7 @@ class CashflowsTable
                                     ->color(fn ($state) => $state ? 'danger' : 'success'),
                             ])->columns(3),
 
-                        \Filament\Infolists\Components\Section::make('Terkait Pesanan')
+                        \Filament\Schemas\Components\Section::make('Terkait Pesanan')
                             ->schema([
                                 \Filament\Infolists\Components\TextEntry::make('order.order_number')
                                     ->label('Nomor Pesanan')
@@ -129,7 +129,7 @@ class CashflowsTable
                             ])->columns(3)
                             ->visible(fn ($record) => $record->order_id !== null),
 
-                        \Filament\Infolists\Components\Section::make('Catatan')
+                        \Filament\Schemas\Components\Section::make('Catatan')
                             ->schema([
                                 \Filament\Infolists\Components\TextEntry::make('description')
                                     ->label('Keterangan')
