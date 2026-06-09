@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\ListRecords\Tab;
 use Illuminate\Support\Facades\Cache;
 
 class ListCashflows extends ListRecords
@@ -74,6 +75,22 @@ class ListCashflows extends ListRecords
     {
         return [
             CashflowStatsWidget::class,
+        ];
+    }
+
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make('Semua')
+                ->icon('heroicon-o-queue-list'),
+
+            'in' => Tab::make('Pemasukan')
+                ->icon('heroicon-o-arrow-trending-up')
+                ->modifyQueryUsing(fn ($query) => $query->where('type', 'in')->where('is_reversed', false)),
+
+            'out' => Tab::make('Pengeluaran')
+                ->icon('heroicon-o-arrow-trending-down')
+                ->modifyQueryUsing(fn ($query) => $query->where('type', 'out')),
         ];
     }
 }

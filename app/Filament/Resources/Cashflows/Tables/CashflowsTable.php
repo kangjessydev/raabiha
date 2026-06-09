@@ -33,7 +33,20 @@ class CashflowsTable
                     }),
                 \Filament\Tables\Columns\TextColumn::make('category')
                     ->label('Kategori')
-                    ->searchable(),
+                    ->searchable()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'Sales'       => 'Penjualan',
+                        'Deposit'     => 'Deposit',
+                        'Other_In'    => 'Pemasukan Lainnya',
+                        'Operational' => 'Operasional',
+                        'Marketing'   => 'Marketing & Iklan',
+                        'Packaging'   => 'Packaging',
+                        'Salary'      => 'Gaji Pegawai',
+                        'Shipping'    => 'Biaya Kurir',
+                        'Other_Out'   => 'Pengeluaran Lainnya',
+                        'Order_Reversal' => 'Pembatalan Pesanan',
+                        default       => $state,
+                    }),
                 \Filament\Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
                     ->money('IDR')

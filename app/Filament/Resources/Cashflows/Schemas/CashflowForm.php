@@ -27,12 +27,13 @@ class CashflowForm
                             ->required()
                             ->options([
                                 'Operational' => 'Operasional (Listrik, Internet, dll)',
-                                'Marketing'   => 'Marketing & Iklan (Ads)',
-                                'Packaging'   => 'Packaging (Kardus, Lakban, dll)',
-                                'Salary'      => 'Gaji Pegawai',
-                                'Shipping'    => 'Biaya Kurir / Ekspedisi',
-                                'Other_Out'   => 'Pengeluaran Lainnya',
-                            ]),
+                                'Marketing' => 'Marketing & Iklan (Ads)',
+                                'Packaging' => 'Packaging (Kardus, Lakban, dll)',
+                                'Salary' => 'Gaji Pegawai',
+                                'Shipping' => 'Biaya Kurir / Ekspedisi',
+                                'Other_Out' => 'Pengeluaran Lainnya',
+                            ])
+                            ->native(false),
                         TextInput::make('amount')
                             ->label('Nominal (Rp)')
                             ->required()
