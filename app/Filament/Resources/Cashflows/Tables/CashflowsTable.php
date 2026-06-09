@@ -72,8 +72,8 @@ class CashflowsTable
                 \Filament\Tables\Filters\Filter::make('transaction_date')
                     ->label('Rentang Tanggal')
                     ->form([
-                        \Filament\Schemas\Components\DatePicker::make('from')->label('Dari'),
-                        \Filament\Schemas\Components\DatePicker::make('until')->label('Sampai'),
+                        \Filament\Forms\Components\DatePicker::make('from')->label('Dari'),
+                        \Filament\Forms\Components\DatePicker::make('until')->label('Sampai'),
                     ])
                     ->query(function ($query, array $data) {
                         return $query
