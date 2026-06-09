@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Widgets\DashboardStatsOverview;
+use App\Filament\Widgets\SalesTrendChart;
 
 class Dashboard extends \Filament\Pages\Dashboard
 {
@@ -23,6 +24,7 @@ class Dashboard extends \Filament\Pages\Dashboard
     {
         return [
             DashboardStatsOverview::class,
+            SalesTrendChart::class,
         ];
     }
 
