@@ -76,6 +76,7 @@ class MainPageSettings extends Page implements HasForms
                             ->icon('heroicon-o-home')
                             ->components([
                                 \Filament\Schemas\Components\Section::make('Hero Section')
+                                    ->collapsible()
                                     ->schema([
                                         TextInput::make('home_hero_tag')
                                             ->label('Tagline Hero (Kecil)')
@@ -98,6 +99,7 @@ class MainPageSettings extends Page implements HasForms
                                     ])->columns(2),
 
                                 \Filament\Schemas\Components\Section::make('Running Text (Marquee)')
+                                    ->collapsible()
                                     ->schema([
                                         Repeater::make('home_marquee_items')
                                             ->label('Daftar Teks Berjalan')
@@ -107,10 +109,13 @@ class MainPageSettings extends Page implements HasForms
                                                     ->required(),
                                             ])
                                             ->defaultItems(4)
-                                            ->columns(1),
+                                            ->columns(1)
+                                            ->collapsible()
+                                            ->cloneable(),
                                     ]),
 
                                 \Filament\Schemas\Components\Section::make('Lookbook Section')
+                                    ->collapsible()
                                     ->schema([
                                         TextInput::make('home_lookbook_tag')
                                             ->label('Tagline Lookbook')
@@ -138,6 +143,7 @@ class MainPageSettings extends Page implements HasForms
                             ->icon('heroicon-o-information-circle')
                             ->components([
                                 \Filament\Schemas\Components\Section::make('Atelier / Filosofi')
+                                    ->collapsible()
                                     ->schema([
                                         TextInput::make('about_atelier_tag')
                                             ->label('Tagline Filosofi')
@@ -157,6 +163,7 @@ class MainPageSettings extends Page implements HasForms
                                     ])->columns(2),
 
                                 \Filament\Schemas\Components\Section::make('Visi & Misi')
+                                    ->collapsible()
                                     ->schema([
                                         TextInput::make('about_vision_title')
                                             ->label('Judul Visi')
@@ -175,10 +182,13 @@ class MainPageSettings extends Page implements HasForms
                                                 Textarea::make('description')->label('Deskripsi Nilai')->required()->rows(2),
                                             ])
                                             ->columns(2)
-                                            ->defaultItems(2),
+                                            ->defaultItems(2)
+                                            ->collapsible()
+                                            ->cloneable(),
                                     ])->columns(2),
 
                                 \Filament\Schemas\Components\Section::make('Perjalanan Kami (Timeline)')
+                                    ->collapsible()
                                     ->schema([
                                         TextInput::make('about_timeline_title')
                                             ->label('Judul Timeline')
@@ -194,10 +204,13 @@ class MainPageSettings extends Page implements HasForms
                                                 Textarea::make('description')->label('Deskripsi Milestone')->required()->rows(2),
                                             ])
                                             ->columns(3)
-                                            ->defaultItems(3),
+                                            ->defaultItems(3)
+                                            ->collapsible()
+                                            ->cloneable(),
                                     ]),
 
                                 \Filament\Schemas\Components\Section::make('Kutipan (Quote)')
+                                    ->collapsible()
                                     ->schema([
                                         TextInput::make('about_quote_text')
                                             ->label('Teks Kutipan Utama')
@@ -210,6 +223,7 @@ class MainPageSettings extends Page implements HasForms
                             ->icon('heroicon-o-phone')
                             ->components([
                                 \Filament\Schemas\Components\Section::make('Hero Section & Deskripsi')
+                                    ->collapsible()
                                     ->schema([
                                         \Awcodes\Curator\Components\Forms\CuratorPicker::make('contact_hero_image')
                                             ->label('Gambar Hero Kontak'),
@@ -222,6 +236,7 @@ class MainPageSettings extends Page implements HasForms
                                     ])->columns(2),
 
                                 \Filament\Schemas\Components\Section::make('Daftar Toko / Lokasi Cabang')
+                                    ->collapsible()
                                     ->schema([
                                         Repeater::make('contact_locations')
                                             ->label('Cabang Toko')
@@ -233,7 +248,9 @@ class MainPageSettings extends Page implements HasForms
                                                 Textarea::make('contact')->label('Info Kontak (Telepon & Email)')->required()->rows(2),
                                             ])
                                             ->columns(2)
-                                            ->defaultItems(2),
+                                            ->defaultItems(2)
+                                            ->collapsible()
+                                            ->cloneable(),
                                     ]),
                             ]),
 
