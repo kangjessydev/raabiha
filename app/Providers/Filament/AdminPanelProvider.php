@@ -19,11 +19,32 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Illuminate\Support\Facades\Schema;
+use App\Models\SiteSetting;
+use Awcodes\Curator\Models\Media;
 
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        // Helper untuk meresolve media URL secara aman
+        $resolveMediaUrl = function ($settingKey) {
+            try {
+                if (Schema::hasTable('site_settings')) {
+                    $mediaId = SiteSetting::where('key', $settingKey)->value('value');
+                    if ($mediaId) {
+                        $media = Media::find($mediaId);
+                        if ($media) {
+                            return $media->url;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Silently catch database or missing table errors
+            }
+            return null;
+        };
+
         return $panel
             ->default()
             ->id('admin')
@@ -34,7 +55,15 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => \Filament\Support\Colors\Color::Emerald,
                 'gray' => \Filament\Support\Colors\Color::Stone,
             ])
-            ->brandName('Raabiha Admin')
+            ->brandName(fn () => 
+                (Schema::hasTable('site_settings') 
+                    ? SiteSetting::where('key', 'site_name')->value('value') 
+                    : null) ?: 'Raabiha Admin'
+            )
+            ->brandLogo(fn () => $resolveMediaUrl('site_logo_light'))
+            ->darkModeBrandLogo(fn () => $resolveMediaUrl('site_logo_dark'))
+            ->brandLogoHeight('2.5rem')
+            ->favicon(fn () => $resolveMediaUrl('site_favicon'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
