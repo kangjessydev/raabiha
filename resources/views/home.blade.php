@@ -10,6 +10,17 @@
             return $fallback ?: 'https://placehold.co/800x800/e5e2de/615e57?text=Image+Not+Available';
         };
 
+        $resolveCatImage = function($imageValue, $fallback = null) {
+            if (is_numeric($imageValue)) {
+                $media = \Awcodes\Curator\Models\Media::find($imageValue);
+                if ($media) return $media->url;
+            }
+            if ($imageValue) {
+                return asset('storage/' . $imageValue);
+            }
+            return $fallback ?: 'https://placehold.co/800x800/e5e2de/615e57?text=Image+Not+Available';
+        };
+
         // Load settings
         $homeHeroTag = \App\Models\SiteSetting::where('key', 'home_hero_tag')->value('value') ?: 'DROP 02 // 2026';
         $homeHeroTitle = \App\Models\SiteSetting::where('key', 'home_hero_title')->value('value') ?: 'Architectural Modesty';
@@ -119,7 +130,7 @@
                 <a href="{{ url('/shop?category=' . $cat->slug) }}" class="relative aspect-[3/4] bg-[#e5e5e5] overflow-hidden group">
                     <div class="absolute top-4 left-4 bg-[#fce7e7] text-[#a14040] px-3 py-1 text-[10px] font-semibold tracking-[0.1em] uppercase z-10">{{ $cat->name }}</div>
                     @php
-                        $catImageUrl = $cat->image ? asset('storage/' . $cat->image) : 'https://placehold.co/800x1000/e5e2de/615e57?text=' . urlencode($cat->name);
+                        $catImageUrl = $resolveCatImage($cat->image, 'https://placehold.co/800x1000/e5e2de/615e57?text=' . urlencode($cat->name));
                     @endphp
                     <img src="{{ $catImageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $cat->name }}">
                 </a>
@@ -134,7 +145,7 @@
                 <a href="{{ url('/shop?category=' . $cat->slug) }}" class="flex flex-col items-center group">
                     <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border border-[#e5e2de] shadow-sm">
                         @php
-                            $catImageUrl = $cat->image ? asset('storage/' . $cat->image) : 'https://placehold.co/100x100/e5e2de/615e57?text=' . urlencode($cat->name);
+                            $catImageUrl = $resolveCatImage($cat->image, 'https://placehold.co/100x100/e5e2de/615e57?text=' . urlencode($cat->name));
                         @endphp
                         <img src="{{ $catImageUrl }}" class="w-full h-full object-cover" alt="{{ $cat->name }}">
                     </div>

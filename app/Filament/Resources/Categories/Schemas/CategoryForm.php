@@ -24,9 +24,8 @@ class CategoryForm
                     ->unique(ignoreRecord: true),
                 Textarea::make('description')
                     ->columnSpanFull(),
-                FileUpload::make('image')
-                    ->image()
-                    ->directory('categories')
+                \Awcodes\Curator\Components\Forms\CuratorPicker::make('image')
+                    ->label('Gambar Kategori')
                     ->columnSpanFull(),
                 Toggle::make('is_active')
                     ->default(true)
