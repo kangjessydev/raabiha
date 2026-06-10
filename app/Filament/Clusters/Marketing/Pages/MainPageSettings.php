@@ -111,7 +111,8 @@ class MainPageSettings extends Page implements HasForms
                                             ->defaultItems(4)
                                             ->columns(1)
                                             ->collapsible()
-                                            ->cloneable(),
+                                            ->cloneable()
+                                            ->itemLabel(fn (array $state): ?string => $state['text'] ?? null),
                                     ]),
 
                                 \Filament\Schemas\Components\Section::make('Lookbook Section')
@@ -184,7 +185,8 @@ class MainPageSettings extends Page implements HasForms
                                             ->columns(2)
                                             ->defaultItems(2)
                                             ->collapsible()
-                                            ->cloneable(),
+                                            ->cloneable()
+                                            ->itemLabel(fn (array $state): ?string => $state['title'] ?? null),
                                     ])->columns(2),
 
                                 \Filament\Schemas\Components\Section::make('Perjalanan Kami (Timeline)')
@@ -206,7 +208,8 @@ class MainPageSettings extends Page implements HasForms
                                             ->columns(3)
                                             ->defaultItems(3)
                                             ->collapsible()
-                                            ->cloneable(),
+                                            ->cloneable()
+                                            ->itemLabel(fn (array $state): ?string => isset($state['year']) && isset($state['title']) ? "{$state['year']} - {$state['title']}" : ($state['title'] ?? null)),
                                     ]),
 
                                 \Filament\Schemas\Components\Section::make('Kutipan (Quote)')
@@ -250,7 +253,8 @@ class MainPageSettings extends Page implements HasForms
                                             ->columns(2)
                                             ->defaultItems(2)
                                             ->collapsible()
-                                            ->cloneable(),
+                                            ->cloneable()
+                                            ->itemLabel(fn (array $state): ?string => isset($state['badge']) && isset($state['name']) ? "{$state['badge']} - {$state['name']}" : ($state['name'] ?? null)),
                                     ]),
                             ]),
 

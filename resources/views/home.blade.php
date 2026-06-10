@@ -35,6 +35,9 @@
         $homeLookbookImage = \App\Models\SiteSetting::where('key', 'home_lookbook_image')->value('value');
         $homeLookbookButtonText = \App\Models\SiteSetting::where('key', 'home_lookbook_button_text')->value('value') ?: 'Read Journal';
         $homeLookbookButtonLink = \App\Models\SiteSetting::where('key', 'home_lookbook_button_link')->value('value') ?: '#';
+
+        // Ambil kategori produk aktif dari database
+        $activeCategories = \App\Models\Category::where('is_active', true)->latest()->take(4)->get();
     @endphp
 
     <!-- Desktop Hero Section -->
@@ -112,50 +115,32 @@
         
         <!-- Desktop Grid (Hidden on Mobile) -->
         <div class="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
-            <a href="{{ url('/shop?category=gamis') }}" class="relative aspect-[3/4] bg-[#e5e5e5] overflow-hidden group">
-                <div class="absolute top-4 left-4 bg-[#fce7e7] text-[#a14040] px-3 py-1 text-[10px] font-semibold tracking-[0.1em] uppercase z-10">Gamis</div>
-                <img src="{{ asset('assets/images/cat_gamis_1779445122345.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            </a>
-            <a href="{{ url('/shop?category=outer') }}" class="relative aspect-[3/4] bg-[#e5e5e5] overflow-hidden group">
-                <div class="absolute top-4 left-4 bg-[#fce7e7] text-[#a14040] px-3 py-1 text-[10px] font-semibold tracking-[0.1em] uppercase z-10">Outer</div>
-                <img src="{{ asset('assets/images/cat_outer_1779445136836.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            </a>
-            <a href="{{ url('/shop?category=set') }}" class="relative aspect-[3/4] bg-[#e5e5e5] overflow-hidden group">
-                <div class="absolute top-4 left-4 bg-[#fce7e7] text-[#a14040] px-3 py-1 text-[10px] font-semibold tracking-[0.1em] uppercase z-10">Set</div>
-                <img src="{{ asset('assets/images/cat_set_1779445153624.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            </a>
-            <a href="{{ url('/shop?category=hijab') }}" class="relative aspect-[3/4] bg-[#e5e5e5] overflow-hidden group">
-                <div class="absolute top-4 left-4 bg-[#fce7e7] text-[#a14040] px-3 py-1 text-[10px] font-semibold tracking-[0.1em] uppercase z-10">Hijab</div>
-                <img src="{{ asset('assets/images/cat_hijab_1779445168360.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            </a>
+            @forelse($activeCategories as $cat)
+                <a href="{{ url('/shop?category=' . $cat->slug) }}" class="relative aspect-[3/4] bg-[#e5e5e5] overflow-hidden group">
+                    <div class="absolute top-4 left-4 bg-[#fce7e7] text-[#a14040] px-3 py-1 text-[10px] font-semibold tracking-[0.1em] uppercase z-10">{{ $cat->name }}</div>
+                    @php
+                        $catImageUrl = $cat->image ? asset('storage/' . $cat->image) : 'https://placehold.co/800x1000/e5e2de/615e57?text=' . urlencode($cat->name);
+                    @endphp
+                    <img src="{{ $catImageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $cat->name }}">
+                </a>
+            @empty
+                <p class="col-span-full text-center text-gray-500 font-serif py-12">Belum ada kategori aktif.</p>
+            @endforelse
         </div>
 
         <!-- Mobile Circular Grid -->
         <div class="md:hidden grid grid-cols-4 gap-4 px-2">
-            <a href="{{ url('/shop?category=gamis') }}" class="flex flex-col items-center group">
-                <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border border-[#e5e2de] shadow-sm">
-                    <img src="{{ asset('assets/images/cat_gamis_1779445122345.png') }}" class="w-full h-full object-cover">
-                </div>
-                <span class="text-[9px] font-mono tracking-[0.1em] uppercase text-[#1c1c1a]">Gamis</span>
-            </a>
-            <a href="{{ url('/shop?category=outer') }}" class="flex flex-col items-center group">
-                <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border border-[#e5e2de] shadow-sm">
-                    <img src="{{ asset('assets/images/cat_outer_1779445136836.png') }}" class="w-full h-full object-cover">
-                </div>
-                <span class="text-[9px] font-mono tracking-[0.1em] uppercase text-[#1c1c1a]">Outer</span>
-            </a>
-            <a href="{{ url('/shop?category=set') }}" class="flex flex-col items-center group">
-                <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border border-[#e5e2de] shadow-sm">
-                    <img src="{{ asset('assets/images/cat_set_1779445153624.png') }}" class="w-full h-full object-cover">
-                </div>
-                <span class="text-[9px] font-mono tracking-[0.1em] uppercase text-[#1c1c1a]">Set</span>
-            </a>
-            <a href="{{ url('/shop?category=hijab') }}" class="flex flex-col items-center group">
-                <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border border-[#e5e2de] shadow-sm">
-                    <img src="{{ asset('assets/images/cat_hijab_1779445168360.png') }}" class="w-full h-full object-cover">
-                </div>
-                <span class="text-[9px] font-mono tracking-[0.1em] uppercase text-[#1c1c1a]">Hijab</span>
-            </a>
+            @foreach($activeCategories as $cat)
+                <a href="{{ url('/shop?category=' . $cat->slug) }}" class="flex flex-col items-center group">
+                    <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border border-[#e5e2de] shadow-sm">
+                        @php
+                            $catImageUrl = $cat->image ? asset('storage/' . $cat->image) : 'https://placehold.co/100x100/e5e2de/615e57?text=' . urlencode($cat->name);
+                        @endphp
+                        <img src="{{ $catImageUrl }}" class="w-full h-full object-cover" alt="{{ $cat->name }}">
+                    </div>
+                    <span class="text-[9px] font-mono tracking-[0.1em] uppercase text-[#1c1c1a] text-center line-clamp-1">{{ $cat->name }}</span>
+                </a>
+            @endforeach
         </div>
     </section>
 
