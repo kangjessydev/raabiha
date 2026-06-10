@@ -52,6 +52,7 @@ class MainPageSettings extends Page implements HasForms
             'about_values',
             'about_timeline',
             'contact_locations',
+            'contact_subjects',
             'gallery_content',
         ];
 
@@ -255,6 +256,37 @@ class MainPageSettings extends Page implements HasForms
                                             ->collapsible()
                                             ->cloneable()
                                             ->itemLabel(fn (array $state): ?string => isset($state['badge']) && isset($state['name']) ? "{$state['badge']} - {$state['name']}" : ($state['name'] ?? null)),
+                                    ]),
+
+                                \Filament\Schemas\Components\Section::make('Google Maps Embed')
+                                    ->collapsible()
+                                    ->schema([
+                                        Textarea::make('contact_gmaps_embed')
+                                            ->label('URL / Kode Embed Google Maps')
+                                            ->helperText('Masukkan URL src embed dari Google Maps (contoh: https://www.google.com/maps/embed?pb=...) atau paste kode iframe secara penuh.')
+                                            ->rows(4)
+                                            ->default('https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3959.856588478794!2d107.59155307499749!3d-7.026138092975612!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68ebe9654e5b13%3A0x9da124ecee2a6509!2sRaabiha!5e0!3m2!1sid!2sid!4v1779961654809!5m2!1sid!2sid'),
+                                    ]),
+
+                                \Filament\Schemas\Components\Section::make('Subjek Hubungi Kami (Contact Us)')
+                                    ->collapsible()
+                                    ->schema([
+                                        Repeater::make('contact_subjects')
+                                            ->label('Daftar Subjek Pesan')
+                                            ->schema([
+                                                TextInput::make('subject')
+                                                    ->label('Subjek')
+                                                    ->required(),
+                                                \Filament\Forms\Components\Toggle::make('save_to_db')
+                                                    ->label('Simpan ke Database?')
+                                                    ->default(true)
+                                                    ->helperText('Jika mati, pesan akan langsung dialihkan ke WhatsApp/Email tanpa disimpan.'),
+                                            ])
+                                            ->columns(2)
+                                            ->defaultItems(1)
+                                            ->collapsible()
+                                            ->cloneable()
+                                            ->itemLabel(fn (array $state): ?string => $state['subject'] ?? null),
                                     ]),
                             ]),
 

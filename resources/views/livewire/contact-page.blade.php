@@ -34,6 +34,11 @@
                 ]
             ];
         }
+
+        $contactGmaps = \App\Models\SiteSetting::where('key', 'contact_gmaps_embed')->value('value') ?: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3959.856588478794!2d107.59155307499749!3d-7.026138092975612!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68ebe9654e5b13%3A0x9da124ecee2a6509!2sRaabiha!5e0!3m2!1sid!2sid!4v1779961654809!5m2!1sid!2sid';
+        if (preg_match('/src="([^"]+)"/', $contactGmaps, $matches)) {
+            $contactGmaps = $matches[1];
+        }
     @endphp
 
     <!-- Hero Section -->
@@ -188,7 +193,7 @@
     <!-- Map Frame Section -->
     <section class="max-w-7xl mx-auto px-6 lg:px-12 py-12 md:py-20 mb-8 md:mb-16">
         <div class="w-full aspect-[4/3] md:aspect-[21/9] bg-[#e5e2de] flex items-center justify-center shadow-sm relative overflow-hidden group">
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3959.856588478794!2d107.59155307499749!3d-7.026138092975612!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68ebe9654e5b13%3A0x9da124ecee2a6509!2sRaabiha!5e0!3m2!1sid!2sid!4v1779961654809!5m2!1sid!2sid" class="absolute inset-0 w-full h-full border-0 grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-700" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <iframe src="{{ $contactGmaps }}" class="absolute inset-0 w-full h-full border-0 grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-700" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
     </section>
 
