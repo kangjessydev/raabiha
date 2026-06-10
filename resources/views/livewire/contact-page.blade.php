@@ -1,4 +1,3 @@
-<x-layouts.app title="Lokasi & Kontak">
 <main class="site-main bg-[#fcf9f5] min-h-screen pb-0">
     
     <!-- Hero Section -->
@@ -112,20 +111,40 @@
                         @error('name') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <!-- Email -->
-                        <div class="flex flex-col">
-                            <label for="email" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Email Address</label>
-                            <input type="email" id="email" wire:model="email" placeholder="EMAIL@EXAMPLE.COM" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
-                            @error('email') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                    <!-- Preferred Channel (Inline Radio Selector) -->
+                    <div class="flex flex-col">
+                        <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Pilih Metode Balasan</label>
+                        <div class="flex gap-8">
+                            <label class="flex items-center gap-2 cursor-pointer font-sans text-sm text-[#1c1c1a]">
+                                <input type="radio" wire:model.live="channel" value="email" class="w-4 h-4 text-[#064e3b] border-[#e5e2de] focus:ring-[#064e3b]">
+                                <span>Alamat Email</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer font-sans text-sm text-[#1c1c1a]">
+                                <input type="radio" wire:model.live="channel" value="whatsapp" class="w-4 h-4 text-[#064e3b] border-[#e5e2de] focus:ring-[#064e3b]">
+                                <span>Nomor WhatsApp</span>
+                            </label>
                         </div>
+                    </div>
 
-                        <!-- Phone -->
-                        <div class="flex flex-col">
-                            <label for="phone" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">WhatsApp Number</label>
-                            <input type="text" id="phone" wire:model="phone" placeholder="+62..." class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
-                            @error('phone') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
-                        </div>
+                    <!-- Contact Details (Dynamic Input) -->
+                    <div>
+                        @if($channel === 'email')
+                            <div class="flex flex-col">
+                                <label for="email" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">
+                                    Email Address <span class="text-red-500 font-sans text-sm">*</span>
+                                </label>
+                                <input type="email" id="email" wire:model="email" placeholder="EMAIL@EXAMPLE.COM" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
+                                @error('email') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                            </div>
+                        @else
+                            <div class="flex flex-col">
+                                <label for="phone" class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">
+                                    WhatsApp Number <span class="text-red-500 font-sans text-sm">*</span>
+                                </label>
+                                <input type="text" id="phone" wire:model="phone" placeholder="+62..." class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors rounded-none">
+                                @error('phone') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
+                            </div>
+                        @endif
                     </div>
                     
                     <!-- Subject -->
@@ -149,22 +168,6 @@
                         <textarea id="message" wire:model="message" rows="4" placeholder="HOW CAN WE ASSIST YOU?" class="w-full bg-transparent border-b border-[#e5e2de] pb-3 text-sm text-[#1c1c1a] placeholder:text-[#a09e99] focus:outline-none focus:border-[#064e3b] transition-colors resize-none rounded-none"></textarea>
                         @error('message') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
                     </div>
-
-                    <!-- Channel / Reply Method -->
-                    <div class="flex flex-col">
-                        <label class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-3 font-bold">Balas Melalui</label>
-                        <div class="flex gap-6">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" wire:model="channel" value="email" class="w-4 h-4 text-[#064e3b] border-[#e5e2de] focus:ring-[#064e3b]">
-                                <span class="text-sm font-sans text-[#1c1c1a]">Email</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" wire:model="channel" value="whatsapp" class="w-4 h-4 text-[#064e3b] border-[#e5e2de] focus:ring-[#064e3b]">
-                                <span class="text-sm font-sans text-[#1c1c1a]">WhatsApp (Langsung Chat)</span>
-                            </label>
-                        </div>
-                        @error('channel') <span class="text-red-500 text-[10px] mt-1">{{ $message }}</span> @enderror
-                    </div>
                     
                     <!-- Submit -->
                     <button type="submit" class="w-full bg-[#064e3b] text-white text-[11px] font-mono uppercase tracking-[0.2em] py-5 hover:bg-[#1c1c1a] transition-colors mt-4">
@@ -185,4 +188,3 @@
     </section>
 
 </main>
-</x-layouts.app>

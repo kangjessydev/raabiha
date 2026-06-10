@@ -7,15 +7,28 @@
     <meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
 
     @php
-        $defaultTitle = \App\Models\SiteSetting::where('key', 'site_name')->value('value') ?? 'Raabiha Olshop';
+        $siteName = \App\Models\SiteSetting::where('key', 'site_name')->value('value') ?? 'Raabiha Olshop';
         $defaultDesc = \App\Models\SiteSetting::where('key', 'site_description')->value('value') ?? 'Modest fashion with modern silhouette and premium quality.';
         
-        $finalTitle = isset($title) ? $title . ' - ' . $defaultTitle : $defaultTitle;
+        $homeMetaTitle = \App\Models\SiteSetting::where('key', 'home_meta_title')->value('value');
+        $homeMetaDesc = \App\Models\SiteSetting::where('key', 'home_meta_description')->value('value');
+        
+        $isHome = request()->is('/');
+        
+        $defaultTitle = $isHome ? ($homeMetaTitle ?: $siteName) : $siteName;
+        $defaultDesc = $isHome ? ($homeMetaDesc ?: $defaultDesc) : $defaultDesc;
+        
+        $finalTitle = isset($title) ? $title . ' - ' . $siteName : $defaultTitle;
         $finalDesc = isset($description) ? $description : $defaultDesc;
+
+        $faviconId = \App\Models\SiteSetting::where('key', 'site_favicon')->value('value');
+        $faviconMedia = $faviconId ? \Awcodes\Curator\Models\Media::find($faviconId) : null;
+        $faviconUrl = $faviconMedia ? Storage::url($faviconMedia->path) : asset('favicon.ico');
     @endphp
 
     <title>{{ $finalTitle }}</title>
     <meta name="description" content="{{ $finalDesc }}">
+    <link rel="icon" type="image/x-icon" href="{{ $faviconUrl }}" />
     <link rel="canonical" href="{{ url()->current() }}" />
     
     <!-- Open Graph / Facebook -->

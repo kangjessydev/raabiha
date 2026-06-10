@@ -30,6 +30,10 @@ class VariantsRelationManager extends RelationManager
                     ->label('Stok')
                     ->numeric()
                     ->required(),
+                TextInput::make('minimum_stock')
+                    ->label('Stok Minimum Peringatan')
+                    ->numeric()
+                    ->placeholder('Batas stok minimum varian (Default: 5)'),
                 TextInput::make('price')
                     ->label('Harga')
                     ->numeric(),

@@ -27,6 +27,7 @@ class Product extends Model
         'wholesale_pricing',
         'promo_rules',
         'is_active',
+        'minimum_stock',
     ];
 
     protected $casts = [

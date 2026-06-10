@@ -1,5 +1,5 @@
 
-<main class="site-main bg-[#fcf9f5] min-h-screen pb-24 pt-12 md:pt-16">
+<main class="site-main bg-[#fcf9f5] min-h-screen pb-24 pt-12 md:pt-16" x-data="{ mobileFilterOpen: false }">
 
         <!-- Header Section -->
         <section class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-12">
@@ -17,10 +17,12 @@
             <div class="flex flex-col lg:flex-row gap-12 lg:gap-16">
                 
                 <!-- Sidebar Filters Backdrop (Mobile) -->
-                <div id="filter-backdrop" class="fixed inset-0 bg-black/50 z-[60] hidden lg:hidden opacity-0 transition-opacity duration-300"></div>
+                <div id="filter-backdrop" @click="mobileFilterOpen = false" :class="mobileFilterOpen ? 'block opacity-100' : 'hidden opacity-0'" class="fixed inset-0 bg-black/50 z-[60] lg:hidden transition-all duration-300"></div>
                 
                 <!-- Sidebar Filters -->
-                <aside id="shop-filter-sidebar" class="
+                <aside id="shop-filter-sidebar" 
+                    :class="mobileFilterOpen ? 'translate-y-0' : 'translate-y-full'"
+                    class="
                     fixed inset-x-0 bottom-0 z-[70] bg-[#fcf9f5] p-6 rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] 
                     transform translate-y-full transition-transform duration-300
                     lg:static lg:transform-none lg:z-auto lg:bg-transparent lg:p-0 lg:rounded-none lg:shadow-none lg:block
@@ -29,7 +31,7 @@
                     <!-- Mobile Bottomsheet Handle & Title -->
                     <div class="flex justify-between items-center mb-6 lg:hidden">
                         <h3 class="text-[#1c1c1a] text-sm font-mono font-bold tracking-[0.2em] uppercase">Filter Produk</h3>
-                        <button id="filter-close-btn" class="text-[#1c1c1a] p-2 hover:bg-[#e5e2de] rounded-full transition-colors focus:outline-none">
+                        <button @click="mobileFilterOpen = false" class="text-[#1c1c1a] p-2 hover:bg-[#e5e2de] rounded-full transition-colors focus:outline-none">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
@@ -54,29 +56,33 @@
                     <div class="mb-10">
                         <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-4 pb-2 border-b border-[#e5e2de]">Ukuran</h4>
                         <div class="grid grid-cols-2 gap-y-4" id="size-filter-list">
-                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox" data-size="XS/S">
-                                <div class="w-4 h-4 border border-[#d1cec9] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors checkbox-box">
-                                    <svg class="w-2.5 h-2.5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox">
+                                <input type="checkbox" wire:model.live="selectedSizes" value="XS/S" class="hidden peer">
+                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest checkbox-label">XS/S</span>
+                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">XS/S</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox" data-size="M/L">
-                                <div class="w-4 h-4 border border-[#d1cec9] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors checkbox-box">
-                                    <svg class="w-2.5 h-2.5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox">
+                                <input type="checkbox" wire:model.live="selectedSizes" value="M/L" class="hidden peer">
+                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest checkbox-label">M/L</span>
+                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">M/L</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox" data-size="Oversized">
-                                <div class="w-4 h-4 border border-[#d1cec9] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors checkbox-box">
-                                    <svg class="w-2.5 h-2.5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox">
+                                <input type="checkbox" wire:model.live="selectedSizes" value="Oversized" class="hidden peer">
+                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest checkbox-label">Oversized</span>
+                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Oversized</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox" data-size="Uni-Size">
-                                <div class="w-4 h-4 border border-[#d1cec9] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors checkbox-box">
-                                    <svg class="w-2.5 h-2.5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox">
+                                <input type="checkbox" wire:model.live="selectedSizes" value="Uni-Size" class="hidden peer">
+                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest checkbox-label">Uni-Size</span>
+                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Uni-Size</span>
                             </label>
                         </div>
                     </div>
@@ -85,33 +91,37 @@
                     <div class="mb-10">
                         <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-4 pb-2 border-b border-[#e5e2de]">Warna</h4>
                         <div class="flex flex-col gap-4" id="color-filter-list">
-                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox" data-color="Charcoal">
-                                <div class="w-4 h-4 border border-[#d1cec9] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors checkbox-box">
-                                    <svg class="w-2.5 h-2.5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox">
+                                <input type="checkbox" wire:model.live="selectedColors" value="Charcoal" class="hidden peer">
+                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
                                 <div class="w-3 h-3 bg-[#333333] shrink-0 border border-black/10"></div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest checkbox-label">Charcoal</span>
+                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Charcoal</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox" data-color="Slate Sand">
-                                <div class="w-4 h-4 border border-[#d1cec9] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors checkbox-box">
-                                    <svg class="w-2.5 h-2.5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox">
+                                <input type="checkbox" wire:model.live="selectedColors" value="Slate Sand" class="hidden peer">
+                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
                                 <div class="w-3 h-3 bg-[#d9d5cd] shrink-0 border border-black/10"></div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest checkbox-label">Slate Sand</span>
+                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Slate Sand</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox" data-color="Dusty Rose">
-                                <div class="w-4 h-4 border border-[#d1cec9] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors checkbox-box">
-                                    <svg class="w-2.5 h-2.5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox">
+                                <input type="checkbox" wire:model.live="selectedColors" value="Dusty Rose" class="hidden peer">
+                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
                                 <div class="w-3 h-3 bg-[#c99a8b] shrink-0 border border-black/10"></div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest checkbox-label">Dusty Rose</span>
+                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Dusty Rose</span>
                             </label>
-                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox" data-color="Off-White">
-                                <div class="w-4 h-4 border border-[#d1cec9] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors checkbox-box">
-                                    <svg class="w-2.5 h-2.5 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox">
+                                <input type="checkbox" wire:model.live="selectedColors" value="Off-White" class="hidden peer">
+                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                 </div>
                                 <div class="w-3 h-3 bg-[#f2f2f2] shrink-0 border border-black/10"></div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest checkbox-label">Off-White</span>
+                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Off-White</span>
                             </label>
                         </div>
                     </div>
@@ -120,10 +130,10 @@
                     <div class="mb-10">
                         <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-4 pb-2 border-b border-[#e5e2de]">Harga Maksimal</h4>
                         <div class="mt-6 px-1">
-                            <input type="range" id="price-range" min="200000" max="4000000" step="100000" value="4000000" class="w-full h-1 bg-[#d1cec9] appearance-none cursor-pointer accent-[#1c1c1a] focus:outline-none">
+                            <input type="range" wire:model.live.debounce.250ms="maxPrice" min="200000" max="4000000" step="100000" class="w-full h-1 bg-[#d1cec9] appearance-none cursor-pointer accent-[#1c1c1a] focus:outline-none">
                             <div class="flex justify-between mt-4">
                                 <span class="text-[#1c1c1a] text-[9px] font-mono tracking-widest uppercase">200k IDR</span>
-                                <span id="price-display" class="text-[#064e3b] text-[10px] font-mono font-bold tracking-widest uppercase">4.000.000 IDR</span>
+                                <span class="text-[#064e3b] text-[10px] font-mono font-bold tracking-widest uppercase">Rp{{ number_format($maxPrice, 0, ',', '.') }} IDR</span>
                             </div>
                         </div>
                     </div>
@@ -138,7 +148,7 @@
                         <!-- Mobile Toolbar -->
                         <div class="flex items-center gap-3 w-full lg:w-auto">
                             <!-- Filter Icon Button (Mobile Only) -->
-                            <button id="mobile-filter-btn" class="lg:hidden flex items-center justify-center w-8 h-8 text-[#1c1c1a] hover:text-[#615e57] transition-colors shrink-0">
+                            <button @click="mobileFilterOpen = true" class="lg:hidden flex items-center justify-center w-8 h-8 text-[#1c1c1a] hover:text-[#615e57] transition-colors shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                             </button>
                             
@@ -170,7 +180,7 @@
                     </div>
 
                     <!-- Products Grid -->
-                    <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, sort" class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-6 gap-y-12 w-full">
+                    <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, selectedSizes, selectedColors, maxPrice, sort" class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-6 gap-y-12 w-full">
                         @forelse ($products as $product)
                             <a href="{{ url('/product/' . $product->slug) }}" wire:navigate class="group block">
                                 <div class="aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
@@ -195,7 +205,7 @@
                     </div>
 
                     <!-- Skeleton Loading Grid -->
-                    <div wire:loading wire:target="search, selectedCategories, sort" class="w-full">
+                    <div wire:loading wire:target="search, selectedCategories, selectedSizes, selectedColors, maxPrice, sort" class="w-full">
                         <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-6 gap-y-12">
                             @for ($i = 0; $i < 6; $i++)
                                 <div class="animate-pulse block">

@@ -13,22 +13,26 @@ class ContactPage extends Component
     public $phone = '';
     public $subject = '';
     public $message = '';
-    public $channel = 'email'; // Default email, can be whatsapp
+    public $channel = 'email'; // Default 'email', can be 'whatsapp'
 
     public function submit()
     {
         $this->validate([
             'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
+            'email' => $this->channel === 'email' ? 'required|email|max:255' : 'nullable|email|max:255',
+            'phone' => $this->channel === 'whatsapp' ? 'required|string|max:20' : 'nullable|string|max:20',
             'subject' => 'required|string',
             'message' => 'required|string',
-            'channel' => 'required|in:email,whatsapp',
+        ], [
+            'email.required' => 'Silakan isi alamat email Anda.',
+            'phone.required' => 'Silakan isi nomor WhatsApp Anda.',
         ]);
 
-        if (empty($this->email) && empty($this->phone)) {
-            session()->flash('error', 'Silakan isi salah satu: Email atau No. WhatsApp Anda.');
-            return;
+        // Clean up the non-selected contact channel
+        if ($this->channel === 'email') {
+            $this->phone = '';
+        } else {
+            $this->email = '';
         }
 
         // Check SiteSettings if we should save to DB based on subject
@@ -50,8 +54,8 @@ class ContactPage extends Component
         if ($saveToDb) {
             Inquiry::create([
                 'name' => $this->name,
-                'email' => $this->email,
-                'phone' => $this->phone,
+                'email' => $this->email ?: null,
+                'phone' => $this->phone ?: null,
                 'subject' => $this->subject,
                 'message' => $this->message,
                 'channel' => $this->channel,
@@ -59,21 +63,25 @@ class ContactPage extends Component
             ]);
         }
 
-        if ($this->channel === 'whatsapp') {
-            $phoneSetting = SiteSetting::where('key', 'contact_phone')->first()->value ?? '6281234567890';
-            $phoneClean = preg_replace('/[^0-9]/', '', $phoneSetting);
-            if (str_starts_with($phoneClean, '0')) {
-                $phoneClean = '62' . substr($phoneClean, 1);
-            }
-            
-            $waMessage = "Halo Raabiha, nama saya {$this->name}.\n\nSubjek: {$this->subject}\n\n{$this->message}";
-            $waUrl = "https://wa.me/{$phoneClean}?text=" . urlencode($waMessage);
-            
-            return redirect()->away($waUrl);
+        $phoneSetting = SiteSetting::where('key', 'contact_phone')->first()->value ?? '6281234567890';
+        $phoneClean = preg_replace('/[^0-9]/', '', $phoneSetting);
+        if (str_starts_with($phoneClean, '0')) {
+            $phoneClean = '62' . substr($phoneClean, 1);
         }
-
-        $this->reset(['name', 'email', 'phone', 'subject', 'message']);
-        session()->flash('success', 'Pesan Anda telah berhasil dikirim! Kami akan segera menghubungi Anda melalui Email.');
+        
+        $waMessage = "Halo Raabiha, nama saya {$this->name}.\n\nSubjek: {$this->subject}\n\n{$this->message}";
+        if ($this->email) {
+            $waMessage .= "\n\nEmail saya: {$this->email}";
+        }
+        if ($this->phone) {
+            $waMessage .= "\n\nWA saya: {$this->phone}";
+        }
+        
+        $waUrl = "https://wa.me/{$phoneClean}?text=" . urlencode($waMessage);
+        
+        $this->reset(['name', 'email', 'phone', 'subject', 'message', 'channel']);
+        
+        return redirect()->away($waUrl);
     }
 
     public function render()
@@ -94,6 +102,8 @@ class ContactPage extends Component
 
         return view('livewire.contact-page', [
             'subjects' => $subjects
-        ])->layout('components.layouts.app');
+        ])->layout('components.layouts.app', [
+            'title' => 'Lokasi & Kontak'
+        ]);
     }
 }

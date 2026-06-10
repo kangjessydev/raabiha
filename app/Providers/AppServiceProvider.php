@@ -4,8 +4,18 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+use App\Models\Inquiry;
 use App\Models\Order;
+use App\Models\PostComment;
+use App\Models\Product;
+use App\Models\ProductReview;
+use App\Models\ProductVariant;
+use App\Observers\InquiryObserver;
 use App\Observers\OrderObserver;
+use App\Observers\PostCommentObserver;
+use App\Observers\ProductObserver;
+use App\Observers\ProductReviewObserver;
+use App\Observers\ProductVariantObserver;
 use Awcodes\Curator\Facades\Curator;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,8 +33,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Daftarkan Observer Order untuk auto-record Buku Kas
+        // Daftarkan Observer Order untuk auto-record Buku Kas & notifikasi lonceng
         Order::observe(OrderObserver::class);
+
+        // Daftarkan Observer Inquiry untuk notifikasi lonceng pesan masuk
+        Inquiry::observe(InquiryObserver::class);
+
+        // Daftarkan Observer untuk komentar blog
+        PostComment::observe(PostCommentObserver::class);
+
+        // Daftarkan Observer untuk ulasan/review produk
+        ProductReview::observe(ProductReviewObserver::class);
+
+        // Daftarkan Observer untuk stok produk & varian
+        Product::observe(ProductObserver::class);
+        ProductVariant::observe(ProductVariantObserver::class);
 
         Curator::acceptedFileTypes([
             'image/jpeg',

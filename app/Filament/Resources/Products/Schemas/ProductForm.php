@@ -98,6 +98,11 @@ class ProductForm
                             ->default(0)
                             ->visible(fn (Get $get) => $get('has_variants') === false)
                             ->required(fn (Get $get) => $get('has_variants') === false),
+                        TextInput::make('minimum_stock')
+                            ->label('Stok Minimum Peringatan (Tanpa Varian)')
+                            ->numeric()
+                            ->placeholder('Kosongkan untuk pakai default global (5)')
+                            ->visible(fn (Get $get) => $get('has_variants') === false),
                         Toggle::make('has_variants')
                             ->label('Punya Varian?')
                             ->live()

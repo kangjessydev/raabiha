@@ -7,25 +7,64 @@ use App\Models\Product;
 use App\Models\Category;
 use Livewire\WithPagination;
 use Livewire\Attributes\Lazy;
+use Livewire\Attributes\Url;
 
 #[Lazy]
 class Shop extends Component
 {
     use WithPagination;
 
+    #[Url(keep: true)]
     public $search = '';
+
+    #[Url(keep: true)]
     public $sort = 'default';
+
+    #[Url(keep: true)]
     public $selectedCategories = [];
 
-    protected $queryString = [
-        'search' => ['except' => ''],
-        'sort' => ['except' => 'default'],
-        'selectedCategories' => ['except' => []],
-    ];
+    #[Url(keep: true)]
+    public $selectedSizes = [];
+
+    #[Url(keep: true)]
+    public $selectedColors = [];
+
+    #[Url(keep: true)]
+    public $maxPrice = 4000000;
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSelectedCategories()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSelectedSizes()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSelectedColors()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedMaxPrice()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSort()
+    {
+        $this->resetPage();
+    }
 
     public function render()
     {
-        $query = Product::with('category')->where('is_active', true);
+        $query = Product::with(['category', 'variants.attributeOptions'])->where('is_active', true);
 
         if ($this->search) {
             $query->where('name', 'like', '%' . $this->search . '%');
@@ -33,6 +72,61 @@ class Shop extends Component
 
         if (!empty($this->selectedCategories)) {
             $query->whereIn('category_id', $this->selectedCategories);
+        }
+
+        if ($this->maxPrice) {
+            $query->where(function($q) {
+                $q->where('price', '<=', $this->maxPrice)
+                  ->orWhereHas('variants', function($qv) {
+                      $qv->where('is_price_override', true)
+                         ->where('price', '<=', $this->maxPrice);
+                  });
+            });
+        }
+
+        if (!empty($this->selectedSizes)) {
+            $query->where(function($q) {
+                $q->whereHas('variants.attributeOptions', function($qo) {
+                    $qo->where(function($sub) {
+                        foreach ($this->selectedSizes as $size) {
+                            $sub->orWhere('slug', 'like', '%' . $size . '%')
+                               ->orWhere('value', 'like', '%' . $size . '%');
+                        }
+                    });
+                })
+                ->orWhereHas('variants', function($qo) {
+                    $qo->where(function($sub) {
+                        foreach ($this->selectedSizes as $size) {
+                            $parts = explode('/', $size);
+                            foreach ($parts as $part) {
+                                $sub->orWhere('name', 'like', '%' . $part . '%')
+                                   ->orWhere('sku', 'like', '%' . $part . '%');
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        if (!empty($this->selectedColors)) {
+            $query->where(function($q) {
+                $q->whereHas('variants.attributeOptions', function($qo) {
+                    $qo->where(function($sub) {
+                        foreach ($this->selectedColors as $color) {
+                            $sub->orWhere('slug', 'like', '%' . $color . '%')
+                               ->orWhere('value', 'like', '%' . $color . '%');
+                        }
+                    });
+                })
+                ->orWhereHas('variants', function($qo) {
+                    $qo->where(function($sub) {
+                        foreach ($this->selectedColors as $color) {
+                            $sub->orWhere('name', 'like', '%' . $color . '%')
+                               ->orWhere('sku', 'like', '%' . $color . '%');
+                        }
+                    });
+                });
+            });
         }
 
         switch ($this->sort) {

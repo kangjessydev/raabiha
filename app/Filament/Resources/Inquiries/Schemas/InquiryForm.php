@@ -15,10 +15,38 @@ class InquiryForm
                     ->readOnly(),
                 \Filament\Forms\Components\TextInput::make('email')
                     ->label('Email')
-                    ->readOnly(),
+                    ->readOnly()
+                    ->suffixAction(
+                        \Filament\Actions\Action::make('copyEmail')
+                            ->icon('heroicon-m-clipboard')
+                            ->tooltip('Salin Email')
+                            ->action(function ($state, $livewire) {
+                                if ($state) {
+                                    $livewire->js('window.navigator.clipboard.writeText("' . addslashes($state) . '")');
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Email berhasil disalin')
+                                        ->success()
+                                        ->send();
+                                }
+                            })
+                    ),
                 \Filament\Forms\Components\TextInput::make('phone')
-                    ->label('No. Handphone')
-                    ->readOnly(),
+                    ->label('No. Handphone / WhatsApp')
+                    ->readOnly()
+                    ->suffixAction(
+                        \Filament\Actions\Action::make('copyPhone')
+                            ->icon('heroicon-m-clipboard')
+                            ->tooltip('Salin No. Handphone')
+                            ->action(function ($state, $livewire) {
+                                if ($state) {
+                                    $livewire->js('window.navigator.clipboard.writeText("' . addslashes($state) . '")');
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Nomor berhasil disalin')
+                                        ->success()
+                                        ->send();
+                                }
+                            })
+                    ),
                 \Filament\Forms\Components\TextInput::make('subject')
                     ->label('Subjek')
                     ->readOnly(),
@@ -28,7 +56,8 @@ class InquiryForm
                         'email' => 'Email',
                         'whatsapp' => 'WhatsApp',
                     ])
-                    ->readOnly(),
+                    ->native(false)
+                    ->disabled(),
                 \Filament\Forms\Components\Select::make('status')
                     ->label('Status Tiket')
                     ->options([
@@ -36,6 +65,7 @@ class InquiryForm
                         'read' => 'Dibaca',
                         'replied' => 'Dibalas',
                     ])
+                    ->native(false)
                     ->required(),
                 \Filament\Forms\Components\Textarea::make('message')
                     ->label('Pesan')

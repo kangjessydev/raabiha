@@ -2,10 +2,16 @@
 
 namespace App\Filament\Exports;
 
+use App\Models\Category;
 use App\Models\Product;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
 use Filament\Actions\Exports\Models\Export;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Fieldset;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Number;
 
 class ProductExporter extends Exporter
@@ -15,34 +21,70 @@ class ProductExporter extends Exporter
     public static function getColumns(): array
     {
         return [
-            ExportColumn::make('id')
-                ->label('ID'),
-            ExportColumn::make('category.name'),
-            ExportColumn::make('name'),
-            ExportColumn::make('slug'),
-            ExportColumn::make('description'),
-            ExportColumn::make('images'),
-            ExportColumn::make('price'),
-            ExportColumn::make('stock'),
-            ExportColumn::make('reseller_price'),
-            ExportColumn::make('weight'),
-            ExportColumn::make('has_variants'),
-            ExportColumn::make('meta_title'),
-            ExportColumn::make('meta_description'),
-            ExportColumn::make('wholesale_pricing'),
-            ExportColumn::make('promo_rules'),
-            ExportColumn::make('is_active'),
-            ExportColumn::make('created_at'),
-            ExportColumn::make('updated_at'),
+            ExportColumn::make('id')->label('ID'),
+            ExportColumn::make('category.name')->label('Kategori'),
+            ExportColumn::make('name')->label('Nama Produk'),
+            ExportColumn::make('slug')->label('Slug'),
+            ExportColumn::make('price')->label('Harga'),
+            ExportColumn::make('reseller_price')->label('Harga Reseller'),
+            ExportColumn::make('stock')->label('Stok'),
+            ExportColumn::make('weight')->label('Berat (gram)'),
+            ExportColumn::make('has_variants')->label('Punya Varian?'),
+            ExportColumn::make('is_active')->label('Aktif?'),
+            ExportColumn::make('meta_title')->label('Meta Title'),
+            ExportColumn::make('meta_description')->label('Meta Description'),
+            ExportColumn::make('wholesale_pricing')->label('Aturan Grosir'),
+            ExportColumn::make('promo_rules')->label('Aturan Promo'),
+            ExportColumn::make('created_at')->label('Dibuat'),
+            ExportColumn::make('updated_at')->label('Diperbarui'),
         ];
+    }
+
+    public static function getOptionsFormComponents(): array
+    {
+        return [
+            Fieldset::make('Filter Data')
+                ->schema([
+                    Select::make('category_id')
+                        ->label('Kategori')
+                        ->placeholder('Semua Kategori')
+                        ->options(Category::pluck('name', 'id'))
+                        ->native(false),
+
+                    Select::make('is_active')
+                        ->label('Status Produk')
+                        ->placeholder('Semua Status')
+                        ->options([
+                            '1' => 'Aktif',
+                            '0' => 'Non-Aktif',
+                        ])
+                        ->native(false),
+
+                    DatePicker::make('date_from')
+                        ->label('Dari Tanggal')
+                        ->displayFormat('d/m/Y')
+                        ->native(false),
+
+                    DatePicker::make('date_until')
+                        ->label('Sampai Tanggal')
+                        ->displayFormat('d/m/Y')
+                        ->native(false),
+                ])
+                ->columns(2),
+        ];
+    }
+
+    public static function modifyQuery(Builder $query): Builder
+    {
+        return $query;
     }
 
     public static function getCompletedNotificationBody(Export $export): string
     {
-        $body = 'Your product export has completed and ' . Number::format($export->successful_rows) . ' ' . str('row')->plural($export->successful_rows) . ' exported.';
+        $body = 'Ekspor produk selesai: ' . Number::format($export->successful_rows) . ' baris berhasil diekspor.';
 
         if ($failedRowsCount = $export->getFailedRowsCount()) {
-            $body .= ' ' . Number::format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' failed to export.';
+            $body .= ' ' . Number::format($failedRowsCount) . ' baris gagal.';
         }
 
         return $body;

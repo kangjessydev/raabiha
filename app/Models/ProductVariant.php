@@ -21,6 +21,7 @@ class ProductVariant extends Model
         'weight',
         'stock',
         'is_active',
+        'minimum_stock',
     ];
 
     protected $casts = [

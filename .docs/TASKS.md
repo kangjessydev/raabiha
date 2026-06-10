@@ -43,9 +43,15 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - **Sistem Keranjang & Beli Sekarang:** Menyelaraskan fungsi masuk ke keranjang dan proses Checkout langsung, dengan perhitungan Diskon Reseller otomatis.
 - **Sistem Checkout (Frontend):** Form pengisian alamat pengiriman dan ringkasan harga.
 - **Integrasi Dashboard Reseller:** Menggabungkan profil Reseller ke dalam *Dashboard Customer* standar.
-- **Global UI Binding:** Menghubungkan data *Site Settings* (Logo, Navbar, Footer, Nomor Kontak) ke komponen *Frontend* secara dinamis.
+- **Global UI Binding (Dasar):** Menghubungkan data *Site Settings* (pengumuman, status mode libur, tautan menu, dll) ke komponen *Frontend* secara dinamis.
 - **Refactoring Hardcode Pages:** Mengoptimalkan halaman Home, About, Lokasi & Kontak.
 - **Dynamic Page Rendering:** Membuat *routing* untuk me-render *Halaman Statis* dan *Sales Page* (`/{slug}`).
+- [x] **Penyempurnaan Global UI Binding:** Menghubungkan logo (Light & Dark Mode) dan nama web di Navbar dan Footer secara dinamis ke pengaturan **Identitas Toko** (termasuk Favicon, judul tab browser dinamis dengan slogan/SEO beranda).
+- [x] **Pencarian Global Navbar (Search):** Berhasil memfungsikan ikon search di navbar agar mengarah ke halaman pencarian dinamis yang mencari produk dan artikel sekaligus.
+- [x] **Logika Filter Katalog Produk:** Berhasil menyelesaikan filter Ukuran, Warna, dan Rentang Harga di halaman `/shop` agar terhubung ke Livewire/database secara real-time.
+
+**Belum (To Do):**
+- *Semua fitur frontend customer utama telah diimplementasikan.*
 
 ---
 

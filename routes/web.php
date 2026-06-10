@@ -16,6 +16,7 @@ Route::get('/contact', \App\Livewire\ContactPage::class);
 Route::get('/shop', \App\Livewire\Shop::class);
 
 Route::get('/blog', \App\Livewire\Blog::class);
+Route::get('/search', \App\Livewire\Search::class);
 
 Route::get('/gallery', function () {
     return view('gallery');

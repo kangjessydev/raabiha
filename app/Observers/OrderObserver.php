@@ -4,32 +4,56 @@ namespace App\Observers;
 
 use App\Models\Cashflow;
 use App\Models\Order;
+use App\Models\User;
+use Filament\Notifications\Notification;
 
 class OrderObserver
 {
     /**
-     * Saat pesanan baru dibuat langsung dengan status paid (POS Manual).
+     * Saat pesanan baru dibuat (termasuk POS Manual yang langsung paid).
      */
     public function created(Order $order): void
     {
+        // Notifikasi ke semua admin — pesanan baru masuk
+        $this->sendOrderNotification(
+            icon: 'heroicon-o-shopping-bag',
+            iconColor: 'success',
+            title: '🛒 Pesanan Baru Masuk',
+            body: "Pesanan #{$order->order_number} baru saja diterima." . ($order->grand_total ? ' Total: Rp ' . number_format($order->grand_total, 0, ',', '.') : ''),
+        );
+
         if ($order->payment_status === 'paid') {
             $this->recordCashIn($order);
         }
     }
 
     /**
-     * Saat pesanan di-update:
-     * - Jika payment_status berubah ke 'paid' → catat Cash In
-     * - Jika status berubah ke 'cancelled' → buat reversal entry (jangan hapus)
+     * Saat pesanan di-update.
      */
     public function updated(Order $order): void
     {
+        // Notif saat payment_status berubah ke paid
         if ($order->isDirty('payment_status') && $order->payment_status === 'paid') {
             $this->recordCashIn($order);
+
+            $this->sendOrderNotification(
+                icon: 'heroicon-o-banknotes',
+                iconColor: 'success',
+                title: '💳 Pembayaran Diterima',
+                body: "Pesanan #{$order->order_number} telah lunas. Total: Rp " . number_format($order->grand_total, 0, ',', '.'),
+            );
         }
 
+        // Notif saat pesanan dibatalkan
         if ($order->isDirty('status') && $order->status === 'cancelled') {
-            // Cek apakah ada Cash In aktif untuk pesanan ini
+            $this->sendOrderNotification(
+                icon: 'heroicon-o-x-circle',
+                iconColor: 'danger',
+                title: '❌ Pesanan Dibatalkan',
+                body: "Pesanan #{$order->order_number} telah dibatalkan.",
+            );
+
+            // Reversal cashflow
             $original = Cashflow::where('order_id', $order->id)
                 ->where('type', 'in')
                 ->where('source', 'order')
@@ -37,13 +61,11 @@ class OrderObserver
                 ->first();
 
             if ($original) {
-                // Tandai entri asli sebagai reversed
                 $original->update([
                     'is_reversed'   => true,
                     'reversal_note' => 'Pesanan #' . $order->order_number . ' dibatalkan.',
                 ]);
 
-                // Buat reversal entry (audit trail)
                 Cashflow::create([
                     'transaction_date' => now()->toDateString(),
                     'type'             => 'out',
@@ -63,11 +85,31 @@ class OrderObserver
     public function forceDeleted(Order $order): void {}
 
     /**
-     * Helper: catat Cash In dari pesanan, cegah duplikat via updateOrInsert.
+     * Kirim notifikasi ke semua admin panel.
+     */
+    private function sendOrderNotification(string $icon, string $iconColor, string $title, string $body): void
+    {
+        $admins = User::role('super_admin')->get();
+
+        if ($admins->isEmpty()) {
+            $admins = User::where('id', 2)->get(); // fallback ke super admin ID 2
+        }
+
+        foreach ($admins as $admin) {
+            Notification::make()
+                ->icon($icon)
+                ->iconColor($iconColor)
+                ->title($title)
+                ->body($body)
+                ->sendToDatabase($admin);
+        }
+    }
+
+    /**
+     * Helper: catat Cash In dari pesanan, cegah duplikat via updateOrCreate.
      */
     private function recordCashIn(Order $order): void
     {
-        // Gunakan updateOrInsert untuk cegah duplikat (idempotent)
         Cashflow::updateOrCreate(
             [
                 'order_id' => $order->id,

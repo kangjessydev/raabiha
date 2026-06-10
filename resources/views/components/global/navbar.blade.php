@@ -1,4 +1,24 @@
-<div class="w-full z-[100] sticky top-0" x-init="setTimeout(() => { if($refs.desktopLogo && $refs.desktopLogo.complete) navLoaded = true; }, 50)">
+@php
+    $siteName = \App\Models\SiteSetting::where('key', 'site_name')->value('value') ?? 'RAABIHA';
+    
+    $logoLightId = \App\Models\SiteSetting::where('key', 'site_logo_light')->value('value');
+    $logoLightMedia = $logoLightId ? \Awcodes\Curator\Models\Media::find($logoLightId) : null;
+    
+    $logoLightUrl = null;
+    if ($logoLightMedia) {
+        $logoLightUrl = Storage::url($logoLightMedia->path);
+    } elseif (file_exists(public_path('assets/images/logo-desktop.png'))) {
+        $logoLightUrl = asset('assets/images/logo-desktop.png');
+    }
+
+    $logoMobileUrl = null;
+    if ($logoLightMedia) {
+        $logoMobileUrl = Storage::url($logoLightMedia->path);
+    } elseif (file_exists(public_path('assets/images/logo-mobile.png'))) {
+        $logoMobileUrl = asset('assets/images/logo-mobile.png');
+    }
+@endphp
+<div class="w-full z-[100] sticky top-0" x-init="setTimeout(() => { navLoaded = true; }, 50)">
     <header class="w-full bg-[#fcf9f5] border-b border-[#e5e2de] transition-transform duration-300 transform translate-y-0" id="smart-navbar">
         
         <!-- ==================== DESKTOP (Hidden on Mobile) ==================== -->
@@ -27,7 +47,11 @@
                 <!-- Desktop Logo -->
                 <div class="w-[180px] shrink-0">
                     <a href="{{ url('/') }}" wire:navigate class="block hover:opacity-80 transition-opacity">
-                        <img x-ref="desktopLogo" x-on:load="navLoaded = true" x-on:error="navLoaded = true; $el.outerHTML='<span class=\'text-2xl font-bold tracking-widest text-[#064e3b] font-serif uppercase whitespace-nowrap\'>RAABIHA</span>'" src="{{ asset('assets/images/logo-desktop.png') }}" alt="Raabiha" class="h-10 w-auto object-contain">
+                        @if($logoLightUrl)
+                            <img src="{{ $logoLightUrl }}" alt="{{ $siteName }}" class="h-10 w-auto object-contain">
+                        @else
+                            <span class="text-2xl font-bold tracking-widest text-[#064e3b] font-serif uppercase whitespace-nowrap">{{ strtoupper($siteName) }}</span>
+                        @endif
                     </a>
                 </div>
                 
@@ -115,7 +139,11 @@
                 
                 <!-- Mobile Logo (Center) -->
                 <a href="{{ url('/') }}" wire:navigate class="block hover:opacity-80 transition-opacity absolute left-1/2 -translate-x-1/2">
-                    <img x-ref="mobileLogo" x-on:load="navLoaded = true" x-on:error="navLoaded = true; $el.outerHTML='<span class=\'text-xl font-bold tracking-widest text-[#064e3b] font-serif uppercase\'>R</span>'" src="{{ asset('assets/images/logo-mobile.png') }}" alt="Raabiha" class="h-8 w-auto object-contain">
+                    @if($logoMobileUrl)
+                        <img src="{{ $logoMobileUrl }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
+                    @else
+                        <span class="text-xl font-bold tracking-widest text-[#064e3b] font-serif uppercase whitespace-nowrap">{{ strtoupper($siteName) }}</span>
+                    @endif
                 </a>
 
                 <!-- Search & Cart (Right) -->
@@ -131,10 +159,9 @@
         <!-- Global Search Overlay (Slide down) -->
         <div id="search-overlay" class="absolute top-full left-0 right-0 bg-[#fcf9f5] border-b border-[#e5e2de] shadow-sm transform -translate-y-full opacity-0 pointer-events-none transition-all duration-300 z-40">
             <div class="max-w-[1400px] mx-auto px-6 md:px-12 py-4">
-                <form role="search" method="get" action="index.html" class="flex items-center gap-4">
-                    <input type="hidden" name="post_type" value="product" />
+                <form role="search" method="get" action="/search" class="flex items-center gap-4">
                     <svg class="w-5 h-5 text-[#a3a3a3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="search" name="s" placeholder="Cari gamis, outerwear, hijab..." class="w-full bg-transparent border-none text-[13px] font-sans text-[#1c1c1a] placeholder-[#a3a3a3] outline-none focus:ring-0">
+                    <input type="search" name="q" placeholder="Cari gamis, outerwear, hijab..." class="w-full bg-transparent border-none text-[13px] font-sans text-[#1c1c1a] placeholder-[#a3a3a3] outline-none focus:ring-0">
                     <button type="button" id="search-close" class="text-[#1c1c1a] hover:text-red-500 transition-colors focus:outline-none">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
