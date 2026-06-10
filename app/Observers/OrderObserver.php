@@ -18,7 +18,7 @@ class OrderObserver
         $this->sendOrderNotification(
             icon: 'heroicon-o-shopping-bag',
             iconColor: 'success',
-            title: '🛒 Pesanan Baru Masuk',
+            title: 'Pesanan Baru Masuk',
             body: "Pesanan #{$order->order_number} baru saja diterima." . ($order->grand_total ? ' Total: Rp ' . number_format($order->grand_total, 0, ',', '.') : ''),
         );
 
@@ -39,7 +39,7 @@ class OrderObserver
             $this->sendOrderNotification(
                 icon: 'heroicon-o-banknotes',
                 iconColor: 'success',
-                title: '💳 Pembayaran Diterima',
+                title: 'Pembayaran Diterima',
                 body: "Pesanan #{$order->order_number} telah lunas. Total: Rp " . number_format($order->grand_total, 0, ',', '.'),
             );
         }
@@ -49,7 +49,7 @@ class OrderObserver
             $this->sendOrderNotification(
                 icon: 'heroicon-o-x-circle',
                 iconColor: 'danger',
-                title: '❌ Pesanan Dibatalkan',
+                title: 'Pesanan Dibatalkan',
                 body: "Pesanan #{$order->order_number} telah dibatalkan.",
             );
 
@@ -101,6 +101,12 @@ class OrderObserver
                 ->iconColor($iconColor)
                 ->title($title)
                 ->body($body)
+                ->actions([
+                    \Filament\Actions\Action::make('view')
+                        ->label('Lihat Pesan' === $title ? 'Lihat Pesan' : 'Lihat Pesanan')
+                        ->button()
+                        ->url(route('filament.admin.e-commerce.resources.orders.index')),
+                ])
                 ->sendToDatabase($admin);
         }
     }

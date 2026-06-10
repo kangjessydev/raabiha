@@ -24,8 +24,14 @@ class InquiryObserver
             Notification::make()
                 ->icon('heroicon-o-envelope')
                 ->iconColor('info')
-                ->title('✉️ Pesan Baru Masuk')
-                ->body("Pesan dari **{$inquiry->name}** via {$channel}: \"{$inquiry->message}\"")
+                ->title('Pesan Baru Masuk')
+                ->body("Pesan dari {$inquiry->name} via {$channel}: \"{$inquiry->message}\"")
+                ->actions([
+                    \Filament\Actions\Action::make('view')
+                        ->label('Lihat Pesan')
+                        ->button()
+                        ->url(route('filament.admin.media-files.resources.inquiries.index')),
+                ])
                 ->sendToDatabase($admin);
         }
     }

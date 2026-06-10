@@ -12,7 +12,6 @@ class ProductReviewObserver
     {
         $product = $review->product;
         $authorName = $review->user?->name ?? $review->customer_name ?? 'Pelanggan';
-        $ratingStars = str_repeat('⭐', $review->rating);
         $excerpt = \Str::limit($review->comment, 80);
         $productName = $product?->name ?? 'Produk';
 
@@ -25,8 +24,14 @@ class ProductReviewObserver
             Notification::make()
                 ->icon('heroicon-o-star')
                 ->iconColor('warning')
-                ->title('⭐ Ulasan Produk Baru')
-                ->body("**{$authorName}** memberi rating {$ratingStars} untuk **{$productName}**: \"{$excerpt}\"")
+                ->title('Ulasan Produk Baru')
+                ->body("{$authorName} memberi rating {$review->rating}/5 untuk {$productName}: \"{$excerpt}\"")
+                ->actions([
+                    \Filament\Actions\Action::make('view')
+                        ->label('Lihat Ulasan')
+                        ->button()
+                        ->url(route('filament.admin.e-commerce.resources.product-reviews.index')),
+                ])
                 ->sendToDatabase($admin);
         }
     }

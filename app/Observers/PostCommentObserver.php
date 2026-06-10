@@ -68,7 +68,7 @@ class PostCommentObserver
 
         foreach ($admins as $admin) {
             // Tentukan judul notifikasi apakah auto-approved atau butuh moderasi
-            $title = $isReply ? '💬 Balasan Komentar Baru' : '💬 Komentar Baru di Blog';
+            $title = $isReply ? 'Balasan Komentar Baru' : 'Komentar Baru di Blog';
             if (!$comment->is_approved) {
                 $title .= ' (Butuh Moderasi)';
             } else {
@@ -79,7 +79,13 @@ class PostCommentObserver
                 ->icon('heroicon-o-chat-bubble-left-ellipsis')
                 ->iconColor($comment->is_approved ? 'success' : 'warning')
                 ->title($title)
-                ->body("**{$authorName}** berkomentar di \"{$postTitle}\": \"{$excerpt}\"")
+                ->body("{$authorName} berkomentar di \"{$postTitle}\": \"{$excerpt}\"")
+                ->actions([
+                    \Filament\Actions\Action::make('view')
+                        ->label('Lihat Komentar')
+                        ->button()
+                        ->url(route('filament.admin.konten.resources.post-comments.index')),
+                ])
                 ->sendToDatabase($admin);
         }
     }
