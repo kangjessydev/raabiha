@@ -48,19 +48,22 @@ class BlogDetail extends Component
             'email' => auth()->check() ? 'nullable' : 'required|email|max:255',
         ]);
 
-        \App\Models\PostComment::create([
+        $comment = \App\Models\PostComment::create([
             'post_id' => $this->post->id,
             'user_id' => auth()->id() ?? null,
             'parent_id' => $this->replyTo,
             'guest_name' => auth()->check() ? auth()->user()->name : $this->name,
             'guest_email' => auth()->check() ? auth()->user()->email : $this->email,
             'content' => $this->commentContent,
-            'is_approved' => false, // Require moderation by default
         ]);
 
         $this->reset(['commentContent', 'replyTo']);
         
-        session()->flash('message', 'Komentar Anda telah dikirim dan menunggu persetujuan moderator.');
+        if ($comment->is_approved) {
+            session()->flash('message', 'Komentar Anda berhasil dipublikasikan!');
+        } else {
+            session()->flash('message', 'Komentar Anda mengandung kata-kata sensitif atau link eksternal dan sedang menunggu persetujuan moderator.');
+        }
     }
 
     public function render()
