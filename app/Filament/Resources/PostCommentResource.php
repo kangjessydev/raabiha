@@ -53,6 +53,7 @@ class PostCommentResource extends Resource
     {
         return $table
             ->poll('5s')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('post.title')
                     ->searchable()
@@ -80,7 +81,7 @@ class PostCommentResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_approved')

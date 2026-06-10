@@ -93,41 +93,36 @@
                             @endif
 
                             {{-- Comment Form --}}
-                            <form wire:submit="postComment" class="mb-12">
-                                @if($replyTo)
-                                    <div class="flex items-center justify-between bg-[#f0ede9] p-3 mb-4 text-xs font-mono text-[#615e57]">
-                                        <span>Replying to comment #{{ $replyTo }}</span>
-                                        <button type="button" wire:click="cancelReply" class="hover:text-[#1c1c1a]">&times; Cancel</button>
+                            @if(!$replyTo)
+                                <form wire:submit="postComment" class="mb-12">
+                                    <div class="mb-6">
+                                        <label class="block text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-2">Leave a thought</label>
+                                        <textarea wire:model="commentContent" required rows="4" placeholder="Share your perspective on this piece..." class="w-full bg-transparent border border-[#d1cec9] p-4 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b] transition-all resize-none"></textarea>
+                                        @error('commentContent') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                                     </div>
-                                @endif
-                                
-                                <div class="mb-6">
-                                    <label class="block text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-2">Leave a thought</label>
-                                    <textarea wire:model="commentContent" required rows="4" placeholder="Share your perspective on this piece..." class="w-full bg-transparent border border-[#d1cec9] p-4 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b] transition-all resize-none"></textarea>
-                                    @error('commentContent') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                                </div>
-                                
-                                @guest
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <div>
-                                        <input wire:model="name" required type="text" placeholder="Name" class="w-full bg-transparent border-b border-[#d1cec9] py-3 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] transition-colors">
-                                        @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                    
+                                    @guest
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div>
+                                            <input wire:model="name" required type="text" placeholder="Name" class="w-full bg-transparent border-b border-[#d1cec9] py-3 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] transition-colors">
+                                            @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                        </div>
+                                        <div>
+                                            <input wire:model="email" required type="email" placeholder="Email" class="w-full bg-transparent border-b border-[#d1cec9] py-3 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] transition-colors">
+                                            @error('email') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                        </div>
                                     </div>
-                                    <div>
-                                        <input wire:model="email" required type="email" placeholder="Email" class="w-full bg-transparent border-b border-[#d1cec9] py-3 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] transition-colors">
-                                        @error('email') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                    @else
+                                    <div class="mb-6 text-sm text-[#615e57] font-mono">
+                                        Commenting as <span class="text-[#1c1c1a] font-bold">{{ auth()->user()->name }}</span>
                                     </div>
-                                </div>
-                                @else
-                                <div class="mb-6 text-sm text-[#615e57] font-mono">
-                                    Commenting as <span class="text-[#1c1c1a] font-bold">{{ auth()->user()->name }}</span>
-                                </div>
-                                @endguest
+                                    @endguest
 
-                                <button type="submit" class="bg-[#1c1c1a] text-white px-8 py-4 text-[11px] font-mono tracking-widest uppercase hover:bg-[#064e3b] transition-colors">
-                                    Post Comment
-                                </button>
-                            </form>
+                                    <button type="submit" class="bg-[#1c1c1a] text-white px-8 py-4 text-[11px] font-mono tracking-widest uppercase hover:bg-[#064e3b] transition-colors">
+                                        Post Comment
+                                    </button>
+                                </form>
+                            @endif
 
                             {{-- Comments List --}}
                             <div class="space-y-8">
@@ -155,7 +150,46 @@
                                                 * Diubah oleh Admin: {{ $comment->admin_edit_reason }}
                                             </div>
                                         @endif
-                                        <button wire:click="setReply({{ $comment->id }})" class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest border-b border-[#1c1c1a] hover:text-[#064e3b] hover:border-[#064e3b] transition-colors">Reply</button>
+                                        <div class="flex items-center gap-4 mb-4">
+                                            <button wire:click="setReply({{ $comment->id }})" class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest border-b border-[#1c1c1a] hover:text-[#064e3b] hover:border-[#064e3b] transition-colors">Reply</button>
+                                        </div>
+
+                                        {{-- Render Form Balasan tepat di bawah komentar yang sedang di-reply --}}
+                                        @if($replyTo === $comment->id)
+                                            <div class="mt-4 mb-6 bg-[#fcf9f5] border border-[#e5e2de] p-6">
+                                                <div class="flex items-center justify-between mb-4 text-xs font-mono text-[#615e57]">
+                                                    <span>Membalas komentar {{ $comment->guest_name }}</span>
+                                                    <button type="button" wire:click="cancelReply" class="text-red-500 hover:text-red-700">&times; Batal</button>
+                                                </div>
+                                                <form wire:submit="postComment">
+                                                    <div class="mb-4">
+                                                        <textarea wire:model="commentContent" required rows="3" placeholder="Tulis balasan Anda..." class="w-full bg-transparent border border-[#d1cec9] p-3 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b] transition-all resize-none"></textarea>
+                                                        @error('commentContent') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                                    </div>
+                                                    
+                                                    @guest
+                                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                        <div>
+                                                            <input wire:model="name" required type="text" placeholder="Nama" class="w-full bg-transparent border-b border-[#d1cec9] py-2 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] transition-colors">
+                                                            @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                                        </div>
+                                                        <div>
+                                                            <input wire:model="email" required type="email" placeholder="Email" class="w-full bg-transparent border-b border-[#d1cec9] py-2 text-sm text-[#1c1c1a] placeholder:text-[#a3a09b] focus:outline-none focus:border-[#064e3b] transition-colors">
+                                                            @error('email') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+                                                    @else
+                                                    <div class="mb-4 text-xs text-[#615e57] font-mono">
+                                                        Membalas sebagai <span class="text-[#1c1c1a] font-bold">{{ auth()->user()->name }}</span>
+                                                    </div>
+                                                    @endguest
+
+                                                    <button type="submit" class="bg-[#1c1c1a] text-white px-6 py-3 text-[10px] font-mono tracking-widest uppercase hover:bg-[#064e3b] transition-colors">
+                                                        Kirim Balasan
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        @endif
 
                                         {{-- Replies --}}
                                         @if($comment->replies->count() > 0)
