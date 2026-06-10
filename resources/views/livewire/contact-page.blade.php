@@ -1,22 +1,58 @@
 <main class="site-main bg-[#fcf9f5] min-h-screen pb-0">
-    
+    @php
+        // Helper untuk render image Curator or Fallback
+        $resolveImage = function($curatorId, $fallback = null) {
+            if ($curatorId) {
+                $media = \Awcodes\Curator\Models\Media::find($curatorId);
+                if ($media) return $media->url;
+            }
+            return $fallback ?: 'https://placehold.co/800x800/e5e2de/615e57?text=Image+Not+Available';
+        };
+
+        // Load Settings
+        $contactHeroImage = \App\Models\SiteSetting::where('key', 'contact_hero_image')->value('value');
+        $contactTitle = \App\Models\SiteSetting::where('key', 'contact_title')->value('value') ?: 'LOCATIONS';
+        $contactSubtitle = \App\Models\SiteSetting::where('key', 'contact_subtitle')->value('value') ?: 'RAABIHA | ARCHITECTURAL MODESTY';
+
+        $rawLocations = \App\Models\SiteSetting::where('key', 'contact_locations')->value('value');
+        $locations = $rawLocations ? json_decode($rawLocations, true) : [];
+        if (!is_array($locations) || empty($locations)) {
+            $locations = [
+                [
+                    'badge' => 'FLAGSHIP STORE #1',
+                    'name' => 'Jakarta, Indonesia',
+                    'address' => "SCBD District 8, Treasury Tower Level 12\nSudirman Central Business District, Jakarta Selatan",
+                    'hours' => "Mon — Sat: 10:00 — 20:00\nSun: 11:00 — 18:00",
+                    'contact' => "+62 21 555 0192\njakarta@raabiha.com"
+                ],
+                [
+                    'badge' => 'FLAGSHIP STORE #2',
+                    'name' => 'London, UK',
+                    'address' => "12 Savile Row, Mayfair\nLondon W1S 3PQ, United Kingdom",
+                    'hours' => "Mon — Fri: 09:00 — 19:00\nSat — Sun: Closed",
+                    'contact' => "+44 20 7946 0148\nlondon@raabiha.com"
+                ]
+            ];
+        }
+    @endphp
+
     <!-- Hero Section -->
     <section class="max-w-[1440px] mx-auto px-6 lg:px-12 py-12 md:py-20">
         <div class="relative w-full aspect-[4/3] md:aspect-[21/9] overflow-hidden">
-            <img src="{{ asset('assets/images/contact-hero.png') }}" alt="Raabiha Store Location" class="w-full h-full object-cover">
+            <img src="{{ $resolveImage($contactHeroImage, asset('assets/images/contact-hero.png')) }}" alt="Raabiha Store Location" class="w-full h-full object-cover">
             
             <!-- Locations Badge -->
             <div class="absolute bottom-0 left-0 bg-white px-8 py-6 max-w-sm hidden md:block">
-                <h1 class="text-4xl font-serif text-[#1c1c1a] mb-2">LOCATIONS</h1>
+                <h1 class="text-4xl font-serif text-[#1c1c1a] mb-2">{{ $contactTitle }}</h1>
                 <p class="text-[9px] font-mono tracking-[0.2em] uppercase text-[#615e57]">
-                    RAABIHA <span class="mx-2">|</span> ARCHITECTURAL MODESTY
+                    {{ $contactSubtitle }}
                 </p>
             </div>
             <!-- Mobile Badge -->
             <div class="absolute bottom-0 left-0 bg-white px-6 py-4 max-w-[80%] md:hidden">
-                <h1 class="text-3xl font-serif text-[#1c1c1a] mb-1">LOCATIONS</h1>
+                <h1 class="text-3xl font-serif text-[#1c1c1a] mb-1">{{ $contactTitle }}</h1>
                 <p class="text-[8px] font-mono tracking-[0.2em] uppercase text-[#615e57]">
-                    RAABIHA | ARCHITECTURAL MODESTY
+                    {{ $contactSubtitle }}
                 </p>
             </div>
         </div>
@@ -28,63 +64,32 @@
             
             <!-- Left Column: Locations -->
             <div class="space-y-16">
-                <!-- Location 1 -->
-                <div>
-                    <div class="inline-block bg-[#1c1c1a] text-white text-[9px] uppercase tracking-[0.2em] px-4 py-1.5 mb-6">
-                        FLAGSHIP STORE #1
-                    </div>
-                    <h2 class="text-3xl font-serif text-[#1c1c1a] mb-6">Jakarta, Indonesia</h2>
-                    
-                    <p class="text-[#615e57] text-sm leading-relaxed mb-8 max-w-sm">
-                        SCBD District 8, Treasury Tower Level 12<br>
-                        Sudirman Central Business District, Jakarta Selatan
-                    </p>
-                    
-                    <div class="mb-6">
-                        <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-2 font-bold">Hours</h3>
-                        <p class="text-[#615e57] text-sm leading-relaxed">
-                            Mon — Sat: 10:00 — 20:00<br>
-                            Sun: 11:00 — 18:00
-                        </p>
-                    </div>
-                    
+                @foreach($locations as $index => $loc)
                     <div>
-                        <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-2 font-bold">Contact</h3>
-                        <p class="text-[#615e57] text-sm leading-relaxed">
-                            +62 21 555 0192<br>
-                            jakarta@@raabiha.com
+                        <div class="inline-block {{ $index === 0 ? 'bg-[#1c1c1a] text-white' : 'bg-[#e5e2de] text-[#1c1c1a]' }} text-[9px] uppercase tracking-[0.2em] px-4 py-1.5 mb-6 font-medium">
+                            {{ $loc['badge'] }}
+                        </div>
+                        <h2 class="text-3xl font-serif text-[#1c1c1a] mb-6">{{ $loc['name'] }}</h2>
+                        
+                        <p class="text-[#615e57] text-sm leading-relaxed mb-8 max-w-sm">
+                            {!! nl2br(e($loc['address'])) !!}
                         </p>
+                        
+                        <div class="mb-6">
+                            <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-2 font-bold">Hours</h3>
+                            <p class="text-[#615e57] text-sm leading-relaxed">
+                                {!! nl2br(e($loc['hours'])) !!}
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-2 font-bold">Contact</h3>
+                            <p class="text-[#615e57] text-sm leading-relaxed">
+                                {!! nl2br(e($loc['contact'])) !!}
+                            </p>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Location 2 -->
-                <div>
-                    <div class="inline-block bg-[#e5e2de] text-[#1c1c1a] text-[9px] uppercase tracking-[0.2em] px-4 py-1.5 mb-6 font-medium">
-                        FLAGSHIP STORE #2
-                    </div>
-                    <h2 class="text-3xl font-serif text-[#1c1c1a] mb-6">London, UK</h2>
-                    
-                    <p class="text-[#615e57] text-sm leading-relaxed mb-8 max-w-sm">
-                        12 Savile Row, Mayfair<br>
-                        London W1S 3PQ, United Kingdom
-                    </p>
-                    
-                    <div class="mb-6">
-                        <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-2 font-bold">Hours</h3>
-                        <p class="text-[#615e57] text-sm leading-relaxed">
-                            Mon — Fri: 09:00 — 19:00<br>
-                            Sat — Sun: Closed
-                        </p>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-[10px] font-mono uppercase tracking-[0.2em] text-[#1c1c1a] mb-2 font-bold">Contact</h3>
-                        <p class="text-[#615e57] text-sm leading-relaxed">
-                            +44 20 7946 0148<br>
-                            london@@raabiha.com
-                        </p>
-                    </div>
-                </div>
+                @endforeach
             </div>
 
             <!-- Right Column: Inquiries -->
