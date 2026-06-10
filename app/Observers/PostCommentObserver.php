@@ -10,13 +10,18 @@ class PostCommentObserver
 {
     public function creating(PostComment $comment): void
     {
-        $badWords = [
-            'anjing', 'babi', 'bangsat', 'keparat', 'bajingan', 'kontol', 'memek', 'ngentot', 'jancok', 'asu',
-            'perek', 'lonte', 'silit', 'tetek', 'toket', 'jembut', 'peler', 'pepek', 'tempik', 'titit', 'pler',
-            'goblok', 'tolol', 'bego', 'gila', 'idiot', 'sinting', 'sarap', 'brengsek', 'tai', 'pantek',
-            'fuck', 'shit', 'asshole', 'bitch', 'bastard', 'cunt', 'dick', 'pussy', 'whore', 'slut', 'faggot',
-            'motherfucker', 'cock', 'wank', 'crap'
-        ];
+        $rawWords = \App\Models\SiteSetting::where('key', 'comment_blacklist_words')->value('value');
+        if (filled($rawWords)) {
+            $badWords = array_filter(array_map('trim', explode(',', $rawWords)));
+        } else {
+            $badWords = [
+                'anjing', 'babi', 'bangsat', 'keparat', 'bajingan', 'kontol', 'memek', 'ngentot', 'jancok', 'asu',
+                'perek', 'lonte', 'silit', 'tetek', 'toket', 'jembut', 'peler', 'pepek', 'tempik', 'titit', 'pler',
+                'goblok', 'tolol', 'bego', 'gila', 'idiot', 'sinting', 'sarap', 'brengsek', 'tai', 'pantek',
+                'fuck', 'shit', 'asshole', 'bitch', 'bastard', 'cunt', 'dick', 'pussy', 'whore', 'slut', 'faggot',
+                'motherfucker', 'cock', 'wank', 'crap'
+            ];
+        }
 
         $isSpam = false;
         $hasBadWords = false;
