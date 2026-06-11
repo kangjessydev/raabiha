@@ -32,3 +32,57 @@
     flex: 1;
 }
 
+/* Premium Glassmorphic Stats Cards */
+.fi-wi-stats-overview-stat {
+    position: relative;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(248, 250, 252, 0.9) 100%) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.08), 0 2px 8px -1px rgba(148, 163, 184, 0.04) !important;
+    border-radius: 1rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden;
+}
+
+.fi-wi-stats-overview-stat:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px -5px rgba(148, 163, 184, 0.18), 0 8px 16px -6px rgba(148, 163, 184, 0.1) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.98) 100%) !important;
+    border-color: rgba(203, 213, 225, 0.8) !important;
+}
+
+.dark .fi-wi-stats-overview-stat {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.7) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+}
+
+.dark .fi-wi-stats-overview-stat:hover {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Border accents for each card type */
+.stat-card-warning {
+    border-left: 4px solid #f59e0b !important;
+}
+.stat-card-success {
+    border-left: 4px solid #10b981 !important;
+}
+.stat-card-danger {
+    border-left: 4px solid #ef4444 !important;
+}
+.stat-card-expense {
+    border-left: 4px solid #f97316 !important;
+}
+.stat-card-info {
+    border-left: 4px solid #06b6d4 !important;
+}
+.stat-card-netprofit {
+    border-left: 4px solid #8b5cf6 !important;
+}
+
+

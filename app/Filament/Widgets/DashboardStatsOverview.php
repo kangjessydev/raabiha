@@ -55,6 +55,68 @@ class DashboardStatsOverview extends StatsOverviewWidget
                 ->where('is_reversed', false)
                 ->sum('amount');
 
+            // --- Query Tren Hourly untuk Sparkline ---
+            $pendingHourly = Order::selectRaw('HOUR(created_at) as hr, COUNT(*) as count')
+                ->whereDate('created_at', $today)
+                ->where('payment_status', 'pending')
+                ->groupBy('hr')
+                ->pluck('count', 'hr')
+                ->toArray();
+
+            $completedHourly = Order::selectRaw('HOUR(created_at) as hr, COUNT(*) as count')
+                ->whereDate('created_at', $today)
+                ->where('status', 'completed')
+                ->groupBy('hr')
+                ->pluck('count', 'hr')
+                ->toArray();
+
+            $cancelledHourly = Order::selectRaw('HOUR(created_at) as hr, COUNT(*) as count')
+                ->whereDate('created_at', $today)
+                ->where('status', 'cancelled')
+                ->groupBy('hr')
+                ->pluck('count', 'hr')
+                ->toArray();
+
+            $hourlyExpenses = Cashflow::selectRaw('HOUR(created_at) as hr, SUM(amount) as amount')
+                ->whereDate('transaction_date', $today)
+                ->where('type', 'out')
+                ->groupBy('hr')
+                ->pluck('amount', 'hr')
+                ->toArray();
+
+            $voucherHourly = Order::selectRaw('HOUR(created_at) as hr, COUNT(*) as count')
+                ->whereDate('created_at', $today)
+                ->whereNotNull('voucher_id')
+                ->groupBy('hr')
+                ->pluck('count', 'hr')
+                ->toArray();
+
+            $hourlyRevenue = Cashflow::selectRaw('HOUR(created_at) as hr, SUM(amount) as amount')
+                ->whereDate('transaction_date', $today)
+                ->where('type', 'in')
+                ->where('is_reversed', false)
+                ->groupBy('hr')
+                ->pluck('amount', 'hr')
+                ->toArray();
+
+            $currentHour = (int) now()->format('H');
+            $pendingTrend = [];
+            $completedTrend = [];
+            $cancelledTrend = [];
+            $expenseTrend = [];
+            $voucherTrend = [];
+            $profitTrend = [];
+
+            for ($i = 5; $i >= 0; $i--) {
+                $h = ($currentHour - $i + 24) % 24;
+                $pendingTrend[] = (int) ($pendingHourly[$h] ?? 0);
+                $completedTrend[] = (int) ($completedHourly[$h] ?? 0);
+                $cancelledTrend[] = (int) ($cancelledHourly[$h] ?? 0);
+                $expenseTrend[] = (int) ($hourlyExpenses[$h] ?? 0);
+                $voucherTrend[] = (int) ($voucherHourly[$h] ?? 0);
+                $profitTrend[] = (int) (($hourlyRevenue[$h] ?? 0) - ($hourlyExpenses[$h] ?? 0));
+            }
+
             return [
                 'pending_payment_count' => (int) ($pendingPayment->count ?? 0),
                 'pending_payment_amount'=> (int) ($pendingPayment->amount ?? 0),
@@ -66,6 +128,14 @@ class DashboardStatsOverview extends StatsOverviewWidget
                 'vouchers_count'        => (int) ($vouchers->count ?? 0),
                 'vouchers_discount'     => (int) ($vouchers->discount ?? 0),
                 'revenue'               => (int) $revenue,
+                
+                // trends
+                'pending_trend'         => $pendingTrend,
+                'completed_trend'       => $completedTrend,
+                'cancelled_trend'       => $cancelledTrend,
+                'expense_trend'         => $expenseTrend,
+                'voucher_trend'         => $voucherTrend,
+                'profit_trend'          => $profitTrend,
             ];
         });
 
@@ -77,37 +147,61 @@ class DashboardStatsOverview extends StatsOverviewWidget
             Stat::make('Pesanan Menunggu Pembayaran', $data['pending_payment_count'] . ' Pesanan')
                 ->description('Nominal: ' . $fmt($data['pending_payment_amount']))
                 ->descriptionIcon('heroicon-m-clock')
-                ->color('warning'),
+                ->chart($data['pending_trend'])
+                ->color('warning')
+                ->extraAttributes([
+                    'class' => 'stat-card-warning',
+                ]),
 
             // 2. Pesanan Selesai
             Stat::make('Pesanan Selesai', $data['completed_count'] . ' Pesanan')
                 ->description('Nominal: ' . $fmt($data['completed_amount']))
                 ->descriptionIcon('heroicon-m-check-circle')
-                ->color('success'),
+                ->chart($data['completed_trend'])
+                ->color('success')
+                ->extraAttributes([
+                    'class' => 'stat-card-success',
+                ]),
 
             // 3. Pesanan Batal
             Stat::make('Pesanan Batal', $data['cancelled_count'] . ' Pesanan')
                 ->description('Nominal: ' . $fmt($data['cancelled_amount']))
                 ->descriptionIcon('heroicon-m-x-circle')
-                ->color('danger'),
+                ->chart($data['cancelled_trend'])
+                ->color('danger')
+                ->extraAttributes([
+                    'class' => 'stat-card-danger',
+                ]),
 
             // 4. Pengeluaran Hari Ini
             Stat::make('Pengeluaran Hari Ini', $fmt($data['expense']))
                 ->description('Diambil dari buku kas keluar')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
-                ->color('danger'),
+                ->chart($data['expense_trend'])
+                ->color('danger')
+                ->extraAttributes([
+                    'class' => 'stat-card-expense',
+                ]),
 
             // 5. Voucher Digunakan
             Stat::make('Voucher Digunakan', $data['vouchers_count'] . ' Voucher')
                 ->description('Total diskon: ' . $fmt($data['vouchers_discount']))
                 ->descriptionIcon('heroicon-m-ticket')
-                ->color('info'),
+                ->chart($data['voucher_trend'])
+                ->color('info')
+                ->extraAttributes([
+                    'class' => 'stat-card-info',
+                ]),
 
             // 6. Laba Bersih
             Stat::make('Laba Bersih', $fmt($netProfit))
                 ->description('Masuk: ' . $fmt($data['revenue']) . ' | Keluar: ' . $fmt($data['expense']))
                 ->descriptionIcon($netProfit >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->color($netProfit >= 0 ? 'success' : 'danger'),
+                ->chart($data['profit_trend'])
+                ->color($netProfit >= 0 ? 'success' : 'danger')
+                ->extraAttributes([
+                    'class' => 'stat-card-netprofit',
+                ]),
         ];
     }
 }
