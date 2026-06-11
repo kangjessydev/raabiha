@@ -13,7 +13,7 @@ class LaporanPenjualan extends Page
     // Hanya user yang diizinkan (super_admin, dsb) yang bisa melihat halaman ini
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chart-pie';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Transaksi';
+    protected static ?string $cluster = \App\Filament\Clusters\Dashboard\DashboardCluster::class;
 
     protected static ?string $title = 'Laporan & Statistik';
 

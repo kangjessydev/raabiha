@@ -1,12 +1,3 @@
 <x-filament-panels::page>
-    <div class="space-y-6">
-        {{-- Kita biarkan Filament Panels merender header widgets secara native --}}
-        @if ($this->hasHeaderWidgets())
-            <x-filament-widgets::widgets
-                :columns="$this->getHeaderWidgetsColumns()"
-                :data="$this->getWidgetData()"
-                :widgets="$this->getVisibleHeaderWidgets()"
-            />
-        @endif
-    </div>
+    {{-- Header widgets are automatically rendered by the layout --}}
 </x-filament-panels::page>

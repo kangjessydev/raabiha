@@ -24,7 +24,6 @@ class Dashboard extends \Filament\Pages\Dashboard
     {
         return [
             DashboardStatsOverview::class,
-            SalesTrendChart::class,
         ];
     }
 
