@@ -8,6 +8,8 @@ use Illuminate\Support\Carbon;
 
 class OrdersChart extends ChartWidget
 {
+    protected static bool $isDiscovered = false;
+
     protected ?string $heading = 'Tren Pesanan Harian (Bulan Ini)';
     protected static ?int $sort = 3;
 

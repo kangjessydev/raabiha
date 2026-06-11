@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 class SalesTrendChart extends ChartWidget
 {
+    protected static bool $isDiscovered = false;
+
     protected ?string $heading = 'Tren Penjualan vs Pengeluaran (30 Hari Terakhir)';
 
     protected string $color = 'success';

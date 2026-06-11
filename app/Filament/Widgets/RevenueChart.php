@@ -7,6 +7,8 @@ use Filament\Widgets\ChartWidget;
 
 class RevenueChart extends ChartWidget
 {
+    protected static bool $isDiscovered = false;
+
     protected ?string $heading = 'Grafik Omset Tahun Ini';
     protected static ?int $sort = 2;
 
