@@ -16,114 +16,98 @@ class DashboardStatsOverview extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $today     = now()->toDateString();
-        $yesterday = now()->subDay()->toDateString();
-        $month     = now()->format('Y-m');
+        $today = now()->toDateString();
 
-        // --- Cache 2 menit: cukup fresh untuk operasional ---
-        $data = Cache::remember('dashboard_overview_' . $today, 120, function () use ($today, $yesterday, $month) {
-            // Penjualan hari ini & kemarin (dari cashflows, source=order, aktif)
-            $salesRow = Cashflow::selectRaw("
-                SUM(CASE WHEN transaction_date = ? THEN amount ELSE 0 END) as today_sales,
-                SUM(CASE WHEN transaction_date = ? THEN amount ELSE 0 END) as yesterday_sales,
-                SUM(CASE WHEN DATE_FORMAT(transaction_date, '%Y-%m') = ? THEN amount ELSE 0 END) as month_sales
-            ", [$today, $yesterday, $month])
-                ->where('type', 'in')
-                ->where('source', 'order')
-                ->where('is_reversed', false)
+        // Cache 10 detik agar tetap responsif dan tidak membebani VPS
+        $data = Cache::remember('dashboard_overview_today_' . $today, 10, function () use ($today) {
+            // 1. Pesanan Menunggu Pembayaran
+            $pendingPayment = Order::selectRaw('COUNT(*) as count, SUM(grand_total) as amount')
+                ->whereDate('created_at', $today)
+                ->where('payment_status', 'pending')
                 ->first();
 
-            // Pengeluaran hari ini & kemarin (manual cash out)
-            $expenseRow = Cashflow::selectRaw("
-                SUM(CASE WHEN transaction_date = ? THEN amount ELSE 0 END) as today_expense,
-                SUM(CASE WHEN transaction_date = ? THEN amount ELSE 0 END) as yesterday_expense
-            ", [$today, $yesterday])
+            // 2. Pesanan Selesai
+            $completed = Order::selectRaw('COUNT(*) as count, SUM(grand_total) as amount')
+                ->whereDate('created_at', $today)
+                ->where('status', 'completed')
+                ->first();
+
+            // 3. Pesanan Batal
+            $cancelled = Order::selectRaw('COUNT(*) as count, SUM(grand_total) as amount')
+                ->whereDate('created_at', $today)
+                ->where('status', 'cancelled')
+                ->first();
+
+            // 4. Pengeluaran Hari Ini (Kas Keluar)
+            $expense = Cashflow::whereDate('transaction_date', $today)
                 ->where('type', 'out')
-                ->where('source', 'manual')
+                ->sum('amount');
+
+            // 5. Voucher digunakan
+            $vouchers = Order::selectRaw('COUNT(*) as count, SUM(discount_total) as discount')
+                ->whereDate('created_at', $today)
+                ->whereNotNull('voucher_id')
                 ->first();
 
-            // Pesanan pending & processing
-            $pendingOrders = Order::whereIn('status', ['pending', 'processing'])->count();
-            $todayNewOrders = Order::whereDate('created_at', $today)->count();
-
-            // Total pesanan lunas bulan ini untuk hitung AOV
-            $monthOrdersCount = Order::whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->where('payment_status', 'paid')
-                ->count();
+            // 6. Laba Bersih
+            $revenue = Cashflow::whereDate('transaction_date', $today)
+                ->where('type', 'in')
+                ->where('is_reversed', false)
+                ->sum('amount');
 
             return [
-                'today_sales'      => (int) ($salesRow->today_sales ?? 0),
-                'yesterday_sales'  => (int) ($salesRow->yesterday_sales ?? 0),
-                'month_sales'      => (int) ($salesRow->month_sales ?? 0),
-                'today_expense'    => (int) ($expenseRow->today_expense ?? 0),
-                'yesterday_expense'=> (int) ($expenseRow->yesterday_expense ?? 0),
-                'pending_orders'   => $pendingOrders,
-                'today_new_orders' => $todayNewOrders,
-                'month_orders_count' => $monthOrdersCount,
+                'pending_payment_count' => (int) ($pendingPayment->count ?? 0),
+                'pending_payment_amount'=> (int) ($pendingPayment->amount ?? 0),
+                'completed_count'       => (int) ($completed->count ?? 0),
+                'completed_amount'      => (int) ($completed->amount ?? 0),
+                'cancelled_count'       => (int) ($cancelled->count ?? 0),
+                'cancelled_amount'      => (int) ($cancelled->amount ?? 0),
+                'expense'               => (int) $expense,
+                'vouchers_count'        => (int) ($vouchers->count ?? 0),
+                'vouchers_discount'     => (int) ($vouchers->discount ?? 0),
+                'revenue'               => (int) $revenue,
             ];
         });
 
-        $todayProfit    = $data['today_sales'] - $data['today_expense'];
-        $yesterdayProfit= $data['yesterday_sales'] - $data['yesterday_expense'];
-
-        $aov = $data['month_orders_count'] > 0 ? (int) ($data['month_sales'] / $data['month_orders_count']) : 0;
-
-        // Helper: format rupiah ringkas
         $fmt = fn (int $value): string => 'Rp ' . number_format($value, 0, ',', '.');
-
-        // Helper: arah tren dari angka (positif = up, negatif = down)
-        $trend = function (int $today, int $yesterday, bool $higherIsBetter = true): string {
-            if ($yesterday === 0) return 'flat';
-            return ($today >= $yesterday) === $higherIsBetter ? 'up' : 'down';
-        };
+        $netProfit = $data['revenue'] - $data['expense'];
 
         return [
-            // 1. Penjualan Hari Ini
-            Stat::make('Penjualan Hari Ini', $fmt($data['today_sales']))
-                ->description(
-                    $data['yesterday_sales'] > 0
-                        ? 'Kemarin: ' . $fmt($data['yesterday_sales'])
-                        : 'Belum ada data kemarin'
-                )
-                ->descriptionIcon(
-                    $trend($data['today_sales'], $data['yesterday_sales']) === 'up'
-                        ? 'heroicon-m-arrow-trending-up'
-                        : 'heroicon-m-arrow-trending-down'
-                )
-                ->color(
-                    $trend($data['today_sales'], $data['yesterday_sales']) === 'up' ? 'success' : 'warning'
-                ),
+            // 1. Pesanan Menunggu Pembayaran
+            Stat::make('Pesanan Menunggu Pembayaran', $data['pending_payment_count'] . ' Pesanan')
+                ->description('Nominal: ' . $fmt($data['pending_payment_amount']))
+                ->descriptionIcon('heroicon-m-clock')
+                ->color('warning'),
 
-            // 2. Pendapatan Bulan Ini (Net Sales)
-            Stat::make('Pendapatan Bulan Ini', $fmt($data['month_sales']))
-                ->description(now()->translatedFormat('F Y'))
-                ->descriptionIcon('heroicon-m-calendar-days')
+            // 2. Pesanan Selesai
+            Stat::make('Pesanan Selesai', $data['completed_count'] . ' Pesanan')
+                ->description('Nominal: ' . $fmt($data['completed_amount']))
+                ->descriptionIcon('heroicon-m-check-circle')
+                ->color('success'),
+
+            // 3. Pesanan Batal
+            Stat::make('Pesanan Batal', $data['cancelled_count'] . ' Pesanan')
+                ->description('Nominal: ' . $fmt($data['cancelled_amount']))
+                ->descriptionIcon('heroicon-m-x-circle')
+                ->color('danger'),
+
+            // 4. Pengeluaran Hari Ini
+            Stat::make('Pengeluaran Hari Ini', $fmt($data['expense']))
+                ->description('Diambil dari buku kas keluar')
+                ->descriptionIcon('heroicon-m-arrow-trending-down')
+                ->color('danger'),
+
+            // 5. Voucher Digunakan
+            Stat::make('Voucher Digunakan', $data['vouchers_count'] . ' Voucher')
+                ->description('Total diskon: ' . $fmt($data['vouchers_discount']))
+                ->descriptionIcon('heroicon-m-ticket')
                 ->color('info'),
 
-            // 3. Rata-rata Belanja (AOV)
-            Stat::make('Rata-rata Nilai Belanja (AOV)', $fmt($aov))
-                ->description('Dari ' . $data['month_orders_count'] . ' transaksi lunas')
-                ->descriptionIcon('heroicon-m-calculator')
-                ->color('primary'),
-
-            // 4. Pesanan Aktif (Pending + Processing)
-            Stat::make('Pesanan Menunggu Proses', (string) $data['pending_orders'])
-                ->description('Masuk hari ini: ' . $data['today_new_orders'] . ' pesanan')
-                ->descriptionIcon('heroicon-m-shopping-bag')
-                ->color($data['pending_orders'] > 0 ? 'warning' : 'success'),
-
-            // 5. Laba Bersih Hari Ini (Sales - Expense)
-            Stat::make('Laba Bersih Hari Ini', $fmt(max(0, $todayProfit)))
-                ->description(
-                    $todayProfit >= 0
-                        ? 'Positif vs kemarin: ' . $fmt(max(0, $yesterdayProfit))
-                        : 'Pengeluaran melebihi pendapatan hari ini'
-                )
-                ->descriptionIcon(
-                    $todayProfit >= 0 ? 'heroicon-m-banknotes' : 'heroicon-m-exclamation-triangle'
-                )
-                ->color($todayProfit >= 0 ? 'success' : 'danger'),
+            // 6. Laba Bersih
+            Stat::make('Laba Bersih', $fmt($netProfit))
+                ->description('Masuk: ' . $fmt($data['revenue']) . ' | Keluar: ' . $fmt($data['expense']))
+                ->descriptionIcon($netProfit >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->color($netProfit >= 0 ? 'success' : 'danger'),
         ];
     }
 }
