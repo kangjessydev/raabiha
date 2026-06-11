@@ -59,6 +59,15 @@ unset MYSQL_PWD
 
 if [ $EXIT_CODE -eq 0 ]; then
     echo "[$(date)] [SUCCESS] Backup berhasil disimpan ke: $BACKUP_FILE" >> "$LOG_FILE"
+
+    # --- PENGIRIMAN KE GOOGLE DRIVE (OPSIONAL VIA RCLONE) ---
+    # Jika Anda menggunakan rclone untuk sync ke Google Drive, hilangkan tanda pagar '#' di bawah ini:
+    # rclone copy "$BACKUP_FILE" "gdrive:RaabihaBackups" >> "$LOG_FILE" 2>&1
+    # if [ $? -eq 0 ]; then
+    #     echo "[$(date)] [SUCCESS] Berhasil mengunggah file backup ke Google Drive." >> "$LOG_FILE"
+    # else
+    #     echo "[$(date)] [WARNING] Gagal mengunggah file backup ke Google Drive." >> "$LOG_FILE"
+    # fi
     
     # --- PROSES ROTASI / RETENSI FILE ---
     # Menghapus file backup .sql.gz di direktori backup yang usianya lebih dari $RETENTION_DAYS hari
