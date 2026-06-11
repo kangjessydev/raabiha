@@ -66,4 +66,4 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Quick Edit & Log Stok:** Membuat halaman khusus untuk mengetik/mengubah jumlah stok secara langsung dilengkapi tabel *Log Keluar-Masuk* barang yang ringan.
 - [x] **Dashboard Metrik Lanjutan:** Menambahkan kumpulan *Widget* statistik di *Homepage* Admin (Total Penjualan Hari Ini, Pesanan Masuk, Pengeluaran, Laba Bersih Harian) yang diolah secara *real-time* dari data pesanan dan buku kas. Dilengkapi *Line Chart* tren penjualan vs pengeluaran 30 hari terakhir dengan cache 5 menit untuk efisiensi VPS.
 - [ ] *Virtual Fitting Room* dengan avatar kustom.
-- [ ] *Script* Backup Database otomatis di VPS CloudPanel.
+- [x] *Script* Backup Database otomatis di VPS CloudPanel.
