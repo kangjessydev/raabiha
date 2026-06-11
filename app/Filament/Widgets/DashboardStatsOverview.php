@@ -46,6 +46,12 @@ class DashboardStatsOverview extends StatsOverviewWidget
             $pendingOrders = Order::whereIn('status', ['pending', 'processing'])->count();
             $todayNewOrders = Order::whereDate('created_at', $today)->count();
 
+            // Total pesanan lunas bulan ini untuk hitung AOV
+            $monthOrdersCount = Order::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->where('payment_status', 'paid')
+                ->count();
+
             return [
                 'today_sales'      => (int) ($salesRow->today_sales ?? 0),
                 'yesterday_sales'  => (int) ($salesRow->yesterday_sales ?? 0),
@@ -54,11 +60,14 @@ class DashboardStatsOverview extends StatsOverviewWidget
                 'yesterday_expense'=> (int) ($expenseRow->yesterday_expense ?? 0),
                 'pending_orders'   => $pendingOrders,
                 'today_new_orders' => $todayNewOrders,
+                'month_orders_count' => $monthOrdersCount,
             ];
         });
 
         $todayProfit    = $data['today_sales'] - $data['today_expense'];
         $yesterdayProfit= $data['yesterday_sales'] - $data['yesterday_expense'];
+
+        $aov = $data['month_orders_count'] > 0 ? (int) ($data['month_sales'] / $data['month_orders_count']) : 0;
 
         // Helper: format rupiah ringkas
         $fmt = fn (int $value): string => 'Rp ' . number_format($value, 0, ',', '.');
@@ -86,27 +95,23 @@ class DashboardStatsOverview extends StatsOverviewWidget
                     $trend($data['today_sales'], $data['yesterday_sales']) === 'up' ? 'success' : 'warning'
                 ),
 
-            // 2. Pendapatan Bulan Ini
+            // 2. Pendapatan Bulan Ini (Net Sales)
             Stat::make('Pendapatan Bulan Ini', $fmt($data['month_sales']))
                 ->description(now()->translatedFormat('F Y'))
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('info'),
 
-            // 3. Pesanan Aktif (Pending + Processing)
+            // 3. Rata-rata Belanja (AOV)
+            Stat::make('Rata-rata Nilai Belanja (AOV)', $fmt($aov))
+                ->description('Dari ' . $data['month_orders_count'] . ' transaksi lunas')
+                ->descriptionIcon('heroicon-m-calculator')
+                ->color('primary'),
+
+            // 4. Pesanan Aktif (Pending + Processing)
             Stat::make('Pesanan Menunggu Proses', (string) $data['pending_orders'])
                 ->description('Masuk hari ini: ' . $data['today_new_orders'] . ' pesanan')
                 ->descriptionIcon('heroicon-m-shopping-bag')
                 ->color($data['pending_orders'] > 0 ? 'warning' : 'success'),
-
-            // 4. Pengeluaran Hari Ini
-            Stat::make('Pengeluaran Hari Ini', $fmt($data['today_expense']))
-                ->description(
-                    $data['yesterday_expense'] > 0
-                        ? 'Kemarin: ' . $fmt($data['yesterday_expense'])
-                        : 'Tidak ada pengeluaran kemarin'
-                )
-                ->descriptionIcon('heroicon-m-arrow-trending-down')
-                ->color('danger'),
 
             // 5. Laba Bersih Hari Ini (Sales - Expense)
             Stat::make('Laba Bersih Hari Ini', $fmt(max(0, $todayProfit)))

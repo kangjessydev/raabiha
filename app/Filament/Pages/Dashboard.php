@@ -4,6 +4,9 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\DashboardStatsOverview;
 use App\Filament\Widgets\SalesTrendChart;
+use App\Filament\Widgets\RevenueChart;
+use App\Filament\Widgets\OrdersChart;
+use App\Filament\Widgets\TopProductsWidget;
 
 class Dashboard extends \Filament\Pages\Dashboard
 {
@@ -24,6 +27,10 @@ class Dashboard extends \Filament\Pages\Dashboard
     {
         return [
             DashboardStatsOverview::class,
+            SalesTrendChart::class,
+            RevenueChart::class,
+            OrdersChart::class,
+            TopProductsWidget::class,
         ];
     }
 

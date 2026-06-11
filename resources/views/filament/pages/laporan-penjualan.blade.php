@@ -1,3 +1,5 @@
 <x-filament-panels::page>
-    {{-- Header widgets are automatically rendered by the layout --}}
+    <div>
+        {{ $this->table }}
+    </div>
 </x-filament-panels::page>
