@@ -67,3 +67,4 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Dashboard Metrik Lanjutan:** Menambahkan kumpulan *Widget* statistik di *Homepage* Admin (Total Penjualan Hari Ini, Pesanan Masuk, Pengeluaran, Laba Bersih Harian) yang diolah secara *real-time* dari data pesanan dan buku kas. Dilengkapi *Line Chart* tren penjualan vs pengeluaran 30 hari terakhir dengan cache 5 menit untuk efisiensi VPS.
 - [ ] *Virtual Fitting Room* dengan avatar kustom.
 - [x] *Script* Backup Database otomatis di VPS CloudPanel.
+- [ ] **Harga Grosir Produk/Varian:** Menambahkan pengaturan harga grosir bertingkat berdasarkan kuantitas pembelian (tier pricing) baik di tingkat produk maupun varian produk.

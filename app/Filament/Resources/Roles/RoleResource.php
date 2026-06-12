@@ -80,6 +80,8 @@ class RoleResource extends Resource
                                 static::getSelectAllFormComponent(),
 
                             ])
+                            ->poll('15s')
+                            ->defaultSort('created_at', 'desc')
                             ->columns([
                                 'sm' => 2,
                                 'lg' => 3,
@@ -95,6 +97,8 @@ class RoleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->poll('15s')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('name')
                     ->weight(FontWeight::Medium)

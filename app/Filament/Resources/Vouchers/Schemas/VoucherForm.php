@@ -108,6 +108,11 @@ class VoucherForm
                                             ->label('Kuota Maksimal')
                                             ->numeric()
                                             ->helperText('Kosongkan untuk tanpa batas (unlimited)'),
+                                        TextInput::make('max_uses_per_user')
+                                            ->label('Batas Pemakaian Per Pengguna')
+                                            ->numeric()
+                                            ->default(1)
+                                            ->helperText('Batas berapa kali satu pengguna yang sama bisa menggunakan voucher ini. Kosongkan untuk tanpa batas.'),
                                         \Filament\Forms\Components\DateTimePicker::make('starts_at')
                                             ->label('Berlaku Mulai'),
                                         \Filament\Forms\Components\DateTimePicker::make('expires_at')

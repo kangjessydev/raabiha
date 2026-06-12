@@ -20,6 +20,7 @@ class Voucher extends Model
         'is_stackable',
         'free_gift_product_id',
         'max_uses',
+        'max_uses_per_user',
         'used_count',
         'starts_at',
         'expires_at',
@@ -37,6 +38,7 @@ class Voucher extends Model
         'discount_amount' => 'decimal:2',
         'min_purchase' => 'decimal:2',
         'max_discount' => 'decimal:2',
+        'max_uses_per_user' => 'integer',
     ];
 
     public function freeGiftProduct()

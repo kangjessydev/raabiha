@@ -13,6 +13,8 @@ class CashflowsTable
     {
         return $table
             ->defaultSort('transaction_date', 'desc')
+            ->poll('15s')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 \Filament\Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')

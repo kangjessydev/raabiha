@@ -49,6 +49,7 @@ class CommentsTable
                     DeleteBulkAction::make(),
                 ]),
             ])
+            ->poll('15s')
             ->defaultSort('created_at', 'desc');
     }
 }

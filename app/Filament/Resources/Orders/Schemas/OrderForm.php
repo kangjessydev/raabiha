@@ -84,13 +84,13 @@ class OrderForm
                                                 $imgTag = $imageUrl ? "<img src='{$imageUrl}' style='width: 32px; height: 32px; object-fit: cover; border-radius: 4px; flex-shrink: 0;' />" : "";
                                                 return "<div style='display: flex; align-items: center; gap: 8px; overflow: hidden; min-width: 0;'>{$imgTag} <span style='white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;'>{$product->name} (ID: {$product->id})</span></div>";
                                             })
-                                            ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                                 $product = \App\Models\Product::find($state);
                                                 if ($product) {
                                                     $set('name', $product->name);
-                                                    $set('price', $product->price);
-                                                    $set('total', $product->price * ($get('quantity') ?: 1));
+                                                    $set('price', $product->selling_price);
+                                                    $set('purchase_price', $product->purchase_price);
+                                                    $set('total', $product->selling_price * ($get('quantity') ?: 1));
                                                 }
                                                 self::updateTotals($get, $set, true);
                                             })
@@ -115,8 +115,10 @@ class OrderForm
                                                     } else {
                                                         $set('name', $variant->name);
                                                     }
-                                                    $price = $variant->is_price_override ? $variant->price : ($product ? $product->price : 0);
+                                                    $price = $variant->selling_price;
                                                     $set('price', $price);
+                                                    $purchasePrice = $variant->purchase_price ?? ($product ? $product->purchase_price : null);
+                                                    $set('purchase_price', $purchasePrice);
                                                     $set('total', $price * ($get('quantity') ?: 1));
                                                 }
                                                 self::updateTotals($get, $set, true);
@@ -130,6 +132,12 @@ class OrderForm
                                                 $set('total', floatval($state) * floatval($get('quantity') ?: 1));
                                                 self::updateTotals($get, $set, true);
                                             }),
+                                        TextInput::make('purchase_price')
+                                            ->label('Harga Modal')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->readOnly()
+                                            ->dehydrated(),
                                         TextInput::make('quantity')
                                             ->numeric()
                                             ->default(1)

@@ -180,7 +180,14 @@
                         <img width="1024" height="1024" src="{{ $resolveImage($firstImg, 'https://placehold.co/800x1000/e5e2de/615e57?text=' . urlencode($prod->name)) }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $prod->name }}" />                                                                
                     </div>
                     <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1">{{ $prod->name }}</h3>
-                    <div class="text-[13px] text-[#525252]">Rp {{ number_format($prod->price, 0, ',', '.') }}</div>
+                    @if($prod->discount_price !== null && $prod->discount_price > 0)
+                        <div class="flex items-center gap-2">
+                            <span class="text-[13px] font-semibold text-[#064e3b]">Rp {{ number_format($prod->discount_price, 0, ',', '.') }}</span>
+                            <span class="text-[11px] text-[#9b9b9b] line-through">Rp {{ number_format($prod->price, 0, ',', '.') }}</span>
+                        </div>
+                    @else
+                        <div class="text-[13px] text-[#525252]">Rp {{ number_format($prod->price, 0, ',', '.') }}</div>
+                    @endif
                 </a>
             @empty
                 <p class="col-span-full text-center text-gray-500 font-serif">Belum ada produk terbaru.</p>
@@ -225,7 +232,14 @@
                                 <img src="{{ $resolveImage($fpImg) }}" class="w-12 h-12 object-cover">
                                 <div>
                                     <div class="text-[10px] font-semibold tracking-[0.1em] uppercase mb-1">{{ $fp->name }}</div>
-                                    <div class="text-[12px] text-[#525252]">Rp {{ number_format($fp->price, 0, ',', '.') }}</div>
+                                    @if($fp->discount_price !== null && $fp->discount_price > 0)
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[12px] font-semibold text-[#064e3b]">Rp {{ number_format($fp->discount_price, 0, ',', '.') }}</span>
+                                            <span class="text-[10px] text-[#9b9b9b] line-through">Rp {{ number_format($fp->price, 0, ',', '.') }}</span>
+                                        </div>
+                                    @else
+                                        <div class="text-[12px] text-[#525252]">Rp {{ number_format($fp->price, 0, ',', '.') }}</div>
+                                    @endif
                                 </div>
                             </div>
                             <svg class="w-4 h-4 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>

@@ -34,6 +34,7 @@ class ResellerSettings extends Page implements HasForms
     public function mount(): void
     {
         $settings = SiteSetting::whereIn('key', [
+            'reseller_registration_open',
             'reseller_min_deposit',
             'reseller_discount_percent',
             'reseller_terms',
@@ -42,6 +43,7 @@ class ResellerSettings extends Page implements HasForms
         ])->pluck('value', 'key')->toArray();
 
         $this->form->fill([
+            'reseller_registration_open' => isset($settings['reseller_registration_open']) ? $settings['reseller_registration_open'] == '1' : false,
             'reseller_min_deposit' => $settings['reseller_min_deposit'] ?? 100000,
             'reseller_discount_percent' => $settings['reseller_discount_percent'] ?? 10,
             'reseller_terms' => $settings['reseller_terms'] ?? '',
@@ -56,6 +58,11 @@ class ResellerSettings extends Page implements HasForms
             ->components([
                 Section::make('Ketentuan & Diskon Reseller')
                     ->schema([
+                        \Filament\Forms\Components\Toggle::make('reseller_registration_open')
+                            ->label('Buka Pendaftaran Reseller')
+                            ->helperText('Jika dinonaktifkan, menu pendaftaran reseller akan disembunyikan dari halaman akun pelanggan umum. (Pelanggan yang sudah menjadi reseller tetap bisa mengakses dasbor)')
+                            ->default(false)
+                            ->columnSpanFull(),
                         TextInput::make('reseller_min_deposit')
                             ->label('Minimum Deposit Awal (Rp)')
                             ->numeric()

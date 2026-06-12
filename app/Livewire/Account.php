@@ -231,13 +231,28 @@ class Account extends Component
 
     public function getVouchersProperty()
     {
-        // Simple logic to get global valid vouchers for now
-        return \App\Models\Coupon::where('is_active', true)
+        $userId = Auth::id();
+        $userEmail = Auth::user()->email;
+        $isReseller = Auth::user()->hasRole('reseller');
+
+        return \App\Models\Voucher::where('is_active', true)
             ->where(function($q) {
-                $q->whereNull('valid_until')->orWhere('valid_until', '>', now());
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
             ->where(function($q) {
-                $q->whereNull('usage_limit')->orWhereRaw('used_count < usage_limit');
+                $q->whereNull('max_uses')->orWhereRaw('used_count < max_uses');
+            })
+            ->where(function($q) use ($userId, $userEmail) {
+                // Voucher umum (null) ATAU secara spesifik diberikan ke ID user ini ATAU ke email user
+                $q->whereNull('specific_users')
+                  ->orWhere('specific_users', '[]')
+                  ->orWhereJsonContains('specific_users', (string)$userId)
+                  ->orWhereJsonContains('specific_users', $userId)
+                  ->orWhereJsonContains('specific_users', $userEmail);
+            })
+            ->when($isReseller, function($q) {
+                // Jika dia reseller, sembunyikan voucher yang mengecualikan reseller
+                $q->where('exclude_resellers', false);
             })
             ->orderBy('created_at', 'desc')
             ->get();

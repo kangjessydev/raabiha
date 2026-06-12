@@ -63,10 +63,21 @@ class TopbarAnnouncement extends Page implements HasForms
                             ])
                             ->live(debounce: 500)
                             ->helperText(function ($state) {
-                                $text = strip_tags($state ?? '');
+                                $flatText = '';
+                                $flatten = function ($val) use (&$flatten, &$flatText) {
+                                    if (is_array($val)) {
+                                        foreach ($val as $v) {
+                                            $flatten($v);
+                                        }
+                                    } elseif (is_string($val)) {
+                                        $flatText .= ' ' . $val;
+                                    }
+                                };
+                                $flatten($state);
+                                $text = strip_tags($flatText);
                                 // replace &nbsp; that RichEditor might insert
                                 $text = str_replace('&nbsp;', ' ', $text);
-                                $count = mb_strlen(html_entity_decode($text));
+                                $count = mb_strlen(html_entity_decode(trim($text)));
                                 $remaining = 100 - $count;
                                 
                                 if ($remaining < 0) {
@@ -78,9 +89,20 @@ class TopbarAnnouncement extends Page implements HasForms
                             ->rules([
                                 function () {
                                     return function (string $attribute, $value, \Closure $fail) {
-                                        $text = strip_tags($value ?? '');
+                                        $flatText = '';
+                                        $flatten = function ($val) use (&$flatten, &$flatText) {
+                                            if (is_array($val)) {
+                                                foreach ($val as $v) {
+                                                    $flatten($v);
+                                                }
+                                            } elseif (is_string($val)) {
+                                                $flatText .= ' ' . $val;
+                                            }
+                                        };
+                                        $flatten($value);
+                                        $text = strip_tags($flatText);
                                         $text = str_replace('&nbsp;', ' ', $text);
-                                        if (mb_strlen(html_entity_decode($text)) > 100) {
+                                        if (mb_strlen(html_entity_decode(trim($text))) > 100) {
                                             $fail('Teks pengumuman tidak boleh lebih dari 100 karakter (tanpa menghitung kode HTML).');
                                         }
                                     };

@@ -22,6 +22,8 @@ class StockLogWidget extends BaseWidget
                     ->latest()
                     ->limit(20)
             )
+            ->poll('15s')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('created_at')
                     ->label('Waktu')

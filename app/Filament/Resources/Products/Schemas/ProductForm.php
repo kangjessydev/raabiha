@@ -81,6 +81,16 @@ class ProductForm
                             ->required()
                             ->numeric()
                             ->prefix('Rp'),
+                        TextInput::make('discount_price')
+                            ->label('Harga Promo (Diskon)')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->helperText('Isi kolom ini jika ingin menjual dengan harga promo. Harga normal akan dicoret.'),
+                        TextInput::make('purchase_price')
+                            ->label('Harga Modal (HPP)')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->helperText('Digunakan untuk menghitung HPP & Laba di Laporan Bisnis. Jika kosong, sistem tidak menghitung modal untuk item ini.'),
                         TextInput::make('reseller_price')
                             ->label('Harga Reseller Khusus')
                             ->helperText('Secara bawaan sistem sudah memotong harga normal sebesar 20% (atau sesuai pengaturan Global Reseller). Isi kolom ini HANYA jika ingin menggunakan harga flat khusus untuk produk ini.')

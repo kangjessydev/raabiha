@@ -44,6 +44,8 @@ class VariantsRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('name')
+            ->poll('15s')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('name')->label('Nama Varian'),
                 Tables\Columns\TextColumn::make('sku')->label('SKU'),
@@ -55,6 +57,12 @@ class VariantsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
+                \Filament\Actions\ExportAction::make()
+                    ->exporter(\App\Filament\Exports\ProductVariantExporter::class)
+                    ->label('Ekspor Varian'),
+                \Filament\Actions\ImportAction::make()
+                    ->importer(\App\Filament\Imports\ProductVariantImporter::class)
+                    ->label('Impor Varian'),
                 \Filament\Actions\Action::make('generate_variants')
                     ->label('Buat Varian Otomatis')
                     ->icon('heroicon-o-sparkles')

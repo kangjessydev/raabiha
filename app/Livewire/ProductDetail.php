@@ -55,7 +55,29 @@ class ProductDetail extends Component
     #[Computed]
     public function currentPrice()
     {
-        $price = $this->product->price;
+        if ($this->product->has_variants && $this->selectedSize && $this->selectedColor) {
+            $matchedVariant = $this->product->variants->first(function($variant) {
+                $hasSize = $variant->attributeOptions->contains(function($opt) {
+                    return $opt->value === $this->selectedSize && $opt->attribute->slug === 'ukuran';
+                });
+                $hasColor = $variant->attributeOptions->contains(function($opt) {
+                    return $opt->value === $this->selectedColor && $opt->attribute->slug === 'warna';
+                });
+                return $hasSize && $hasColor;
+            });
+
+            if ($matchedVariant) {
+                return $matchedVariant->effective_price * $this->quantity;
+            }
+        }
+
+        return $this->product->effective_price * $this->quantity;
+    }
+
+    #[Computed]
+    public function currentOriginalPrice()
+    {
+        $originalPrice = $this->product->price;
 
         if ($this->product->has_variants && $this->selectedSize && $this->selectedColor) {
             $matchedVariant = $this->product->variants->first(function($variant) {
@@ -68,12 +90,12 @@ class ProductDetail extends Component
                 return $hasSize && $hasColor;
             });
 
-            if ($matchedVariant && $matchedVariant->price !== null) {
-                $price = $matchedVariant->price;
+            if ($matchedVariant && $matchedVariant->is_price_override && $matchedVariant->price !== null) {
+                $originalPrice = $matchedVariant->price;
             }
         }
 
-        return $price * $this->quantity;
+        return $originalPrice * $this->quantity;
     }
 
     #[Computed]

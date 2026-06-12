@@ -82,6 +82,28 @@ class Cart extends Component
             }
         }
 
+        if ($voucher->max_uses_per_user > 0) {
+            $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
+                ->where(function ($q) {
+                    $q->where('payment_status', '!=', 'cancelled')
+                      ->where('status', '!=', 'cancelled');
+                });
+
+            if (auth()->check()) {
+                $userUsageQuery->where(function ($q) {
+                    $q->where('user_id', auth()->id())
+                      ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [auth()->user()->email]);
+                });
+            } else {
+                $userUsageQuery = null;
+            }
+
+            if ($userUsageQuery && $userUsageQuery->count() >= $voucher->max_uses_per_user) {
+                session()->flash('voucher_error', 'Anda sudah melebihi batas penggunaan untuk voucher ini (' . $voucher->max_uses_per_user . ' kali).');
+                return;
+            }
+        }
+
         $this->appliedVoucher = $voucher->toArray();
         session(['applied_voucher' => $this->appliedVoucher]);
         $this->voucherCode = '';

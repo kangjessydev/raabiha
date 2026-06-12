@@ -19,6 +19,8 @@ class StockManagementTable
             ->description('Edit stok secara langsung. Setiap perubahan akan tercatat di Log Stok.')
             ->searchable()
             ->defaultSort('name', 'asc')
+            ->poll('15s')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('name')
                     ->label('Nama Produk')

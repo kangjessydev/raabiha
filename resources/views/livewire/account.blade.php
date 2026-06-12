@@ -28,6 +28,12 @@
                         <button wire:click="setTab('pesanan')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'pesanan' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pesanan Saya</button>
                         <button wire:click="setTab('alamat')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'alamat' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Alamat Tersimpan</button>
                         <button wire:click="setTab('voucher')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'voucher' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Voucher Saya</button>
+                        @php
+                            $resellerRegistrationOpen = \App\Models\SiteSetting::where('key', 'reseller_registration_open')->value('value') == '1';
+                            $validStatuses = ['active', 'pending', 'rejected'];
+                            $hasResellerStatus = in_array(auth()->user()->reseller_status, $validStatuses);
+                        @endphp
+                        @if($resellerRegistrationOpen || $hasResellerStatus)
                         <button wire:click="setTab('reseller')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors flex justify-between items-center {{ $activeTab === 'reseller' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">
                             Portal Reseller
                             @if(auth()->user()->reseller_status === 'active')
@@ -36,6 +42,7 @@
                                 <span class="bg-[#ca8a04] text-white text-[8px] px-1.5 py-0.5 rounded-sm ml-2">PENDING</span>
                             @endif
                         </button>
+                        @endif
                         <button wire:click="setTab('akun')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'akun' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pengaturan Akun</button>
                         <form method="POST" action="{{ route('logout') }}" class="m-0 p-0">
                             @csrf
@@ -390,20 +397,25 @@
                                             
                                             <!-- Voucher Content -->
                                             <div class="p-6 flex-1 bg-[#fcf9f5]">
-                                                <div class="font-mono text-[12px] font-bold tracking-widest uppercase text-[#064e3b] mb-1">{{ $voucher->code }}</div>
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <div class="font-mono text-[12px] font-bold tracking-widest uppercase text-[#064e3b]">{{ $voucher->code }}</div>
+                                                    @if($voucher->specific_users && count($voucher->specific_users) > 0)
+                                                        <span class="bg-[#ba1a1a] text-white text-[9px] font-mono tracking-widest uppercase px-2 py-0.5 rounded-sm">Khusus {{ strtoupper(strtok(auth()->user()->name, ' ')) }}</span>
+                                                    @endif
+                                                </div>
                                                 <div class="font-sans text-[16px] font-bold text-[#1c1c1a] mb-2">
-                                                    Diskon {{ $voucher->discount_type === 'percentage' ? rtrim(rtrim(number_format($voucher->discount_value, 2, ',', '.'), '0'), ',') . '%' : 'Rp' . number_format($voucher->discount_value, 0, ',', '.') }}
+                                                    Diskon {{ $voucher->discount_type === 'percentage' ? rtrim(rtrim(number_format($voucher->discount_amount, 2, ',', '.'), '0'), ',') . '%' : 'Rp' . number_format($voucher->discount_amount, 0, ',', '.') }}
                                                 </div>
                                                 
                                                 <div class="font-sans text-[12px] text-[#615e57] mb-4 space-y-1">
-                                                    @if($voucher->min_spend > 0)
-                                                        <p>Min. belanja Rp{{ number_format($voucher->min_spend, 0, ',', '.') }}</p>
+                                                    @if($voucher->min_purchase > 0)
+                                                        <p>Min. belanja Rp{{ number_format($voucher->min_purchase, 0, ',', '.') }}</p>
                                                     @endif
                                                     @if($voucher->max_discount > 0)
                                                         <p>Maks. diskon Rp{{ number_format($voucher->max_discount, 0, ',', '.') }}</p>
                                                     @endif
-                                                    @if($voucher->valid_until)
-                                                        <p class="text-[#ba1a1a]">Berlaku hingga {{ $voucher->valid_until->format('d M Y') }}</p>
+                                                    @if($voucher->expires_at)
+                                                        <p class="text-[#ba1a1a]">Berlaku hingga {{ $voucher->expires_at->format('d M Y') }}</p>
                                                     @else
                                                         <p>Tanpa batas waktu</p>
                                                     @endif

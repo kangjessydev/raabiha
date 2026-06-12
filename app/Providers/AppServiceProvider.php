@@ -101,5 +101,19 @@ class AppServiceProvider extends ServiceProvider
                 @endauth
             ')
         );
+
+        \Livewire\on('dehydrate', function ($component, $context) {
+            if (isset($context->effects['returns'])) {
+                foreach ($context->effects['returns'] as $key => $value) {
+                    if ($value instanceof \Symfony\Component\HttpFoundation\Response) {
+                        unset($context->effects['returns'][$key]);
+                    }
+                }
+                $context->effects['returns'] = array_values($context->effects['returns']);
+                if (empty($context->effects['returns'])) {
+                    unset($context->effects['returns']);
+                }
+            }
+        });
     }
 }

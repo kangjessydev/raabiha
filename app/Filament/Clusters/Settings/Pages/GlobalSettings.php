@@ -81,14 +81,7 @@ class GlobalSettings extends Page implements HasForms
                                     ->default('Mohon maaf, toko kami sedang libur. Semua pesanan yang masuk akan diproses dan dikirim setelah kami kembali beroperasi.')
                                     ->rows(3),
                             ]),
-                        \Filament\Schemas\Components\Tabs\Tab::make('Stok & Inventaris')
-                            ->components([
-                                Forms\Components\TextInput::make('default_minimum_stock')
-                                    ->label('Batas Stok Minimum (Global)')
-                                    ->numeric()
-                                    ->default(5)
-                                    ->helperText('Batas stok minimum untuk seluruh produk sebagai acuan notifikasi peringatan. Jika produk memiliki stok minimum khusus, nilai ini akan di-override.'),
-                            ]),
+
                         \Filament\Schemas\Components\Tabs\Tab::make('Kontak & Sosmed')
                             ->components([
                                 Forms\Components\TextInput::make('contact_phone')

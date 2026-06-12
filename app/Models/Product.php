@@ -18,6 +18,7 @@ class Product extends Model
         'description',
         'images',
         'price',
+        'discount_price',
         'reseller_price',
         'stock',
         'weight',
@@ -28,6 +29,7 @@ class Product extends Model
         'promo_rules',
         'is_active',
         'minimum_stock',
+        'purchase_price',
     ];
 
     protected $casts = [
@@ -37,7 +39,9 @@ class Product extends Model
         'promo_rules' => 'array',
         'images' => 'array',
         'price' => 'decimal:2',
+        'discount_price' => 'decimal:2',
         'reseller_price' => 'decimal:2',
+        'purchase_price' => 'decimal:2',
     ];
 
     public function category(): BelongsTo
@@ -50,9 +54,14 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    public function getSellingPriceAttribute()
+    {
+        return ($this->discount_price !== null && $this->discount_price > 0) ? $this->discount_price : $this->price;
+    }
+
     public function getEffectivePriceAttribute()
     {
-        $price = $this->price;
+        $price = $this->selling_price;
         
         if (auth()->check() && auth()->user()->hasRole('reseller')) {
             // Check if there is a specific reseller price for this product

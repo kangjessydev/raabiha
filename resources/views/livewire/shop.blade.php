@@ -194,7 +194,14 @@
                                     </button>
                                 </div>
                                 <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1">{{ $product->name }}</h3>
-                                <div class="text-[13px] text-[#525252]">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</div>
+                                @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[13px] font-semibold text-[#064e3b]">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</span>
+                                        <span class="text-[11px] text-[#9b9b9b] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
+                                    </div>
+                                @else
+                                    <div class="text-[13px] text-[#525252]">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</div>
+                                @endif
                             </a>
                         @empty
                             <div class="col-span-2 lg:col-span-3 text-center py-24">

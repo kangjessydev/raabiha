@@ -108,8 +108,13 @@
                         </h1>
                         
                         <!-- Price -->
-                        <div id="main-product-price" class="text-[#615e57] text-lg md:text-3xl font-serif mb-10">
-                            Rp{{ number_format($this->currentPrice, 0, ",", ".") }}
+                        <div id="main-product-price" class="text-[#615e57] text-lg md:text-3xl font-serif mb-10 flex items-center gap-3 flex-wrap">
+                            @if($this->currentPrice < $this->currentOriginalPrice)
+                                <span class="font-bold text-[#064e3b]">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                                <span class="text-sm md:text-lg text-[#9b9b9b] line-through font-normal">Rp{{ number_format($this->currentOriginalPrice, 0, ",", ".") }}</span>
+                            @else
+                                <span>Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                            @endif
                         </div>
 
                         <!-- Product Form (Add to Cart / Variation selectors) -->
@@ -581,7 +586,14 @@
                 </div>
                 <div>
                     <div id="bs-product-name" class="text-[#1c1c1a] text-sm font-serif font-bold uppercase leading-tight">{{ $product->name }}</div>
-                    <div id="bs-product-price" class="text-[#615e57] text-xs font-mono mt-0.5">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</div>
+                    <div id="bs-product-price" class="text-[#615e57] text-xs font-mono mt-0.5 flex items-center gap-2">
+                        @if($this->currentPrice < $this->currentOriginalPrice)
+                            <span class="font-bold text-[#064e3b]">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                            <span class="line-through text-[#9b9b9b]">Rp{{ number_format($this->currentOriginalPrice, 0, ",", ".") }}</span>
+                        @else
+                            <span>Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                        @endif
+                    </div>
                 </div>
             </div>
             <button type="button" @click="bsOpen = false" class="w-8 h-8 flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none self-start">

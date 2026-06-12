@@ -55,6 +55,14 @@ class DashboardStatsOverview extends StatsOverviewWidget
                 ->where('is_reversed', false)
                 ->sum('amount');
 
+            // 6b. HPP Hari Ini
+            $hpp = (float) Order::where('orders.payment_status', 'paid')
+                ->whereDate('orders.created_at', $today)
+                ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+                ->leftJoin('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
+                ->leftJoin('products', 'order_items.product_id', '=', 'products.id')
+                ->sum(DB::raw('COALESCE(order_items.purchase_price, product_variants.purchase_price, products.purchase_price, 0) * order_items.quantity'));
+
             // --- Query Tren Hourly untuk Sparkline ---
             $pendingHourly = Order::selectRaw('HOUR(created_at) as hr, COUNT(*) as count')
                 ->whereDate('created_at', $today)
@@ -128,6 +136,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
                 'vouchers_count'        => (int) ($vouchers->count ?? 0),
                 'vouchers_discount'     => (int) ($vouchers->discount ?? 0),
                 'revenue'               => (int) $revenue,
+                'hpp'                   => (int) $hpp,
                 
                 // trends
                 'pending_trend'         => $pendingTrend,
@@ -140,7 +149,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
         });
 
         $fmt = fn (int $value): string => 'Rp ' . number_format($value, 0, ',', '.');
-        $netProfit = $data['revenue'] - $data['expense'];
+        $netProfit = $data['revenue'] - $data['hpp'] - $data['expense'];
 
         return [
             // 1. Pesanan Menunggu Pembayaran
@@ -195,7 +204,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
 
             // 6. Laba Bersih
             Stat::make('Laba Bersih', $fmt($netProfit))
-                ->description('Masuk: ' . $fmt($data['revenue']) . ' | Keluar: ' . $fmt($data['expense']))
+                ->description('Omset: ' . $fmt($data['revenue']) . ' | HPP: ' . $fmt($data['hpp']) . ' | Operasional: ' . $fmt($data['expense']))
                 ->descriptionIcon($netProfit >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->chart($data['profit_trend'])
                 ->color($netProfit >= 0 ? 'success' : 'danger')

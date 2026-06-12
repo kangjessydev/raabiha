@@ -405,6 +405,32 @@ class Checkout extends Component
             }
         }
 
+        if ($voucher->max_uses_per_user > 0) {
+            $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
+                ->where(function ($q) {
+                    $q->where('payment_status', '!=', 'cancelled')
+                      ->where('status', '!=', 'cancelled');
+                });
+
+            if (auth()->check()) {
+                $userUsageQuery->where(function ($q) {
+                    $q->where('user_id', auth()->id())
+                      ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [auth()->user()->email]);
+                });
+            } else {
+                if (!empty($this->email)) {
+                    $userUsageQuery->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$this->email]);
+                } else {
+                    $userUsageQuery = null;
+                }
+            }
+
+            if ($userUsageQuery && $userUsageQuery->count() >= $voucher->max_uses_per_user) {
+                session()->flash('voucher_error', 'Anda sudah melebihi batas penggunaan untuk voucher ini (' . $voucher->max_uses_per_user . ' kali).');
+                return;
+            }
+        }
+
         $this->appliedVoucher = $voucher->toArray();
         session(['applied_voucher' => $this->appliedVoucher]);
         $this->voucherCode = '';
@@ -434,6 +460,38 @@ class Checkout extends Component
         if (empty($this->email) && empty($this->phone)) {
             $this->addError('email', 'Isi salah satu: Email atau No. WhatsApp.');
             return;
+        }
+
+        if ($this->appliedVoucher) {
+            $voucher = \App\Models\Voucher::find($this->appliedVoucher['id']);
+            if ($voucher) {
+                if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
+                    session()->flash('error', 'Voucher yang Anda gunakan baru saja habis.');
+                    return;
+                }
+
+                if ($voucher->max_uses_per_user > 0) {
+                    $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
+                        ->where(function ($q) {
+                            $q->where('payment_status', '!=', 'cancelled')
+                              ->where('status', '!=', 'cancelled');
+                        });
+
+                    if (auth()->check()) {
+                        $userUsageQuery->where(function ($q) {
+                            $q->where('user_id', auth()->id())
+                              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [auth()->user()->email]);
+                        });
+                    } else {
+                        $userUsageQuery->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$this->email]);
+                    }
+
+                    if ($userUsageQuery->count() >= $voucher->max_uses_per_user) {
+                        session()->flash('error', 'Anda sudah melebihi batas penggunaan untuk voucher ini (' . $voucher->max_uses_per_user . ' kali).');
+                        return;
+                    }
+                }
+            }
         }
 
         $items = $this->checkoutItems;
@@ -491,6 +549,7 @@ class Checkout extends Component
                 'discount_total' => $this->discountAmount + $this->reseller_discount,
                 'grand_total' => $this->total,
                 'notes' => $this->notes,
+                'voucher_id' => $this->appliedVoucher ? $this->appliedVoucher['id'] : null,
             ]);
             
             // Mark voucher as used if applied
@@ -504,6 +563,7 @@ class Checkout extends Component
 
             foreach ($items as $item) {
                 $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
+                $purchasePrice = $item->variant ? ($item->variant->purchase_price ?? $item->product->purchase_price) : $item->product->purchase_price;
 
                 $attributes = [];
                 if ($item->variant) {
@@ -520,6 +580,7 @@ class Checkout extends Component
                     'price' => $price,
                     'quantity' => $item->quantity,
                     'total' => $price * $item->quantity,
+                    'purchase_price' => $purchasePrice,
                 ]);
 
                 // Reduce stock & Log it

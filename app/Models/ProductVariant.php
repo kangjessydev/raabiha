@@ -16,12 +16,14 @@ class ProductVariant extends Model
         'sku',
         'is_price_override',
         'price',
+        'discount_price',
         'reseller_price',
         'is_weight_override',
         'weight',
         'stock',
         'is_active',
         'minimum_stock',
+        'purchase_price',
     ];
 
     protected $casts = [
@@ -29,7 +31,9 @@ class ProductVariant extends Model
         'is_weight_override' => 'boolean',
         'is_active' => 'boolean',
         'price' => 'decimal:2',
+        'discount_price' => 'decimal:2',
         'reseller_price' => 'decimal:2',
+        'purchase_price' => 'decimal:2',
     ];
 
     public function product(): BelongsTo
@@ -47,9 +51,17 @@ class ProductVariant extends Model
         return $this->belongsToMany(AttributeOption::class, 'attribute_option_product_variant');
     }
 
+    public function getSellingPriceAttribute()
+    {
+        if ($this->is_price_override) {
+            return ($this->discount_price !== null && $this->discount_price > 0) ? $this->discount_price : $this->price;
+        }
+        return $this->product->selling_price;
+    }
+
     public function getEffectivePriceAttribute()
     {
-        $basePrice = $this->is_price_override && $this->price !== null ? $this->price : $this->product->price;
+        $basePrice = $this->selling_price;
         
         if (auth()->check() && auth()->user()->hasRole('reseller')) {
             if ($this->is_price_override && $this->reseller_price !== null && $this->reseller_price > 0) {
