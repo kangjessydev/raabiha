@@ -87,8 +87,8 @@
                 <span class="font-serif text-[20px] font-semibold text-[#1c1c1a]">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <a href="/cart" wire:navigate wire:click="close" class="flex items-center justify-center border border-[#1c1c1a] text-[#1c1c1a] py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#f2efe8] transition-colors leading-tight">LIHAT KERANJANG</a>
-                <a href="/checkout" wire:navigate wire:click="close" class="flex items-center justify-center bg-[#064e3b] text-white py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#043326] transition-colors leading-tight">LANJUT PEMBAYARAN</a>
+                <a href="/cart" wire:navigate.hover wire:click="close" class="flex items-center justify-center border border-[#1c1c1a] text-[#1c1c1a] py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#f2efe8] transition-colors leading-tight">LIHAT KERANJANG</a>
+                <a href="/checkout" wire:navigate.hover wire:click="close" class="flex items-center justify-center bg-[#064e3b] text-white py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#043326] transition-colors leading-tight">LANJUT PEMBAYARAN</a>
             </div>
         </div>
         @endif

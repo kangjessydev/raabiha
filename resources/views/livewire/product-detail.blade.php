@@ -435,7 +435,7 @@
                         
                         <!-- Product 1 -->
                         <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
-                            <a href="{{ url('/product/asymmetrical-tunic') }}" wire:navigate class="group block">
+                            <a href="{{ url('/product/asymmetrical-tunic') }}" wire:navigate.hover class="group block">
                                 <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
                                     <img width="1024" height="1024" src="{{ asset('assets/images/gallery-3.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Asymmetrical Tunic" />                                                                
                                     <button class="md:hidden absolute bottom-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md z-10 text-black">
@@ -449,7 +449,7 @@
 
                         <!-- Product 2 -->
                         <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
-                            <a href="{{ url('/product/kimono-structural-parka') }}" wire:navigate class="group block">
+                            <a href="{{ url('/product/kimono-structural-parka') }}" wire:navigate.hover class="group block">
                                 <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
                                     <img width="1024" height="1024" src="{{ asset('assets/images/gallery-1.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Kimono Structural Parka" />                                                                
                                     <button class="md:hidden absolute bottom-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md z-10 text-black">
@@ -463,7 +463,7 @@
 
                         <!-- Product 3 -->
                         <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
-                            <a href="{{ url('/product/monolith-overcoat') }}" wire:navigate class="group block">
+                            <a href="{{ url('/product/monolith-overcoat') }}" wire:navigate.hover class="group block">
                                 <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
                                     <img width="1024" height="1024" src="{{ asset('assets/images/blog-coat.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Monolith Overcoat" />                                                                
                                     <button class="md:hidden absolute bottom-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md z-10 text-black">
@@ -477,7 +477,7 @@
 
                         <!-- Product 4 -->
                         <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
-                            <a href="{{ url('/product/modest-urban-coat') }}" wire:navigate class="group block">
+                            <a href="{{ url('/product/modest-urban-coat') }}" wire:navigate.hover class="group block">
                                 <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
                                     <div class="absolute top-3 right-3 bg-[#1a1a1a] text-white text-[9px] px-2 py-1 uppercase tracking-widest z-10">Sale</div>
                                     <img width="1024" height="1024" src="{{ asset('assets/images/blog-coat.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Modest Urban Coat" />                                                                

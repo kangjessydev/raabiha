@@ -10,13 +10,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\HasAvatar;
+use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'email', 'password', 'role', 'reseller_status'])]
+#[Fillable(['name', 'email', 'password', 'role', 'reseller_status', 'avatar_url'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements HasAvatar
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        if ($this->avatar_url) {
+            $media = \Awcodes\Curator\Models\Media::find($this->avatar_url);
+            return $media?->url;
+        }
+        return null;
+    }
 
     /**
      * Get the attributes that should be cast.

@@ -143,7 +143,7 @@
                                         @endif
                                     </p>
                                     @if(empty($searchPesanan))
-                                        <a href="/shop" wire:navigate class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Mulai Belanja</a>
+                                        <a href="/shop" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Mulai Belanja</a>
                                     @else
                                         <button wire:click="$set('searchPesanan', '')" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Reset Pencarian</button>
                                     @endif
@@ -243,7 +243,7 @@
                                                 @endif
                                             @else
                                                 <a href="{{ url('/order-detail?id=' . $order->id) }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#c4c7c7] px-6 py-2.5 hover:border-[#1c1c1a] hover:text-[#1c1c1a] transition-colors w-full sm:w-auto text-center inline-block">Lihat Invoice</a>
-                                                <a href="{{ url('/product/' . $order->items->first()->product->slug) }}" wire:navigate class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#1c1c1a] hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Beli Lagi</a>
+                                                <a href="{{ url('/product/' . $order->items->first()->product->slug) }}" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#1c1c1a] hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Beli Lagi</a>
                                             @endif
                                         </div>
                                     </div>
@@ -583,7 +583,7 @@
                                         <h3 class="font-serif font-bold text-[20px] text-[#1c1c1a] mb-2">Tingkatkan Keuntungan Anda!</h3>
                                         <p class="font-sans text-[13px] text-[#615e57] max-w-md mx-auto">Gabung menjadi mitra reseller Raabiha dan dapatkan potongan harga eksklusif untuk setiap pembelian tanpa minimal order. Daftarkan diri Anda sekarang!</p>
                                     </div>
-                                    <a href="/reseller-register" wire:navigate class="mt-2 inline-block bg-[#064e3b] text-white px-6 py-3 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-colors">
+                                    <a href="/reseller-register" wire:navigate.hover class="mt-2 inline-block bg-[#064e3b] text-white px-6 py-3 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-colors">
                                         Daftar Menjadi Reseller
                                     </a>
                                 </div>

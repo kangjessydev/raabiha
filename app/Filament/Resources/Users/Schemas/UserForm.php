@@ -14,6 +14,10 @@ class UserForm
             ->components([
                 \Filament\Schemas\Components\Section::make('Informasi Akun')
                     ->schema([
+                        \Awcodes\Curator\Components\Forms\CuratorPicker::make('avatar_url')
+                            ->label('Foto Profil')
+                            ->buttonLabel('Pilih Foto Profil')
+                            ->columnSpanFull(),
                         TextInput::make('name')
                             ->required(),
                         TextInput::make('email')

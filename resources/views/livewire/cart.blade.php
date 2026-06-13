@@ -19,7 +19,7 @@
                         <svg class="w-16 h-16 mx-auto text-[#e5e2de] mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                         <h2 class="font-serif text-2xl text-[#1c1c1a] mb-4">Keranjang Anda Kosong</h2>
                         <p class="text-[#615e57] font-sans mb-8">Anda belum menambahkan produk apa pun ke keranjang belanja.</p>
-                        <a href="/shop" wire:navigate class="inline-block bg-[#064e3b] text-white px-8 py-4 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-[#043326] transition-colors">MULAI BELANJA</a>
+                        <a href="/shop" wire:navigate.hover class="inline-block bg-[#064e3b] text-white px-8 py-4 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-[#043326] transition-colors">MULAI BELANJA</a>
                     </div>
                 @else
                     <!-- Main Grid -->
@@ -65,7 +65,7 @@
                                     <div class="flex flex-col flex-1 py-0 sm:py-2 min-w-0">
                                         <div class="flex flex-col sm:flex-row justify-between items-start gap-1 sm:gap-4 w-full">
                                             <h3 class="font-serif text-base sm:text-[24px] font-semibold text-[#1c1c1a] leading-tight sm:normal-case line-clamp-2 sm:line-clamp-none pr-1">
-                                                <a href="/product/{{ $item->product->slug }}" wire:navigate class="hover:text-[#615e57] transition-colors">{{ $item->product->name }}</a>
+                                                <a href="/product/{{ $item->product->slug }}" wire:navigate.hover class="hover:text-[#615e57] transition-colors">{{ $item->product->name }}</a>
                                             </h3>
                                             <div class="item-subtotal-val font-sans text-sm sm:text-[18px] font-medium sm:font-normal text-[#1c1c1a] whitespace-nowrap shrink-0">
                                                 Rp{{ number_format($price * $item->quantity, 0, ',', '.') }}

@@ -182,7 +182,7 @@
                     <!-- Products Grid -->
                     <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, selectedSizes, selectedColors, maxPrice, sort" class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-6 gap-y-12 w-full">
                         @forelse ($products as $product)
-                            <a href="{{ url('/product/' . $product->slug) }}" wire:navigate class="group block">
+                            <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="group block">
                                 <div class="aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
                                     @if ($product->promo_rules)
                                         <div class="absolute top-3 right-3 bg-[#1a1a1a] text-white text-[9px] px-2 py-1 uppercase tracking-widest z-10">Sale</div>

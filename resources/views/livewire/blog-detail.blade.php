@@ -262,7 +262,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-12">
                     @foreach($relatedPosts as $index => $related)
                     <article class="group cursor-pointer {{ $index == 2 ? 'hidden md:block' : '' }}">
-                        <a href="{{ url('/blog/' . $related->slug) }}" wire:navigate class="block">
+                        <a href="{{ url('/blog/' . $related->slug) }}" wire:navigate.hover class="block">
                             <div class="w-full aspect-[4/5] overflow-hidden mb-4 md:mb-6">
                                 @if($related->image && $media = \Awcodes\Curator\Models\Media::find($related->image))
                                     <img src="{{ Storage::url($media->path) }}" alt="{{ $related->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">

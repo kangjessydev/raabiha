@@ -18,7 +18,7 @@
         @elseif($products->isEmpty() && $posts->isEmpty())
             <div class="text-center py-24 border border-dashed border-[#e5e2de] bg-white/50">
                 <p class="text-[#615e57] font-mono uppercase tracking-widest text-xs mb-4">Tidak ada produk atau artikel yang cocok dengan "{{ $q }}".</p>
-                <a href="{{ url('/shop') }}" wire:navigate class="inline-block border border-[#1c1c1a] px-6 py-3 text-[10px] font-mono font-bold uppercase tracking-widest hover:bg-[#f2efe8] transition-colors">Lihat Semua Produk</a>
+                <a href="{{ url('/shop') }}" wire:navigate.hover class="inline-block border border-[#1c1c1a] px-6 py-3 text-[10px] font-mono font-bold uppercase tracking-widest hover:bg-[#f2efe8] transition-colors">Lihat Semua Produk</a>
             </div>
         @else
             <div class="flex flex-col gap-16">
@@ -27,12 +27,12 @@
                     <div>
                         <h2 class="text-lg font-serif tracking-widest uppercase text-[#1c1c1a] mb-8 pb-3 border-b border-[#e5e2de] flex justify-between items-end">
                             <span>Produk Terkait ({{ $products->count() }})</span>
-                            <a href="{{ url('/shop?search=' . urlencode($q)) }}" wire:navigate class="text-[10px] font-mono tracking-widest text-[#064e3b] hover:underline uppercase">Lihat di Katalog &rarr;</a>
+                            <a href="{{ url('/shop?search=' . urlencode($q)) }}" wire:navigate.hover class="text-[10px] font-mono tracking-widest text-[#064e3b] hover:underline uppercase">Lihat di Katalog &rarr;</a>
                         </h2>
                         
                         <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 lg:gap-x-6 gap-y-12 w-full">
                             @foreach ($products as $index => $product)
-                                <a href="{{ url('/product/' . $product->slug) }}" wire:navigate class="group block">
+                                <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="group block">
                                     <div class="aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
                                         @if ($product->promo_rules)
                                             <div class="absolute top-3 right-3 bg-[#1a1a1a] text-white text-[9px] px-2 py-1 uppercase tracking-widest z-10">Sale</div>
@@ -63,13 +63,13 @@
                     <div>
                         <h2 class="text-lg font-serif tracking-widest uppercase text-[#1c1c1a] mb-8 pb-3 border-b border-[#e5e2de] flex justify-between items-end">
                             <span>Artikel & Jurnal ({{ $posts->count() }})</span>
-                            <a href="{{ url('/blog') }}" wire:navigate class="text-[10px] font-mono tracking-widest text-[#064e3b] hover:underline uppercase">Buka Blog &rarr;</a>
+                            <a href="{{ url('/blog') }}" wire:navigate.hover class="text-[10px] font-mono tracking-widest text-[#064e3b] hover:underline uppercase">Buka Blog &rarr;</a>
                         </h2>
                         
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
                             @foreach($posts as $index => $post)
                                 <article class="group cursor-pointer">
-                                    <a href="{{ url('/blog/' . $post->slug) }}" wire:navigate class="block">
+                                    <a href="{{ url('/blog/' . $post->slug) }}" wire:navigate.hover class="block">
                                         <div class="w-full aspect-[16/10] overflow-hidden mb-4 bg-[#e5e2de]">
                                             @if($post->image && $media = \Awcodes\Curator\Models\Media::find($post->image))
                                                 <img src="{{ Storage::url($media->path) }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">

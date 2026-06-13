@@ -9,7 +9,7 @@
                 
                 <!-- Back Button & Header -->
                 <div class="hidden md:flex items-center gap-4 mb-8">
-                    <a href="/account" wire:navigate class="w-10 h-10 border border-[#e5e2de] bg-white flex items-center justify-center hover:bg-[#f0ede9] transition-colors shrink-0">
+                    <a href="/account" wire:navigate.hover class="w-10 h-10 border border-[#e5e2de] bg-white flex items-center justify-center hover:bg-[#f0ede9] transition-colors shrink-0">
                         <svg class="w-5 h-5 text-[#1c1c1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </a>
                     <div>
@@ -176,7 +176,7 @@
                             Bayar Sekarang
                         </a>
                     @elseif(in_array($order->status, ['completed', 'cancelled']))
-                        <a href="/shop" wire:navigate class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#1c1c1a] px-8 py-3 hover:bg-black transition-colors flex items-center justify-center">
+                        <a href="/shop" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#1c1c1a] px-8 py-3 hover:bg-black transition-colors flex items-center justify-center">
                             Belanja Lagi
                         </a>
                     @endif

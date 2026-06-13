@@ -39,6 +39,27 @@ class AppServiceProvider extends ServiceProvider
         // Daftarkan Observer Inquiry untuk notifikasi lonceng pesan masuk
         Inquiry::observe(InquiryObserver::class);
 
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('site_settings')) {
+                $maxSizeMb = \App\Models\SiteSetting::where('key', 'media_max_size_mb')->value('value') ?? 2;
+                $allowedTypes = \App\Models\SiteSetting::where('key', 'media_allowed_types')->value('value');
+                if (is_string($allowedTypes)) {
+                    $allowedTypes = json_decode($allowedTypes, true);
+                }
+                
+                $maxSizeKb = (int)$maxSizeMb * 1024;
+                
+                \Awcodes\Curator\Components\Forms\CuratorPicker::configureUsing(function (\Awcodes\Curator\Components\Forms\CuratorPicker $component) use ($maxSizeKb, $allowedTypes) {
+                    $component->maxSize($maxSizeKb);
+                    if ($allowedTypes && is_array($allowedTypes)) {
+                        $component->acceptedFileTypes($allowedTypes);
+                    }
+                });
+            }
+        } catch (\Exception $e) {
+            // Ignore during migrations
+        }
+
         // Daftarkan Observer untuk komentar blog
         PostComment::observe(PostCommentObserver::class);
 

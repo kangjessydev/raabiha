@@ -32,7 +32,7 @@ class GlobalSettings extends Page implements HasForms
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
         
         // Decode JSON arrays for repeaters
-        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'social_links'] as $jsonKey) {
+        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'social_links', 'media_allowed_types'] as $jsonKey) {
             if (isset($settings[$jsonKey])) {
                 $decoded = json_decode($settings[$jsonKey], true);
                 $settings[$jsonKey] = is_array($decoded) ? $decoded : [];
@@ -80,6 +80,32 @@ class GlobalSettings extends Page implements HasForms
                                     ->helperText('Contoh: "Toko sedang libur Lebaran. Pesanan akan dikirim mulai tanggal 15 Mei."')
                                     ->default('Mohon maaf, toko kami sedang libur. Semua pesanan yang masuk akan diproses dan dikirim setelah kami kembali beroperasi.')
                                     ->rows(3),
+                            ]),
+
+                        \Filament\Schemas\Components\Tabs\Tab::make('Manajemen Media')
+                            ->components([
+                                Forms\Components\TextInput::make('media_max_size_mb')
+                                    ->label('Maksimal Ukuran Upload (MB)')
+                                    ->numeric()
+                                    ->default(2)
+                                    ->helperText('Batas maksimal ukuran file yang boleh diunggah oleh admin. Rekomendasi: 2 MB untuk performa optimal dan menghemat ruang penyimpanan.'),
+                                Forms\Components\Toggle::make('media_auto_webp')
+                                    ->label('Otomatis Konversi ke WEBP & Kompres')
+                                    ->default(true)
+                                    ->helperText('Sangat disarankan! Gambar yang diunggah akan otomatis dikompresi dan diubah menjadi .webp untuk menghemat server.'),
+                                Forms\Components\Select::make('media_allowed_types')
+                                    ->label('Format File yang Diizinkan')
+                                    ->multiple()
+                                    ->options([
+                                        'image/jpeg' => 'JPEG/JPG',
+                                        'image/png' => 'PNG',
+                                        'image/webp' => 'WEBP',
+                                        'image/gif' => 'GIF',
+                                        'video/mp4' => 'MP4 Video',
+                                        'application/pdf' => 'PDF',
+                                    ])
+                                    ->default(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+                                    ->helperText('Pilih format file apa saja yang boleh diunggah ke Media Library.'),
                             ]),
 
                         \Filament\Schemas\Components\Tabs\Tab::make('Kontak & Sosmed')

@@ -8,7 +8,7 @@
             <div class="max-w-[800px] mx-auto px-6 py-12 md:py-24">
                 
                 <!-- Back Link (Desktop) -->
-                <a href="{{ url('/account') }}" wire:navigate class="hidden md:inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-[#615e57] hover:text-[#1c1c1a] transition-colors mb-8">
+                <a href="{{ url('/account') }}" wire:navigate.hover class="hidden md:inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-[#615e57] hover:text-[#1c1c1a] transition-colors mb-8">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     Kembali ke Akun
                 </a>

@@ -51,6 +51,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->font('Poppins')
             ->login()
+            ->profile()
             ->colors([
                 'primary' => \Filament\Support\Colors\Color::Emerald,
                 'gray' => \Filament\Support\Colors\Color::Stone,

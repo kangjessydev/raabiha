@@ -60,11 +60,15 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Pembayaran (Xendit / Tripay):** Sinkronisasi Virtual Account, QRIS, e-Wallet otomatis dengan *Webhook* integrasi ke status pesanan, serta *Dual-Gateway Switcher* di Admin Panel.
 
 ## Backlog / Ekstensi Bisnis (Sprint 3 / Fase 3)
+- [ ] **Role & Manajemen Akses Lanjutan (Spatie):** 
+  - Membuat Role **CS** yang hanya bisa mengakses Pesan Masuk (Inquiry) dan menyetujui Ulasan Produk.
+  - Membatasi akses menu *Integrasi & API* khusus untuk Super Admin saja.
+- [ ] **Fitur Refund Pelanggan:** Merancang tabel `refund_requests` dan alur antarmuka (UI) khusus di Dasbor Customer & Admin Panel untuk menangani pengembalian dana.
+- [ ] **Simpan Alamat Otomatis di Checkout:** Menambahkan *checkbox* kecil ("Simpan alamat ini ke akun saya") di halaman Checkout khusus bagi pelanggan yang belum memiliki alamat tersimpan, agar alamat otomatis masuk ke daftar alamat di akun mereka.
+- [ ] **Validasi Import/Export Media Cluster:** Memastikan fungsi ekspor data (Produk, Pesanan, User, dsb.) yang berada di cluster *Media Files* berjalan dengan benar dan tersinkronisasi dengan perubahan *database* terbaru.
 - [x] **Google Analytics Embed:** Menambahkan halaman *iframe* Looker Studio di Filament untuk metrik kunjungan lengkap (Traffic Source, Pageviews) dengan 0% beban server.
 - [x] **Kasir Sederhana (POS Manual):** Menyempurnakan form *Create Order* di Admin Panel agar kasir *offline* bisa menginput pesanan secara cepat dan otomatis menjumlahkan harga.
 - [x] **Buku Kas (Cashflow):** Mencatat *Cash In* otomatis dari pesanan lunas (via Observer & tombol Tarik Data), *Cash Out* manual oleh admin, reversal entry saat pembatalan, widget statistik dengan cache, dan filter rentang tanggal.
 - [x] **Quick Edit & Log Stok:** Membuat halaman khusus untuk mengetik/mengubah jumlah stok secara langsung dilengkapi tabel *Log Keluar-Masuk* barang yang ringan.
 - [x] **Dashboard Metrik Lanjutan:** Menambahkan kumpulan *Widget* statistik di *Homepage* Admin (Total Penjualan Hari Ini, Pesanan Masuk, Pengeluaran, Laba Bersih Harian) yang diolah secara *real-time* dari data pesanan dan buku kas. Dilengkapi *Line Chart* tren penjualan vs pengeluaran 30 hari terakhir dengan cache 5 menit untuk efisiensi VPS.
-- [ ] *Virtual Fitting Room* dengan avatar kustom.
 - [x] *Script* Backup Database otomatis di VPS CloudPanel.
-- [ ] **Harga Grosir Produk/Varian:** Menambahkan pengaturan harga grosir bertingkat berdasarkan kuantitas pembelian (tier pricing) baik di tingkat produk maupun varian produk.

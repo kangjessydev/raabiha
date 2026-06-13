@@ -18,7 +18,7 @@ return [
         ],
     ],
     'glide_token' => env('CURATOR_GLIDE_TOKEN'),
-    'model' => Awcodes\Curator\Models\Media::class,
+    'model' => \App\Models\Media::class,
     'path_generator' => null,
     'resource' => [
         'label' => 'Media',
