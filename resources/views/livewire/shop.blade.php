@@ -20,29 +20,32 @@
                 <div id="filter-backdrop" @click="mobileFilterOpen = false" :class="mobileFilterOpen ? 'block opacity-100' : 'hidden opacity-0'" class="fixed inset-0 bg-black/50 z-[60] lg:hidden transition-all duration-300"></div>
                 
                 <!-- Sidebar Filters -->
-                <aside id="shop-filter-sidebar" 
+                <aside id="shop-filter-sidebar" data-lenis-prevent
                     :class="mobileFilterOpen ? 'translate-y-0' : 'translate-y-full'"
                     class="
-                    fixed inset-x-0 bottom-0 z-[70] bg-[#fcf9f5] p-6 rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] 
-                    transform translate-y-full transition-transform duration-300
-                    lg:static lg:transform-none lg:z-auto lg:bg-transparent lg:p-0 lg:rounded-none lg:shadow-none lg:block
-                    w-full lg:w-64 shrink-0 max-h-[85vh] lg:max-h-none overflow-y-auto lg:overflow-visible
+                    fixed inset-x-0 bottom-0 z-[70] bg-[#fcf9f5] rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] 
+                    transition-transform duration-300
+                    lg:sticky lg:top-24 lg:self-start lg:z-auto lg:bg-transparent lg:rounded-none lg:shadow-none lg:block lg:transform-none
+                    w-full lg:w-64 shrink-0 max-h-[85vh] lg:max-h-[calc(100vh-8rem)] overflow-hidden lg:overflow-auto lg:scrollbar-hide
+                    flex flex-col
                 ">
                     <!-- Mobile Bottomsheet Handle & Title -->
-                    <div class="flex justify-between items-center mb-6 lg:hidden">
+                    <div class="flex justify-between items-center mb-6 lg:hidden p-6 pb-0">
                         <h3 class="text-[#1c1c1a] text-sm font-mono font-bold tracking-[0.2em] uppercase">Filter Produk</h3>
-                        <button @click="mobileFilterOpen = false" class="text-[#1c1c1a] p-2 hover:bg-[#e5e2de] rounded-full transition-colors focus:outline-none">
+                        <button @click="mobileFilterOpen = false" class="text-[#1c1c1a] p-2 -mr-2 hover:bg-[#e5e2de] rounded-full transition-colors focus:outline-none">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
 
+                    <div class="flex-1 overflow-y-auto p-6 pt-0 lg:p-0 lg:overflow-visible">
+
                     <!-- Kategori -->
-                    <div class="mb-10">
+                    <div class="mb-10" x-data="{ expanded: false }">
                         <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-4 pb-2 border-b border-[#e5e2de]">Kategori</h4>
                         <div class="flex flex-col gap-4">
-                            @foreach ($categories as $category)
-                                <label class="flex items-center gap-3 cursor-pointer group category-checkbox">
-                                    <input type="checkbox" wire:model.live="selectedCategories" value="{{ $category->id }}" class="hidden peer">
+                            @foreach ($categories as $index => $category)
+                                <label class="flex items-center gap-3 cursor-pointer group category-checkbox relative" x-show="expanded || {{ $index }} < 5" style="display: {{ $index < 5 ? 'flex' : 'none' }};">
+                                    <input type="checkbox" wire:model.live="selectedCategories" value="{{ $category->id }}" class="opacity-0 absolute w-0 h-0 peer">
                                     <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
                                         <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                     </div>
@@ -50,81 +53,44 @@
                                 </label>
                             @endforeach
                         </div>
+                        @if($categories->count() > 5)
+                            <button @click="expanded = !expanded" class="text-[9px] text-[#615e57] hover:text-[#1c1c1a] font-mono font-bold tracking-widest mt-4 uppercase transition-colors flex items-center gap-1">
+                                <span x-text="expanded ? '- Sembunyikan' : '+ Lihat {{ $categories->count() - 5 }} Lainnya'"></span>
+                            </button>
+                        @endif
                     </div>
 
-                    <!-- Ukuran -->
-                    <div class="mb-10">
-                        <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-4 pb-2 border-b border-[#e5e2de]">Ukuran</h4>
-                        <div class="grid grid-cols-2 gap-y-4" id="size-filter-list">
-                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox">
-                                <input type="checkbox" wire:model.live="selectedSizes" value="XS/S" class="hidden peer">
-                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">XS/S</span>
-                            </label>
-                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox">
-                                <input type="checkbox" wire:model.live="selectedSizes" value="M/L" class="hidden peer">
-                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">M/L</span>
-                            </label>
-                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox">
-                                <input type="checkbox" wire:model.live="selectedSizes" value="Oversized" class="hidden peer">
-                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Oversized</span>
-                            </label>
-                            <label class="flex items-center gap-3 cursor-pointer group size-checkbox">
-                                <input type="checkbox" wire:model.live="selectedSizes" value="Uni-Size" class="hidden peer">
-                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Uni-Size</span>
-                            </label>
+                    <!-- Dynamic Attributes -->
+                    @foreach($filterAttributes as $attr)
+                        @if($attr->options->count() > 0)
+                        <div class="mb-10" x-data="{ expanded: false }">
+                            <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-4 pb-2 border-b border-[#e5e2de]">{{ $attr->name }}</h4>
+                            <div class="{{ strtolower($attr->name) == 'ukuran' ? 'grid grid-cols-2 gap-y-4' : 'flex flex-col gap-4' }}">
+                                @foreach($attr->options as $index => $option)
+                                <label class="flex items-center gap-3 cursor-pointer group relative" x-show="expanded || {{ $index }} < 5" style="display: {{ $index < 5 ? 'flex' : 'none' }};">
+                                    <input type="checkbox" wire:model.live="selectedAttributes.{{ $attr->id }}" value="{{ $option->id }}" class="opacity-0 absolute w-0 h-0 peer">
+                                    <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                        <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                    @if(strtolower($attr->name) == 'warna')
+                                        @if($option->meta && isset($option->meta['color']))
+                                            <div class="w-3 h-3 shrink-0 border border-black/10" style="background-color: {{ $option->meta['color'] }};"></div>
+                                        @else
+                                            <div class="w-3 h-3 bg-[#e5e2de] shrink-0 border border-black/10"></div>
+                                        @endif
+                                    @endif
+                                    <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">{{ $option->value }}</span>
+                                </label>
+                                @endforeach
+                            </div>
+                            @if($attr->options->count() > 5)
+                                <button @click="expanded = !expanded" class="text-[9px] text-[#615e57] hover:text-[#1c1c1a] font-mono font-bold tracking-widest mt-4 uppercase transition-colors flex items-center gap-1">
+                                    <span x-text="expanded ? '- Sembunyikan' : '+ Lihat {{ $attr->options->count() - 5 }} Lainnya'"></span>
+                                </button>
+                            @endif
                         </div>
-                    </div>
-
-                    <!-- Warna -->
-                    <div class="mb-10">
-                        <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase mb-4 pb-2 border-b border-[#e5e2de]">Warna</h4>
-                        <div class="flex flex-col gap-4" id="color-filter-list">
-                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox">
-                                <input type="checkbox" wire:model.live="selectedColors" value="Charcoal" class="hidden peer">
-                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <div class="w-3 h-3 bg-[#333333] shrink-0 border border-black/10"></div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Charcoal</span>
-                            </label>
-                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox">
-                                <input type="checkbox" wire:model.live="selectedColors" value="Slate Sand" class="hidden peer">
-                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <div class="w-3 h-3 bg-[#d9d5cd] shrink-0 border border-black/10"></div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Slate Sand</span>
-                            </label>
-                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox">
-                                <input type="checkbox" wire:model.live="selectedColors" value="Dusty Rose" class="hidden peer">
-                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <div class="w-3 h-3 bg-[#c99a8b] shrink-0 border border-black/10"></div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Dusty Rose</span>
-                            </label>
-                            <label class="flex items-center gap-3 cursor-pointer group color-checkbox">
-                                <input type="checkbox" wire:model.live="selectedColors" value="Off-White" class="hidden peer">
-                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                                <div class="w-3 h-3 bg-[#f2f2f2] shrink-0 border border-black/10"></div>
-                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">Off-White</span>
-                            </label>
-                        </div>
-                    </div>
+                        @endif
+                    @endforeach
 
                     <!-- Harga -->
                     <div class="mb-10">
@@ -136,6 +102,14 @@
                                 <span class="text-[#064e3b] text-[10px] font-mono font-bold tracking-widest uppercase">Rp{{ number_format($maxPrice, 0, ',', '.') }} IDR</span>
                             </div>
                         </div>
+                    </div>
+                    </div>
+
+                    <!-- Sticky Apply Button (Mobile Only) -->
+                    <div class="sticky bottom-0 left-0 right-0 bg-[#fcf9f5] p-6 lg:hidden border-t border-[#e5e2de] z-20">
+                        <button @click="mobileFilterOpen = false" class="w-full bg-[#1c1c1a] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase py-4 hover:bg-[#333333] transition-colors">
+                            Terapkan Filter
+                        </button>
                     </div>
                 </aside>
 
@@ -224,9 +198,15 @@
                         </div>
                     </div>
 
-                    @if($products->hasPages())
-                        <div class="mt-12">
-                            {{ $products->links() }}
+                    @if($products->hasMorePages())
+                        <div class="mt-12 flex justify-center pb-12">
+                            <div x-data x-intersect="$wire.loadMore()" class="flex items-center gap-3 text-[#615e57]">
+                                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="text-[10px] font-mono uppercase tracking-widest">Memuat produk...</span>
+                            </div>
                         </div>
                     @endif
 

@@ -12,54 +12,44 @@ use Livewire\Attributes\Url;
 #[Lazy]
 class Shop extends Component
 {
-    use WithPagination;
+    public $amount = 12;
 
-    #[Url(keep: true)]
+    public function loadMore()
+    {
+        $this->amount += 12;
+    }
+
+    #[Url]
     public $search = '';
 
-    #[Url(keep: true)]
+    #[Url]
     public $sort = 'default';
 
-    #[Url(keep: true)]
+    #[Url]
     public $selectedCategories = [];
 
-    #[Url(keep: true)]
-    public $selectedSizes = [];
+    #[Url]
+    public $selectedAttributes = [];
 
-    #[Url(keep: true)]
-    public $selectedColors = [];
-
-    #[Url(keep: true)]
+    #[Url]
     public $maxPrice = 4000000;
 
-    public function updatedSearch()
+    public function mount()
     {
-        $this->resetPage();
-    }
-
-    public function updatedSelectedCategories()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSelectedSizes()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSelectedColors()
-    {
-        $this->resetPage();
-    }
-
-    public function updatedMaxPrice()
-    {
-        $this->resetPage();
+        // Initialize attribute keys as empty arrays to ensure Livewire binds multiple checkboxes correctly
+        $attributes = \App\Models\Attribute::all();
+        foreach ($attributes as $attr) {
+            if (!isset($this->selectedAttributes[$attr->id])) {
+                $this->selectedAttributes[$attr->id] = [];
+            } else if (!is_array($this->selectedAttributes[$attr->id])) {
+                $this->selectedAttributes[$attr->id] = [$this->selectedAttributes[$attr->id]];
+            }
+        }
     }
 
     public function updatedSort()
     {
-        $this->resetPage();
+        // Pagination logic removed for loadMore
     }
 
     public function render()
@@ -84,49 +74,19 @@ class Shop extends Component
             });
         }
 
-        if (!empty($this->selectedSizes)) {
-            $query->where(function($q) {
-                $q->whereHas('variants.attributeOptions', function($qo) {
-                    $qo->where(function($sub) {
-                        foreach ($this->selectedSizes as $size) {
-                            $sub->orWhere('slug', 'like', '%' . $size . '%')
-                               ->orWhere('value', 'like', '%' . $size . '%');
-                        }
-                    });
-                })
-                ->orWhereHas('variants', function($qo) {
-                    $qo->where(function($sub) {
-                        foreach ($this->selectedSizes as $size) {
-                            $parts = explode('/', $size);
-                            foreach ($parts as $part) {
-                                $sub->orWhere('name', 'like', '%' . $part . '%')
-                                   ->orWhere('sku', 'like', '%' . $part . '%');
-                            }
-                        }
-                    });
-                });
-            });
-        }
+        if (!empty($this->selectedAttributes)) {
+            foreach ($this->selectedAttributes as $attributeId => $optionIds) {
+                if (empty($optionIds)) continue;
+                if (!is_array($optionIds)) {
+                    $optionIds = [$optionIds];
+                }
 
-        if (!empty($this->selectedColors)) {
-            $query->where(function($q) {
-                $q->whereHas('variants.attributeOptions', function($qo) {
-                    $qo->where(function($sub) {
-                        foreach ($this->selectedColors as $color) {
-                            $sub->orWhere('slug', 'like', '%' . $color . '%')
-                               ->orWhere('value', 'like', '%' . $color . '%');
-                        }
-                    });
-                })
-                ->orWhereHas('variants', function($qo) {
-                    $qo->where(function($sub) {
-                        foreach ($this->selectedColors as $color) {
-                            $sub->orWhere('name', 'like', '%' . $color . '%')
-                               ->orWhere('sku', 'like', '%' . $color . '%');
-                        }
-                    });
+                // Ensure the product has at least one variant with the selected option
+                $query->whereHas('variants.attributeOptions', function($qo) use ($attributeId, $optionIds) {
+                    $qo->where('attribute_options.attribute_id', $attributeId)
+                       ->whereIn('attribute_options.id', $optionIds);
                 });
-            });
+            }
         }
 
         switch ($this->sort) {
@@ -142,8 +102,9 @@ class Shop extends Component
         }
 
         return view('livewire.shop', [
-            'products' => $query->paginate(12),
-            'categories' => Category::where('is_active', true)->get()
+            'products' => $query->paginate($this->amount),
+            'categories' => Category::where('is_active', true)->get(),
+            'filterAttributes' => \App\Models\Attribute::with('options')->get()
         ])->layout('components.layouts.app', [
             'title' => 'Katalog Produk'
         ]);

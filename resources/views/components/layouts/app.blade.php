@@ -152,6 +152,29 @@
 
     <!-- Phantom UI Skeleton Loader -->
     <script src="https://cdn.jsdelivr.net/npm/@aejkatappaja/phantom-ui/dist/phantom-ui.cdn.js"></script>
+    <!-- Lenis Smooth Scroll CSS -->
+    <style>
+        html.lenis, html.lenis body {
+            height: auto;
+        }
+        .lenis.lenis-smooth {
+            scroll-behavior: auto !important;
+        }
+        .lenis.lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+        .lenis.lenis-stopped {
+            overflow: hidden;
+        }
+        .lenis.lenis-scrolling iframe {
+            pointer-events: none;
+        }
+        
+        /* Override Phantom UI overflow to allow sticky elements */
+        phantom-ui {
+            overflow: visible !important;
+        }
+    </style>
 </head>
 <body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js" x-data="{ navLoaded: false }">
         
@@ -495,7 +518,7 @@
         </div>
     </phantom-ui>
 
-    @if(!isset($header) && !request()->is('checkout') && !request()->is('cart'))
+    @if(!isset($header) && !request()->is('checkout') && !request()->is('cart') && !request()->is('shop*') && !request()->is('katalog*'))
         <!-- Mobile Newsletter Block (Before Footer) -->
         <div class="md:hidden bg-black text-white px-6 py-16 text-center">
             <div class="text-[9px] font-mono tracking-[0.2em] uppercase mb-4 text-[#a3a3a3]">The Inner Circle</div>
@@ -509,9 +532,11 @@
     @endif
     
     <!-- Custom Minimal Footer -->
+    @if(!request()->is('shop*') && !request()->is('katalog*'))
     <div class="{{ (isset($header) || request()->is('checkout') || request()->is('cart')) ? 'hidden md:block' : '' }}">
         <x-global.footer />
     </div>
+    @endif
 
     @if(!isset($header) && !request()->is('checkout') && !request()->is('cart'))
         <!-- Fixed Bottom Navigation (Mobile Only) -->
@@ -720,5 +745,43 @@
             </div>
         @endif
     @endif
+    <!-- Lenis Smooth Scroll Initialization -->
+    <script src="https://unpkg.com/lenis@1.1.2/dist/lenis.min.js"></script>
+    <script>
+        let lenis;
+        let rafId;
+
+        function initLenis() {
+            if (lenis) {
+                lenis.destroy();
+                cancelAnimationFrame(rafId);
+            }
+
+            lenis = new Lenis({
+                duration: 1.2,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+                direction: 'vertical',
+                gestureDirection: 'vertical',
+                smooth: true,
+                mouseMultiplier: 1,
+                smoothTouch: false,
+                touchMultiplier: 2,
+            });
+
+            function raf(time) {
+                lenis.raf(time);
+                rafId = requestAnimationFrame(raf);
+            }
+
+            rafId = requestAnimationFrame(raf);
+        }
+
+        document.addEventListener('DOMContentLoaded', initLenis);
+
+        document.addEventListener('livewire:navigated', () => {
+            window.scrollTo(0, 0);
+            initLenis();
+        });
+    </script>
 </body>
 </html>
