@@ -107,6 +107,48 @@
                             {{ $product->name }}
                         </h1>
                         
+                        <!-- Promo, Rating & Sold Count -->
+                        <div class="flex flex-wrap items-center gap-3 mb-6 mt-3">
+                            @if($product->effective_rating > 0 || $product->effective_sold_count > 0)
+                                <div class="flex items-center gap-2 text-[10px] text-[#615e57] uppercase tracking-widest font-mono border-r border-[#e5e2de] pr-3">
+                                    @if($product->effective_rating > 0)
+                                        <div class="flex items-center text-[#eab308] gap-1">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                            <span class="font-bold text-[#1c1c1a]">{{ number_format($product->effective_rating, 1, ',', '.') }}</span>
+                                        </div>
+                                    @endif
+                                    @if($product->effective_rating > 0 && $product->effective_sold_count > 0)
+                                        <span class="text-[#d1cec9] px-0.5">•</span>
+                                    @endif
+                                    @if($product->effective_sold_count > 0)
+                                        <span>Terjual {{ number_format($product->effective_sold_count, 0, ',', '.') }}</span>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @php
+                                $globalPromos = \App\Models\Voucher::getGlobalPromoLabels();
+                            @endphp
+                            
+                            @if($product->has_free_shipping || count($globalPromos) > 0)
+                                <div class="flex flex-wrap gap-1.5">
+                                    @if($product->has_free_shipping && !collect($globalPromos)->contains('type', 'shipping'))
+                                        <span class="text-[9px] font-bold text-[#064e3b] bg-[#e6f4ea] px-2 py-0.5 rounded flex items-center gap-1 border border-[#064e3b]/20 uppercase tracking-widest">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                                            Gratis Ongkir
+                                        </span>
+                                    @endif
+                                    
+                                    @foreach($globalPromos as $promo)
+                                        <span class="text-[9px] font-bold {{ $promo['color'] }} {{ $promo['bg'] }} px-2 py-0.5 rounded flex items-center gap-1 border {{ $promo['border'] }} uppercase tracking-widest">
+                                            @if($promo['icon']) {!! str_replace('w-2.5 h-2.5', 'w-3 h-3', $promo['icon']) !!} @endif
+                                            {{ $promo['text'] }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                        
                         <!-- Price -->
                         <div id="main-product-price" class="text-[#615e57] text-lg md:text-3xl font-serif mb-10 flex items-center gap-3 flex-wrap">
                             @if($this->currentPrice < $this->currentOriginalPrice)
@@ -238,7 +280,7 @@
                     <!-- 02. Reviews & Ratings -->
                     <div class="group py-6 product-accordion" x-data="{ open: false }">
                         <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
-                            02. REVIEWS & RATINGS ({{ number_format($this->averageRating, 1) }} ★)
+                            02. REVIEWS & RATINGS ({{ number_format($product->effective_rating, 1, ',', '.') }} ★)
                             <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-collapse style="display: none;" class="mt-6 text-[#1c1c1a] font-sans accordion-content">
@@ -247,68 +289,30 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 pb-8 border-b border-[#e5e2de]">
                                 <!-- Overall Rating -->
                                 <div class="flex flex-col items-center justify-center text-center p-6 bg-[#fcf9f5] border border-[#e5e2de]">
-                                    <span class="text-5xl font-serif text-[#1c1c1a] mb-2">{{ number_format($this->averageRating, 1) }}</span>
+                                    <span class="text-5xl font-serif text-[#1c1c1a] mb-2">{{ number_format($product->effective_rating, 1, ',', '.') }}</span>
                                     <div class="flex gap-1 text-[#064e3b] mb-1">
                                         <!-- 5 Stars -->
                                         @for($i = 1; $i <= 5; $i++)
-                                            <svg class="w-4 h-4 {{ $i <= round($this->averageRating) ? 'fill-current' : 'text-[#d1cec9] fill-current' }}" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                            <svg class="w-4 h-4 {{ $i <= round($product->effective_rating) ? 'fill-current' : 'text-[#d1cec9] fill-current' }}" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                         @endfor
                                     </div>
-                                    <span class="text-[10px] font-mono tracking-widest text-[#615e57] uppercase">Berdasarkan 18 Ulasan</span>
+                                    <span class="text-[10px] font-mono tracking-widest text-[#615e57] uppercase">Berdasarkan {{ max($this->reviews->count(), $product->effective_rating > 0 ? 1 : 0) }} Ulasan</span>
                                 </div>
 
                                 <!-- Rating Bars -->
                                 <div class="md:col-span-2 flex flex-col justify-center gap-3">
+                                    @foreach($this->ratingDistribution as $star => $percentage)
                                     <div class="flex items-center gap-4 text-xs">
                                         <div class="w-12 flex items-center justify-end gap-1 text-[#615e57] font-mono">
-                                            <span>5</span>
+                                            <span>{{ $star }}</span>
                                             <svg class="w-3 h-3 fill-current text-[#064e3b]" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                         </div>
                                         <div class="flex-1 h-1.5 bg-[#e5e2de] rounded-full overflow-hidden">
-                                            <div class="h-full bg-[#064e3b]" style="width: 90%"></div>
+                                            <div class="h-full bg-[#064e3b] transition-all duration-500" style="width: {{ $percentage }}%"></div>
                                         </div>
-                                        <span class="w-8 text-left text-[#615e57] font-mono">90%</span>
+                                        <span class="w-8 text-left text-[#615e57] font-mono">{{ $percentage }}%</span>
                                     </div>
-                                    <div class="flex items-center gap-4 text-xs">
-                                        <div class="w-12 flex items-center justify-end gap-1 text-[#615e57] font-mono">
-                                            <span>4</span>
-                                            <svg class="w-3 h-3 fill-current text-[#064e3b]" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </div>
-                                        <div class="flex-1 h-1.5 bg-[#e5e2de] rounded-full overflow-hidden">
-                                            <div class="h-full bg-[#064e3b]" style="width: 10%"></div>
-                                        </div>
-                                        <span class="w-8 text-left text-[#615e57] font-mono">10%</span>
-                                    </div>
-                                    <div class="flex items-center gap-4 text-xs">
-                                        <div class="w-12 flex items-center justify-end gap-1 text-[#615e57] font-mono">
-                                            <span>3</span>
-                                            <svg class="w-3 h-3 fill-current text-[#064e3b]" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </div>
-                                        <div class="flex-1 h-1.5 bg-[#e5e2de] rounded-full overflow-hidden">
-                                            <div class="h-full bg-[#064e3b]" style="width: 0%"></div>
-                                        </div>
-                                        <span class="w-8 text-left text-[#615e57] font-mono">0%</span>
-                                    </div>
-                                    <div class="flex items-center gap-4 text-xs">
-                                        <div class="w-12 flex items-center justify-end gap-1 text-[#615e57] font-mono">
-                                            <span>2</span>
-                                            <svg class="w-3 h-3 fill-current text-[#064e3b]" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </div>
-                                        <div class="flex-1 h-1.5 bg-[#e5e2de] rounded-full overflow-hidden">
-                                            <div class="h-full bg-[#064e3b]" style="width: 0%"></div>
-                                        </div>
-                                        <span class="w-8 text-left text-[#615e57] font-mono">0%</span>
-                                    </div>
-                                    <div class="flex items-center gap-4 text-xs">
-                                        <div class="w-12 flex items-center justify-end gap-1 text-[#615e57] font-mono">
-                                            <span>1</span>
-                                            <svg class="w-3 h-3 fill-current text-[#064e3b]" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                                        </div>
-                                        <div class="flex-1 h-1.5 bg-[#e5e2de] rounded-full overflow-hidden">
-                                            <div class="h-full bg-[#064e3b]" style="width: 0%"></div>
-                                        </div>
-                                        <span class="w-8 text-left text-[#615e57] font-mono">0%</span>
-                                    </div>
+                                    @endforeach
                                 </div>
                             </div>
 

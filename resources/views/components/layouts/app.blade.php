@@ -395,7 +395,7 @@
     @endif
 
     <!-- Mobile Sidebar Menu -->
-    <div id="mobile-sidebar" class="fixed inset-0 z-[60] transform -translate-x-full transition-transform duration-300 md:hidden">
+    <div id="mobile-sidebar" class="fixed inset-0 z-[110] transform -translate-x-full transition-transform duration-300 md:hidden">
         <!-- Backdrop -->
         <div id="mobile-sidebar-backdrop" class="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 pointer-events-none"></div>
         <!-- Sidebar Content -->
@@ -513,7 +513,7 @@
 
     <!-- PAGE CONTENT WRAPPER -->
     <phantom-ui :loading="!navLoaded">
-        <div class="pt-[120px] pb-20 px-6 md:px-12 max-w-[1400px] mx-auto w-full min-h-[70vh]">
+        <div class="w-full min-h-[70vh]">
             {{ $slot }}
         </div>
     </phantom-ui>

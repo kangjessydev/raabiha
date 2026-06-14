@@ -135,10 +135,53 @@ class ProductDetail extends Component
         return $this->reviews->avg('rating') ?? 0;
     }
 
-    public function mount($slug)
+    #[Computed]
+    public function ratingDistribution()
     {
+        $distribution = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
+        $totalReviews = $this->reviews->count();
+
+        if ($totalReviews > 0) {
+            foreach ($this->reviews as $review) {
+                if (isset($distribution[$review->rating])) {
+                    $distribution[$review->rating]++;
+                }
+            }
+            foreach ($distribution as $stars => $count) {
+                $distribution[$stars] = round(($count / $totalReviews) * 100);
+            }
+        } else {
+            // Generate dummy distribution based on effective rating
+            $rating = round($this->product->effective_rating * 2) / 2; 
+            if ($rating >= 4.5) {
+                $distribution[5] = 85;
+                $distribution[4] = 15;
+            } elseif ($rating >= 4.0) {
+                $distribution[5] = 40;
+                $distribution[4] = 50;
+                $distribution[3] = 10;
+            } elseif ($rating >= 3.0) {
+                $distribution[4] = 30;
+                $distribution[3] = 50;
+                $distribution[2] = 20;
+            } elseif ($rating > 0) {
+                $distribution[ceil($rating)] = 100;
+            }
+        }
+
+        return $distribution;
+    }
+
+    public function mount($slug = null)
+    {
+        \Log::info("ProductDetail mount called with slug: " . var_export($slug, true));
         $this->slug = $slug;
-        $this->product = Product::with(['variants.attributeOptions.attribute'])->where('slug', $slug)->firstOrFail();
+        try {
+            $this->product = Product::with(['variants.attributeOptions.attribute'])->where('slug', $slug)->firstOrFail();
+        } catch (\Exception $e) {
+            \Log::error("ProductDetail mount failed: " . $e->getMessage());
+            throw $e;
+        }
         
         // Resolve Curator Media URLs
         $this->galleryUrls = [];

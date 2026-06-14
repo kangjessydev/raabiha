@@ -52,6 +52,18 @@ class Shop extends Component
         // Pagination logic removed for loadMore
     }
 
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->selectedCategories = [];
+        $this->maxPrice = 4000000;
+        
+        $attributes = \App\Models\Attribute::all();
+        foreach ($attributes as $attr) {
+            $this->selectedAttributes[$attr->id] = [];
+        }
+    }
+
     public function render()
     {
         $query = Product::with(['category', 'variants.attributeOptions'])->where('is_active', true);
@@ -104,7 +116,11 @@ class Shop extends Component
         return view('livewire.shop', [
             'products' => $query->paginate($this->amount),
             'categories' => Category::where('is_active', true)->get(),
-            'filterAttributes' => \App\Models\Attribute::with('options')->get()
+            'filterAttributes' => \App\Models\Attribute::with(['options' => function($q) {
+                $q->whereHas('productVariants.product', function($q2) {
+                    $q2->where('is_active', true);
+                });
+            }])->get()
         ])->layout('components.layouts.app', [
             'title' => 'Katalog Produk'
         ]);

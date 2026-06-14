@@ -122,11 +122,26 @@
                                         <img src="{{ $image }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover">
                                     </div>
                                     <div class="flex-1">
-                                        <h4 class="font-serif text-[15px] md:text-[16px] font-semibold text-[#1c1c1a] leading-tight mb-1">{{ $item->product->name }}</h4>
+                                        <a href="/product/{{ $item->product->slug }}" wire:navigate.hover class="font-serif text-[15px] md:text-[16px] font-semibold text-[#1c1c1a] leading-tight mb-1 hover:text-[#064e3b] transition-colors line-clamp-1">{{ $item->product->name }}</a>
                                         <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-1">
                                             {{ $variantText }}
                                         </p>
-                                        <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Qty: {{ $item->quantity }} x Rp{{ number_format($item->price, 0, ',', '.') }}</p>
+                                        <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-3">Qty: {{ $item->quantity }} x Rp{{ number_format($item->price, 0, ',', '.') }}</p>
+                                        
+                                        @if($order->status == 'completed')
+                                            @php
+                                                $hasReviewed = \App\Models\ProductReview::where('product_id', $item->product_id)->where('user_id', auth()->id())->exists();
+                                            @endphp
+                                            @if(!$hasReviewed)
+                                                <a href="/product/{{ $item->product->slug }}" wire:navigate class="inline-block border border-[#1c1c1a] px-3 py-1.5 text-[8px] font-mono font-bold uppercase tracking-[0.1em] hover:bg-[#1c1c1a] hover:text-white text-[#1c1c1a] transition-colors focus:outline-none">
+                                                    Beri Ulasan
+                                                </a>
+                                            @else
+                                                <span class="inline-block bg-[#064e3b]/10 text-[#064e3b] px-3 py-1.5 text-[8px] font-mono font-bold uppercase tracking-[0.1em] border border-[#064e3b]/20">
+                                                    Sudah Diulas
+                                                </span>
+                                            @endif
+                                        @endif
                                     </div>
                                     <div class="font-sans text-[14px] md:text-[15px] font-semibold text-[#1c1c1a] text-right shrink-0">
                                         Rp{{ number_format($item->total, 0, ',', '.') }}

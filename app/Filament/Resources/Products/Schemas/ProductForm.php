@@ -28,7 +28,7 @@ class ProductForm
                             ->label('Nama Produk')
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn (string $operation, string $state, Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
+                            ->afterStateUpdated(fn(string $operation, string $state, Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
                         TextInput::make('slug')
                             ->required()
                             ->unique(ignoreRecord: true),
@@ -106,13 +106,13 @@ class ProductForm
                             ->label('Stok Produk (Tanpa Varian)')
                             ->numeric()
                             ->default(0)
-                            ->visible(fn (Get $get) => $get('has_variants') === false)
-                            ->required(fn (Get $get) => $get('has_variants') === false),
+                            ->visible(fn(Get $get) => $get('has_variants') === false)
+                            ->required(fn(Get $get) => $get('has_variants') === false),
                         TextInput::make('minimum_stock')
                             ->label('Stok Minimum Peringatan (Tanpa Varian)')
                             ->numeric()
                             ->placeholder('Kosongkan untuk pakai default global (5)')
-                            ->visible(fn (Get $get) => $get('has_variants') === false),
+                            ->visible(fn(Get $get) => $get('has_variants') === false),
                         Toggle::make('has_variants')
                             ->label('Punya Varian?')
                             ->live()
@@ -134,16 +134,32 @@ class ProductForm
                             ->columnSpanFull(),
                     ])->columns(2),
 
-                Section::make('Pengaturan Tambahan')
+                Section::make('Marketing')
                     ->schema([
-                        Textarea::make('wholesale_pricing')
-                            ->label('Aturan Harga Grosir (Opsional)'),
-                        Textarea::make('promo_rules')
-                            ->label('Aturan Promo (Opsional)'),
                         Toggle::make('is_active')
                             ->label('Produk Aktif?')
                             ->default(true),
+                        Toggle::make('has_free_shipping')
+                            ->label('Gratis Ongkir')
+                            ->default(false),
                     ])->columns(2),
+
+                Section::make('Statistik (Overrides)')
+                    ->schema([
+                        TextInput::make('rating')
+                            ->label('Rating (1.0 - 5.0)')
+                            ->numeric()
+                            ->step(0.1)
+                            ->minValue(0)
+                            ->maxValue(5)
+                            ->default(0.0)
+                            ->helperText('Angka desimal, contoh: 4.8'),
+                        TextInput::make('sold_count')
+                            ->label('Jumlah Terjual (Dummy/Override)')
+                            ->numeric()
+                            ->default(0)
+                            ->helperText('Angka penjualan (bisa diisi manual untuk keperluan marketing awal)'),
+                    ])->columns(2)->collapsed(),
             ]);
     }
 }

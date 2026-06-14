@@ -30,11 +30,15 @@ class Product extends Model
         'is_active',
         'minimum_stock',
         'purchase_price',
+        'rating',
+        'sold_count',
+        'has_free_shipping',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'has_variants' => 'boolean',
+        'has_free_shipping' => 'boolean',
         'wholesale_pricing' => 'array',
         'promo_rules' => 'array',
         'images' => 'array',
@@ -42,6 +46,8 @@ class Product extends Model
         'discount_price' => 'decimal:2',
         'reseller_price' => 'decimal:2',
         'purchase_price' => 'decimal:2',
+        'rating' => 'decimal:1',
+        'sold_count' => 'integer',
     ];
 
     public function category(): BelongsTo
@@ -75,5 +81,37 @@ class Product extends Model
         }
 
         return $price;
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function getEffectiveRatingAttribute()
+    {
+        // Get actual average rating from reviews (cached or computed)
+        // For efficiency in a catalog, this is usually loaded via withAvg() in queries.
+        // We'll fall back to calculating it if not loaded.
+        $actualRating = $this->reviews_avg_rating ?? $this->reviews()->where('is_approved', true)->avg('rating') ?? 0;
+        
+        // Return the higher value between actual and manual dummy rating
+        return max(round($actualRating, 1), $this->rating);
+    }
+
+    public function getEffectiveSoldCountAttribute()
+    {
+        // Get actual sold count from order items (usually aggregated or counted via observers)
+        // For now, we will assume a generic relation or field. 
+        // We'll just rely on the manual `sold_count` override compared to a potential `actual_sold` column if we add one later, 
+        // or just return the manual one since actual sales counting requires joining OrderItem.
+        // Let's assume actual_sold doesn't exist yet, we just return the manual one or sum of order items.
+        
+        $actualSold = $this->order_items_sum_quantity ?? \App\Models\OrderItem::where('product_id', $this->id)
+            ->whereHas('order', function($q) {
+                $q->where('payment_status', 'PAID');
+            })->sum('quantity') ?? 0;
+
+        return max($actualSold, $this->sold_count);
     }
 }
