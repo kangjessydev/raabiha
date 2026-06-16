@@ -13,8 +13,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -41,46 +40,42 @@ class RefundRequestResource extends Resource
         return $schema
             ->components([
                 Section::make('Informasi Pengajuan')
+                    ->columns(2)
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('user_id')
-                                    ->relationship('user', 'name')
-                                    ->label('Pelanggan')
-                                    ->disabled(),
-                                Select::make('order_id')
-                                    ->relationship('order', 'order_number')
-                                    ->label('Pesanan')
-                                    ->disabled(),
-                            ]),
+                        Select::make('user_id')
+                            ->relationship('user', 'name')
+                            ->label('Pelanggan')
+                            ->disabled(),
+                        Select::make('order_id')
+                            ->relationship('order', 'order_number')
+                            ->label('Pesanan')
+                            ->disabled(),
                         TextInput::make('reason')
                             ->label('Alasan')
                             ->disabled(),
-                        Textarea::make('description')
-                            ->label('Penjelasan Detail')
-                            ->disabled()
-                            ->columnSpanFull(),
                         TextInput::make('refund_amount')
                             ->label('Total Nominal Refund')
                             ->numeric()
                             ->prefix('Rp')
                             ->disabled(),
+                        Textarea::make('description')
+                            ->label('Penjelasan Detail')
+                            ->disabled()
+                            ->columnSpanFull(),
                     ]),
                 
                 Section::make('Informasi Bank Pelanggan')
+                    ->columns(3)
                     ->schema([
-                        Grid::make(3)
-                            ->schema([
-                                TextInput::make('bank_name')
-                                    ->label('Nama Bank')
-                                    ->disabled(),
-                                TextInput::make('bank_account_number')
-                                    ->label('No. Rekening')
-                                    ->disabled(),
-                                TextInput::make('bank_account_name')
-                                    ->label('Atas Nama')
-                                    ->disabled(),
-                            ])
+                        TextInput::make('bank_name')
+                            ->label('Nama Bank')
+                            ->disabled(),
+                        TextInput::make('bank_account_number')
+                            ->label('No. Rekening')
+                            ->disabled(),
+                        TextInput::make('bank_account_name')
+                            ->label('Atas Nama')
+                            ->disabled(),
                     ]),
 
                 Section::make('Penanganan Admin')
