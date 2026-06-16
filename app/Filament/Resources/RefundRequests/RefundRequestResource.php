@@ -26,6 +26,11 @@ class RefundRequestResource extends Resource
     protected static ?string $model = RefundRequest::class;
     protected static ?string $cluster = \App\Filament\Clusters\ECommerce\ECommerceCluster::class;
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
     protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Transaksi;
     protected static ?string $navigationLabel = 'Refund Pelanggan';
@@ -160,14 +165,27 @@ class RefundRequestResource extends Resource
                         $amount = number_format($record->refund_amount, 0, ',', '.');
 
                         $status = $record->status;
+                        
+                        // Default templates
+                        $defApproved = 'Halo {name}, pengajuan refund untuk pesanan #{order} senilai Rp{amount} telah DISETUJUI. Tim Finance kami akan segera memproses transfer ke rekening Anda.';
+                        $defRejected = 'Halo {name}, mohon maaf pengajuan refund untuk pesanan #{order} senilai Rp{amount} DITOLAK. Catatan: {notes}';
+                        $defCompleted = 'Halo {name}, dana refund untuk pesanan #{order} senilai Rp{amount} telah SELESAI DITRANSFER ke rekening {bank} Anda. Silakan cek mutasi rekening Anda.';
+
+                        // Load templates from DB
+                        $tplApproved = \App\Models\SiteSetting::where('key', 'refund_template_approved')->value('value') ?: $defApproved;
+                        $tplRejected = \App\Models\SiteSetting::where('key', 'refund_template_rejected')->value('value') ?: $defRejected;
+                        $tplCompleted = \App\Models\SiteSetting::where('key', 'refund_template_completed')->value('value') ?: $defCompleted;
+                        
+                        $msg = "Halo {$customerName}, kami sedang meninjau pengajuan refund untuk pesanan #{$orderNo}.";
+                        
                         if ($status === 'approved') {
-                            $msg = "Halo {$customerName}, pengajuan refund untuk pesanan #{$orderNo} senilai Rp{$amount} telah *DISETUJUI*. Tim Finance kami akan segera memproses transfer ke rekening Anda.";
+                            $msg = str_replace(['{name}', '{order}', '{amount}'], [$customerName, $orderNo, $amount], $tplApproved);
                         } elseif ($status === 'rejected') {
-                            $msg = "Halo {$customerName}, mohon maaf pengajuan refund untuk pesanan #{$orderNo} senilai Rp{$amount} *DITOLAK*.\n\nCatatan: " . ($record->admin_notes ?? 'Tidak memenuhi syarat pengembalian.');
+                            $notes = $record->admin_notes ?? 'Tidak memenuhi syarat pengembalian.';
+                            $msg = str_replace(['{name}', '{order}', '{amount}', '{notes}'], [$customerName, $orderNo, $amount, $notes], $tplRejected);
                         } elseif ($status === 'completed') {
-                            $msg = "Halo {$customerName}, dana refund untuk pesanan #{$orderNo} senilai Rp{$amount} telah *SELESAI DITRANSFER* ke rekening {$record->bank_name} Anda. Silakan cek mutasi rekening Anda.";
-                        } else {
-                            $msg = "Halo {$customerName}, kami sedang meninjau pengajuan refund untuk pesanan #{$orderNo}.";
+                            $bank = $record->bank_name ?? '-';
+                            $msg = str_replace(['{name}', '{order}', '{amount}', '{bank}'], [$customerName, $orderNo, $amount, $bank], $tplCompleted);
                         }
 
                         return "https://wa.me/{$phone}?text=" . urlencode($msg);

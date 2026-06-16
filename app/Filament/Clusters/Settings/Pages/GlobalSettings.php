@@ -108,6 +108,34 @@ class GlobalSettings extends Page implements HasForms
                                     ->helperText('Pilih format file apa saja yang boleh diunggah ke Media Library.'),
                             ]),
 
+                        \Filament\Schemas\Components\Tabs\Tab::make('Refund & Pengembalian')
+                            ->components([
+                                Forms\Components\RichEditor::make('refund_terms')
+                                    ->label('Syarat & Ketentuan Refund')
+                                    ->helperText('Penjelasan detail mengenai syarat, cara, dan ketentuan pengembalian dana.'),
+                                Forms\Components\TextInput::make('refund_claim_days')
+                                    ->label('Batas Waktu Klaim (Hari)')
+                                    ->numeric()
+                                    ->default(7)
+                                    ->helperText('Maksimal hari setelah pesanan Selesai/Terkirim bagi pelanggan untuk dapat mengajukan refund.'),
+                                Forms\Components\TextInput::make('refund_admin_phone')
+                                    ->label('Nomor WA Admin Refund')
+                                    ->helperText('Nomor WhatsApp admin khusus bagian Refund (gunakan format 628...).')
+                                    ->prefix('+62'),
+                                Forms\Components\Textarea::make('refund_template_approved')
+                                    ->label('Template Pesan WA - Disetujui')
+                                    ->default('Halo {name}, pengajuan refund untuk pesanan #{order} senilai Rp{amount} telah DISETUJUI. Tim Finance kami akan segera memproses transfer ke rekening Anda.')
+                                    ->rows(3),
+                                Forms\Components\Textarea::make('refund_template_rejected')
+                                    ->label('Template Pesan WA - Ditolak')
+                                    ->default('Halo {name}, mohon maaf pengajuan refund untuk pesanan #{order} senilai Rp{amount} DITOLAK. Catatan: {notes}')
+                                    ->rows(3),
+                                Forms\Components\Textarea::make('refund_template_completed')
+                                    ->label('Template Pesan WA - Selesai')
+                                    ->default('Halo {name}, dana refund untuk pesanan #{order} senilai Rp{amount} telah SELESAI DITRANSFER ke rekening {bank} Anda. Silakan cek mutasi rekening Anda.')
+                                    ->rows(3),
+                            ]),
+
                         \Filament\Schemas\Components\Tabs\Tab::make('Kontak & Sosmed')
                             ->components([
                                 Forms\Components\TextInput::make('contact_phone')
