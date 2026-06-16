@@ -49,6 +49,9 @@ class Checkout extends Component
     
     // Guest checkout state: null = undecided, true = continue as guest, false = logged in
     public $guest_mode = null;
+    
+    // Save address state
+    public $save_address = true;
 
     public function mount()
     {
@@ -621,6 +624,29 @@ class Checkout extends Component
                 $item->delete();
             }
 
+            // Save address automatically if requested and user is authenticated
+            if (auth()->check() && $this->save_address) {
+                // Set all other addresses to non-primary
+                \App\Models\UserAddress::where('user_id', auth()->id())->update(['is_primary' => false]);
+                
+                \App\Models\UserAddress::updateOrCreate(
+                    [
+                        'user_id' => auth()->id(),
+                        'recipient_name' => trim($this->first_name . ' ' . $this->last_name),
+                        'phone' => $this->phone,
+                        'full_address' => $this->address,
+                    ],
+                    [
+                        'title' => 'Alamat Utama',
+                        'province' => $province,
+                        'city' => $city,
+                        'district' => $districtValue,
+                        'postal_code' => $this->postal_code,
+                        'is_primary' => true,
+                    ]
+                );
+            }
+
             // Clear cart if empty
             $cart = $this->cart;
             if ($cart && $cart->items()->count() === 0) {
@@ -629,8 +655,6 @@ class Checkout extends Component
 
             // Clear session to prevent stale items on next visit
             session()->forget('checkout_item_ids');
-
-            DB::commit();
 
             // Check Active Payment Gateway
             $activeGateway = \App\Models\SiteSetting::where('key', 'active_payment_gateway')->value('value') ?: 'tripay';
@@ -716,7 +740,9 @@ class Checkout extends Component
                                 'payment_url' => $tripayData['checkout_url']
                             ]);
                             
-                            return redirect()->away($tripayData['checkout_url']);
+                            DB::commit();
+                            $this->redirect($tripayData['checkout_url'], navigate: false);
+                            return;
                         } else {
                             Log::error('Tripay Create Transaction Error', ['response' => $response->json()]);
                             throw new \Exception('Gagal membuat transaksi Tripay: ' . ($response->json('message') ?? 'Internal Error'));
@@ -750,6 +776,14 @@ class Checkout extends Component
                                 'quantity' => 1,
                             ];
                         }
+                        
+                        if ($this->paymentFee > 0) {
+                            $orderItems[] = [
+                                'name' => 'Biaya Layanan',
+                                'price' => (int) $this->paymentFee,
+                                'quantity' => 1,
+                            ];
+                        }
 
                         $data = [
                             'external_id'      => $merchantRef,
@@ -766,8 +800,21 @@ class Checkout extends Component
                             'items' => $orderItems
                         ];
 
+                        // Hanya tampilkan metode yang dipilih oleh pelanggan
+                        if ($this->payment_method && $this->payment_method !== 'XENDIT_AUTO') {
+                            $data['payment_methods'] = [$this->payment_method];
+                        }
+
                         $response = \Illuminate\Support\Facades\Http::withBasicAuth($apiKey, '')
                             ->post($endpoint, $data);
+
+                        // Fallback: If Xendit rejects the specific payment method, try again without restrictions
+                        if (!$response->successful() && $response->json('error_code') === 'UNAVAILABLE_PAYMENT_METHOD_ERROR') {
+                            Log::warning('Xendit Fallback triggered: Payment method ' . $this->payment_method . ' not active. Falling back to generic invoice.');
+                            unset($data['payment_methods']);
+                            $response = \Illuminate\Support\Facades\Http::withBasicAuth($apiKey, '')
+                                ->post($endpoint, $data);
+                        }
 
                         if ($response->successful()) {
                             $xenditData = $response->json();
@@ -775,7 +822,9 @@ class Checkout extends Component
                                 'payment_id' => $xenditData['id'],
                                 'payment_url' => $xenditData['invoice_url']
                             ]);
-                            return redirect()->away($xenditData['invoice_url']);
+                            DB::commit();
+                            $this->redirect($xenditData['invoice_url'], navigate: false);
+                            return;
                         } else {
                             Log::error('Xendit Create Invoice Error', ['response' => $response->json()]);
                             throw new \Exception('Gagal membuat transaksi Xendit: ' . ($response->json('message') ?? 'Internal Error'));
@@ -784,6 +833,7 @@ class Checkout extends Component
                 }
             }
 
+            DB::commit();
             return redirect()->to('/order-success?order=' . $order->order_number);
 
         } catch (\Exception $e) {

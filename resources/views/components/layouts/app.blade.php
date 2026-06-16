@@ -428,7 +428,7 @@
     <!-- Mini Cart Overlay removed -->
 
     <script>
-        document.addEventListener('livewire:navigate.hoverd', function() {
+        document.addEventListener('livewire:navigated', function() {
             // Sidebar Logic
             const toggle = document.getElementById('mobile-menu-toggle');
             const close = document.getElementById('mobile-sidebar-close');

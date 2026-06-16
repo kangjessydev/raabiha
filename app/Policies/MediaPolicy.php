@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use Illuminate\Foundation\Auth\User as AuthUser;
-use Awcodes\Curator\Models\Media;
+use App\Models\Media;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class MediaPolicy

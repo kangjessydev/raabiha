@@ -53,16 +53,34 @@ class PaymentMethodForm
                                     $component->state($config['availability'] ?? 'both');
                                 }
                             }),
+                        Select::make('config.group')
+                            ->label('Grup Pembayaran')
+                            ->options([
+                                'Virtual Account' => 'Virtual Account',
+                                'E-Wallet' => 'E-Wallet',
+                                'QR Code' => 'QR Code',
+                                'Retail' => 'Retail (Minimarket)',
+                                'Lainnya' => 'Lainnya',
+                            ])
+                            ->default('Lainnya')
+                            ->required(),
                     ])->columns(2),
 
-                Section::make('Konfigurasi API / Kredensial')
+                Section::make('Biaya Admin (Dibebankan ke Pelanggan)')
+                    ->description('Jika dikosongkan (0), maka biaya transaksi Xendit/Tripay akan dipotong dari saldo Anda (Penjual).')
                     ->schema([
-                        KeyValue::make('config')
-                            ->label('Parameter Konfigurasi (Key-Value)')
-                            ->keyLabel('Nama Parameter')
-                            ->valueLabel('Nilai')
-                            ->columnSpanFull(),
-                    ]),
+                        TextInput::make('config.fee_customer.flat')
+                            ->label('Biaya Admin Flat (Rp)')
+                            ->numeric()
+                            ->default(0)
+                            ->helperText('Biaya tetap. Contoh: Isi 4440 untuk Virtual Account (termasuk PPN 11%).'),
+                        TextInput::make('config.fee_customer.percent')
+                            ->label('Biaya Admin Persen (%)')
+                            ->numeric()
+                            ->step(0.01)
+                            ->default(0)
+                            ->helperText('Biaya persentase. Contoh: Isi 1.5 untuk E-Wallet.'),
+                    ])->columns(2),
             ]);
     }
 }

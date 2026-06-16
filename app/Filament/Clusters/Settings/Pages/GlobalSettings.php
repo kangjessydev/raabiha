@@ -237,6 +237,7 @@ class GlobalSettings extends Page implements HasForms
                                     ])
                             ]),
                         \Filament\Schemas\Components\Tabs\Tab::make('Integrasi & API')
+                            ->visible(fn () => auth()->user()->hasRole('super_admin'))
                             ->components([
                                 \Filament\Schemas\Components\Section::make('API & Payment Gateway')
                                     ->schema([
@@ -402,5 +403,27 @@ class GlobalSettings extends Page implements HasForms
             ->title('Pengaturan berhasil disimpan')
             ->success()
             ->send();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('generate_roles')
+                ->label('Generate Roles & Demo Users')
+                ->icon('heroicon-o-users')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Generate Roles & Users')
+                ->modalDescription('Tindakan ini akan memuat ulang Spatie Permission dan membuat akun demo beserta role standarnya. Apakah Anda yakin?')
+                ->action(function () {
+                    \Illuminate\Support\Facades\Artisan::call('app:generate-roles-users');
+                    \Filament\Notifications\Notification::make()
+                        ->title('Sukses')
+                        ->body('Roles dan Demo Users berhasil dibuat!')
+                        ->success()
+                        ->send();
+                })
+                ->visible(fn () => auth()->user()->hasRole('super_admin'))
+        ];
     }
 }

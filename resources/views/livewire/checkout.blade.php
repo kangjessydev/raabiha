@@ -144,6 +144,18 @@
                                     <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Catatan Pesanan (Opsional)</label>
                                     <textarea rows="2" wire:model="notes" class="w-full bg-transparent border border-[#e5e2de] p-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors" placeholder="Catatan untuk penjual atau kurir, misal: Tolong titip di pos satpam."></textarea>
                                 </div>
+                                
+                                @if(auth()->check())
+                                <div class="flex items-start gap-3 md:col-span-2 mt-2 p-4 bg-[#fcf9f5] border border-[#e5e2de]">
+                                    <div class="flex items-center h-5">
+                                        <input type="checkbox" id="save_address" wire:model="save_address" class="w-4 h-4 text-[#064e3b] bg-transparent border-gray-300 rounded focus:ring-[#064e3b] cursor-pointer">
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <label for="save_address" class="font-sans text-sm font-semibold text-[#1c1c1a] cursor-pointer">Simpan Alamat Ini</label>
+                                        <p class="text-xs text-[#615e57] mt-0.5">Alamat akan otomatis terisi di pesanan Anda berikutnya.</p>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </section>
 
