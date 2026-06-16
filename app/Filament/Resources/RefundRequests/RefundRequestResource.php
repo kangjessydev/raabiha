@@ -63,7 +63,7 @@ class RefundRequestResource extends Resource
                             ->disabled()
                             ->columnSpanFull(),
                     ]),
-                
+
                 Section::make('Informasi Bank Pelanggan')
                     ->columns(3)
                     ->schema([
@@ -122,25 +122,59 @@ class RefundRequestResource extends Resource
                     ->badge()
                     ->colors([
                         'warning' => 'pending',
-                        'success' => fn ($state) => in_array($state, ['approved', 'completed']),
+                        'success' => fn($state) => in_array($state, ['approved', 'completed']),
                         'danger' => 'rejected',
                     ])
-                    ->formatStateUsing(fn ($state) => match($state) {
+                    ->formatStateUsing(fn($state) => match ($state) {
                         'pending' => 'Menunggu',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak',
                         'completed' => 'Selesai',
                         default => $state,
                     })
-                    ->searchable(),
+                    ->searchable()
+                    ->native(false),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                \Filament\Tables\Actions\Action::make('notify_wa')
+                    ->label('Kirim Notif WA')
+                    ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
+                    ->color('success')
+                    ->url(function ($record) {
+                        $phone = $record->order->shipping_address['phone'] ?? null;
+                        if (!$phone && $record->user) {
+                            $phone = $record->user->phone ?? null;
+                        }
+                        if (!$phone) return '#';
+                        
+                        if (str_starts_with($phone, '0')) {
+                            $phone = '62' . substr($phone, 1);
+                        }
+                        
+                        $customerName = $record->user ? $record->user->name : 'Pelanggan';
+                        $orderNo = $record->order ? $record->order->order_number : '-';
+                        $amount = number_format($record->refund_amount, 0, ',', '.');
+                        
+                        $status = $record->status;
+                        if ($status === 'approved') {
+                            $msg = "Halo {$customerName}, pengajuan refund untuk pesanan #{$orderNo} senilai Rp{$amount} telah *DISETUJUI*. Tim Finance kami akan segera memproses transfer ke rekening Anda.";
+                        } elseif ($status === 'rejected') {
+                            $msg = "Halo {$customerName}, mohon maaf pengajuan refund untuk pesanan #{$orderNo} senilai Rp{$amount} *DITOLAK*.\n\nCatatan: " . ($record->admin_notes ?? 'Tidak memenuhi syarat pengembalian.');
+                        } elseif ($status === 'completed') {
+                            $msg = "Halo {$customerName}, dana refund untuk pesanan #{$orderNo} senilai Rp{$amount} telah *SELESAI DITRANSFER* ke rekening {$record->bank_name} Anda. Silakan cek mutasi rekening Anda.";
+                        } else {
+                            $msg = "Halo {$customerName}, kami sedang meninjau pengajuan refund untuk pesanan #{$orderNo}.";
+                        }
+                        
+                        return "https://wa.me/{$phone}?text=" . urlencode($msg);
+                    })
+                    ->openUrlInNewTab(),
+                \Filament\Tables\Actions\EditAction::make(),
+                \Filament\Tables\Actions\DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
