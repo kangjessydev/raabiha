@@ -26,8 +26,8 @@ class RefundRequestResource extends Resource
 {
     protected static ?string $model = RefundRequest::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
-    protected static ?string $navigationGroup = 'Pesanan';
+    protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pesanan';
     protected static ?string $navigationLabel = 'Refund Pelanggan';
     protected static ?string $modelLabel = 'Pengajuan Refund';
     protected static ?string $pluralModelLabel = 'Pengajuan Refund';
