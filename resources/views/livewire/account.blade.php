@@ -214,7 +214,7 @@
                                         <!-- Order Items -->
                                         @foreach($order->items as $item)
                                             @php
-                                                $imageId = is_array($item->product->images) ? ($item->product->images[0] ?? null) : null;
+                                                $imageId = ($item->product && is_array($item->product->images)) ? ($item->product->images[0] ?? null) : null;
                                                 $image = asset('assets/images/placeholder.png');
                                                 if ($imageId) {
                                                     if (is_numeric($imageId)) {
@@ -228,10 +228,10 @@
                                             @endphp
                                             <div class="p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 md:items-center {{ !$loop->last ? 'border-b border-[#e5e2de]' : '' }}">
                                                 <div class="w-20 h-24 bg-[#e5e2de] shrink-0">
-                                                    <img src="{{ $image }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover {{ $isInactive ? 'grayscale opacity-80' : '' }}">
+                                                    <img src="{{ $image }}" alt="{{ $item->product ? $item->product->name : 'Produk Dihapus' }}" class="w-full h-full object-cover {{ $isInactive ? 'grayscale opacity-80' : '' }}">
                                                 </div>
                                                 <div class="flex-1">
-                                                    <h3 class="font-serif text-[16px] md:text-[18px] font-semibold text-[#1c1c1a] leading-tight mb-1">{{ $item->product->name }}</h3>
+                                                    <h3 class="font-serif text-[16px] md:text-[18px] font-semibold text-[#1c1c1a] leading-tight mb-1">{{ $item->product ? $item->product->name : 'Produk Tidak Tersedia (Dihapus)' }}</h3>
                                                     <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">
                                                         {{ $variantText ? $variantText . ' | ' : '' }}Rp{{ number_format($item->price, 0, ',', '.') }}
                                                     </p>
@@ -269,7 +269,9 @@
                                                     @endif
                                                 @endif
                                                 <a href="{{ url('/order-detail?id=' . $order->id) }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#c4c7c7] px-6 py-2.5 hover:border-[#1c1c1a] hover:text-[#1c1c1a] transition-colors w-full sm:w-auto text-center inline-block">Lihat Invoice</a>
-                                                <a href="{{ url('/product/' . $order->items->first()->product->slug) }}" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#1c1c1a] hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Beli Lagi</a>
+                                                @if($order->items->first() && $order->items->first()->product)
+                                                    <a href="{{ url('/product/' . $order->items->first()->product->slug) }}" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#1c1c1a] hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Beli Lagi</a>
+                                                @endif
                                             @endif
                                         </div>
                                     </div>
