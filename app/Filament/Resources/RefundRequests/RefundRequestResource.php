@@ -132,15 +132,14 @@ class RefundRequestResource extends Resource
                         'completed' => 'Selesai',
                         default => $state,
                     })
-                    ->searchable()
-                    ->native(false),
+                    ->searchable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
                 //
             ])
             ->recordActions([
-                \Filament\Tables\Actions\Action::make('notify_wa')
+                \Filament\Actions\Action::make('notify_wa')
                     ->label('Kirim Notif WA')
                     ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
                     ->color('success')
@@ -149,16 +148,17 @@ class RefundRequestResource extends Resource
                         if (!$phone && $record->user) {
                             $phone = $record->user->phone ?? null;
                         }
-                        if (!$phone) return '#';
-                        
+                        if (!$phone)
+                            return '#';
+
                         if (str_starts_with($phone, '0')) {
                             $phone = '62' . substr($phone, 1);
                         }
-                        
+
                         $customerName = $record->user ? $record->user->name : 'Pelanggan';
                         $orderNo = $record->order ? $record->order->order_number : '-';
                         $amount = number_format($record->refund_amount, 0, ',', '.');
-                        
+
                         $status = $record->status;
                         if ($status === 'approved') {
                             $msg = "Halo {$customerName}, pengajuan refund untuk pesanan #{$orderNo} senilai Rp{$amount} telah *DISETUJUI*. Tim Finance kami akan segera memproses transfer ke rekening Anda.";
@@ -169,12 +169,12 @@ class RefundRequestResource extends Resource
                         } else {
                             $msg = "Halo {$customerName}, kami sedang meninjau pengajuan refund untuk pesanan #{$orderNo}.";
                         }
-                        
+
                         return "https://wa.me/{$phone}?text=" . urlencode($msg);
                     })
                     ->openUrlInNewTab(),
-                \Filament\Tables\Actions\EditAction::make(),
-                \Filament\Tables\Actions\DeleteAction::make(),
+                \Filament\Actions\EditAction::make(),
+                \Filament\Actions\DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
