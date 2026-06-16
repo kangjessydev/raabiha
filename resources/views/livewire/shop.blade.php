@@ -240,18 +240,21 @@
                     <!-- Products Grid -->
                     <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, selectedSizes, selectedColors, maxPrice, sort" class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 lg:gap-x-6 gap-y-12 w-full mt-4">
                         @forelse ($products as $product)
-                            <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="group block">
+                            <div class="group block relative flex flex-col h-full">
                                 <div class="aspect-[1/1] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                                    @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
-                                        <div class="absolute top-3 right-3 bg-[#b91c1c] text-white font-bold text-[10px] px-2.5 py-1 z-10 tracking-wider shadow-sm">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
-                                    @endif
-                                    <!-- Temporary placeholder image if product has no image yet -->
-                                    <img width="1024" height="1024" src="{{ asset('assets/images/gallery-' . (rand(1, 3)) . '.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $product->name }}" />
+                                    <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="block w-full h-full">
+                                        @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                            <div class="absolute top-3 right-3 bg-[#b91c1c] text-white font-bold text-[10px] px-2.5 py-1 z-10 tracking-wider shadow-sm">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
+                                        @endif
+                                        <!-- Temporary placeholder image if product has no image yet -->
+                                        <img width="1024" height="1024" src="{{ asset('assets/images/gallery-' . (rand(1, 3)) . '.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $product->name }}" />
+                                    </a>
                                     <div class="absolute bottom-3 right-3 z-10">
                                         <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-shop-'.$product->id" />
                                     </div>
                                 </div>
-                                <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-1">{{ $product->name }}</h3>
+                                <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="block flex-1 flex flex-col">
+                                    <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-1">{{ $product->name }}</h3>
                                 
                                 <!-- Price Section -->
                                 <div class="mb-2.5">
@@ -312,7 +315,8 @@
                                         @endif
                                     </div>
                                 @endif
-                            </a>
+                                </a>
+                            </div>
                         @empty
                             <div class="col-span-2 lg:col-span-3 text-center py-24">
                                 <p class="text-[#615e57] font-mono uppercase tracking-widest text-xs mb-4">Belum ada produk yang cocok dengan kriteria filter.</p>
