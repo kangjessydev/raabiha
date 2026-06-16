@@ -65,7 +65,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
   - Mendefinisikan hak akses CRUD untuk Owner, Marketing, Finance, Logistics, CS, dan Admin Kasir.
   - Membatasi akses menu *Integrasi & API* khusus untuk Super Admin saja.
   - [ ] **Uji Coba Role:** (*To Do*) Klien atau developer perlu mencoba *login* menggunakan akun demo (kasir, finance, dll) untuk memverifikasi fungsionalitas UI secara langsung.
-- [ ] **Fitur Refund Pelanggan:** Merancang tabel `refund_requests` dan alur antarmuka (UI) khusus di Dasbor Customer & Admin Panel untuk menangani pengembalian dana.
+- [x] **Fitur Refund Pelanggan:** Merancang tabel `refund_requests` dan alur antarmuka (UI) khusus di Dasbor Customer & Admin Panel untuk menangani pengembalian dana.
 - [x] **Simpan Alamat Otomatis di Checkout:** Menambahkan *checkbox* kecil ("Simpan alamat ini ke akun saya") di halaman Checkout khusus bagi pelanggan yang belum memiliki alamat tersimpan, agar alamat otomatis masuk ke daftar alamat di akun mereka.
 - [ ] **Validasi Import/Export Media Cluster:** Memastikan fungsi ekspor data (Produk, Pesanan, User, dsb.) yang berada di cluster *Media Files* berjalan dengan benar dan tersinkronisasi dengan perubahan *database* terbaru.
 - [x] **Google Analytics Embed:** Menambahkan halaman *iframe* Looker Studio di Filament untuk metrik kunjungan lengkap (Traffic Source, Pageviews) dengan 0% beban server.

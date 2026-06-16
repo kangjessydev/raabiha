@@ -132,6 +132,13 @@
                                 </div>
                             </div>
 
+                            @if(session('refund_success'))
+                                <div class="bg-[#064e3b]/10 border border-[#064e3b]/20 text-[#064e3b] px-4 py-3 mb-4 flex items-center gap-3">
+                                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <p class="font-sans text-[13px]">{{ session('refund_success') }}</p>
+                                </div>
+                            @endif
+
                             @if($this->orders->isEmpty())
                                 <!-- Empty State -->
                                 <div class="flex flex-col items-center justify-center py-16 text-center border border-[#e5e2de] bg-white">
@@ -243,6 +250,24 @@
                                                     <a href="{{ url('/order-detail?id=' . $order->id) }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#1c1c1a] px-6 py-2.5 hover:bg-black transition-colors w-full sm:w-auto text-center inline-block">Cara Pembayaran</a>
                                                 @endif
                                             @else
+                                                @if($order->status == 'completed' || $order->status == 'sent')
+                                                    @if($order->refundRequest)
+                                                        @php
+                                                            $refundStatusLabels = [
+                                                                'pending' => 'Refund Diajukan',
+                                                                'approved' => 'Refund Disetujui',
+                                                                'rejected' => 'Refund Ditolak',
+                                                                'completed' => 'Refund Selesai',
+                                                            ];
+                                                            $refundLabel = $refundStatusLabels[$order->refundRequest->status] ?? 'Refund Diproses';
+                                                        @endphp
+                                                        <span class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] px-4 py-2.5 flex items-center bg-[#f0ede9]">
+                                                            {{ $refundLabel }}
+                                                        </span>
+                                                    @else
+                                                        <button wire:click="openRefundForm({{ $order->id }})" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-red-600 border border-red-200 bg-red-50 px-6 py-2.5 hover:bg-red-600 hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Ajukan Refund</button>
+                                                    @endif
+                                                @endif
                                                 <a href="{{ url('/order-detail?id=' . $order->id) }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#c4c7c7] px-6 py-2.5 hover:border-[#1c1c1a] hover:text-[#1c1c1a] transition-colors w-full sm:w-auto text-center inline-block">Lihat Invoice</a>
                                                 <a href="{{ url('/product/' . $order->items->first()->product->slug) }}" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#1c1c1a] hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Beli Lagi</a>
                                             @endif
@@ -657,4 +682,75 @@
             </div>
         </main>
     </div>
+
+    <!-- Refund Modal -->
+    @if($showRefundForm)
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div class="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 md:p-8">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 class="font-serif text-[24px] font-semibold text-[#1c1c1a]">Ajukan Refund</h3>
+                        <p class="font-sans text-[13px] text-[#615e57] mt-1">Pesanan #{{ \App\Models\Order::find($refundOrderId)->order_number ?? '' }}</p>
+                    </div>
+                    <button wire:click="closeRefundForm" class="text-[#a3a3a3] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="submitRefund" class="space-y-4">
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Alasan Refund</label>
+                        <select wire:model="refundForm.reason" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" required>
+                            <option value="">Pilih Alasan</option>
+                            <option value="Produk Rusak/Cacat">Produk Rusak/Cacat</option>
+                            <option value="Salah Kirim Produk">Salah Kirim Produk</option>
+                            <option value="Pesanan Tidak Lengkap">Pesanan Tidak Lengkap</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                        @error('refundForm.reason') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+                    
+                    <div>
+                        <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Penjelasan Detail</label>
+                        <textarea wire:model="refundForm.description" rows="3" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Jelaskan masalah secara detail..." required></textarea>
+                        @error('refundForm.description') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="border-t border-[#e5e2de] pt-4 mt-4">
+                        <p class="font-mono text-[10px] uppercase tracking-widest text-[#615e57] mb-4">Informasi Rekening Pengembalian</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nama Bank</label>
+                                <input type="text" wire:model="refundForm.bank_name" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: BCA, Mandiri, dll" required>
+                                @error('refundForm.bank_name') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+                            
+                            <div>
+                                <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nomor Rekening</label>
+                                <input type="text" wire:model="refundForm.bank_account_number" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: 1234567890" required>
+                                @error('refundForm.bank_account_number') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nama Pemilik Rekening</label>
+                                <input type="text" wire:model="refundForm.bank_account_name" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: Budi Santoso" required>
+                                @error('refundForm.bank_account_name') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end gap-3">
+                        <button type="button" wire:click="closeRefundForm" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] hover:text-[#1c1c1a] px-6 py-3 transition-colors">Batal</button>
+                        <button type="submit" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-red-600 px-6 py-3 hover:bg-red-700 transition-colors flex items-center justify-center min-w-[120px]">
+                            <span wire:loading.remove wire:target="submitRefund">Kirim Pengajuan</span>
+                            <span wire:loading wire:target="submitRefund" class="inline-block animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>

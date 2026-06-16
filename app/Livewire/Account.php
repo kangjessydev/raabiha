@@ -100,6 +100,64 @@ class Account extends Component
         session()->flash('address_success', 'Alamat berhasil dihapus.');
     }
 
+    // Refund Methods
+    public $showRefundForm = false;
+    public $refundOrderId = null;
+    public $refundForm = [
+        'reason' => '',
+        'description' => '',
+        'bank_name' => '',
+        'bank_account_name' => '',
+        'bank_account_number' => '',
+    ];
+
+    public function openRefundForm($orderId)
+    {
+        $this->refundOrderId = $orderId;
+        $this->refundForm = [
+            'reason' => '',
+            'description' => '',
+            'bank_name' => '',
+            'bank_account_name' => '',
+            'bank_account_number' => '',
+        ];
+        $this->showRefundForm = true;
+    }
+
+    public function closeRefundForm()
+    {
+        $this->showRefundForm = false;
+        $this->refundOrderId = null;
+    }
+
+    public function submitRefund()
+    {
+        $this->validate([
+            'refundForm.reason' => 'required|string|max:255',
+            'refundForm.description' => 'required|string',
+            'refundForm.bank_name' => 'required|string|max:255',
+            'refundForm.bank_account_name' => 'required|string|max:255',
+            'refundForm.bank_account_number' => 'required|string|max:255',
+        ]);
+
+        $order = Order::where('user_id', Auth::id())->findOrFail($this->refundOrderId);
+
+        \App\Models\RefundRequest::create([
+            'user_id' => Auth::id(),
+            'order_id' => $order->id,
+            'reason' => $this->refundForm['reason'],
+            'description' => $this->refundForm['description'],
+            'refund_amount' => $order->grand_total,
+            'status' => 'pending',
+            'bank_name' => $this->refundForm['bank_name'],
+            'bank_account_name' => $this->refundForm['bank_account_name'],
+            'bank_account_number' => $this->refundForm['bank_account_number'],
+        ]);
+
+        $this->closeRefundForm();
+        session()->flash('refund_success', 'Pengajuan refund berhasil dikirim. Kami akan meninjau permintaan Anda.');
+    }
+
     public function setPrimaryAddress($id)
     {
         \App\Models\UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
@@ -179,7 +237,7 @@ class Account extends Component
 
     public function getOrdersProperty()
     {
-        $query = Order::with(['items.product', 'items.variant.attributeOptions.attribute'])
+        $query = Order::with(['items.product', 'items.variant.attributeOptions.attribute', 'refundRequest'])
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc');
 
