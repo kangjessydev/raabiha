@@ -46,4 +46,9 @@ class User extends Authenticatable implements HasAvatar
     {
         return $this->hasMany(UserAddress::class);
     }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
 }

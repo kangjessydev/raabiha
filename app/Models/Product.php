@@ -88,6 +88,11 @@ class Product extends Model
         return $this->hasMany(ProductReview::class);
     }
 
+    public function wishlists(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
     public function getEffectiveRatingAttribute()
     {
         // Get actual average rating from reviews (cached or computed)

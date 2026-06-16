@@ -27,6 +27,7 @@
                         <button wire:click="setTab('dasbor')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'dasbor' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Dasbor</button>
                         <button wire:click="setTab('pesanan')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'pesanan' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pesanan Saya</button>
                         <button wire:click="setTab('alamat')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'alamat' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Alamat Tersimpan</button>
+                        <button wire:click="setTab('wishlist')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'wishlist' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Wishlist Saya</button>
                         <button wire:click="setTab('voucher')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'voucher' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Voucher Saya</button>
                         @php
                             $resellerRegistrationOpen = \App\Models\SiteSetting::where('key', 'reseller_registration_open')->value('value') == '1';
@@ -370,6 +371,69 @@
                                                 @endif
                                             </div>
                                         </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                        @elseif($activeTab === 'wishlist')
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                                <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Wishlist Saya</h2>
+                            </div>
+
+                            @if($this->wishlists->isEmpty())
+                                <!-- Empty State -->
+                                <div class="flex flex-col items-center justify-center py-16 text-center border border-[#e5e2de] bg-white">
+                                    <svg class="w-12 h-12 text-[#c4c7c7] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                    <p class="font-sans text-[14px] text-[#615e57] mb-4">Anda belum menyimpan produk ke wishlist.</p>
+                                    <a href="/shop" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Mulai Belanja</a>
+                                </div>
+                            @else
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                                    @foreach($this->wishlists as $wishlist)
+                                        @php 
+                                            $product = $wishlist->product;
+                                            $image = asset('assets/images/placeholder.png');
+                                            if ($product && is_array($product->images) && !empty($product->images)) {
+                                                $imgData = $product->images[0];
+                                                if (is_numeric($imgData)) {
+                                                    $media = \Awcodes\Curator\Models\Media::find($imgData);
+                                                    if ($media) $image = $media->url;
+                                                } else {
+                                                    $image = Storage::url($imgData);
+                                                }
+                                            }
+                                        @endphp
+                                        @if($product)
+                                            <div class="border border-[#e5e2de] bg-white relative group flex flex-col">
+                                                <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="block">
+                                                    <div class="aspect-[1/1] bg-[#e5e5e5] overflow-hidden relative">
+                                                        @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                                            <div class="absolute top-2 right-2 bg-[#b91c1c] text-white font-bold text-[9px] px-2 py-0.5 z-10 tracking-wider shadow-sm">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
+                                                        @endif
+                                                        <img width="400" height="400" src="{{ $image }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $product->name }}" />
+                                                    </div>
+                                                </a>
+                                                <!-- Quick remove button -->
+                                                <div class="absolute top-2 left-2 z-10">
+                                                    <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-'.$wishlist->id" />
+                                                </div>
+                                                <div class="p-4 flex-1 flex flex-col">
+                                                    <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-2">
+                                                        <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="hover:underline">{{ $product->name }}</a>
+                                                    </h3>
+                                                    <div class="mt-auto">
+                                                        @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                                <div class="text-[12px] font-bold text-[#1c1c1a] tracking-wide">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</div>
+                                                                <span class="text-[9px] text-[#9b9b9b] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
+                                                            </div>
+                                                        @else
+                                                            <div class="text-[12px] font-bold text-[#1c1c1a] tracking-wide mb-1">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             @endif

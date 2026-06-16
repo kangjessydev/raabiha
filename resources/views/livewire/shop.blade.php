@@ -247,10 +247,9 @@
                                     @endif
                                     <!-- Temporary placeholder image if product has no image yet -->
                                     <img width="1024" height="1024" src="{{ asset('assets/images/gallery-' . (rand(1, 3)) . '.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $product->name }}" />
-                                    <!-- Wishlist Button -->
-                                    <button @click.prevent.stop class="absolute bottom-3 right-3 w-8 h-8 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md z-10 text-[#615e57] hover:text-[#b91c1c] transition-colors hover:scale-110 active:scale-95">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                                    </button>
+                                    <div class="absolute bottom-3 right-3 z-10">
+                                        <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-shop-'.$product->id" />
+                                    </div>
                                 </div>
                                 <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-1">{{ $product->name }}</h3>
                                 

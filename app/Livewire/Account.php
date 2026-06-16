@@ -258,6 +258,14 @@ class Account extends Component
             ->get();
     }
 
+    public function getWishlistsProperty()
+    {
+        return \App\Models\Wishlist::with('product')
+            ->where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
     public function render()
     {
         return view('livewire.account')->layout('components.layouts.app', [

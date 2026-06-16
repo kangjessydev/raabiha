@@ -60,7 +60,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Pembayaran (Xendit / Tripay):** Sinkronisasi Virtual Account, QRIS, e-Wallet otomatis dengan *Webhook* integrasi ke status pesanan, serta *Dual-Gateway Switcher* di Admin Panel.
 
 ## Backlog / Ekstensi Bisnis (Sprint 3 / Fase 3)
-- [ ] **Fitur Wishlist Pelanggan:** Membuat tabel `wishlists` (user_id, product_id) dan fitur simpan produk untuk pengguna terdaftar yang dapat diakses langsung dari halaman katalog dan dashboard akun.
+- [x] **Fitur Wishlist Pelanggan:** Membuat tabel `wishlists` (user_id, product_id) dan fitur simpan produk untuk pengguna terdaftar yang dapat diakses langsung dari halaman katalog dan dashboard akun.
 - [x] **Role & Manajemen Akses Lanjutan (Spatie):** 
   - Mendefinisikan hak akses CRUD untuk Owner, Marketing, Finance, Logistics, CS, dan Admin Kasir.
   - Membatasi akses menu *Integrasi & API* khusus untuk Super Admin saja.
