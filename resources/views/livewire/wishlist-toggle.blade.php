@@ -1,4 +1,4 @@
-<div x-data="{ active: @js($isInWishlist) }">
+<div x-data="{ active: @js($isInWishlist) }" class="{{ $isDetail ? 'h-full' : '' }}">
     @if($isDetail)
     <button wire:click.prevent.stop="toggleWishlist" x-on:click="active = !active"
             class="w-14 shrink-0 h-full border border-[#e5e2de] transition-colors flex justify-center items-center focus:outline-none relative"
