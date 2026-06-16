@@ -687,8 +687,8 @@
 
     <!-- Refund Modal -->
     @if($showRefundForm)
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-        <div class="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div x-data x-init="document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' }" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div class="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl relative">
             <div class="p-6 md:p-8">
                 <div class="flex justify-between items-start mb-6">
                     <div>
