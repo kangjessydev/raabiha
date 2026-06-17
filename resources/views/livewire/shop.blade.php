@@ -246,8 +246,22 @@
                                         @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
                                             <div class="absolute top-3 right-3 bg-[#b91c1c] text-white font-bold text-[10px] px-2.5 py-1 z-10 tracking-wider shadow-sm">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
                                         @endif
-                                        <!-- Temporary placeholder image if product has no image yet -->
-                                        <img width="1024" height="1024" src="{{ asset('assets/images/gallery-' . (rand(1, 3)) . '.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $product->name }}" />
+                                        @php
+                                            $imageUrl = asset('assets/images/placeholder.png');
+                                            if (!empty($product->images)) {
+                                                if (is_numeric($product->images[0])) {
+                                                    $media = \Awcodes\Curator\Models\Media::find($product->images[0]);
+                                                    if ($media && Storage::disk('public')->exists($media->path)) {
+                                                        $imageUrl = Storage::url($media->path);
+                                                    }
+                                                } else {
+                                                    if (Storage::disk('public')->exists($product->images[0])) {
+                                                        $imageUrl = asset('storage/' . $product->images[0]);
+                                                    }
+                                                }
+                                            }
+                                        @endphp
+                                        <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $product->name }}" />
                                     </a>
                                     <div class="absolute bottom-3 right-3 z-10">
                                         <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-shop-'.$product->id" />

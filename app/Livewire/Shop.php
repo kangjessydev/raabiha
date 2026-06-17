@@ -6,10 +6,8 @@ use Livewire\Component;
 use App\Models\Product;
 use App\Models\Category;
 use Livewire\WithPagination;
-use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Url;
 
-#[Lazy]
 class Shop extends Component
 {
     public $amount = 12;

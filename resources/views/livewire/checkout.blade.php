@@ -264,8 +264,16 @@
                                         $imageId = $item->product->images && count($item->product->images) > 0 ? $item->product->images[0] : null;
                                         $image = asset('assets/images/placeholder.png');
                                         if ($imageId) {
-                                            $media = \Awcodes\Curator\Models\Media::find($imageId);
-                                            if ($media) $image = $media->url;
+                                            if (is_numeric($imageId)) {
+                                                $media = \Awcodes\Curator\Models\Media::find($imageId);
+                                                if ($media && Storage::disk('public')->exists($media->path)) {
+                                                    $image = Storage::url($media->path);
+                                                }
+                                            } else {
+                                                if (Storage::disk('public')->exists($imageId)) {
+                                                    $image = asset('storage/' . $imageId);
+                                                }
+                                            }
                                         }
                                         
                                         $variantText = '';

@@ -7,10 +7,8 @@ use App\Models\Product;
 use Livewire\Attributes\Computed;
 
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Lazy;
 
 #[Layout('components.layouts.app')]
-#[Lazy]
 class ProductDetail extends Component
 {
     public $slug;

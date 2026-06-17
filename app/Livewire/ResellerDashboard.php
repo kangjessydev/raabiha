@@ -6,10 +6,8 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\Lazy;
 
 #[Layout('components.layouts.app')]
-#[Lazy]
 class ResellerDashboard extends Component
 {
     public $activeTab = 'overview'; // overview, pesanan, komisi, diskon

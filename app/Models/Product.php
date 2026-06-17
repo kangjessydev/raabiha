@@ -76,7 +76,9 @@ class Product extends Model
             }
             
             // Apply flat global discount
-            $discountPercent = \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 20;
+            $discountPercent = \Illuminate\Support\Facades\Cache::remember('reseller_discount_percent', 86400, function () {
+                return \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 20;
+            });
             return $price * (1 - ($discountPercent / 100));
         }
 

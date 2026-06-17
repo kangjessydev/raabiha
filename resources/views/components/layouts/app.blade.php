@@ -444,6 +444,9 @@
 
     <script>
         document.addEventListener('livewire:navigated', function() {
+            if (window.raabihaNavInitialized) return;
+            window.raabihaNavInitialized = true;
+
             // Sidebar Logic
             const toggle = document.getElementById('mobile-menu-toggle');
             const close = document.getElementById('mobile-sidebar-close');

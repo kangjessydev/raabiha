@@ -30,11 +30,13 @@
                             if (!empty($item->product->images)) {
                                 if (is_numeric($item->product->images[0])) {
                                     $media = \Awcodes\Curator\Models\Media::find($item->product->images[0]);
-                                    if ($media) {
-                                        $imageUrl = $media->url;
+                                    if ($media && Storage::disk('public')->exists($media->path)) {
+                                        $imageUrl = Storage::url($media->path);
                                     }
                                 } else {
-                                    $imageUrl = asset('storage/' . $item->product->images[0]);
+                                    if (Storage::disk('public')->exists($item->product->images[0])) {
+                                        $imageUrl = asset('storage/' . $item->product->images[0]);
+                                    }
                                 }
                             }
                             $price = $item->variant && $item->variant->price ? $item->variant->price : $item->product->price;

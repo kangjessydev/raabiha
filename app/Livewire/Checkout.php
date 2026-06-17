@@ -10,10 +10,8 @@ use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Lazy;
 
 #[Layout('components.layouts.app')]
-#[Lazy]
 class Checkout extends Component
 {
     // Form fields

@@ -20,7 +20,8 @@ class Search extends Component
         $posts = collect();
 
         if (trim($this->q) !== '') {
-            $products = Product::where('is_active', true)
+            $products = Product::with(['category', 'variants'])
+                ->where('is_active', true)
                 ->where(function($query) {
                     $query->where('name', 'like', '%' . $this->q . '%')
                           ->orWhere('description', 'like', '%' . $this->q . '%');
@@ -28,7 +29,8 @@ class Search extends Component
                 ->limit(12)
                 ->get();
 
-            $posts = Post::where('is_published', true)
+            $posts = Post::with(['category'])
+                ->where('is_published', true)
                 ->where(function($query) {
                     $query->where('title', 'like', '%' . $this->q . '%')
                           ->orWhere('content', 'like', '%' . $this->q . '%');
