@@ -23,19 +23,19 @@
                 <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-10 lg:gap-16 items-start">
                     
                     <!-- Left Sidebar Menu -->
-                    <aside class="flex flex-col gap-1 border-b border-[#e5e2de] pb-6 md:border-none md:pb-0">
-                        <button wire:click="setTab('dasbor')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'dasbor' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Dasbor</button>
-                        <button wire:click="setTab('pesanan')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'pesanan' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pesanan Saya</button>
-                        <button wire:click="setTab('alamat')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'alamat' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Alamat Tersimpan</button>
-                        <button wire:click="setTab('wishlist')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'wishlist' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Wishlist Saya</button>
-                        <button wire:click="setTab('voucher')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'voucher' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Voucher Saya</button>
+                    <aside class="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:flex-col gap-2 md:gap-1 border-b border-[#e5e2de] pb-4 mb-6 md:mb-0 md:border-none md:pb-0 w-full snap-x">
+                        <button wire:click="setTab('dasbor')" class="whitespace-nowrap shrink-0 snap-start font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-center md:text-left transition-colors {{ $activeTab === 'dasbor' ? 'font-bold text-[#1c1c1a] border-b-2 border-[#1c1c1a] md:border-b-0 md:bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Dasbor</button>
+                        <button wire:click="setTab('pesanan')" class="whitespace-nowrap shrink-0 snap-start font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-center md:text-left transition-colors {{ $activeTab === 'pesanan' ? 'font-bold text-[#1c1c1a] border-b-2 border-[#1c1c1a] md:border-b-0 md:bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pesanan Saya</button>
+                        <button wire:click="setTab('alamat')" class="whitespace-nowrap shrink-0 snap-start font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-center md:text-left transition-colors {{ $activeTab === 'alamat' ? 'font-bold text-[#1c1c1a] border-b-2 border-[#1c1c1a] md:border-b-0 md:bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Alamat Tersimpan</button>
+                        <button wire:click="setTab('wishlist')" class="whitespace-nowrap shrink-0 snap-start font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-center md:text-left transition-colors {{ $activeTab === 'wishlist' ? 'font-bold text-[#1c1c1a] border-b-2 border-[#1c1c1a] md:border-b-0 md:bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Wishlist Saya</button>
+                        <button wire:click="setTab('voucher')" class="whitespace-nowrap shrink-0 snap-start font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-center md:text-left transition-colors {{ $activeTab === 'voucher' ? 'font-bold text-[#1c1c1a] border-b-2 border-[#1c1c1a] md:border-b-0 md:bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Voucher Saya</button>
                         @php
                             $resellerRegistrationOpen = \App\Models\SiteSetting::where('key', 'reseller_registration_open')->value('value') == '1';
                             $validStatuses = ['active', 'pending', 'rejected'];
                             $hasResellerStatus = in_array(auth()->user()->reseller_status, $validStatuses);
                         @endphp
                         @if($resellerRegistrationOpen || $hasResellerStatus)
-                        <button wire:click="setTab('reseller')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors flex justify-between items-center {{ $activeTab === 'reseller' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">
+                        <button wire:click="setTab('reseller')" class="whitespace-nowrap shrink-0 snap-start font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-center md:text-left transition-colors flex justify-between items-center {{ $activeTab === 'reseller' ? 'font-bold text-[#1c1c1a] border-b-2 border-[#1c1c1a] md:border-b-0 md:bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">
                             Portal Reseller
                             @if(auth()->user()->reseller_status === 'active')
                                 <span class="bg-[#064e3b] text-white text-[8px] px-1.5 py-0.5 rounded-sm ml-2">AKTIF</span>
@@ -44,10 +44,10 @@
                             @endif
                         </button>
                         @endif
-                        <button wire:click="setTab('akun')" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'akun' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pengaturan Akun</button>
-                        <form method="POST" action="{{ route('logout') }}" class="m-0 p-0">
+                        <button wire:click="setTab('akun')" class="whitespace-nowrap shrink-0 snap-start font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-center md:text-left transition-colors {{ $activeTab === 'akun' ? 'font-bold text-[#1c1c1a] border-b-2 border-[#1c1c1a] md:border-b-0 md:bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pengaturan Akun</button>
+                        <form method="POST" action="{{ route('logout') }}" class="m-0 p-0 shrink-0 snap-start">
                             @csrf
-                            <button type="submit" class="w-full font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-[#ba1a1a] hover:bg-[#ba1a1a]/10 mt-4 px-4 py-3 transition-colors text-left">Keluar</button>
+                            <button type="submit" class="whitespace-nowrap w-full font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-[#ba1a1a] hover:bg-[#ba1a1a]/10 md:mt-4 px-4 py-3 transition-colors text-center md:text-left">Keluar</button>
                         </form>
                     </aside>
 
