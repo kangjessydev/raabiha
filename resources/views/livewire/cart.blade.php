@@ -2,7 +2,7 @@
      x-effect="document.body.style.overflow = bsVoucherOpen ? 'hidden' : ''"
      @close-voucher-sheet.window="bsVoucherOpen = false">
     @slot('header')
-        <x-global.mobile-subnav title="Keranjang" backUrl="/shop" />
+        <x-global.mobile-subnav title="Keranjang" />
     @endslot
 
     <div class="page-slide-in">

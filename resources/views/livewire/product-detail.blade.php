@@ -1,6 +1,6 @@
 <div x-data="{ bsOpen: $wire.entangle('bsOpen'), bsMode: $wire.entangle('bsMode') }">
     @slot('header')
-        <x-global.mobile-subnav title="Detail Produk" backUrl="/shop" transparent="true" :cart="true" />
+        <x-global.mobile-subnav title="Detail Produk" transparent="true" :cart="true" />
     @endslot
 
     <div id="product-detail-container" class="page-slide-in">
@@ -21,7 +21,7 @@
                                 @if(!empty($galleryUrls))
                                     @foreach($galleryUrls as $idx => $img)
                                         <div class="w-full h-full shrink-0">
-                                            <img src="{{ $img }}" alt="{{ $product->name }}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='{{ asset('assets/images/placeholder.png') }}';">
+                                            <img src="{{ $img }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
                                         </div>
                                     @endforeach
                                 @else
@@ -162,47 +162,67 @@
                         <!-- Product Form (Add to Cart / Variation selectors) -->
                         <div class="w-full mb-8 pt-6 border-t border-[#e5e2de]">
                             <!-- Size & Color selectors (Desktop only on mobile, shown in bottomsheet) -->
+                            <!-- Dynamic Selectors (Desktop only on mobile, shown in bottomsheet) -->
                             <div class="hidden md:block">
-                                <!-- Size Select -->
-                                <div class="mb-6" id="size-selector-container">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <label class="text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase">SELECT SIZE</label>
-                                        <span class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest cursor-pointer underline">SIZE GUIDE</span>
+                                @foreach($this->availableAttributes as $attrSlug => $data)
+                                    <div class="mb-6">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <label class="text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase">{{ $data['name'] }}@if($data['type'] === 'color') : <span class="font-normal text-[#615e57]">{{ $selectedOptions[$attrSlug] ?? '' }}</span>@endif</label>
+                                        </div>
+                                        
+                                        @if($data['type'] === 'color')
+                                            <div class="flex flex-wrap gap-3">
+                                                @foreach($data['options'] as $opt)
+                                                    @php 
+                                                        $val = $opt['value'];
+                                                        $hex = $opt['meta'] ?? '#333333';
+                                                        $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
+                                                        $isAvailable = $this->isOptionAvailable($attrSlug, $val);
+                                                        $escapedVal = addslashes($val);
+                                                    @endphp
+                                                    <button 
+                                                        type="button"
+                                                        @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                                        class="flex flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer' }}">
+                                                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 {{ $isSelected ? 'border-[#1c1c1a]' : 'border-transparent ' . ($isAvailable ? 'hover:border-gray-300' : '') }}">
+                                                            <div class="w-full h-full rounded-full border border-black/10 relative overflow-hidden" style="background-color: {{ $hex }}">
+                                                                @if(!$isAvailable)
+                                                                    <div class="absolute inset-0 flex items-center justify-center">
+                                                                        <div class="w-full h-[1px] bg-red-500 transform rotate-45"></div>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                        <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : 'text-[#a09e99] ' . ($isAvailable ? 'group-hover:text-[#615e57]' : '') }}">{{ $val }}</span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach($data['options'] as $opt)
+                                                    @php 
+                                                        $val = $opt['value'];
+                                                        $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
+                                                        $isAvailable = $this->isOptionAvailable($attrSlug, $val);
+                                                        $escapedVal = addslashes($val);
+                                                    @endphp
+                                                    <button 
+                                                        type="button" 
+                                                        @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                                        class="flex-1 py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 relative overflow-hidden
+                                                        {{ $isSelected ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] ' . ($isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed') }}">
+                                                        {{ $val }}
+                                                        @if(!$isAvailable)
+                                                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+                                                                <div class="w-full h-[1px] bg-[#1c1c1a] transform -rotate-[20deg]"></div>
+                                                            </div>
+                                                        @endif
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </div>
-                                    <div class="flex flex-wrap gap-2" id="size-options-grid">
-                                        @foreach($this->sizes as $sizeOpt)
-                                            @php $sizeName = $sizeOpt->value; @endphp
-                                            <button 
-                                                type="button" 
-                                                wire:click="$set('selectedSize', '{{ $sizeName }}')"
-                                                class="flex-1 py-3 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 {{ $selectedSize === $sizeName ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] hover:border-[#1c1c1a]' }}">
-                                                {{ $sizeName }}
-                                            </button>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                
-                                <!-- Color Select -->
-                                <div class="mb-8" id="color-selector-container">
-                                    <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Color: <span id="selected-color-label" class="font-normal text-[#615e57]">{{ $selectedColor }}</span></label>
-                                    <div class="flex flex-wrap gap-3" id="color-options-grid">
-                                        @foreach($this->colors as $colorOpt)
-                                            @php 
-                                                $colorName = $colorOpt->value;
-                                                $hex = $colorOpt->meta ?? '#333333'; 
-                                            @endphp
-                                            <button 
-                                                type="button"
-                                                wire:click="$set('selectedColor', '{{ $colorName }}')"
-                                                class="flex flex-col items-center gap-1.5 group transition-all duration-200">
-                                                <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $colorName ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
-                                                    <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
-                                                </div>
-                                                <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $selectedColor === $colorName ? 'text-[#1c1c1a] font-bold' : 'text-[#a09e99] group-hover:text-[#615e57]' }}">{{ $colorName }}</span>
-                                            </button>
-                                        @endforeach
-                                    </div>
-                                </div>
+                                @endforeach
                             </div>
 
                             <!-- Add to Cart Widget -->
@@ -246,7 +266,7 @@
                         <div class="flex flex-col md:flex-row gap-6 mt-8 pt-8 border-t border-[#e5e2de] text-[9px] text-[#1c1c1a] font-mono tracking-widest uppercase">
                             <div class="flex items-center gap-2">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                FREE SHIPPING ON ORDERS OVER 500K
+                                ALWAYS OPEN
                             </div>
                             <div class="flex items-center gap-2">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
@@ -264,12 +284,16 @@
                     
                     <!-- 01. Product Description -->
                     <div class="group py-6 product-accordion" x-data="{ open: true }">
-                        <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
-                            01. PRODUCT DESCRIPTION
+                        <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[13px] font-mono font-bold tracking-widest uppercase focus:outline-none">
+                            01. DESKRIPSI PRODUK
                             <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div x-show="open" x-collapse class="mt-6 text-[#1c1c1a] text-[14px] leading-relaxed font-sans accordion-content">
-                            <div class="space-y-6 prose prose-sm max-w-none prose-p:my-2">
+                        <div x-show="open" x-collapse class="mt-6 text-[14px] leading-relaxed font-sans accordion-content">
+                            <style>
+                                .accordion-prose-colors * { color: #1c1c1a !important; }
+                                .accordion-prose-colors li::marker { color: #1c1c1a !important; }
+                            </style>
+                            <div class="prose prose-sm max-w-none accordion-prose-colors prose-p:my-2 prose-li:my-1 prose-ul:my-2 prose-ol:my-2">
                                 {!! $product->description !!}
                             </div>
                         </div>
@@ -277,8 +301,8 @@
                     
                     <!-- 02. Reviews & Ratings -->
                     <div class="group py-6 product-accordion" x-data="{ open: false }">
-                        <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
-                            02. REVIEWS & RATINGS ({{ number_format($product->effective_rating, 1, ',', '.') }} ★)
+                        <button @click="open = !open" type="button" class="w-full flex justify-between items-center text-[#1c1c1a] text-[13px] font-mono font-bold tracking-widest uppercase focus:outline-none">
+                            02. REVIEW & RATING ({{ number_format($product->effective_rating, 1, ',', '.') }} ★)
                             <svg :class="open ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
                         <div x-show="open" x-collapse style="display: none;" class="mt-6 text-[#1c1c1a] font-sans accordion-content">
@@ -429,69 +453,52 @@
             <!-- Related Products -->
             <section class="border-t border-[#e5e2de] pt-20 mt-12">
                 <h2 class="text-3xl lg:text-[2rem] font-serif tracking-[0.05em] text-[#1c1c1a] text-center mb-12 uppercase">
-                    RELATED PRODUCTS
+                    PRODUK TERKAIT
                 </h2>
                 
-                <div class="relative group">
+                <div class="relative">
                     <div id="related-products-track" class="flex md:grid md:grid-cols-4 gap-6 md:gap-8 overflow-x-auto md:overflow-x-visible pb-6 md:pb-0 scrollbar-none scroll-smooth" style="scrollbar-width: none; -ms-overflow-style: none;">
-                        
-                        <!-- Product 1 -->
+                        @foreach($this->relatedProducts as $related)
                         <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
-                            <a href="{{ url('/product/asymmetrical-tunic') }}" wire:navigate.hover class="group block">
+                            <a href="{{ url('/product/' . $related->slug) }}" class="group block">
                                 <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                                    <img width="1024" height="1024" src="{{ asset('assets/images/gallery-3.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Asymmetrical Tunic" />                                                                
+                                    @if($related->discount_price && $related->discount_price < $related->price)
+                                        <div class="absolute top-3 right-3 bg-[#1a1a1a] text-white text-[9px] px-2 py-1 uppercase tracking-widest z-10">Sale</div>
+                                    @endif
+                                    
+                                    @php
+                                        $imgUrl = asset('assets/images/placeholder.png');
+                                        if (!empty($related->images)) {
+                                            if (is_numeric($related->images[0])) {
+                                                $media = \Awcodes\Curator\Models\Media::find($related->images[0]);
+                                                if ($media && \Illuminate\Support\Facades\Storage::disk('public')->exists($media->path)) {
+                                                    $imgUrl = $media->url;
+                                                }
+                                            } else {
+                                                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($related->images[0])) {
+                                                    $imgUrl = asset('storage/' . $related->images[0]);
+                                                }
+                                            }
+                                        }
+                                    @endphp
+                                    <img width="1024" height="1024" src="{{ $imgUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $related->name }}" />                                                                
+                                    
                                     <button class="md:hidden absolute bottom-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md z-10 text-black">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                                     </button>
                                 </div>
-                                <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1">ASYMMETRICAL TUNIC</h3>
-                                <div class="text-[13px] text-[#525252]">Rp750.000 - Rp950.000</div>
-                            </a>
-                        </div>
-
-                        <!-- Product 2 -->
-                        <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
-                            <a href="{{ url('/product/kimono-structural-parka') }}" wire:navigate.hover class="group block">
-                                <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                                    <img width="1024" height="1024" src="{{ asset('assets/images/gallery-1.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Kimono Structural Parka" />                                                                
-                                    <button class="md:hidden absolute bottom-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md z-10 text-black">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                                    </button>
+                                <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1 truncate">{{ $related->name }}</h3>
+                                <div class="text-[13px] text-[#525252]">
+                                    @if($related->discount_price && $related->discount_price < $related->price)
+                                        <span class="font-bold text-[#064e3b]">Rp{{ number_format($related->discount_price, 0, ",", ".") }}</span>
+                                        <span class="line-through text-[#9b9b9b] ml-1">Rp{{ number_format($related->price, 0, ",", ".") }}</span>
+                                    @else
+                                        Rp{{ number_format($related->price, 0, ",", ".") }}
+                                    @endif
                                 </div>
-                                <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1">KIMONO STRUCTURAL PARKA</h3>
-                                <div class="text-[13px] text-[#525252]">Rp1.499.000</div>
                             </a>
                         </div>
-
-                        <!-- Product 3 -->
-                        <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
-                            <a href="{{ url('/product/monolith-overcoat') }}" wire:navigate.hover class="group block">
-                                <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                                    <img width="1024" height="1024" src="{{ asset('assets/images/blog-coat.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Monolith Overcoat" />                                                                
-                                    <button class="md:hidden absolute bottom-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md z-10 text-black">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                                    </button>
-                                </div>
-                                <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1">MONOLITH OVERCOAT</h3>
-                                <div class="text-[13px] text-[#525252]">Rp2.850.000</div>
-                            </a>
-                        </div>
-
-                        <!-- Product 4 -->
-                        <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
-                            <a href="{{ url('/product/modest-urban-coat') }}" wire:navigate.hover class="group block">
-                                <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                                    <div class="absolute top-3 right-3 bg-[#1a1a1a] text-white text-[9px] px-2 py-1 uppercase tracking-widest z-10">Sale</div>
-                                    <img width="1024" height="1024" src="{{ asset('assets/images/blog-coat.png') }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Modest Urban Coat" />                                                                
-                                    <button class="md:hidden absolute bottom-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md z-10 text-black">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                                    </button>
-                                </div>
-                                <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1">MODEST URBAN COAT</h3>
-                                <div class="text-[13px] text-[#525252]">Rp3.100.000</div>
-                            </a>
-                        </div>
-
+                        @endforeach
                     </div>
 
                     <!-- Navigation Arrow Triggers for Mobile Slider -->
@@ -605,40 +612,66 @@
 
         <!-- Body -->
         <div id="mobile-bs-body" class="px-5 pt-4 pb-4 overflow-y-auto max-h-[55vh]">
-            @if(count($this->sizes) > 0)
-            <div class="mb-5" id="bs-size-selector">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase">SELECT SIZE</label>
-                    <span class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest cursor-pointer underline">SIZE GUIDE</span>
+            @foreach($this->availableAttributes as $attrSlug => $data)
+                <div class="mb-5">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase">{{ $data['name'] }}@if($data['type'] === 'color') : <span class="font-normal text-[#615e57]">{{ $selectedOptions[$attrSlug] ?? '' }}</span>@endif</label>
+                        @if(strtolower($data['name']) === 'ukuran' || strtolower($data['name']) === 'size')
+                            <span class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest cursor-pointer underline">SIZE GUIDE</span>
+                        @endif
+                    </div>
+                    
+                    @if($data['type'] === 'color')
+                        <div class="flex flex-wrap gap-3">
+                            @foreach($data['options'] as $opt)
+                                @php 
+                                    $val = $opt['value'];
+                                    $hex = $opt['meta'] ?? '#333333';
+                                    $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
+                                    $isAvailable = $this->isOptionAvailable($attrSlug, $val);
+                                    $escapedVal = addslashes($val);
+                                @endphp
+                                <button type="button" 
+                                    @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                    class="flex flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer' }}">
+                                    <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 {{ $isSelected ? 'border-[#1c1c1a]' : 'border-transparent ' . ($isAvailable ? 'hover:border-gray-300' : '') }}">
+                                        <div class="w-full h-full rounded-full border border-black/10 relative overflow-hidden" style="background-color: {{ $hex }}">
+                                            @if(!$isAvailable)
+                                                <div class="absolute inset-0 flex items-center justify-center">
+                                                    <div class="w-full h-[1px] bg-red-500 transform rotate-45"></div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : 'text-[#a09e99] ' . ($isAvailable ? 'group-hover:text-[#615e57]' : '') }}">{{ $val }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($data['options'] as $opt)
+                                @php 
+                                    $val = $opt['value'];
+                                    $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
+                                    $isAvailable = $this->isOptionAvailable($attrSlug, $val);
+                                    $escapedVal = addslashes($val);
+                                @endphp
+                                <button type="button" 
+                                    @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                    class="flex-1 py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 relative overflow-hidden
+                                    {{ $isSelected ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] ' . ($isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed') }}">
+                                    {{ $val }}
+                                    @if(!$isAvailable)
+                                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+                                            <div class="w-full h-[1px] bg-[#1c1c1a] transform -rotate-[20deg]"></div>
+                                        </div>
+                                    @endif
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($this->sizes as $sizeOpt)
-                        @php $sizeName = $sizeOpt->value; @endphp
-                        <button type="button" wire:click="$set('selectedSize', '{{ $sizeName }}')" class="flex-1 py-3 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 {{ $selectedSize === $sizeName ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] hover:border-[#1c1c1a]' }}">{{ $sizeName }}</button>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-
-            @if(count($this->colors) > 0)
-            <div class="mb-6" id="bs-color-selector">
-                <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Color: <span class="font-normal text-[#615e57]">{{ $selectedColor }}</span></label>
-                <div class="flex flex-wrap gap-3">
-                    @foreach($this->colors as $colorOpt)
-                        @php 
-                            $colorName = $colorOpt->value;
-                            $hex = $colorOpt->meta ?? '#333333'; 
-                        @endphp
-                        <button type="button" wire:click="$set('selectedColor', '{{ $colorName }}')" class="flex flex-col items-center gap-1.5 group transition-all duration-200">
-                            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 {{ $selectedColor === $colorName ? 'border-[#1c1c1a]' : 'border-transparent hover:border-gray-300' }}">
-                                <div class="w-full h-full rounded-full border border-black/10" style="background-color: {{ $hex }}"></div>
-                            </div>
-                            <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $selectedColor === $colorName ? 'text-[#1c1c1a] font-bold' : 'text-[#a09e99] group-hover:text-[#615e57]' }}">{{ $colorName }}</span>
-                        </button>
-                    @endforeach
-                </div>
-            </div>
-            @endif
+            @endforeach
 
             <div class="mb-2" id="bs-qty-selector">
                 <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">QUANTITY</label>

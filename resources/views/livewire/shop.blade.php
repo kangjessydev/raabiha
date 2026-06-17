@@ -23,6 +23,7 @@
                 <aside id="shop-filter-sidebar" data-lenis-prevent
                     :class="mobileFilterOpen ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'"
                     class="
+                    translate-y-full lg:translate-y-0 lg:translate-x-full
                     fixed inset-x-0 bottom-0 lg:inset-y-0 lg:left-auto lg:right-0 z-[110] 
                     bg-[#fcf9f5] rounded-t-2xl lg:rounded-none shadow-2xl
                     transition-transform duration-300
@@ -100,8 +101,8 @@
                                         @if(!$isLarge) x-show="expanded || {{ $index }} < 10" style="display: {{ $index < 10 ? 'flex' : 'none' }};" @endif
                                     >
                                         <input type="checkbox" wire:model.live="selectedAttributes.{{ $attr->id }}" value="{{ $option->id }}" class="opacity-0 absolute w-0 h-0 peer">
-                                        @if($option->meta && isset($option->meta['color']))
-                                            <div class="w-3 h-3 shrink-0 border border-black/10 rounded-full" style="background-color: {{ $option->meta['color'] }};"></div>
+                                        @if($option->meta)
+                                            <div class="w-3 h-3 shrink-0 border border-black/10 rounded-full" style="background-color: {{ $option->meta }};"></div>
                                         @endif
                                         <span class="text-[#1c1c1a] text-[9px] font-mono uppercase tracking-wider peer-checked:font-bold">{{ $option->value }}</span>
                                         <!-- absolute overlay to show it's checked with a border -->
@@ -242,7 +243,7 @@
                         @forelse ($products as $product)
                             <div class="group block relative flex flex-col h-full">
                                 <div class="aspect-[1/1] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                                    <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="block w-full h-full">
+                                    <a href="{{ url('/product/' . $product->slug) }}" class="block w-full h-full">
                                         @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
                                             <div class="absolute top-3 right-3 bg-[#b91c1c] text-white font-bold text-[10px] px-2.5 py-1 z-10 tracking-wider shadow-sm">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
                                         @endif
@@ -267,7 +268,7 @@
                                         <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-shop-'.$product->id" />
                                     </div>
                                 </div>
-                                <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="block flex-1 flex flex-col">
+                                <a href="{{ url('/product/' . $product->slug) }}" class="block flex-1 flex flex-col">
                                     <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-1">{{ $product->name }}</h3>
                                 
                                 <!-- Price Section -->

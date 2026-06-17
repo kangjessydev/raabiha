@@ -1,4 +1,4 @@
-@props(['title', 'backUrl' => url()->previous(), 'transparent' => false, 'cart' => false])
+@props(['title', 'backUrl' => 'javascript:history.back()', 'transparent' => false, 'cart' => false])
 
 <div class="md:hidden {{ $transparent ? 'absolute top-0 left-0 right-0 z-50 bg-transparent border-none' : 'sticky top-0 z-50 bg-[#fcf9f5] border-b border-[#e5e5e5]' }} px-4 py-3 flex items-center justify-between">
     <!-- Back Button -->

@@ -13,8 +13,7 @@ class ProductDetail extends Component
 {
     public $slug;
     public $product;
-    public $selectedSize = '';
-    public $selectedColor = '';
+    public $selectedOptions = [];
     public $quantity = 1;
     public $galleryUrls = [];
     public $bsOpen = false;
@@ -26,74 +25,108 @@ class ProductDetail extends Component
     public $reviewComment = '';
     public $showReviewForm = false;
 
-    #[Computed]
-    public function sizes()
-    {
-        if (!isset($this->product)) return [];
-        
-        return \App\Models\AttributeOption::whereHas('productVariants', function($q) {
-            $q->where('product_id', $this->product->id);
-        })->whereHas('attribute', function($q) {
-            $q->where('slug', 'ukuran');
-        })->get();
-    }
+
 
     #[Computed]
-    public function colors()
+    public function availableAttributes()
     {
-        if (!isset($this->product)) return [];
+        if (!isset($this->product) || !$this->product->has_variants) return [];
         
-        return \App\Models\AttributeOption::whereHas('productVariants', function($q) {
-            $q->where('product_id', $this->product->id);
-        })->whereHas('attribute', function($q) {
-            $q->where('slug', 'warna');
-        })->get();
+        $attributes = [];
+        foreach ($this->product->variants as $variant) {
+            foreach ($variant->attributeOptions as $option) {
+                $attrSlug = $option->attribute->slug;
+                if (!isset($attributes[$attrSlug])) {
+                    $attributes[$attrSlug] = [
+                        'name' => $option->attribute->name,
+                        'slug' => $attrSlug,
+                        'type' => $option->attribute->type,
+                        'options' => []
+                    ];
+                }
+                if (!collect($attributes[$attrSlug]['options'])->contains('value', $option->value)) {
+                    $attributes[$attrSlug]['options'][] = [
+                        'id' => $option->id,
+                        'value' => $option->value,
+                        'meta' => $option->meta
+                    ];
+                }
+            }
+        }
+        return $attributes;
+    }
+
+    public function isOptionAvailable($attrSlug, $optionValue)
+    {
+        if (!$this->product->has_variants) return true;
+
+        $testSelection = $this->selectedOptions;
+        $testSelection[$attrSlug] = $optionValue;
+        $testSelection = array_filter($testSelection, fn($val) => $val !== '');
+
+        foreach ($this->product->variants as $variant) {
+            if ($variant->stock <= 0) continue;
+
+            $matchesAll = true;
+            foreach ($testSelection as $testAttrSlug => $testOptionVal) {
+                $hasOption = $variant->attributeOptions->contains(function($opt) use ($testAttrSlug, $testOptionVal) {
+                    return $opt->attribute->slug === $testAttrSlug && $opt->value === $testOptionVal;
+                });
+                if (!$hasOption) {
+                    $matchesAll = false;
+                    break;
+                }
+            }
+            if ($matchesAll) return true;
+        }
+        return false;
+    }
+
+    public function selectOption($attrSlug, $optionValue)
+    {
+        if (!$this->isOptionAvailable($attrSlug, $optionValue)) return;
+        
+        if ($this->selectedOptions[$attrSlug] === $optionValue) {
+            $this->selectedOptions[$attrSlug] = ''; // Deselect
+        } else {
+            $this->selectedOptions[$attrSlug] = $optionValue;
+        }
+    }
+
+    public function getMatchedVariant()
+    {
+        if (!$this->product->has_variants) return null;
+        
+        return $this->product->variants->first(function($variant) {
+            foreach ($this->selectedOptions as $slug => $val) {
+                if (empty($val)) return false;
+                $hasOption = $variant->attributeOptions->contains(function($opt) use ($slug, $val) {
+                    return $opt->attribute->slug === $slug && $opt->value === $val;
+                });
+                if (!$hasOption) return false;
+            }
+            return true;
+        });
     }
 
     #[Computed]
     public function currentPrice()
     {
-        if ($this->product->has_variants && $this->selectedSize && $this->selectedColor) {
-            $matchedVariant = $this->product->variants->first(function($variant) {
-                $hasSize = $variant->attributeOptions->contains(function($opt) {
-                    return $opt->value === $this->selectedSize && $opt->attribute->slug === 'ukuran';
-                });
-                $hasColor = $variant->attributeOptions->contains(function($opt) {
-                    return $opt->value === $this->selectedColor && $opt->attribute->slug === 'warna';
-                });
-                return $hasSize && $hasColor;
-            });
-
-            if ($matchedVariant) {
-                return $matchedVariant->effective_price * $this->quantity;
-            }
+        $variant = $this->getMatchedVariant();
+        if ($variant) {
+            return $variant->effective_price * $this->quantity;
         }
-
         return $this->product->effective_price * $this->quantity;
     }
 
     #[Computed]
     public function currentOriginalPrice()
     {
-        $originalPrice = $this->product->price;
-
-        if ($this->product->has_variants && $this->selectedSize && $this->selectedColor) {
-            $matchedVariant = $this->product->variants->first(function($variant) {
-                $hasSize = $variant->attributeOptions->contains(function($opt) {
-                    return $opt->value === $this->selectedSize && $opt->attribute->slug === 'ukuran';
-                });
-                $hasColor = $variant->attributeOptions->contains(function($opt) {
-                    return $opt->value === $this->selectedColor && $opt->attribute->slug === 'warna';
-                });
-                return $hasSize && $hasColor;
-            });
-
-            if ($matchedVariant && $matchedVariant->is_price_override && $matchedVariant->price !== null) {
-                $originalPrice = $matchedVariant->price;
-            }
+        $variant = $this->getMatchedVariant();
+        if ($variant && $variant->is_price_override && $variant->price !== null) {
+            return $variant->price * $this->quantity;
         }
-
-        return $originalPrice * $this->quantity;
+        return $this->product->price * $this->quantity;
     }
 
     #[Computed]
@@ -180,6 +213,11 @@ class ProductDetail extends Component
             \Log::error("ProductDetail mount failed: " . $e->getMessage());
             throw $e;
         }
+
+        // Initialize selectedOptions with empty strings for all available attributes
+        foreach ($this->availableAttributes() as $attrSlug => $data) {
+            $this->selectedOptions[$attrSlug] = '';
+        }
         
         // Resolve Curator Media URLs
         $this->galleryUrls = [];
@@ -190,16 +228,23 @@ class ProductDetail extends Component
                 // To maintain order
                 foreach ($this->product->images as $id) {
                     $media = $mediaItems->firstWhere('id', $id);
-                    if ($media) {
+                    if ($media && \Illuminate\Support\Facades\Storage::disk('public')->exists($media->path)) {
                         $this->galleryUrls[] = $media->url;
                     }
                 }
             } else {
                 // Fallback for old strings
                 foreach ($this->product->images as $path) {
-                    $this->galleryUrls[] = asset('storage/' . $path);
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                        $this->galleryUrls[] = asset('storage/' . $path);
+                    }
                 }
             }
+        }
+
+        // If gallery is completely empty after validation, push a placeholder
+        if (empty($this->galleryUrls)) {
+            $this->galleryUrls[] = asset('assets/images/placeholder.png');
         }
         
         if (auth()->check()) {
@@ -225,24 +270,18 @@ class ProductDetail extends Component
     {
         // 1. Validation
         if ($this->product->has_variants) {
-            if (empty($this->selectedSize) || empty($this->selectedColor)) {
-                session()->flash('error', 'Silakan pilih ukuran dan warna terlebih dahulu.');
-                return;
+            foreach ($this->availableAttributes() as $attrSlug => $data) {
+                if (empty($this->selectedOptions[$attrSlug])) {
+                    session()->flash('error', 'Silakan lengkapi pilihan varian terlebih dahulu.');
+                    return;
+                }
             }
         }
 
         // 2. Find Variant and check stock
         $variantId = null;
         if ($this->product->has_variants) {
-            $matchedVariant = $this->product->variants->first(function($variant) {
-                $hasSize = $variant->attributeOptions->contains(function($opt) {
-                    return $opt->value === $this->selectedSize && $opt->attribute->slug === 'ukuran';
-                });
-                $hasColor = $variant->attributeOptions->contains(function($opt) {
-                    return $opt->value === $this->selectedColor && $opt->attribute->slug === 'warna';
-                });
-                return $hasSize && $hasColor;
-            });
+            $matchedVariant = $this->getMatchedVariant();
 
             if (!$matchedVariant) {
                 session()->flash('error', 'Kombinasi varian tidak ditemukan atau habis.');
@@ -360,6 +399,17 @@ class ProductDetail extends Component
                 'description' => $description,
                 'image' => $image
             ]);
+    }
+
+    #[Computed]
+    public function relatedProducts()
+    {
+        return Product::where('is_active', true)
+            ->where('category_id', $this->product->category_id)
+            ->where('id', '!=', $this->product->id)
+            ->inRandomOrder()
+            ->take(4)
+            ->get();
     }
 
     public function placeholder()

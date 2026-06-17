@@ -1,6 +1,6 @@
 <x-layouts.app>
     <x-slot:header>
-        <x-global.mobile-subnav title="Portal Reseller" backUrl="/" />
+        <x-global.mobile-subnav title="Portal Reseller" />
     </x-slot:header>
 
     <div class="page-slide-in">

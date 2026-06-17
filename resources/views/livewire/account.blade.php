@@ -1,6 +1,6 @@
 <div>
     <x-slot:header>
-        <x-global.mobile-subnav title="Akun Saya" backUrl="/" />
+        <x-global.mobile-subnav title="Akun Saya" />
     </x-slot:header>
 
     <div class="page-slide-in">

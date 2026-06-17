@@ -2,7 +2,7 @@
      x-effect="document.body.style.overflow = bsVoucherOpen ? 'hidden' : ''"
      @close-voucher-sheet.window="bsVoucherOpen = false">
     <x-slot:header>
-        <x-global.mobile-subnav title="Checkout" backUrl="/cart" />
+        <x-global.mobile-subnav title="Checkout" />
     </x-slot:header>
 
     <div class="page-slide-in">

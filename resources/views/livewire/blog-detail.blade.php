@@ -1,6 +1,6 @@
 <div>
     <x-slot:header>
-        <x-global.mobile-subnav title="Detail Blog" backUrl="/blog" transparent="true" :share="true" />
+        <x-global.mobile-subnav title="Detail Blog" transparent="true" :share="true" />
     </x-slot:header>
 
     <div class="page-slide-in">
