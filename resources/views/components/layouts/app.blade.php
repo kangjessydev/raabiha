@@ -176,7 +176,7 @@
         }
     </style>
 </head>
-<body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js" x-data="{ navLoaded: false }">
+<body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js" x-data="{ navLoaded: false }" x-init="$nextTick(() => { setTimeout(() => navLoaded = true, 100) })" @livewire:navigating.window="navLoaded = false" @livewire:navigated.window="setTimeout(() => navLoaded = true, 100)">
         
     @php
         $topbar = \App\Models\TopbarAnnouncement::first();
