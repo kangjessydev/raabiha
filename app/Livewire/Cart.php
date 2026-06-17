@@ -235,7 +235,7 @@ class Cart extends Component
         
         $grandTotal = max(0, $baseTotalForVoucher - $discountAmount);
         
-        $availableVouchers = \App\Models\Voucher::where('is_active', true)
+        $vouchers = \App\Models\Voucher::where('is_active', true)
             ->where(function($query) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
@@ -243,6 +243,50 @@ class Cart extends Component
                 $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->get();
+            
+        $availableVouchers = collect();
+        $cartQuantity = 0;
+        if ($this->cart && $this->cart->items) {
+            foreach ($this->cart->items as $item) {
+                if (in_array((string)$item->id, $this->selectedItems)) {
+                    $cartQuantity += $item->quantity;
+                }
+            }
+        }
+        $user = auth()->user();
+        
+        foreach ($vouchers as $voucher) {
+            // Cek voucher khusus user tertentu
+            if (!empty($voucher->specific_users)) {
+                if (!$user || !in_array($user->email, $voucher->specific_users)) {
+                    continue; // Jangan tampilkan sama sekali
+                }
+            }
+            
+            $isEligible = true;
+            $reason = '';
+            
+            if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
+                $isEligible = false;
+                $reason = 'Sudah melewati batas penggunaan maksimal.';
+            } elseif ($voucher->is_shipping_voucher) {
+                $isEligible = false;
+                $reason = 'Voucher ongkir hanya dapat digunakan di halaman Checkout.';
+            } elseif ($voucher->min_items > 0 && $cartQuantity < $voucher->min_items) {
+                $isEligible = false;
+                $reason = 'Minimal belanja ' . $voucher->min_items . ' item.';
+            } elseif ($voucher->min_purchase > 0 && $baseTotalForVoucher < $voucher->min_purchase) {
+                $isEligible = false;
+                $reason = 'Minimal transaksi Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.';
+            } elseif ($voucher->exclude_resellers && $user && $user->hasRole('reseller')) {
+                $isEligible = false;
+                $reason = 'Tidak berlaku untuk mitra Reseller.';
+            }
+            
+            $voucher->is_eligible = $isEligible;
+            $voucher->ineligibility_reason = $reason;
+            $availableVouchers->push($voucher);
+        }
 
         return view('livewire.cart', [
             'subtotal' => $subtotal,

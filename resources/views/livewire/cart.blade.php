@@ -310,16 +310,22 @@
                     <div class="flex flex-col gap-4 pb-12">
                         <div class="font-sans text-xs font-semibold text-[#1c1c1a] mb-2">Voucher Tersedia:</div>
                         @foreach($availableVouchers as $voucher)
-                            <div wire:click="selectVoucher('{{ $voucher->code }}')" class="cursor-pointer border border-[#e5e2de] p-4 flex flex-col gap-2 transition-colors hover:border-[#064e3b] {{ $appliedVoucher && $appliedVoucher['code'] === $voucher->code ? 'border-[#064e3b] bg-[#f0ede9]' : 'bg-white' }}">
+                            <div 
+                                @if($voucher->is_eligible) wire:click="selectVoucher('{{ $voucher->code }}')" @endif 
+                                class="border p-4 flex flex-col gap-2 transition-colors 
+                                {{ !$voucher->is_eligible ? 'border-[#e5e2de] bg-[#fcfcfc] opacity-75 cursor-not-allowed' : ($appliedVoucher && $appliedVoucher['code'] === $voucher->code ? 'border-[#064e3b] bg-[#f0ede9] cursor-pointer' : 'border-[#e5e2de] hover:border-[#064e3b] bg-white cursor-pointer') }}">
+                                
                                 <div class="flex justify-between items-start">
-                                    <div>
-                                        <div class="font-mono text-[12px] font-bold tracking-widest uppercase text-[#064e3b] mb-1">{{ $voucher->code }}</div>
-                                        <div class="font-sans text-[13px] font-semibold text-[#1c1c1a]">
+                                    <div class="{{ !$voucher->is_eligible ? 'opacity-80' : '' }}">
+                                        <div class="font-mono text-[12px] font-bold tracking-widest uppercase {{ !$voucher->is_eligible ? 'text-[#615e57]' : 'text-[#064e3b]' }} mb-1">{{ $voucher->code }}</div>
+                                        <div class="font-sans text-[13px] font-semibold {{ !$voucher->is_eligible ? 'text-[#615e57]' : 'text-[#1c1c1a]' }}">
                                             Diskon {{ $voucher->discount_type === 'percent' ? rtrim(rtrim(number_format($voucher->discount_amount, 2, ',', '.'), '0'), ',') . '%' : 'Rp' . number_format($voucher->discount_amount, 0, ',', '.') }}
                                         </div>
                                     </div>
                                     @if($appliedVoucher && $appliedVoucher['code'] === $voucher->code)
                                         <span class="bg-[#064e3b] text-white text-[9px] font-mono uppercase tracking-widest px-2 py-1">TERPAKAI</span>
+                                    @elseif(!$voucher->is_eligible)
+                                        <span class="bg-[#e5e2de] text-[#615e57] text-[9px] font-mono uppercase tracking-widest px-2 py-1">TIDAK MEMENUHI SYARAT</span>
                                     @endif
                                 </div>
                                 <div class="font-sans text-[11px] text-[#615e57] mt-1">
@@ -328,6 +334,11 @@
                                         | Maks. diskon Rp{{ number_format($voucher->max_discount, 0, ',', '.') }}
                                     @endif
                                 </div>
+                                @if(!$voucher->is_eligible)
+                                    <div class="font-sans text-[10px] text-[#ba1a1a] mt-1 italic">
+                                        * {{ $voucher->ineligibility_reason }}
+                                    </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>
