@@ -18,32 +18,13 @@
         $logoMobileUrl = asset('assets/images/logo-mobile.png');
     }
 @endphp
-<div class="w-full z-[100] sticky top-0" x-init="setTimeout(() => { navLoaded = true; }, 300)">
+<div class="w-full z-[100] sticky top-0">
     <header class="w-full bg-[#fcf9f5] border-b border-[#e5e2de] transition-transform duration-300 transform translate-y-0" id="smart-navbar">
         
         <!-- ==================== DESKTOP (Hidden on Mobile) ==================== -->
         <div class="hidden md:block">
-            <!-- DESKTOP SKELETON -->
-            <div x-show="!navLoaded" class="flex items-center justify-between px-12 py-5 relative z-50 bg-[#fcf9f5] animate-pulse">
-                <div class="w-[180px] shrink-0">
-                    <div class="h-10 w-32 bg-[#e5e2de] rounded"></div>
-                </div>
-                <div class="flex gap-8">
-                    <div class="h-4 w-16 bg-[#e5e2de] rounded"></div>
-                    <div class="h-4 w-24 bg-[#e5e2de] rounded"></div>
-                    <div class="h-4 w-24 bg-[#e5e2de] rounded"></div>
-                    <div class="h-4 w-16 bg-[#e5e2de] rounded"></div>
-                    <div class="h-4 w-16 bg-[#e5e2de] rounded"></div>
-                </div>
-                <div class="flex items-center gap-5 w-[180px] justify-end shrink-0">
-                    <div class="w-5 h-5 bg-[#e5e2de] rounded-full"></div>
-                    <div class="w-5 h-5 bg-[#e5e2de] rounded-full"></div>
-                    <div class="w-6 h-6 bg-[#e5e2de] rounded-full"></div>
-                </div>
-            </div>
-
             <!-- DESKTOP LAYOUT -->
-            <div x-show="navLoaded" style="display: none;" class="flex items-center justify-between px-12 py-5 relative z-50 bg-[#fcf9f5]">
+            <div class="flex items-center justify-between px-12 py-5 relative z-50 bg-[#fcf9f5]">
                 <!-- Desktop Logo -->
                 <div class="w-[180px] shrink-0">
                     <a href="{{ url('/') }}" wire:navigate.hover class="block hover:opacity-80 transition-opacity">
@@ -118,20 +99,8 @@
 
         <!-- ==================== MOBILE (Hidden on Desktop) ==================== -->
         <div class="block md:hidden">
-            <!-- MOBILE SKELETON -->
-            <div x-show="!navLoaded" class="flex items-center justify-between px-6 py-4 relative z-50 bg-[#fcf9f5] animate-pulse">
-                <!-- Hamburger Skeleton -->
-                <div class="w-6 h-6 bg-[#e5e2de] rounded"></div>
-                <!-- Logo Skeleton -->
-                <div class="absolute left-1/2 -translate-x-1/2 h-8 w-24 bg-[#e5e2de] rounded"></div>
-                <!-- Search Skeleton -->
-                <div class="flex items-center gap-4">
-                    <div class="w-5 h-5 bg-[#e5e2de] rounded-full"></div>
-                </div>
-            </div>
-
             <!-- MOBILE LAYOUT -->
-            <div x-show="navLoaded" style="display: none;" class="flex items-center justify-between px-6 py-4 relative z-50 bg-[#fcf9f5]">
+            <div class="flex items-center justify-between px-6 py-4 relative z-50 bg-[#fcf9f5]">
                 <!-- Hamburger Menu (Left) -->
                 <button id="mobile-menu-toggle" class="text-[#1c1c1a] hover:text-[#064e3b] transition-colors focus:outline-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
