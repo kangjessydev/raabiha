@@ -1,4 +1,6 @@
-<div x-data="{ bsVoucherOpen: false }" @close-voucher-sheet.window="bsVoucherOpen = false">
+<div x-data="{ bsVoucherOpen: false }" 
+     x-effect="document.body.style.overflow = bsVoucherOpen ? 'hidden' : ''"
+     @close-voucher-sheet.window="bsVoucherOpen = false">
     <x-slot:header>
         <x-global.mobile-subnav title="Checkout" backUrl="/cart" />
     </x-slot:header>
@@ -430,7 +432,7 @@
             </div>
             
             <!-- Body -->
-            <div class="p-5 overflow-y-auto flex-1 min-h-0">
+            <div class="p-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
                 @if (session()->has('voucher_error'))
                     <div class="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-sm mb-4 text-xs font-sans">
                         {{ session('voucher_error') }}
