@@ -911,6 +911,32 @@ class Checkout extends Component
                 $reason = 'Tidak berlaku untuk mitra Reseller.';
             }
             
+            if ($isEligible && $voucher->max_uses_per_user > 0) {
+                $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
+                    ->where(function ($q) {
+                        $q->where('payment_status', '!=', 'cancelled')
+                          ->where('status', '!=', 'cancelled');
+                    });
+                
+                if ($user) {
+                    $userUsageQuery->where(function ($q) use ($user) {
+                        $q->where('user_id', $user->id)
+                          ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$user->email]);
+                    });
+                } else {
+                    if (!empty($this->email)) {
+                        $userUsageQuery->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$this->email]);
+                    } else {
+                        $userUsageQuery = null;
+                    }
+                }
+                
+                if ($userUsageQuery && $userUsageQuery->count() >= $voucher->max_uses_per_user) {
+                    $isEligible = false;
+                    $reason = 'Telah melewati batas penggunaan untuk akun Anda (' . $voucher->max_uses_per_user . ' kali).';
+                }
+            }
+            
             $voucher->is_eligible = $isEligible;
             $voucher->ineligibility_reason = $reason;
             $availableVouchers->push($voucher);
