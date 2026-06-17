@@ -384,15 +384,24 @@
     
     
     <div wire:key="layout-header-wrapper" class="contents">
-        @if(isset($header))
+        @if(request()->is('checkout'))
             <div class="md:hidden">
-                {{ $header }}
+                {{ $header ?? '' }}
             </div>
-            <div class="hidden md:block">
-                <x-global.navbar />
+            <div class="hidden md:flex py-8 justify-center border-b border-[#e5e2de] bg-[#fcf9f5]">
+                <a href="{{ url('/') }}" class="inline-block text-2xl font-serif tracking-widest text-[#064e3b] font-bold">RAABIHA</a>
             </div>
         @else
-            <x-global.navbar />
+            @if(isset($header))
+                <div class="md:hidden">
+                    {{ $header }}
+                </div>
+                <div class="hidden md:block">
+                    <x-global.navbar />
+                </div>
+            @else
+                <x-global.navbar />
+            @endif
         @endif
     </div>
 
@@ -535,10 +544,12 @@
     
     <!-- Custom Minimal Footer -->
     <div wire:key="layout-footer" class="contents">
-        @if(!request()->is('shop*') && !request()->is('katalog*'))
-        <div class="{{ (isset($header) || request()->is('checkout') || request()->is('cart')) ? 'hidden md:block' : '' }}">
-            <x-global.footer />
-        </div>
+        @if(!request()->is('checkout'))
+            @if(!request()->is('shop*') && !request()->is('katalog*'))
+            <div class="{{ (isset($header) || request()->is('cart')) ? 'hidden md:block' : '' }}">
+                <x-global.footer />
+            </div>
+            @endif
         @endif
     </div>
 
