@@ -276,7 +276,7 @@
              x-transition:leave="transition-transform duration-300 lg:transition-opacity lg:duration-200 lg:ease-in"
              x-transition:leave-start="translate-y-0 lg:scale-100 lg:opacity-100"
              x-transition:leave-end="translate-y-full lg:translate-y-0 lg:scale-95 lg:opacity-0"
-             class="absolute bottom-0 left-0 right-0 bg-[#fcf9f5] rounded-t-2xl lg:rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:w-full lg:max-w-[480px]">
+             class="absolute bottom-0 left-0 right-0 bg-[#fcf9f5] rounded-t-2xl lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:w-full lg:max-w-[480px]">
              
             <!-- Handle -->
             <div class="flex lg:hidden justify-center pt-3 pb-2" @click="bsVoucherOpen = false">
@@ -292,7 +292,7 @@
             </div>
             
             <!-- Body -->
-            <div class="p-5 overflow-y-auto flex-1 min-h-0 overscroll-contain">
+            <div class="p-5 overflow-y-auto overscroll-contain max-h-[60vh] lg:max-h-[500px]">
                 @if (session()->has('voucher_error'))
                     <div class="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-sm mb-4 text-xs font-sans">
                         {{ session('voucher_error') }}
