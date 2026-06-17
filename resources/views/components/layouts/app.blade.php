@@ -182,30 +182,34 @@
         $topbar = \App\Models\TopbarAnnouncement::first();
     @endphp
 
-    @if($topbar && $topbar->is_active && !request()->is('checkout'))
-    <!-- Topbar Promo Marquee -->
-    <div class="{{ isset($header) ? 'hidden md:block' : '' }} text-[10px] tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap" style="background-color: {{ $topbar->bg_color ?? '#000000' }}; color: {{ $topbar->text_color ?? '#ffffff' }};">
-        <div class="inline-block md:w-full md:text-center animate-[marquee_20s_linear_infinite] md:animate-none pl-[100%] md:pl-0">
-            <span class="[&_a]:underline [&_a]:font-bold [&_strong]:font-bold [&_em]:italic mr-8 md:mr-0">{!! strip_tags($topbar->text, '<strong><em><a>') !!}</span>
-            <span class="[&_a]:underline [&_a]:font-bold [&_strong]:font-bold [&_em]:italic mr-8 md:hidden">{!! strip_tags($topbar->text, '<strong><em><a>') !!}</span>
+    <div wire:key="layout-topbar-wrapper" class="contents">
+        @if($topbar && $topbar->is_active && !request()->is('checkout'))
+        <!-- Topbar Promo Marquee -->
+        <div class="{{ isset($header) ? 'hidden md:block' : '' }} text-[10px] tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap" style="background-color: {{ $topbar->bg_color ?? '#000000' }}; color: {{ $topbar->text_color ?? '#ffffff' }};">
+            <div class="inline-block md:w-full md:text-center animate-[marquee_20s_linear_infinite] md:animate-none pl-[100%] md:pl-0">
+                <span class="[&_a]:underline [&_a]:font-bold [&_strong]:font-bold [&_em]:italic mr-8 md:mr-0">{!! strip_tags($topbar->text, '<strong><em><a>') !!}</span>
+                <span class="[&_a]:underline [&_a]:font-bold [&_strong]:font-bold [&_em]:italic mr-8 md:hidden">{!! strip_tags($topbar->text, '<strong><em><a>') !!}</span>
+            </div>
         </div>
+        @endif
     </div>
-    @endif
 
     @php
         $holidayMode = \App\Models\SiteSetting::where('key', 'store_holiday_mode')->value('value');
         $holidayMessage = \App\Models\SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur.';
     @endphp
 
-    @if($holidayMode)
-    <!-- Holiday Mode Banner -->
-    <div class="bg-red-700 text-white text-center py-3 px-4 shadow-sm z-[100] relative">
-        <p class="text-xs md:text-sm font-sans max-w-4xl mx-auto flex items-center justify-center gap-2">
-            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            <span>{{ $holidayMessage }}</span>
-        </p>
+    <div wire:key="layout-holiday-banner-wrapper" class="contents">
+        @if($holidayMode && !request()->is('checkout'))
+        <!-- Holiday Mode Banner -->
+        <div class="bg-red-700 text-white text-center py-3 px-4 shadow-sm z-[100] relative">
+            <p class="text-xs md:text-sm font-sans max-w-4xl mx-auto flex items-center justify-center gap-2">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span>{{ $holidayMessage }}</span>
+            </p>
+        </div>
+        @endif
     </div>
-    @endif
     <style>
     @@keyframes marquee {
         0% { transform: translateX(0%); }
