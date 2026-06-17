@@ -43,7 +43,7 @@
                             <div class="w-20 h-24 bg-[#f0ede9] shrink-0">
                                 <img src="{{ $imageUrl }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover">
                             </div>
-                            <div class="flex flex-col flex-1 pr-6">
+                            <div class="flex flex-col flex-1 min-w-0 pr-6">
                                 <div class="flex justify-between items-start gap-2">
                                     <h3 class="font-serif text-sm font-semibold text-[#1c1c1a] leading-tight line-clamp-2">
                                         <a href="/product/{{ $item->product->slug }}" class="hover:text-[#615e57] transition-colors">{{ $item->product->name }}</a>
@@ -52,9 +52,9 @@
                                 <div class="font-sans text-xs text-[#1c1c1a] mt-1">Rp{{ number_format($price, 0, ',', '.') }}</div>
                                 
                                 @if($item->variant)
-                                <div class="font-mono text-[9px] uppercase tracking-[0.1em] text-[#615e57] mt-1 truncate">
+                                <div class="font-mono text-[9px] uppercase tracking-[0.1em] text-[#615e57] mt-1 leading-relaxed">
                                     @foreach($item->variant->attributeOptions as $option)
-                                        {{ $option->attribute->name }}: {{ $option->value }} @if(!$loop->last) <span class="mx-1">/</span> @endif
+                                        <span class="whitespace-nowrap">{{ $option->attribute->name }}: {{ $option->value }}</span>@if(!$loop->last) <span class="mx-1">/</span> @endif
                                     @endforeach
                                 </div>
                                 @endif
