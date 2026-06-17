@@ -383,16 +383,18 @@
     </style>
     
     
-    @if(isset($header))
-        <div class="md:hidden">
-            {{ $header }}
-        </div>
-        <div class="hidden md:block">
+    <div wire:key="layout-header-wrapper" class="contents">
+        @if(isset($header))
+            <div class="md:hidden">
+                {{ $header }}
+            </div>
+            <div class="hidden md:block">
+                <x-global.navbar />
+            </div>
+        @else
             <x-global.navbar />
-        </div>
-    @else
-        <x-global.navbar />
-    @endif
+        @endif
+    </div>
 
     <!-- Mobile Sidebar Menu -->
     <div id="mobile-sidebar" class="fixed inset-0 z-[110] transform -translate-x-full transition-transform duration-300 md:hidden">
@@ -516,29 +518,34 @@
         {{ $slot }}
     </div>
 
-    @if(!isset($header) && !request()->is('checkout') && !request()->is('cart') && !request()->is('shop*') && !request()->is('katalog*'))
-        <!-- Mobile Newsletter Block (Before Footer) -->
-        <div class="md:hidden bg-black text-white px-6 py-16 text-center">
-            <div class="text-[9px] font-mono tracking-[0.2em] uppercase mb-4 text-[#a3a3a3]">The Inner Circle</div>
-            <h2 class="text-3xl font-serif mb-4">Join our movement.</h2>
-            <p class="text-[13px] font-sans text-[#d4d4d4] mb-8 max-w-[280px] mx-auto">Be the first to access limited drops and editorial stories.</p>
-            <div class="border-b border-[#404040] pb-2 mb-6 text-left">
-                <input type="email" placeholder="YOUR EMAIL ADDRESS" class="bg-transparent border-none text-[11px] font-mono tracking-[0.1em] text-white w-full outline-none placeholder-[#737373]">
+    <div wire:key="layout-newsletter" class="contents">
+        @if(!isset($header) && !request()->is('checkout') && !request()->is('cart') && !request()->is('shop*') && !request()->is('katalog*'))
+            <!-- Mobile Newsletter Block (Before Footer) -->
+            <div class="md:hidden bg-black text-white px-6 py-16 text-center">
+                <div class="text-[9px] font-mono tracking-[0.2em] uppercase mb-4 text-[#a3a3a3]">The Inner Circle</div>
+                <h2 class="text-3xl font-serif mb-4">Join our movement.</h2>
+                <p class="text-[13px] font-sans text-[#d4d4d4] mb-8 max-w-[280px] mx-auto">Be the first to access limited drops and editorial stories.</p>
+                <div class="border-b border-[#404040] pb-2 mb-6 text-left">
+                    <input type="email" placeholder="YOUR EMAIL ADDRESS" class="bg-transparent border-none text-[11px] font-mono tracking-[0.1em] text-white w-full outline-none placeholder-[#737373]">
+                </div>
+                <button class="bg-[#064e3b] text-white text-[10px] font-mono tracking-[0.1em] uppercase py-4 w-full">SUBSCRIBE</button>
             </div>
-            <button class="bg-[#064e3b] text-white text-[10px] font-mono tracking-[0.1em] uppercase py-4 w-full">SUBSCRIBE</button>
-        </div>
-    @endif
+        @endif
+    </div>
     
     <!-- Custom Minimal Footer -->
-    @if(!request()->is('shop*') && !request()->is('katalog*'))
-    <div class="{{ (isset($header) || request()->is('checkout') || request()->is('cart')) ? 'hidden md:block' : '' }}">
-        <x-global.footer />
+    <div wire:key="layout-footer" class="contents">
+        @if(!request()->is('shop*') && !request()->is('katalog*'))
+        <div class="{{ (isset($header) || request()->is('checkout') || request()->is('cart')) ? 'hidden md:block' : '' }}">
+            <x-global.footer />
+        </div>
+        @endif
     </div>
-    @endif
 
-    @if(!isset($header) && !request()->is('checkout') && !request()->is('cart'))
-        <!-- Fixed Bottom Navigation (Mobile Only) -->
-        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-[#fcf9f5] border-t border-[#e5e2de] flex justify-between px-6 py-2 z-50">
+    <div wire:key="layout-bottom-nav" class="contents">
+        @if(!isset($header) && !request()->is('checkout') && !request()->is('cart'))
+            <!-- Fixed Bottom Navigation (Mobile Only) -->
+            <div class="md:hidden fixed bottom-0 left-0 right-0 bg-[#fcf9f5] border-t border-[#e5e2de] flex justify-between px-6 py-2 z-50">
             <a href="{{ url('/') }}" wire:navigate.hover class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('/') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                 <span class="text-[9px] font-mono {{ request()->is('/') ? 'font-bold' : '' }}">Home</span>
