@@ -182,7 +182,7 @@
         $topbar = \App\Models\TopbarAnnouncement::first();
     @endphp
 
-    @if($topbar && $topbar->is_active)
+    @if($topbar && $topbar->is_active && !request()->is('checkout'))
     <!-- Topbar Promo Marquee -->
     <div class="{{ isset($header) ? 'hidden md:block' : '' }} text-[10px] tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap" style="background-color: {{ $topbar->bg_color ?? '#000000' }}; color: {{ $topbar->text_color ?? '#ffffff' }};">
         <div class="inline-block md:w-full md:text-center animate-[marquee_20s_linear_infinite] md:animate-none pl-[100%] md:pl-0">
