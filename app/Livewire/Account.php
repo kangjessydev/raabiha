@@ -130,6 +130,56 @@ class Account extends Component
         $this->refundOrderId = null;
     }
 
+    public $showRefundStatusModal = false;
+    public $refundStatusData = null;
+
+    public function openRefundStatus($refundId)
+    {
+        $refund = \App\Models\RefundRequest::with(['order', 'user'])->find($refundId);
+        if (!$refund) return;
+        
+        $customerName = $refund->user ? $refund->user->name : 'Pelanggan';
+        $orderNo = $refund->order ? $refund->order->order_number : '-';
+        $amount = number_format($refund->refund_amount, 0, ',', '.');
+        $status = $refund->status;
+        
+        $defApproved = 'Halo {name}, pengajuan refund untuk pesanan #{order} senilai Rp{amount} telah DISETUJUI. Tim Finance kami akan segera memproses transfer ke rekening Anda.';
+        $defRejected = 'Halo {name}, mohon maaf pengajuan refund untuk pesanan #{order} senilai Rp{amount} DITOLAK. Catatan: {notes}';
+        $defCompleted = 'Halo {name}, dana refund untuk pesanan #{order} senilai Rp{amount} telah SELESAI DITRANSFER ke rekening {bank} Anda. Silakan cek mutasi rekening Anda.';
+
+        $tplApproved = \App\Models\SiteSetting::where('key', 'refund_template_approved')->value('value') ?: $defApproved;
+        $tplRejected = \App\Models\SiteSetting::where('key', 'refund_template_rejected')->value('value') ?: $defRejected;
+        $tplCompleted = \App\Models\SiteSetting::where('key', 'refund_template_completed')->value('value') ?: $defCompleted;
+        
+        if ($status === 'approved') {
+            $msg = str_replace(['{name}', '{order}', '{amount}'], [$customerName, $orderNo, $amount], $tplApproved);
+        } elseif ($status === 'rejected') {
+            $notes = $refund->admin_notes ?? 'Tidak memenuhi syarat pengembalian.';
+            $msg = str_replace(['{name}', '{order}', '{amount}', '{notes}'], [$customerName, $orderNo, $amount, $notes], $tplRejected);
+        } elseif ($status === 'completed') {
+            $bank = $refund->bank_name ?? '-';
+            $msg = str_replace(['{name}', '{order}', '{amount}', '{bank}'], [$customerName, $orderNo, $amount, $bank], $tplCompleted);
+        } else {
+            $msg = "Pengajuan refund sedang dalam proses pengecekan oleh tim kami.";
+        }
+        
+        $this->refundStatusData = [
+            'status' => $status,
+            'message' => $msg,
+            'amount' => $amount,
+            'reason' => $refund->reason,
+            'admin_notes' => $refund->admin_notes,
+        ];
+        
+        $this->showRefundStatusModal = true;
+    }
+    
+    public function closeRefundStatus()
+    {
+        $this->showRefundStatusModal = false;
+        $this->refundStatusData = null;
+    }
+
     public function submitRefund()
     {
         $this->validate([

@@ -261,9 +261,15 @@
                                                             ];
                                                             $refundLabel = $refundStatusLabels[$order->refundRequest->status] ?? 'Refund Diproses';
                                                         @endphp
-                                                        <span class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] px-4 py-2.5 flex items-center bg-[#f0ede9]">
-                                                            {{ $refundLabel }}
-                                                        </span>
+                                                        @if(in_array($order->refundRequest->status, ['approved', 'rejected', 'completed']))
+                                                            <button wire:click="openRefundStatus({{ $order->refundRequest->id }})" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white px-6 py-2.5 flex items-center justify-center cursor-pointer transition-colors w-full sm:w-auto text-center inline-block {{ $order->refundRequest->status === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#064e3b] hover:bg-[#043326]' }}">
+                                                                {{ $refundLabel }}
+                                                            </button>
+                                                        @else
+                                                            <span class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] px-4 py-2.5 flex items-center bg-[#f0ede9]">
+                                                                {{ $refundLabel }}
+                                                            </span>
+                                                        @endif
                                                     @else
                                                         <button wire:click="openRefundForm({{ $order->id }})" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-red-600 border border-red-200 bg-red-50 px-6 py-2.5 hover:bg-red-600 hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Ajukan Refund</button>
                                                     @endif
@@ -751,6 +757,71 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Refund Status Modal -->
+    @if($showRefundStatusModal && $refundStatusData)
+    <div x-data="{ open: true }" x-init="$watch('open', value => { if(!value) @this.closeRefundStatus() })" 
+         x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        
+        <div x-show="open" x-transition.opacity class="fixed inset-0 bg-[#1c1c1a]/40 backdrop-blur-sm" @click="open = false"></div>
+        
+        <div x-show="open" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+             x-transition:leave-end="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
+             class="bg-white border border-[#e5e2de] w-full max-w-lg relative z-10 max-h-[90vh] overflow-y-auto shadow-2xl">
+            
+            <div class="p-6 sm:p-8">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 class="font-serif text-[24px] font-semibold text-[#1c1c1a]">Detail Status Refund</h3>
+                        @if($refundStatusData['status'] === 'approved')
+                            <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#064e3b] mt-2">Disetujui</p>
+                        @elseif($refundStatusData['status'] === 'rejected')
+                            <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-red-600 mt-2">Ditolak</p>
+                        @elseif($refundStatusData['status'] === 'completed')
+                            <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#064e3b] mt-2">Selesai</p>
+                        @endif
+                    </div>
+                    <button wire:click="closeRefundStatus" class="text-[#a3a3a3] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <div class="bg-[#fcf9f5] border border-[#e5e2de] p-5 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full {{ $refundStatusData['status'] === 'rejected' ? 'bg-red-500' : 'bg-[#064e3b]' }}"></div>
+                        <p class="font-sans text-[13px] text-[#1c1c1a] leading-relaxed whitespace-pre-wrap">{{ $refundStatusData['message'] }}</p>
+                    </div>
+
+                    <div class="space-y-3 pt-4 border-t border-[#e5e2de]">
+                        <div class="flex justify-between items-start">
+                            <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Alasan Klaim</span>
+                            <span class="font-sans text-[12px] text-[#1c1c1a] text-right max-w-[60%]">{{ $refundStatusData['reason'] }}</span>
+                        </div>
+                        <div class="flex justify-between items-start">
+                            <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Nominal</span>
+                            <span class="font-sans text-[12px] font-semibold text-[#1c1c1a]">Rp{{ $refundStatusData['amount'] }}</span>
+                        </div>
+                        @if($refundStatusData['admin_notes'])
+                        <div class="flex justify-between items-start">
+                            <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Catatan Admin</span>
+                            <span class="font-sans text-[12px] text-[#1c1c1a] text-right max-w-[60%]">{{ $refundStatusData['admin_notes'] }}</span>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="pt-6 mt-6 flex justify-end gap-3 border-t border-[#e5e2de]">
+                    <button type="button" wire:click="closeRefundStatus" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#f0ede9] transition-colors w-full">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
