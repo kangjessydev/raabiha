@@ -512,11 +512,9 @@
 
 
     <!-- PAGE CONTENT WRAPPER -->
-    <phantom-ui :loading="!navLoaded">
-        <div class="w-full min-h-[70vh]">
-            {{ $slot }}
-        </div>
-    </phantom-ui>
+    <div class="w-full min-h-[70vh]">
+        {{ $slot }}
+    </div>
 
     @if(!isset($header) && !request()->is('checkout') && !request()->is('cart') && !request()->is('shop*') && !request()->is('katalog*'))
         <!-- Mobile Newsletter Block (Before Footer) -->
