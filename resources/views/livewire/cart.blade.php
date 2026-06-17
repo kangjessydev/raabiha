@@ -308,8 +308,19 @@
                 
                 @if($availableVouchers && $availableVouchers->count() > 0)
                     <div class="flex flex-col gap-4 pb-12">
-                        <div class="font-sans text-xs font-semibold text-[#1c1c1a] mb-2">Voucher Tersedia:</div>
-                        @foreach($availableVouchers as $voucher)
+                        @php
+                            $sortedVouchers = $availableVouchers->sortByDesc('is_eligible')->values();
+                            $hasShownIneligibleHeader = false;
+                        @endphp
+                        @foreach($sortedVouchers as $index => $voucher)
+                            @if(!$voucher->is_eligible && !$hasShownIneligibleHeader)
+                                <div class="font-sans text-xs font-semibold text-[#1c1c1a] mb-0 {{ $index > 0 ? 'mt-4' : '' }}">Belum Memenuhi Syarat:</div>
+                                @php $hasShownIneligibleHeader = true; @endphp
+                            @endif
+                            @if($index === 0 && $voucher->is_eligible)
+                                <div class="font-sans text-xs font-semibold text-[#1c1c1a] mb-0">Voucher Tersedia:</div>
+                            @endif
+                            
                             <div 
                                 @if($voucher->is_eligible) wire:click="selectVoucher('{{ $voucher->code }}')" @endif 
                                 class="border p-4 flex flex-col gap-2 transition-colors 
