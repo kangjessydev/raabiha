@@ -4,12 +4,14 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 
 #[Layout('components.layouts.app')]
 class Account extends Component
 {
+    #[Url]
     public $activeTab = 'dasbor'; // dasbor, pesanan, alamat, voucher, akun
     
     // Order Search
