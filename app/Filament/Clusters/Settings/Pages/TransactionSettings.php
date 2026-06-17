@@ -53,14 +53,17 @@ class TransactionSettings extends Page implements HasForms
                                 Forms\Components\Textarea::make('refund_template_approved')
                                     ->label('Template Pesan WA - Disetujui')
                                     ->default('Halo {name}, pengajuan refund untuk pesanan #{order} senilai Rp{amount} telah DISETUJUI. Tim Finance kami akan segera memproses transfer ke rekening Anda.')
+                                    ->helperText('Gunakan parameter ini: {name} (Nama pelanggan), {order} (No. Pesanan), {amount} (Nominal refund)')
                                     ->rows(3),
                                 Forms\Components\Textarea::make('refund_template_rejected')
                                     ->label('Template Pesan WA - Ditolak')
                                     ->default('Halo {name}, mohon maaf pengajuan refund untuk pesanan #{order} senilai Rp{amount} DITOLAK. Catatan: {notes}')
+                                    ->helperText('Tersedia parameter tambahan: {notes} (Catatan/alasan penolakan dari admin)')
                                     ->rows(3),
                                 Forms\Components\Textarea::make('refund_template_completed')
                                     ->label('Template Pesan WA - Selesai')
                                     ->default('Halo {name}, dana refund untuk pesanan #{order} senilai Rp{amount} telah SELESAI DITRANSFER ke rekening {bank} Anda. Silakan cek mutasi rekening Anda.')
+                                    ->helperText('Tersedia parameter tambahan: {bank} (Nama bank rekening tujuan pelanggan)')
                                     ->rows(3),
                             ]),
                         \Filament\Schemas\Components\Tabs\Tab::make('Mode Libur')
