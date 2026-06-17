@@ -22,6 +22,7 @@ class Checkout extends Component
     public $first_name;
     public $last_name;
     public $address;
+    public $agree_terms = false;
     public $province;
     public $city;
     public $district;
@@ -456,8 +457,10 @@ class Checkout extends Component
             'last_name' => 'required|string',
             'address' => 'required|string',
             'selectedDestinationId' => 'required',
+            'agree_terms' => 'accepted',
         ], [
             'selectedDestinationId.required' => 'Silakan pilih lokasi tujuan pengiriman (Kecamatan/Kota).',
+            'agree_terms.accepted' => 'Anda harus menyetujui Syarat dan Ketentuan untuk melanjutkan.',
         ]);
 
         if (empty($this->email) && empty($this->phone)) {

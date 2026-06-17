@@ -380,6 +380,19 @@
                                 Terdapat isian form yang belum lengkap atau salah. Silakan periksa kembali formulir di atas.
                             </div>
                         @endif
+                        
+                        <!-- Terms and Conditions Checkbox -->
+                        <div class="mb-6">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center h-5 mt-0.5">
+                                    <input type="checkbox" id="agree_terms" wire:model="agree_terms" class="w-4 h-4 text-[#064e3b] bg-transparent border-[#1c1c1a] focus:ring-[#064e3b] rounded-sm transition-colors cursor-pointer">
+                                </div>
+                                <label for="agree_terms" class="font-sans text-[12px] text-[#615e57] leading-relaxed cursor-pointer">
+                                    Saya telah membaca dan menyetujui <a href="{{ url('/syarat-ketentuan') }}" target="_blank" class="underline text-[#064e3b]">Syarat dan Ketentuan</a> serta kebijakan privasi situs ini.
+                                </label>
+                            </div>
+                            @error('agree_terms') <span class="text-red-500 text-xs mt-1 block font-sans">{{ $message }}</span> @enderror
+                        </div>
                         <button type="button" wire:click="processCheckout" class="flex justify-center items-center gap-2 w-full bg-[#064e3b] hover:bg-[#043326] text-white py-5 px-6 font-mono text-[10px] md:text-[12px] lg:text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors">
                             <span class="block" wire:loading.remove wire:target="processCheckout">BAYAR SEKARANG</span>
                             <span class="block" wire:loading wire:target="processCheckout">MEMPROSES...</span>
