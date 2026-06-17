@@ -10,6 +10,13 @@
             <div class="max-w-[1440px] mx-auto px-6 md:px-[64px] py-12 md:py-24">
                 
                 <div class="mb-10 md:mb-16 hidden md:block">
+                    <nav class="font-mono text-[9px] uppercase tracking-[0.2em] text-[#615e57] mb-6 flex items-center gap-2">
+                        <a href="{{ url('/') }}" wire:navigate.hover class="hover:text-[#064e3b] transition-colors">Home</a>
+                        <span class="text-[#d1cec9]">/</span>
+                        <a href="{{ url('/cart') }}" wire:navigate.hover class="hover:text-[#064e3b] transition-colors">Keranjang</a>
+                        <span class="text-[#d1cec9]">/</span>
+                        <span class="text-[#1c1c1a] font-bold">Checkout</span>
+                    </nav>
                     <h1 class="font-serif text-[32px] md:text-[48px] font-bold text-[#1c1c1a] tracking-tight uppercase">Checkout</h1>
                 </div>
 
@@ -389,7 +396,7 @@
                                         <input type="checkbox" id="agree_terms" x-model="agree" class="w-4 h-4 text-[#064e3b] bg-transparent border-[#1c1c1a] focus:ring-[#064e3b] rounded-sm transition-colors cursor-pointer">
                                     </div>
                                     <label for="agree_terms" class="font-sans text-[12px] text-[#615e57] leading-relaxed cursor-pointer">
-                                        Saya telah membaca dan menyetujui <a href="{{ url('/syarat-ketentuan') }}" target="_blank" class="underline text-[#064e3b]">Syarat dan Ketentuan</a> serta kebijakan privasi situs ini.
+                                        Saya telah membaca dan menyetujui <a href="{{ url('/syarat-ketentuan') }}" target="_blank" class="underline text-[#064e3b]">Syarat dan Ketentuan</a> serta <a href="{{  url('/kebijakan-privasi') }}" target="_blank" class="underline text-[#064e3b]">kebijakan privasi</a> situs ini.
                                     </label>
                                 </div>
                                 @error('agree_terms') <span class="text-red-500 text-xs mt-1 block font-sans">{{ $message }}</span> @enderror

@@ -10,6 +10,11 @@
             <div class="max-w-[1440px] mx-auto px-6 md:px-[64px] py-12 md:py-24">
                 <!-- Header -->
                 <div class="mb-10 md:mb-16 hidden md:block">
+                    <nav class="font-mono text-[9px] uppercase tracking-[0.2em] text-[#615e57] mb-6 flex items-center gap-2">
+                        <a href="{{ url('/') }}" wire:navigate.hover class="hover:text-[#064e3b] transition-colors">Home</a>
+                        <span class="text-[#d1cec9]">/</span>
+                        <span class="text-[#1c1c1a] font-bold">Keranjang</span>
+                    </nav>
                     <h1 class="font-serif text-[32px] md:text-[48px] font-bold text-[#1c1c1a] tracking-tight uppercase">Keranjang</h1>
                     <div class="font-mono text-[9px] font-medium tracking-[0.2em] text-[#615e57] uppercase mt-2">
                         {{ $cart ? $cart->items->count() : 0 }} Produk Terpilih
