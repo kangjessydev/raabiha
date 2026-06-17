@@ -62,6 +62,7 @@
                     <!-- Right Content Area -->
                     <div class="flex flex-col gap-8">
                         @if($activeTab === 'dasbor')
+                            <div wire:key="tab-dasbor" class="contents">
                             <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Dasbor</h2>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -131,7 +132,9 @@
                                 <a href="https://wa.me/6281234567890" target="_blank" class="shrink-0 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors text-center w-full md:w-auto">Hubungi CS</a>
                             </div>
 
+                            </div>
                         @elseif($activeTab === 'pesanan')
+                            <div wire:key="tab-pesanan" class="contents">
                             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                                 <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Pesanan Saya</h2>
                                 <div class="w-full sm:w-64 relative">
@@ -292,7 +295,9 @@
                                 @endforeach
                             @endif
 
+                            </div>
                         @elseif($activeTab === 'alamat')
+                            <div wire:key="tab-alamat" class="contents">
                             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                                 <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Alamat Tersimpan</h2>
                                 @if(!$showAddressForm)
@@ -418,7 +423,9 @@
                                 </div>
                             @endif
 
+                            </div>
                         @elseif($activeTab === 'wishlist')
+                            <div wire:key="tab-wishlist" class="contents">
                             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                                 <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Wishlist Saya</h2>
                             </div>
@@ -481,7 +488,9 @@
                                 </div>
                             @endif
 
+                            </div>
                         @elseif($activeTab === 'voucher')
+                            <div wire:key="tab-voucher" class="contents">
                             <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block mb-4">Voucher Saya</h2>
 
                             @if($this->vouchers->isEmpty())
@@ -535,7 +544,9 @@
                                 </div>
                             @endif
 
+                            </div>
                         @elseif($activeTab === 'akun')
+                            <div wire:key="tab-akun" class="contents">
                             <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Pengaturan Akun</h2>
                             
                             <!-- Profile Information Form -->
@@ -599,7 +610,9 @@
                                     </button>
                                 </form>
                             </div>
+                            </div>
                         @elseif($activeTab === 'reseller')
+                            <div wire:key="tab-reseller" class="contents">
                             <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Laporan Pembelian Reseller</h2>
                             
                             @if(auth()->user()->reseller_status === 'active')
@@ -695,6 +708,7 @@
                                     </a>
                                 </div>
                             @endif
+                            </div>
                         @endif
                 </div>
             </div>
