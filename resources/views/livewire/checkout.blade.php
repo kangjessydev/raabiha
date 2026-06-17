@@ -432,7 +432,7 @@
             </div>
             
             <!-- Body -->
-            <div class="p-5 overflow-y-auto overscroll-contain max-h-[60vh] lg:max-h-[500px]">
+            <div class="p-5 overflow-y-auto overscroll-contain max-h-[60vh] lg:max-h-[500px]" data-lenis-prevent>
                 @if (session()->has('voucher_error'))
                     <div class="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-sm mb-4 text-xs font-sans">
                         {{ session('voucher_error') }}
