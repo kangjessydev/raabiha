@@ -360,9 +360,9 @@
                                             <label for="is_primary" class="font-sans text-[13px] text-[#1c1c1a] cursor-pointer">Jadikan sebagai alamat utama</label>
                                         </div>
                                         
-                                        <div class="flex gap-4 mt-4">
-                                            <button type="button" wire:click="toggleAddressForm" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-8 py-3 hover:bg-[#f0ede9] transition-colors">Batal</button>
-                                            <button type="submit" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-8 py-3 hover:bg-[#043326] transition-colors">
+                                        <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                                            <button type="button" wire:click="toggleAddressForm" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-8 py-3 hover:bg-[#f0ede9] transition-colors w-full sm:w-auto text-center">Batal</button>
+                                            <button type="submit" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-8 py-3 hover:bg-[#043326] transition-colors w-full sm:w-auto text-center flex justify-center">
                                                 <span wire:loading.remove wire:target="saveAddress">Simpan</span>
                                                 <span wire:loading wire:target="saveAddress">Menyimpan...</span>
                                             </button>
@@ -401,13 +401,15 @@
                                                 {{ $address->province }} {{ $address->postal_code }}
                                             </p>
                                             
-                                            <div class="flex items-center gap-4 pt-4 border-t border-[#e5e2de] mt-auto">
-                                                <button wire:click="editAddress({{ $address->id }})" class="font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#064e3b] hover:text-[#043326] transition-colors">Ubah</button>
-                                                <button wire:click="deleteAddress({{ $address->id }})" wire:confirm="Apakah Anda yakin ingin menghapus alamat ini?" class="font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#ba1a1a] hover:text-red-900 transition-colors">Hapus</button>
+                                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4 border-t border-[#e5e2de] mt-auto">
+                                                <div class="flex items-center gap-4 w-full sm:w-auto">
+                                                    <button wire:click="editAddress({{ $address->id }})" class="flex-1 sm:flex-none text-center font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#064e3b] border sm:border-0 border-[#e5e2de] py-2 sm:py-0 hover:bg-[#fcf9f5] sm:hover:bg-transparent transition-colors">Ubah</button>
+                                                    <button wire:click="deleteAddress({{ $address->id }})" wire:confirm="Apakah Anda yakin ingin menghapus alamat ini?" class="flex-1 sm:flex-none text-center font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#ba1a1a] border sm:border-0 border-[#e5e2de] py-2 sm:py-0 hover:bg-[#fcf9f5] sm:hover:bg-transparent transition-colors">Hapus</button>
+                                                </div>
                                                 
                                                 @if(!$address->is_primary)
-                                                    <div class="ml-auto">
-                                                        <button wire:click="setPrimaryAddress({{ $address->id }})" class="font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#615e57] border border-[#e5e2de] px-3 py-1.5 hover:border-[#1c1c1a] hover:text-[#1c1c1a] transition-colors">Jadikan Utama</button>
+                                                    <div class="sm:ml-auto w-full sm:w-auto mt-2 sm:mt-0">
+                                                        <button wire:click="setPrimaryAddress({{ $address->id }})" class="w-full sm:w-auto font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#615e57] border border-[#e5e2de] px-3 py-2.5 hover:border-[#1c1c1a] hover:text-[#1c1c1a] transition-colors">Jadikan Utama</button>
                                                     </div>
                                                 @endif
                                             </div>
@@ -558,7 +560,7 @@
                                         <input type="email" wire:model="email" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors placeholder-[#a3a3a3]">
                                         @error('email') <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span> @enderror
                                     </div>
-                                    <button type="submit" class="self-start mt-2 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-8 py-3 hover:bg-[#043326] transition-colors">
+                                    <button type="submit" class="w-full sm:w-auto self-start mt-2 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-8 py-3.5 hover:bg-[#043326] transition-colors text-center flex justify-center">
                                         <span wire:loading.remove wire:target="updateProfile">Simpan Perubahan</span>
                                         <span wire:loading wire:target="updateProfile">Menyimpan...</span>
                                     </button>
@@ -591,7 +593,7 @@
                                         <label class="block font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57] mb-2">Konfirmasi Kata Sandi Baru</label>
                                         <input type="password" wire:model="new_password_confirmation" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors">
                                     </div>
-                                    <button type="submit" class="self-start mt-2 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-8 py-3 hover:bg-[#043326] transition-colors">
+                                    <button type="submit" class="w-full sm:w-auto self-start mt-2 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-8 py-3.5 hover:bg-[#043326] transition-colors text-center flex justify-center">
                                         <span wire:loading.remove wire:target="updatePassword">Perbarui Sandi</span>
                                         <span wire:loading wire:target="updatePassword">Menyimpan...</span>
                                     </button>
@@ -688,7 +690,7 @@
                                         <h3 class="font-serif font-bold text-[20px] text-[#1c1c1a] mb-2">Tingkatkan Keuntungan Anda!</h3>
                                         <p class="font-sans text-[13px] text-[#615e57] max-w-md mx-auto">Gabung menjadi mitra reseller Raabiha dan dapatkan potongan harga eksklusif untuk setiap pembelian tanpa minimal order. Daftarkan diri Anda sekarang!</p>
                                     </div>
-                                    <a href="/reseller-register" wire:navigate.hover class="mt-2 inline-block bg-[#064e3b] text-white px-6 py-3 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-colors">
+                                    <a href="/reseller-register" wire:navigate.hover class="mt-2 w-full sm:w-auto text-center inline-block bg-[#064e3b] text-white px-6 py-3.5 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-colors">
                                         Daftar Menjadi Reseller
                                     </a>
                                 </div>
