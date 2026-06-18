@@ -22,11 +22,41 @@ class ProductExporter extends Exporter
     {
         return [
             ExportColumn::make('id')->label('ID'),
+            ExportColumn::make('is_variant')
+                ->label('Varian?')
+                ->state(fn() => 'Tidak'),
+            ExportColumn::make('variant_name')
+                ->label('Nama Varian')
+                ->state(fn() => ''),
+            ExportColumn::make('variant_sku')
+                ->label('SKU Varian')
+                ->state(fn() => ''),
             ExportColumn::make('category.name')->label('Kategori'),
             ExportColumn::make('name')->label('Nama Produk'),
             ExportColumn::make('slug')->label('Slug'),
-            ExportColumn::make('description')->label('Deskripsi'),
-            ExportColumn::make('images')->label('Gambar'),
+            ExportColumn::make('description')
+                ->label('Deskripsi')
+                ->formatStateUsing(function ($state) {
+                    if (empty($state)) return null;
+                    $text = strip_tags($state);
+                    return trim(preg_replace('/\s+/', ' ', $text));
+                }),
+            ExportColumn::make('images')
+                ->label('Gambar')
+                ->formatStateUsing(function ($state) {
+                    if (is_array($state) && count($state) > 0) {
+                        // Check if they are Curator media IDs
+                        if (is_numeric($state[0])) {
+                            $mediaPaths = \Awcodes\Curator\Models\Media::whereIn('id', $state)->pluck('path')->toArray();
+                            $urls = array_map(fn($path) => asset('storage/' . $path), $mediaPaths);
+                            return implode(', ', $urls);
+                        }
+                        
+                        // If they are just normal string paths/urls
+                        return implode(', ', $state);
+                    }
+                    return $state;
+                }),
             ExportColumn::make('price')->label('Harga'),
             ExportColumn::make('discount_price')->label('Harga Diskon'),
             ExportColumn::make('reseller_price')->label('Harga Reseller'),
@@ -36,10 +66,10 @@ class ProductExporter extends Exporter
             ExportColumn::make('weight')->label('Berat (gram)'),
             ExportColumn::make('has_variants')->label('Punya Varian?'),
             ExportColumn::make('is_active')->label('Aktif?'),
-            ExportColumn::make('meta_title')->label('Meta Title'),
-            ExportColumn::make('meta_description')->label('Meta Description'),
-            ExportColumn::make('wholesale_pricing')->label('Aturan Grosir'),
-            ExportColumn::make('promo_rules')->label('Aturan Promo'),
+            ExportColumn::make('rating')->label('Rating/Bintang'),
+            ExportColumn::make('sold_count')->label('Terjual (Manual)'),
+            ExportColumn::make('has_free_shipping')->label('Gratis Ongkir?'),
+
             ExportColumn::make('created_at')->label('Dibuat'),
             ExportColumn::make('updated_at')->label('Diperbarui'),
         ];

@@ -34,13 +34,59 @@ class ImportMedia extends Page
                 ->label('Impor Produk')
                 ->importer(ProductImporter::class)
                 ->icon('heroicon-o-shopping-bag')
-                ->color('primary'),
+                ->color('primary')
+                ->authorize('viewAny')
+                ->modalDescription(new \Illuminate\Support\HtmlString('
+                    <div class="prose text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        <p><strong>Panduan Pengisian Excel:</strong></p>
+                        <ul class="list-disc pl-4 space-y-1 mt-1">
+                            <li><strong>Produk Utama (Varian? = Tidak):</strong><br> Wajib isi: Nama Produk, Harga, Stok, Berat.</li>
+                            <li><strong>Varian Anak (Varian? = Ya):</strong><br> Wajib isi: Nama Produk <i>(sesuai nama induk)</i>, Nama Varian, Harga, Stok, Berat.</li>
+                        </ul>
+                    </div>
+                ')),
 
             ImportAction::make('import_orders')
                 ->label('Impor Pesanan')
                 ->importer(OrderImporter::class)
                 ->icon('heroicon-o-clipboard-document-list')
-                ->color('success'),
+                ->color('success')
+                ->authorize('viewAny')
+                ->modalDescription(''),
+
+            ImportAction::make('import_users')
+                ->label('Impor Pengguna')
+                ->importer(\App\Filament\Imports\UserImporter::class)
+                ->icon('heroicon-o-users')
+                ->color('info')
+                ->authorize('viewAny')
+                ->modalDescription(''),
+
+            ImportAction::make('import_categories')
+                ->label('Impor Kategori')
+                ->importer(\App\Filament\Imports\CategoryImporter::class)
+                ->icon('heroicon-o-folder')
+                ->color('warning')
+                ->authorize('viewAny')
+                ->hidden()
+                ->modalDescription(''),
+
+            ImportAction::make('import_posts')
+                ->label('Impor Artikel Blog')
+                ->importer(\App\Filament\Imports\PostImporter::class)
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->authorize('viewAny')
+                ->modalDescription(''),
+
+            ImportAction::make('import_vouchers')
+                ->label('Impor Voucher')
+                ->importer(\App\Filament\Imports\VoucherImporter::class)
+                ->icon('heroicon-o-ticket')
+                ->color('danger')
+                ->authorize('viewAny')
+                ->hidden()
+                ->modalDescription(''),
         ];
     }
 }

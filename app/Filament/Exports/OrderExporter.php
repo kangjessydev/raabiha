@@ -23,16 +23,42 @@ class OrderExporter extends Exporter
             ExportColumn::make('order_number')->label('No. Pesanan'),
             ExportColumn::make('user.name')->label('Nama Pelanggan'),
             ExportColumn::make('status')->label('Status Pesanan'),
+            ExportColumn::make('source')->label('Sumber Pesanan'),
+            ExportColumn::make('voucher.code')->label('Kode Voucher'),
             ExportColumn::make('subtotal')->label('Subtotal'),
             ExportColumn::make('shipping_cost')->label('Ongkos Kirim'),
             ExportColumn::make('discount_total')->label('Diskon'),
             ExportColumn::make('grand_total')->label('Total Bayar'),
             ExportColumn::make('payment_method')->label('Metode Pembayaran'),
             ExportColumn::make('payment_status')->label('Status Pembayaran'),
-            ExportColumn::make('shipping_address')->label('Alamat Pengiriman'),
+            ExportColumn::make('shipping_address')
+                ->label('Alamat Pengiriman')
+                ->formatStateUsing(function ($state) {
+                    if (is_string($state)) {
+                        $state = json_decode($state, true);
+                    }
+                    if (is_array($state)) {
+                        return implode(', ', array_filter([
+                            $state['name'] ?? null,
+                            $state['phone'] ?? null,
+                            $state['address'] ?? null,
+                            $state['district'] ?? null,
+                            $state['city'] ?? null,
+                            $state['province'] ?? null,
+                            $state['postal_code'] ?? null,
+                        ]));
+                    }
+                    return $state;
+                }),
             ExportColumn::make('courier')->label('Kurir'),
             ExportColumn::make('awb_number')->label('No. Resi'),
-            ExportColumn::make('notes')->label('Catatan'),
+            ExportColumn::make('notes')
+                ->label('Catatan')
+                ->formatStateUsing(function ($state) {
+                    if (empty($state)) return null;
+                    $text = strip_tags($state);
+                    return trim(preg_replace('/\s+/', ' ', $text));
+                }),
             ExportColumn::make('created_at')->label('Tanggal Pesan'),
             ExportColumn::make('updated_at')->label('Terakhir Diperbarui'),
         ];

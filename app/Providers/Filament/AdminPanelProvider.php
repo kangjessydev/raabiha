@@ -105,7 +105,8 @@ class AdminPanelProvider extends PanelProvider
                     ->navigationIcon('heroicon-o-photo')
                     ->navigationGroup('Content')
                     ->navigationSort(3)
-                    ->registerNavigation(true)
+                    ->registerNavigation(true),
+                \BezhanSalleh\GoogleAnalytics\GoogleAnalyticsPlugin::make(),
             ])
             ->authMiddleware([
                 Authenticate::class,

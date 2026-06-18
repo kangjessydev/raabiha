@@ -18,7 +18,13 @@ class CategoryExporter extends Exporter
             ExportColumn::make('id')->label('ID'),
             ExportColumn::make('name')->label('Nama Kategori'),
             ExportColumn::make('slug')->label('Slug'),
-            ExportColumn::make('description')->label('Deskripsi'),
+            ExportColumn::make('description')
+                ->label('Deskripsi')
+                ->formatStateUsing(function ($state) {
+                    if (empty($state)) return null;
+                    $text = strip_tags($state);
+                    return trim(preg_replace('/\s+/', ' ', $text));
+                }),
             ExportColumn::make('created_at')->label('Dibuat'),
         ];
     }

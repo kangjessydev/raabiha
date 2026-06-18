@@ -80,8 +80,6 @@ class RoleResource extends Resource
                                 static::getSelectAllFormComponent(),
 
                             ])
-                            ->poll('15s')
-                            ->defaultSort('created_at', 'desc')
                             ->columns([
                                 'sm' => 2,
                                 'lg' => 3,

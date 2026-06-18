@@ -24,17 +24,16 @@ class TopProductsWidget extends BaseWidget
         return $table
             ->query(
                 OrderItem::query()
-                    ->select('product_id as id', 'product_id', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.total) as total_rev'))
+                    ->select('order_items.name as id', 'order_items.name', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.total) as total_rev'))
                     ->join('orders', 'orders.id', '=', 'order_items.order_id')
                     ->where('orders.payment_status', 'paid')
-                    ->groupBy('product_id')
+                    ->groupBy('order_items.name')
                     ->orderByDesc('total_qty')
                     ->limit(5)
             )
             ->columns([
-                TextColumn::make('product.name')
+                TextColumn::make('name')
                     ->label('Nama Produk')
-                    ->description(fn ($record) => $record->product?->sku ?? '-')
                     ->searchable(),
                 TextColumn::make('total_qty')
                     ->label('Jumlah Terjual')

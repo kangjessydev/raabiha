@@ -35,17 +35,115 @@ class ExportMedia extends Page
     protected function getHeaderActions(): array
     {
         return [
-            ExportAction::make('export_products')
+            \Filament\Actions\Action::make('export_products')
                 ->label('Ekspor Produk')
-                ->exporter(ProductExporter::class)
                 ->icon('heroicon-o-shopping-bag')
                 ->color('primary')
-                ->modifyQueryUsing(fn (Builder $query, array $options) => $query
-                    ->when(filled($options['category_id'] ?? null), fn ($q) => $q->where('category_id', $options['category_id']))
-                    ->when(isset($options['is_active']) && $options['is_active'] !== '', fn ($q) => $q->where('is_active', (bool) $options['is_active']))
-                    ->when(filled($options['date_from'] ?? null), fn ($q) => $q->whereDate('created_at', '>=', $options['date_from']))
-                    ->when(filled($options['date_until'] ?? null), fn ($q) => $q->whereDate('created_at', '<=', $options['date_until']))
-                ),
+                ->form([
+                    \Filament\Schemas\Components\Fieldset::make('Filter Data')
+                        ->schema([
+                            \Filament\Forms\Components\Select::make('category_id')
+                                ->label('Kategori')
+                                ->placeholder('Semua Kategori')
+                                ->options(\App\Models\Category::pluck('name', 'id'))
+                                ->native(false),
+                            \Filament\Forms\Components\Select::make('is_active')
+                                ->label('Status Produk')
+                                ->placeholder('Semua Status')
+                                ->options(['1' => 'Aktif', '0' => 'Non-Aktif'])
+                                ->native(false),
+                        ]),
+                    \Filament\Schemas\Components\Fieldset::make('Filter Tanggal (Opsional)')
+                        ->schema([
+                            \Filament\Forms\Components\DatePicker::make('date_from')->label('Dari Tanggal'),
+                            \Filament\Forms\Components\DatePicker::make('date_until')->label('Sampai Tanggal'),
+                        ]),
+                ])
+                ->action(function (array $data) {
+                    $query = \App\Models\Product::with(['category', 'variants']);
+                    
+                    if (filled($data['category_id'] ?? null)) {
+                        $query->where('category_id', $data['category_id']);
+                    }
+                    if (isset($data['is_active']) && $data['is_active'] !== '') {
+                        $query->where('is_active', (bool) $data['is_active']);
+                    }
+                    if (filled($data['date_from'] ?? null)) {
+                        $query->whereDate('created_at', '>=', $data['date_from']);
+                    }
+                    if (filled($data['date_until'] ?? null)) {
+                        $query->whereDate('created_at', '<=', $data['date_until']);
+                    }
+
+                    $csv = \League\Csv\Writer::createFromString('');
+                    $csv->insertOne([
+                        'ID', 'Varian?', 'Nama Varian', 'SKU Varian', 'Kategori', 'Nama Produk', 'Slug', 'Deskripsi', 'Gambar', 'Harga', 'Harga Diskon', 'Harga Beli (HPP)', 'Harga Reseller', 'Stok', 'Stok Minimum', 'Berat (gram)', 'Punya Varian?', 'Aktif?', 'Rating/Bintang', 'Terjual (Manual)', 'Gratis Ongkir?', 'Meta Title', 'Meta Description', 'Dibuat', 'Diperbarui'
+                    ]);
+
+                    foreach ($query->cursor() as $product) {
+                        $csv->insertOne([
+                            $product->id,
+                            'Tidak',
+                            '',
+                            '',
+                            $product->category?->name ?? '',
+                            $product->name,
+                            $product->slug,
+                            trim(preg_replace('/\s+/', ' ', strip_tags((string) $product->description))),
+                            is_array($product->images) ? implode(', ', $product->images) : $product->images,
+                            $product->price,
+                            $product->discount_price,
+                            $product->purchase_price,
+                            $product->reseller_price,
+                            $product->stock,
+                            $product->minimum_stock,
+                            $product->weight,
+                            $product->has_variants ? 1 : 0,
+                            $product->is_active ? 1 : 0,
+                            $product->rating,
+                            $product->sold_count,
+                            $product->has_free_shipping ? 1 : 0,
+                            $product->meta_title,
+                            trim(preg_replace('/\s+/', ' ', strip_tags((string) $product->meta_description))),
+                            $product->created_at?->format('Y-m-d H:i:s'),
+                            $product->updated_at?->format('Y-m-d H:i:s')
+                        ]);
+
+                        foreach ($product->variants as $variant) {
+                            $csv->insertOne([
+                                $variant->id,
+                                'Ya',
+                                $variant->name,
+                                $variant->sku,
+                                $product->category?->name ?? '',
+                                $product->name, // Parent name
+                                '',
+                                '',
+                                '',
+                                $variant->price,
+                                $variant->discount_price,
+                                $variant->purchase_price,
+                                $variant->reseller_price,
+                                $variant->stock,
+                                $variant->minimum_stock,
+                                $variant->weight,
+                                '',
+                                $variant->is_active ? 1 : 0,
+                                '',
+                                '',
+                                '',
+                                '',
+                                '',
+                                $variant->created_at?->format('Y-m-d H:i:s'),
+                                $variant->updated_at?->format('Y-m-d H:i:s')
+                            ]);
+                        }
+                    }
+
+                    return response()->streamDownload(function () use ($csv) {
+                        echo $csv->toString();
+                    }, 'products-export-' . date('Y-m-d-His') . '.csv');
+                }),
 
             ExportAction::make('export_orders')
                 ->label('Ekspor Pesanan')
@@ -77,7 +175,8 @@ class ExportMedia extends Page
                 ->label('Ekspor Kategori')
                 ->exporter(CategoryExporter::class)
                 ->icon('heroicon-o-folder')
-                ->color('warning'),
+                ->color('warning')
+                ->hidden(),
 
             ExportAction::make('export_posts')
                 ->label('Ekspor Artikel Blog')
@@ -89,7 +188,8 @@ class ExportMedia extends Page
                 ->label('Ekspor Voucher')
                 ->exporter(VoucherExporter::class)
                 ->icon('heroicon-o-ticket')
-                ->color('danger'),
+                ->color('danger')
+                ->hidden(),
         ];
     }
 }

@@ -22,7 +22,14 @@ class PostExporter extends Exporter
             ExportColumn::make('status')->label('Status'),
             ExportColumn::make('published_at')->label('Tanggal Terbit'),
             ExportColumn::make('meta_title')->label('Meta Title'),
-            ExportColumn::make('meta_description')->label('Meta Description'),
+            ExportColumn::make('meta_description')
+                ->label('Meta Description')
+                ->formatStateUsing(function ($state) {
+                    if (empty($state)) return null;
+                    $text = strip_tags($state);
+                    return trim(preg_replace('/\s+/', ' ', $text));
+                }),
+            ExportColumn::make('focus_keyword')->label('Focus Keyword'),
             ExportColumn::make('created_at')->label('Dibuat'),
         ];
     }

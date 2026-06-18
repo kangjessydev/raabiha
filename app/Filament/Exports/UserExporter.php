@@ -22,8 +22,7 @@ class UserExporter extends Exporter
             ExportColumn::make('id')->label('ID'),
             ExportColumn::make('name')->label('Nama'),
             ExportColumn::make('email')->label('Email'),
-            ExportColumn::make('phone')->label('No. HP'),
-            ExportColumn::make('is_reseller')->label('Reseller?'),
+            ExportColumn::make('role')->label('Role'),
             ExportColumn::make('reseller_status')->label('Status Reseller'),
             ExportColumn::make('created_at')->label('Tanggal Daftar'),
         ];
