@@ -26,13 +26,13 @@ class PromoBannerForm
                                             ->label('Judul Banner')
                                             ->required(),
                                         \Awcodes\Curator\Components\Forms\CuratorPicker::make('image')
-                                            ->label('Banner Image')
+                                            ->label('Gambar Banner')
                                             ->buttonLabel('Pilih Media / Unggah')
                                             ->color('primary')
                                             ->size(\Filament\Support\Enums\Size::Medium)
                                             ->required(),
                                         TextInput::make('link')
-                                            ->label('Link URL')
+                                            ->label('Tautan URL')
                                             ->placeholder('Contoh: https://raabiha.com/shop/promo')
                                             ->default(null),
                                     ]),
@@ -58,11 +58,6 @@ class PromoBannerForm
                                             ->default('all')
                                             ->native(false)
                                             ->required(),
-                                        TextInput::make('sort_order')
-                                            ->label('Urutan')
-                                            ->required()
-                                            ->numeric()
-                                            ->default(0),
                                     ]),
                             ])
                             ->columnSpan(1),

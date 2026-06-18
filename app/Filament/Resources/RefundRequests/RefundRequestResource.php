@@ -36,7 +36,7 @@ class RefundRequestResource extends Resource
     protected static ?string $navigationLabel = 'Refund Pelanggan';
     protected static ?string $modelLabel = 'Pengajuan Refund';
     protected static ?string $pluralModelLabel = 'Pengajuan Refund';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'id';
 

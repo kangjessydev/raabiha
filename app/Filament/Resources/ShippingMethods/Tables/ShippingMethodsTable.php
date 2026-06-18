@@ -16,7 +16,7 @@ class ShippingMethodsTable
     {
         return $table
             ->poll('15s')
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('is_active', 'desc')
             ->columns([
                 ImageColumn::make('logo')
                     ->label('Logo')

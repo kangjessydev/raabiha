@@ -206,6 +206,18 @@ class Account extends Component
             'bank_account_number' => $this->refundForm['bank_account_number'],
         ]);
 
+        try {
+            $admins = \App\Models\User::role('super_admin')->get();
+            \Filament\Notifications\Notification::make()
+                ->title('Pengajuan Refund Baru')
+                ->body('Pelanggan ' . Auth::user()->name . ' mengajukan refund untuk pesanan #' . $order->order_number . '.')
+                ->icon('heroicon-o-receipt-refund')
+                ->warning()
+                ->sendToDatabase($admins);
+        } catch (\Exception $e) {
+            // Ignore if role doesn't exist or notification fails
+        }
+
         $this->closeRefundForm();
         session()->flash('refund_success', 'Pengajuan refund berhasil dikirim. Kami akan meninjau permintaan Anda.');
     }

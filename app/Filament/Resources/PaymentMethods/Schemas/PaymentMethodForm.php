@@ -41,10 +41,11 @@ class PaymentMethodForm
                         Select::make('availability')
                             ->label('Tampil Di Mana?')
                             ->options([
-                                'both'    => 'Semua (Online & Offline)',
-                                'online'  => 'Khusus Website (Online)',
+                                'both' => 'Semua (Online & Offline)',
+                                'online' => 'Khusus Website (Online)',
                                 'offline' => 'Khusus Kasir (Offline)',
                             ])
+                            ->native(false)
                             ->default('both')
                             ->required()
                             ->afterStateHydrated(function (Select $component, $record) {
@@ -63,7 +64,8 @@ class PaymentMethodForm
                                 'Lainnya' => 'Lainnya',
                             ])
                             ->default('Lainnya')
-                            ->required(),
+                            ->required()
+                            ->native(false),
                     ])->columns(2),
 
                 Section::make('Biaya Admin (Dibebankan ke Pelanggan)')

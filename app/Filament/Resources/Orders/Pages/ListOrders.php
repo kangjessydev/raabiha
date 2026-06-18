@@ -27,9 +27,7 @@ class ListOrders extends ListRecords
                     ->when(filled($options['date_from'] ?? null), fn ($q) => $q->whereDate('created_at', '>=', $options['date_from']))
                     ->when(filled($options['date_until'] ?? null), fn ($q) => $q->whereDate('created_at', '<=', $options['date_until']))
                 ),
-            ImportAction::make()
-                ->label('Impor Pesanan')
-                ->importer(OrderImporter::class),
+
             CreateAction::make(),
         ];
     }

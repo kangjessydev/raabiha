@@ -63,51 +63,17 @@ class TopbarAnnouncement extends Page implements HasForms
                             ])
                             ->live(debounce: 500)
                             ->helperText(function ($state) {
-                                $flatText = '';
-                                $flatten = function ($val) use (&$flatten, &$flatText) {
-                                    if (is_array($val)) {
-                                        foreach ($val as $v) {
-                                            $flatten($v);
-                                        }
-                                    } elseif (is_string($val)) {
-                                        $flatText .= ' ' . $val;
-                                    }
-                                };
-                                $flatten($state);
-                                $text = strip_tags($flatText);
-                                // replace &nbsp; that RichEditor might insert
+                                $text = strip_tags((string) $state);
                                 $text = str_replace('&nbsp;', ' ', $text);
                                 $count = mb_strlen(html_entity_decode(trim($text)));
-                                $remaining = 100 - $count;
                                 
-                                if ($remaining < 0) {
-                                    return new \Illuminate\Support\HtmlString('<span style="color:red; font-weight:bold;">Teks terlalu panjang! Karakter: ' . $count . '/100 (Sisa: ' . $remaining . '). Harap kurangi teks agar bisa disimpan.</span>');
+                                if ($count > 100) {
+                                    return new \Illuminate\Support\HtmlString('<span style="color:#eab308; font-weight:bold;">Karakter: ' . $count . '/100. Karena lebih dari 100 karakter, teks akan otomatis menjadi efek berjalan (Marquee) di layar HP.</span>');
                                 }
                                 
                                 return new \Illuminate\Support\HtmlString('Gunakan teks singkat. Karakter: <strong>' . $count . '/100</strong>. Jika teks menyentuh batas 100, akan otomatis menjadi efek berjalan (Marquee) di HP.');
                             })
-                            ->rules([
-                                function () {
-                                    return function (string $attribute, $value, \Closure $fail) {
-                                        $flatText = '';
-                                        $flatten = function ($val) use (&$flatten, &$flatText) {
-                                            if (is_array($val)) {
-                                                foreach ($val as $v) {
-                                                    $flatten($v);
-                                                }
-                                            } elseif (is_string($val)) {
-                                                $flatText .= ' ' . $val;
-                                            }
-                                        };
-                                        $flatten($value);
-                                        $text = strip_tags($flatText);
-                                        $text = str_replace('&nbsp;', ' ', $text);
-                                        if (mb_strlen(html_entity_decode(trim($text))) > 100) {
-                                            $fail('Teks pengumuman tidak boleh lebih dari 100 karakter (tanpa menghitung kode HTML).');
-                                        }
-                                    };
-                                },
-                            ])
+
                             ->required()
                             ->columnSpanFull(),
                         ColorPicker::make('bg_color')

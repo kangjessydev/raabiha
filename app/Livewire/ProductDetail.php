@@ -380,11 +380,11 @@ class ProductDetail extends Component
             'customer_email' => auth()->user()->email,
             'rating' => $this->reviewRating,
             'comment' => $this->reviewComment,
-            'is_approved' => false,
+            'is_approved' => true,
         ]);
 
         $this->reset(['reviewRating', 'reviewComment', 'showReviewForm']);
-        session()->flash('review_success', 'Terima kasih! Ulasan Anda telah dikirim dan sedang menunggu persetujuan.');
+        session()->flash('review_success', 'Terima kasih! Ulasan Anda berhasil ditambahkan.');
     }
 
     public function render()

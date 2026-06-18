@@ -19,8 +19,10 @@ class PromoBannersTable
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('title')
+                    ->label('Judul')
                     ->searchable(),
                 \Awcodes\Curator\Components\Tables\CuratorColumn::make('image')
+                    ->label('Gambar')
                     ->size(40),
                 TextColumn::make('placement')
                     ->label('Penempatan')
@@ -38,12 +40,10 @@ class PromoBannersTable
                         default => $state,
                     }),
                 TextColumn::make('link')
+                    ->label('Tautan')
                     ->searchable(),
-                TextColumn::make('sort_order')
-                    ->numeric()
-                    ->sortable(),
-                IconColumn::make('is_active')
-                    ->boolean(),
+                \Filament\Tables\Columns\ToggleColumn::make('is_active')
+                    ->label('Status Aktif'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
