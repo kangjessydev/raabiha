@@ -12,5 +12,4 @@ class ECommerceCluster extends Cluster
     protected static ?string $navigationLabel = 'E-Commerce';
     protected static ?string $clusterBreadcrumb = 'E-Commerce';
     protected static ?int $navigationSort = 1;
-
-    }
+}

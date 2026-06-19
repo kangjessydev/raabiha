@@ -85,4 +85,15 @@
     border-left: 4px solid #8b5cf6 !important;
 }
 
-
+/* Fix Rich Editor toolbar to be sticky */
+.fi-fo-rich-editor-toolbar {
+    position: sticky;
+    top: 4rem;
+    z-index: 10;
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(226, 232, 240, 1);
+}
+.dark .fi-fo-rich-editor-toolbar {
+    background-color: #18181b;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}

@@ -18,8 +18,9 @@ class CategoriesTable
             ->poll('15s')
             ->defaultSort('created_at', 'desc')
             ->columns([
-                ImageColumn::make('image')
-                    ->circular(),
+                \Awcodes\Curator\Components\Tables\CuratorColumn::make('image')
+                    ->circular()
+                    ->size(40),
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('slug')

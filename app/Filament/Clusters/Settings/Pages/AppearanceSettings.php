@@ -28,7 +28,7 @@ class AppearanceSettings extends Page implements HasForms
     {
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
         
-        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'media_allowed_types'] as $jsonKey) {
+        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'footer_help_links', 'media_allowed_types'] as $jsonKey) {
             if (isset($settings[$jsonKey])) {
                 $decoded = json_decode($settings[$jsonKey], true);
                 $settings[$jsonKey] = is_array($decoded) ? $decoded : [];
@@ -92,6 +92,7 @@ class AppearanceSettings extends Page implements HasForms
                                             ->components([
                                                 Forms\Components\TextInput::make('footer_kolom1_title')->label('Judul Kolom 1'),
                                                 Forms\Components\Repeater::make('footer_shop_links')
+                                                    ->label('Daftar Tautan Kolom 1')
                                                     ->components([
                                                         Forms\Components\TextInput::make('label')->required(),
                                                         Forms\Components\TextInput::make('url')->required(),
@@ -101,6 +102,17 @@ class AppearanceSettings extends Page implements HasForms
                                             ->components([
                                                 Forms\Components\TextInput::make('footer_kolom2_title')->label('Judul Kolom 2'),
                                                 Forms\Components\Repeater::make('footer_brand_links')
+                                                    ->label('Daftar Tautan Kolom 2')
+                                                    ->components([
+                                                        Forms\Components\TextInput::make('label')->required(),
+                                                        Forms\Components\TextInput::make('url')->required(),
+                                                    ])->columns(2)->defaultItems(0),
+                                            ]),
+                                        \Filament\Schemas\Components\Tabs\Tab::make('Kolom Menu 3')
+                                            ->components([
+                                                Forms\Components\TextInput::make('footer_kolom3_title')->label('Judul Kolom 3'),
+                                                Forms\Components\Repeater::make('footer_help_links')
+                                                    ->label('Daftar Tautan Kolom 3')
                                                     ->components([
                                                         Forms\Components\TextInput::make('label')->required(),
                                                         Forms\Components\TextInput::make('url')->required(),

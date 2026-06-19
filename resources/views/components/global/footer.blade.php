@@ -26,8 +26,13 @@
             $brandLinks = $rawBrandLinks ? json_decode($rawBrandLinks, true) : [];
             if (!is_array($brandLinks)) $brandLinks = [];
 
+            $rawHelpLinks = \App\Models\SiteSetting::where('key', 'footer_help_links')->value('value');
+            $helpLinks = $rawHelpLinks ? json_decode($rawHelpLinks, true) : [];
+            if (!is_array($helpLinks)) $helpLinks = [];
+
             $kolom1Title = \App\Models\SiteSetting::where('key', 'footer_kolom1_title')->value('value') ?: 'Shop';
             $kolom2Title = \App\Models\SiteSetting::where('key', 'footer_kolom2_title')->value('value') ?: 'Brand';
+            $kolom3Title = \App\Models\SiteSetting::where('key', 'footer_kolom3_title')->value('value') ?: 'Bantuan';
         @endphp
         
         <!-- Desktop Grid (Hidden on Mobile) -->
@@ -81,14 +86,18 @@
                 </ul>
             </div>
             <div>
-                <h4 class="font-inter text-[10px] tracking-widest uppercase text-[#d4d4d4] mb-6">Newsletter</h4>
-                <p class="font-inter text-[13px] leading-relaxed text-[#a3a3a3] mb-8">Join the architectural elite. Be the first to know about new drops.</p>
-                <div class="flex border-b border-[#525252] pb-2">
-                    <input type="email" placeholder="YOUR EMAIL" class="bg-transparent border-none font-inter text-[11px] text-[#f5f5f5] w-full outline-none placeholder-[#737373] tracking-[0.1em]">
-                    <button class="text-[#a3a3a3] hover:text-white transition-colors focus:outline-none">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                    </button>
-                </div>
+                <h4 class="font-inter text-[10px] tracking-widest uppercase text-[#d4d4d4] mb-6">{{ $kolom3Title }}</h4>
+                <ul class="flex flex-col gap-4 font-inter text-[13px] text-[#a3a3a3]">
+                    @forelse($helpLinks as $link)
+                        <li><a href="{{ url($link['url']) }}" class="hover:text-white transition-colors">{{ $link['label'] }}</a></li>
+                    @empty
+                        <li><a href="{{ url('/contact') }}" class="hover:text-white transition-colors">Hubungi Kami</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Cara Pemesanan</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Pengiriman & Retur</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Lacak Pesanan</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">FAQ</a></li>
+                    @endforelse
+                </ul>
             </div>
         </div>
 

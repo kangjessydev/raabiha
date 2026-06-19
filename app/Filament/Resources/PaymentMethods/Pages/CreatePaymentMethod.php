@@ -17,4 +17,13 @@ class CreatePaymentMethod extends CreateRecord
         $data['config'] = $config;
         return $data;
     }
+
+    public function getSubNavigation(): array
+    {
+        if (filled($cluster = static::getCluster()) && $cluster::shouldRegisterSubNavigation()) {
+            return $this->generateNavigationItems($cluster::getClusteredComponents());
+        }
+
+        return [];
+    }
 }

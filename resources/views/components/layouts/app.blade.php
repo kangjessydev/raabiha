@@ -58,7 +58,7 @@
 
 	
     <!-- Tailwind CSS CDN and configuration -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script>
       tailwind.config = {
         theme: {

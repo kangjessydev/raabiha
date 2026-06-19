@@ -8,4 +8,13 @@ use Awcodes\Curator\Resources\Media\Pages\EditMedia as BaseEditMedia;
 class EditMedia extends BaseEditMedia
 {
     protected static string $resource = MediaResource::class;
+
+    public function getSubNavigation(): array
+    {
+        if (filled($cluster = static::getCluster()) && $cluster::shouldRegisterSubNavigation()) {
+            return $this->generateNavigationItems($cluster::getClusteredComponents());
+        }
+
+        return [];
+    }
 }

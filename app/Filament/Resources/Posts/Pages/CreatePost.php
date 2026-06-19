@@ -14,4 +14,13 @@ class CreatePost extends CreateRecord
         $data['user_id'] = auth()->id();
         return $data;
     }
+
+    public function getSubNavigation(): array
+    {
+        if (filled($cluster = static::getCluster()) && $cluster::shouldRegisterSubNavigation()) {
+            return $this->generateNavigationItems($cluster::getClusteredComponents());
+        }
+
+        return [];
+    }
 }

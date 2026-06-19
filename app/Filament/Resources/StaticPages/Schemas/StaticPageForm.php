@@ -15,7 +15,7 @@ class StaticPageForm
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(fn (string $operation, $state, \Filament\Forms\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
+                    ->afterStateUpdated(fn (string $operation, $state, \Filament\Schemas\Components\Utilities\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
                 \Filament\Forms\Components\TextInput::make('slug')
                     ->label('URL Slug')
                     ->required()
@@ -25,6 +25,7 @@ class StaticPageForm
                     ->label('Konten (HTML)')
                     ->required()
                     ->columnSpanFull()
+                    ->extraInputAttributes(['style' => 'min-height: 500px;'])
                     ->disableToolbarButtons(['attachFiles']),
                 \Filament\Forms\Components\Toggle::make('is_active')
                     ->label('Aktif & Terpublikasi')

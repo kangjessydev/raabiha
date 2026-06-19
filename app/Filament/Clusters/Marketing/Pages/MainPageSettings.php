@@ -49,6 +49,7 @@ class MainPageSettings extends Page implements HasForms
         // Decode JSON arrays for repeaters & builders
         $jsonKeys = [
             'home_marquee_items',
+            'home_lookbook_products',
             'about_values',
             'about_timeline',
             'contact_locations',
@@ -137,6 +138,13 @@ class MainPageSettings extends Page implements HasForms
                                         TextInput::make('home_lookbook_button_link')
                                             ->label('Link Tombol Lookbook')
                                             ->default('#'),
+                                        \Filament\Forms\Components\Select::make('home_lookbook_products')
+                                            ->label('Pilih Produk (Maksimal 3)')
+                                            ->multiple()
+                                            ->options(\App\Models\Product::where('is_active', true)->pluck('name', 'id')->toArray())
+                                            ->maxItems(3)
+                                            ->columnSpanFull()
+                                            ->helperText('Pilih secara manual produk apa saja yang ingin ditampilkan di samping gambar lookbook.'),
                                     ])->columns(2),
                             ]),
 

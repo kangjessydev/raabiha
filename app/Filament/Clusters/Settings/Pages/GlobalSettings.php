@@ -32,7 +32,7 @@ class GlobalSettings extends Page implements HasForms
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
         
         // Decode JSON arrays for repeaters
-        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'social_links', 'media_allowed_types'] as $jsonKey) {
+        foreach (['navbar_links', 'footer_links', 'footer_shop_links', 'footer_brand_links', 'footer_help_links', 'social_links', 'media_allowed_types'] as $jsonKey) {
             if (isset($settings[$jsonKey])) {
                 $decoded = json_decode($settings[$jsonKey], true);
                 $settings[$jsonKey] = is_array($decoded) ? $decoded : [];
