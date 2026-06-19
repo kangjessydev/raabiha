@@ -27,6 +27,16 @@ Dokumen ini mencatat fitur-fitur yang sudah selesai dilakukan pengujian secara m
   - Alur pengajuan dan pemrosesan dana kembalian (refund) berfungsi dengan baik.
 - [x] **Buku Kas (Cashflow)**
   - Pencatatan arus kas dan statistik laporan transaksi bekerja secara normal.
+- [x] **Halaman Statis (CMS)**
+  - Fitur tipografi Tailwind CSS berhasil diterapkan sehingga list, bold, heading, dll dari *Rich Editor* di admin panel ter-render dengan sempurna di *frontend*.
+  - Toolbar *Rich Editor* di-set menjadi *sticky* di bagian atas dengan latar warna solid agar tidak transparan/menimpa tulisan saat mengedit konten panjang.
+- [x] **Sales Page Builder**
+  - Berhasil mengubah struktur *Sales Page Builder* dari model kaku (hardcoded sections) menjadi sistem *Nested Builder* (Section > Widgets) yang lebih modular dan dinamis seperti Elementor.
+  - Implementasi warna latar belakang (*bg-color*) dan warna teks secara dinamis di *frontend* berjalan lancar.
+  - Opsi kustomisasi tipografi (jenis font, ukuran, warna, *alignment*) pada setiap *widget* tereksekusi dengan baik di *frontend*.
+  - Layout halaman khusus Sales Page otomatis dalam mode "Blank" (tanpa Navigasi, Footer, dan Bottom bar).
+- [x] **CMS Halaman Utama**
+  - Modul pengaturan tampilan halaman utama dari panel admin sudah bekerja dan terhubung secara *real-time* ke *frontend*.
 
 ---
 *Dokumen ini akan terus diperbarui seiring dengan berjalannya proses pengujian modul-modul lainnya.*

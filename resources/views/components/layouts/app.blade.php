@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'image' => null, 'header' => null])
+@props(['title' => null, 'description' => null, 'image' => null, 'header' => null, 'blank' => false])
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -183,7 +183,7 @@
     @endphp
 
     <div wire:key="layout-topbar-wrapper" class="contents">
-        @if($topbar && $topbar->is_active && !request()->is('checkout'))
+        @if(!$blank && $topbar && $topbar->is_active && !request()->is('checkout'))
         <!-- Topbar Promo Marquee -->
         <div class="{{ isset($header) ? 'hidden md:block' : '' }} text-[10px] tracking-[0.2em] uppercase py-2 overflow-hidden whitespace-nowrap" style="background-color: {{ $topbar->bg_color ?? '#000000' }}; color: {{ $topbar->text_color ?? '#ffffff' }};">
             <div class="inline-block md:w-full md:text-center animate-[marquee_20s_linear_infinite] md:animate-none pl-[100%] md:pl-0">
@@ -200,7 +200,7 @@
     @endphp
 
     <div wire:key="layout-holiday-banner-wrapper" class="contents">
-        @if($holidayMode && !request()->is('checkout'))
+        @if(!$blank && $holidayMode && !request()->is('checkout'))
         <!-- Holiday Mode Banner -->
         <div class="bg-red-700 text-white text-center py-3 px-4 shadow-sm z-[100] relative">
             <p class="text-xs md:text-sm font-sans max-w-4xl mx-auto flex items-center justify-center gap-2">
@@ -388,23 +388,25 @@
     
     
     <div wire:key="layout-header-wrapper" class="contents">
-        @if(request()->is('checkout'))
-            <div class="md:hidden">
-                {{ $header ?? '' }}
-            </div>
-            <div class="hidden md:flex py-8 justify-center border-b border-[#e5e2de] bg-[#fcf9f5]">
-                <a href="{{ url('/') }}" class="inline-block text-2xl font-serif tracking-widest text-[#064e3b] font-bold">RAABIHA</a>
-            </div>
-        @else
-            @if(isset($header))
+        @if(!$blank)
+            @if(request()->is('checkout'))
                 <div class="md:hidden">
-                    {{ $header }}
+                    {{ $header ?? '' }}
                 </div>
-                <div class="hidden md:block">
-                    <x-global.navbar />
+                <div class="hidden md:flex py-8 justify-center border-b border-[#e5e2de] bg-[#fcf9f5]">
+                    <a href="{{ url('/') }}" class="inline-block text-2xl font-serif tracking-widest text-[#064e3b] font-bold">RAABIHA</a>
                 </div>
             @else
-                <x-global.navbar />
+                @if(isset($header))
+                    <div class="md:hidden">
+                        {{ $header }}
+                    </div>
+                    <div class="hidden md:block">
+                        <x-global.navbar />
+                    </div>
+                @else
+                    <x-global.navbar />
+                @endif
             @endif
         @endif
     </div>
@@ -535,7 +537,7 @@
     </div>
 
     <div wire:key="layout-newsletter" class="contents">
-        @if(!isset($header) && !request()->is('checkout') && !request()->is('cart') && !request()->is('shop*') && !request()->is('katalog*'))
+        @if(!$blank && !isset($header) && !request()->is('checkout') && !request()->is('cart') && !request()->is('shop*') && !request()->is('katalog*'))
             <!-- Mobile Newsletter Block (Before Footer) -->
             <div class="md:hidden bg-black text-white px-6 py-16 text-center">
                 <div class="text-[9px] font-mono tracking-[0.2em] uppercase mb-4 text-[#a3a3a3]">The Inner Circle</div>
@@ -551,7 +553,7 @@
     
     <!-- Custom Minimal Footer -->
     <div wire:key="layout-footer" class="contents">
-        @if(!request()->is('checkout'))
+        @if(!$blank && !request()->is('checkout'))
             @if(!request()->is('shop*') && !request()->is('katalog*'))
             <div class="{{ (isset($header) || request()->is('cart')) ? 'hidden md:block' : '' }}">
                 <x-global.footer />
@@ -561,7 +563,7 @@
     </div>
 
     <div wire:key="layout-bottom-nav" class="contents">
-        @if(!isset($header) && !request()->is('checkout') && !request()->is('cart'))
+        @if(!$blank && !isset($header) && !request()->is('checkout') && !request()->is('cart'))
             <!-- Fixed Bottom Navigation (Mobile Only) -->
             <div class="md:hidden fixed bottom-0 left-0 right-0 bg-[#fcf9f5] border-t border-[#e5e2de] flex justify-between px-6 py-2 z-50">
             <a href="{{ url('/') }}" wire:navigate.hover class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('/') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
