@@ -54,6 +54,13 @@ class Checkout extends Component
 
     public function mount()
     {
+        $holidayMode = \App\Models\SiteSetting::where('key', 'store_holiday_mode')->value('value');
+        if ($holidayMode) {
+            $holidayMessage = \App\Models\SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
+            session()->flash('error', $holidayMessage);
+            return redirect('/cart');
+        }
+
         if (auth()->check()) {
             $this->guest_mode = false;
             $user = auth()->user();

@@ -206,11 +206,9 @@
             @endphp
             @forelse($latestProducts as $prod)
                 <div class="group block relative flex flex-col h-full">
-                    <div class="aspect-[1/1] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                        <a href="{{ url('/product/' . $prod->slug) }}" class="block w-full h-full">
-                            @if($prod->discount_price !== null && $prod->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
-                                <div class="absolute top-3 right-3 bg-[#b91c1c] text-white font-bold text-[10px] px-2.5 py-1 z-10 tracking-wider shadow-sm">-{{ round((($prod->price - $prod->discount_price) / $prod->price) * 100) }}%</div>
-                            @endif
+                    {{-- IMAGE CONTAINER: Portrait 3:4 editorial --}}
+                    <div class="aspect-[3/4] bg-[#e5e2de] mb-4 overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.09)] group-hover:shadow-[0_8px_36px_rgba(0,0,0,0.15)] transition-shadow duration-500">
+                        <a href="{{ url('/product/' . $prod->slug) }}" class="block w-full h-full" aria-label="Lihat produk {{ $prod->name }}">
                             @php
                                 $imageUrl = asset('assets/images/placeholder.png');
                                 if (!empty($prod->images)) {
@@ -226,74 +224,75 @@
                                     }
                                 }
                             @endphp
-                            <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $prod->name }}" />
+                            <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]" alt="{{ $prod->name }}" />
+                            {{-- Hover overlay --}}
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-500 flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100">
+                                <span class="text-white text-[9px] font-mono tracking-[0.25em] uppercase border border-white/80 px-5 py-2.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">Lihat Detail</span>
+                            </div>
                         </a>
-                        <div class="absolute bottom-3 right-3 z-10">
+                        {{-- Discount Badge --}}
+                        @if($prod->discount_price !== null && $prod->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                            <div class="absolute top-3 left-3 bg-[#1c1c1a] text-white text-[9px] font-mono tracking-[0.15em] px-2.5 py-1 z-10">-{{ round((($prod->price - $prod->discount_price) / $prod->price) * 100) }}%</div>
+                        @endif
+                        {{-- Wishlist --}}
+                        <div class="absolute top-3 right-3 z-10">
                             <livewire:wishlist-toggle :product_id="$prod->id" :key="'wishlist-home-'.$prod->id" />
                         </div>
                     </div>
+
+                    {{-- INFO BELOW IMAGE --}}
                     <a href="{{ url('/product/' . $prod->slug) }}" class="block flex-1 flex flex-col">
-                        <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-1">{{ $prod->name }}</h3>
-                    
-                    <!-- Price Section -->
-                    <div class="mb-2.5">
-                        @if($prod->discount_price !== null && $prod->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
-                            <div class="flex items-center gap-2 flex-wrap mb-1">
-                                <span class="text-[10px] text-[#9b9b9b] line-through">Rp{{ number_format($prod->price, 0, ',', '.') }}</span>
-                                <div class="text-[13px] font-bold text-[#1c1c1a] tracking-wide">Rp{{ number_format($prod->discount_price, 0, ',', '.') }}</div>
-                                <span class="text-[9px] font-bold text-[#b91c1c] bg-[#fee2e2] px-1 py-0.5 rounded-sm tracking-wider">-{{ round((($prod->price - $prod->discount_price) / $prod->price) * 100) }}%</span>
-                            </div>
-                        @else
-                            <div class="text-[13px] font-bold text-[#1c1c1a] tracking-wide mb-1">Rp{{ number_format($prod->effective_price, 0, ',', '.') }}</div>
-                        @endif
-                    </div>
+                        {{-- Product Name: serif italic for premium fashion feel --}}
+                        <h3 class="text-[13px] font-serif italic text-[#1c1c1a] mb-1.5 line-clamp-2 leading-snug tracking-wide">{{ $prod->name }}</h3>
 
-                    <!-- Promo & Voucher Labels -->
-                    @php
-                        $globalPromos = \App\Models\Voucher::getGlobalPromoLabels();
-                    @endphp
-                    
-                    @if($prod->has_free_shipping || count($globalPromos) > 0)
-                        <div class="flex flex-wrap gap-1.5 mb-2.5">
-                            @if($prod->has_free_shipping && !collect($globalPromos)->contains('type', 'shipping'))
-                                <span class="text-[8px] font-bold text-[#064e3b] bg-[#e6f4ea] px-1.5 py-0.5 rounded flex items-center gap-1 border border-[#064e3b]/20 uppercase tracking-widest">
-                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                                    Gratis Ongkir
-                                </span>
-                            @endif
-                            
-                            @foreach($globalPromos as $promo)
-                                <span class="text-[8px] font-bold {{ $promo['color'] }} {{ $promo['bg'] }} px-1.5 py-0.5 rounded flex items-center gap-1 border {{ $promo['border'] }} uppercase tracking-widest">
-                                    @if($promo['icon']) {!! $promo['icon'] !!} @endif
-                                    {{ $promo['text'] }}
-                                </span>
-                            @endforeach
-                        </div>
-                    @endif
+                        {{-- Thin accent divider --}}
+                        <div class="w-5 h-[1.5px] bg-[#1c1c1a]/30 mb-2.5"></div>
 
-                    <!-- Rating & Sold Count -->
-                    @if($prod->effective_rating > 0 || $prod->effective_sold_count > 0)
-                        <div class="flex items-center gap-1.5 text-[9px] text-[#615e57] uppercase tracking-widest font-mono">
-                            @if($prod->effective_rating > 0)
-                                <div class="flex items-center text-[#eab308] gap-0.5">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <span class="font-bold text-[#1c1c1a]">{{ number_format($prod->effective_rating, 1, ',', '.') }}</span>
+                        {{-- Price: prominent --}}
+                        <div class="mb-2.5">
+                            @if($prod->discount_price !== null && $prod->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-[15px] font-bold text-[#1c1c1a]">Rp{{ number_format($prod->discount_price, 0, ',', '.') }}</span>
+                                    <span class="text-[11px] text-[#b0aca6] line-through">Rp{{ number_format($prod->price, 0, ',', '.') }}</span>
                                 </div>
-                            @endif
-                            
-                            @if($prod->effective_rating > 0 && $prod->effective_sold_count > 0)
-                                <div class="w-0.5 h-0.5 rounded-full bg-[#1c1c1a]"></div>
-                            @endif
-                            
-                            @if($prod->effective_sold_count > 0)
-                                @php
-                                    $soldCount = $prod->effective_sold_count;
-                                    $soldText = $soldCount >= 1000 ? number_format($soldCount / 1000, 1, ',', '.') . 'rb' : $soldCount;
-                                @endphp
-                                <span>Terjual {{ $soldText }}</span>
+                            @else
+                                <span class="text-[15px] font-bold text-[#1c1c1a]">Rp{{ number_format($prod->effective_price, 0, ',', '.') }}</span>
                             @endif
                         </div>
-                    @endif
+
+                        {{-- Promo badges: pill with subtle border --}}
+                        @php $globalPromos = \App\Models\Voucher::getGlobalPromoLabels(); @endphp
+                        @if($prod->has_free_shipping || count($globalPromos) > 0)
+                            <div class="flex flex-wrap gap-1.5 mb-2.5">
+                                @if($prod->has_free_shipping && !collect($globalPromos)->contains('type', 'shipping'))
+                                    <span class="text-[8px] font-semibold text-[#064e3b] bg-[#f0faf4] border border-[#064e3b]/25 uppercase tracking-[0.1em] px-2 py-0.5 rounded-full">
+                                        Gratis Ongkir
+                                    </span>
+                                @endif
+                                @foreach($globalPromos as $promo)
+                                    <span class="text-[8px] font-semibold text-[#615e57] bg-[#f5f3ef] border border-[#c4c0b8] uppercase tracking-[0.1em] px-2 py-0.5 rounded-full">
+                                        {{ $promo['text'] }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        {{-- Rating & Sold --}}
+                        @if($prod->effective_rating > 0 || $prod->effective_sold_count > 0)
+                            <div class="flex items-center gap-1.5">
+                                @if($prod->effective_rating > 0)
+                                    <span class="text-[#d4a843] text-[11px]">★</span>
+                                    <span class="text-[10px] font-semibold text-[#1c1c1a]">{{ number_format($prod->effective_rating, 1, ',', '.') }}</span>
+                                @endif
+                                @if($prod->effective_rating > 0 && $prod->effective_sold_count > 0)
+                                    <span class="text-[#c4c0b8] text-[10px]">·</span>
+                                @endif
+                                @if($prod->effective_sold_count > 0)
+                                    @php $soldCount = $prod->effective_sold_count; $soldText = $soldCount >= 1000 ? number_format($soldCount / 1000, 1, ',', '.') . 'rb' : $soldCount; @endphp
+                                    <span class="text-[10px] text-[#9b9b9b]">{{ $soldText }} terjual</span>
+                                @endif
+                            </div>
+                        @endif
                     </a>
                 </div>
             @empty

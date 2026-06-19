@@ -24,12 +24,12 @@
         <!-- ==================== DESKTOP (Hidden on Mobile) ==================== -->
         <div class="hidden md:block">
             <!-- DESKTOP LAYOUT -->
-            <div class="flex items-center justify-between px-12 py-5 relative z-50 bg-[#fcf9f5]">
+            <div class="flex items-center justify-between px-12 h-[80px] relative z-50 bg-[#fcf9f5]">
                 <!-- Desktop Logo -->
                 <div class="w-[180px] shrink-0">
-                    <a href="{{ url('/') }}" wire:navigate.hover class="block hover:opacity-80 transition-opacity">
+                    <a href="{{ url('/') }}" wire:navigate.hover class="block hover:opacity-80 transition-opacity h-full flex items-center">
                         @if($logoLightUrl)
-                            <img src="{{ $logoLightUrl }}" alt="{{ $siteName }}" class="h-10 w-auto object-contain">
+                            <img src="{{ $logoLightUrl }}" alt="{{ $siteName }}" class="h-[56px] w-auto max-w-[200px] object-contain">
                         @else
                             <span class="text-2xl font-bold tracking-widest text-[#064e3b] font-serif uppercase whitespace-nowrap">{{ strtoupper($siteName) }}</span>
                         @endif
@@ -100,16 +100,16 @@
         <!-- ==================== MOBILE (Hidden on Desktop) ==================== -->
         <div class="block md:hidden">
             <!-- MOBILE LAYOUT -->
-            <div class="flex items-center justify-between px-6 py-4 relative z-50 bg-[#fcf9f5]">
+            <div class="flex items-center justify-between px-6 h-[64px] relative z-50 bg-[#fcf9f5]">
                 <!-- Hamburger Menu (Left) -->
                 <button id="mobile-menu-toggle" class="text-[#1c1c1a] hover:text-[#064e3b] transition-colors focus:outline-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
                 
                 <!-- Mobile Logo (Center) -->
-                <a href="{{ url('/') }}" wire:navigate.hover class="block hover:opacity-80 transition-opacity absolute left-1/2 -translate-x-1/2">
+                <a href="{{ url('/') }}" wire:navigate.hover class="block hover:opacity-80 transition-opacity absolute left-1/2 -translate-x-1/2 h-full flex items-center">
                     @if($logoMobileUrl)
-                        <img src="{{ $logoMobileUrl }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
+                        <img src="{{ $logoMobileUrl }}" alt="{{ $siteName }}" class="h-[44px] w-auto max-w-[150px] object-contain">
                     @else
                         <span class="text-xl font-bold tracking-widest text-[#064e3b] font-serif uppercase whitespace-nowrap">{{ strtoupper($siteName) }}</span>
                     @endif

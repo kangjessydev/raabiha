@@ -345,6 +345,13 @@ class ProductDetail extends Component
         if (session()->has('error')) {
             return;
         }
+
+        $holidayMode = \App\Models\SiteSetting::where('key', 'store_holiday_mode')->value('value');
+        if ($holidayMode) {
+            $holidayMessage = \App\Models\SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
+            session()->flash('error', $holidayMessage);
+            return;
+        }
         
         // Mark as buy_now or just redirect to checkout since we just added it to the cart
         return redirect()->to('/checkout');

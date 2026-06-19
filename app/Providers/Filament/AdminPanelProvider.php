@@ -51,7 +51,12 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->font('Poppins')
             ->login()
-            ->profile()
+            ->userMenuItems([
+                \Filament\Navigation\MenuItem::make()
+                    ->label('Profil')
+                    ->url(fn (): string => \App\Filament\Pages\MyProfile::getUrl())
+                    ->icon('heroicon-m-user-circle'),
+            ])
             ->colors([
                 'primary' => \Filament\Support\Colors\Color::Emerald,
                 'gray' => \Filament\Support\Colors\Color::Stone,

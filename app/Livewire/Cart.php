@@ -187,6 +187,13 @@ class Cart extends Component
     
     public function proceedToCheckout()
     {
+        $holidayMode = \App\Models\SiteSetting::where('key', 'store_holiday_mode')->value('value');
+        if ($holidayMode) {
+            $holidayMessage = \App\Models\SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
+            session()->flash('error', $holidayMessage);
+            return;
+        }
+
         if (empty($this->selectedItems)) {
             session()->flash('error', 'Pilih minimal satu produk untuk di-checkout.');
             return;

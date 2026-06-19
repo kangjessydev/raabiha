@@ -52,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
                 \Awcodes\Curator\Components\Forms\CuratorPicker::configureUsing(function (\Awcodes\Curator\Components\Forms\CuratorPicker $component) use ($maxSizeKb, $allowedTypes) {
                     $component->maxSize($maxSizeKb);
                     if ($allowedTypes && is_array($allowedTypes)) {
+                        if (in_array('image/x-icon', $allowedTypes) && !in_array('image/vnd.microsoft.icon', $allowedTypes)) {
+                            $allowedTypes[] = 'image/vnd.microsoft.icon';
+                        }
                         $component->acceptedFileTypes($allowedTypes);
                     }
                 });
@@ -75,6 +78,8 @@ class AppServiceProvider extends ServiceProvider
             'image/png',
             'image/webp',
             'image/svg+xml',
+            'image/x-icon',
+            'image/vnd.microsoft.icon',
             'video/mp4',
             'application/pdf',
             'application/vnd.ms-excel',

@@ -1,13 +1,13 @@
-
 <main class="site-main bg-[#fcf9f5] min-h-screen pb-24 pt-4 md:pt-8" x-data="{ mobileFilterOpen: false }">
 
-        <!-- Header Section -->
-        <section class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-12">
-            <h1 class="text-5xl md:text-6xl lg:text-7xl font-serif text-[#1c1c1a] mb-6 tracking-tight uppercase">
-                Katalog Produk
-            </h1>
-            <p class="text-[#615e57] text-sm md:text-base leading-relaxed max-w-2xl mb-12 font-sans">
-                Architectural silhouettes designed for the contemporary modest lifestyle. Melding urban utility with high-fashion restraint.
+    <!-- Header Section -->
+    <section class="max-w-[1440px] mx-auto px-6 lg:px-12 mb-12">
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-serif text-[#1c1c1a] mb-6 tracking-tight uppercase">
+            Katalog Produk
+        </h1>
+        <p class="text-[#615e57] text-sm md:text-base leading-relaxed max-w-2xl mb-12 font-sans">
+            Pilih produk sesuai seleramu. Boleh keranjangin atau ❤️
+        dulu aja 😉
             </p>
             <div class="w-full h-[1px] bg-[#e5e2de]"></div>
         </section>
@@ -71,68 +71,68 @@
                     <!-- Dynamic Attributes -->
                     @foreach($filterAttributes as $attr)
                         @if($attr->options->count() > 0)
-                        @php $isLarge = $attr->options->count() > 10; @endphp
-                        <div class="mb-10" x-data="{ expanded: false, searchOption: '' }">
-                            <div class="flex justify-between items-end mb-4 pb-2 border-b border-[#e5e2de]">
-                                <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase">{{ $attr->name }}</h4>
+                            @php $isLarge = $attr->options->count() > 10; @endphp
+                            <div class="mb-10" x-data="{ expanded: false, searchOption: '' }">
+                                <div class="flex justify-between items-end mb-4 pb-2 border-b border-[#e5e2de]">
+                                    <h4 class="text-[#1c1c1a] text-[10px] font-mono tracking-[0.2em] uppercase">{{ $attr->name }}</h4>
+                                    @if(!$isLarge && $attr->options->count() > 5)
+                                        <button x-show="expanded" x-cloak @click="expanded = false" class="text-[9px] text-[#615e57] hover:text-[#1c1c1a] font-mono font-bold tracking-widest uppercase transition-colors">
+                                            - Sembunyikan
+                                        </button>
+                                    @endif
+                                </div>
+
+                                @if($isLarge)
+                                    <div class="mb-4 relative">
+                                        <input x-model="searchOption" type="text" placeholder="Cari {{ strtolower($attr->name) }}..." class="w-full border-b border-[#e5e2de] px-0 py-2 text-[10px] font-mono tracking-widest uppercase bg-transparent focus:outline-none focus:border-[#1c1c1a] transition-colors">
+                                        <span class="absolute right-0 top-1/2 -translate-y-1/2 text-[#615e57]">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                        </span>
+                                    </div>
+                                @endif
+
+                                <div class="{{ strtolower($attr->name) == 'ukuran' ? 'grid grid-cols-2 gap-y-4' : (strtolower($attr->name) == 'warna' ? 'flex flex-wrap gap-2' : 'flex flex-col gap-4') }} {{ $isLarge ? 'max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#d1cec9] scrollbar-track-transparent' : '' }}">
+                                    @foreach($attr->options as $index => $option)
+
+                                        @if(strtolower($attr->name) == 'warna')
+                                            <!-- Warna rendered as dense tags -->
+                                            <label class="flex items-center gap-2 cursor-pointer group relative border border-[#d1cec9] hover:border-[#1c1c1a] px-2.5 py-1.5 transition-colors"
+                                                :class="searchOption === '' ? '' : ('{{ strtolower(addslashes($option->value)) }}'.includes(searchOption.toLowerCase()) ? '' : 'hidden')"
+                                                @if(!$isLarge) x-show="expanded || {{ $index }} < 10" style="display: {{ $index < 10 ? 'flex' : 'none' }};" @endif
+                                            >
+                                                <input type="checkbox" wire:model.live="selectedAttributes.{{ $attr->id }}" value="{{ $option->id }}" class="opacity-0 absolute w-0 h-0 peer">
+                                                @if($option->meta)
+                                                    <div class="w-3 h-3 shrink-0 border border-black/10 rounded-full" style="background-color: {{ $option->meta }};"></div>
+                                                @endif
+                                                <span class="text-[#1c1c1a] text-[9px] font-mono uppercase tracking-wider peer-checked:font-bold">{{ $option->value }}</span>
+                                                <!-- absolute overlay to show it's checked with a border -->
+                                                <div class="absolute inset-0 border-2 border-transparent peer-checked:border-[#1c1c1a] pointer-events-none transition-colors"></div>
+                                            </label>
+                                        @else
+                                            <!-- Default Filter Output -->
+                                            <label class="flex items-center gap-3 cursor-pointer group relative" 
+                                                @if($isLarge)
+                                                    x-show="searchOption === '' || '{{ strtolower(addslashes($option->value)) }}'.includes(searchOption.toLowerCase())"
+                                                @else
+                                                    x-show="expanded || {{ $index }} < 5" style="display: {{ $index < 5 ? 'flex' : 'none' }};"
+                                                @endif
+                                            >
+                                                <input type="checkbox" wire:model.live="selectedAttributes.{{ $attr->id }}" value="{{ $option->id }}" class="opacity-0 absolute w-0 h-0 peer">
+                                                <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
+                                                    <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                                </div>
+                                                <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">{{ $option->value }}</span>
+                                            </label>
+                                        @endif
+
+                                    @endforeach
+                                </div>
                                 @if(!$isLarge && $attr->options->count() > 5)
-                                    <button x-show="expanded" x-cloak @click="expanded = false" class="text-[9px] text-[#615e57] hover:text-[#1c1c1a] font-mono font-bold tracking-widest uppercase transition-colors">
-                                        - Sembunyikan
+                                    <button @click="expanded = !expanded" class="text-[9px] text-[#615e57] hover:text-[#1c1c1a] font-mono font-bold tracking-widest mt-4 uppercase transition-colors flex items-center gap-1">
+                                        <span x-text="expanded ? '- Sembunyikan' : '+ Lihat {{ $attr->options->count() - 5 }} Lainnya'"></span>
                                     </button>
                                 @endif
                             </div>
-                            
-                            @if($isLarge)
-                                <div class="mb-4 relative">
-                                    <input x-model="searchOption" type="text" placeholder="Cari {{ strtolower($attr->name) }}..." class="w-full border-b border-[#e5e2de] px-0 py-2 text-[10px] font-mono tracking-widest uppercase bg-transparent focus:outline-none focus:border-[#1c1c1a] transition-colors">
-                                    <span class="absolute right-0 top-1/2 -translate-y-1/2 text-[#615e57]">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                    </span>
-                                </div>
-                            @endif
-
-                            <div class="{{ strtolower($attr->name) == 'ukuran' ? 'grid grid-cols-2 gap-y-4' : (strtolower($attr->name) == 'warna' ? 'flex flex-wrap gap-2' : 'flex flex-col gap-4') }} {{ $isLarge ? 'max-h-[240px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#d1cec9] scrollbar-track-transparent' : '' }}">
-                                @foreach($attr->options as $index => $option)
-                                
-                                @if(strtolower($attr->name) == 'warna')
-                                    <!-- Warna rendered as dense tags -->
-                                    <label class="flex items-center gap-2 cursor-pointer group relative border border-[#d1cec9] hover:border-[#1c1c1a] px-2.5 py-1.5 transition-colors"
-                                        :class="searchOption === '' ? '' : ('{{ strtolower(addslashes($option->value)) }}'.includes(searchOption.toLowerCase()) ? '' : 'hidden')"
-                                        @if(!$isLarge) x-show="expanded || {{ $index }} < 10" style="display: {{ $index < 10 ? 'flex' : 'none' }};" @endif
-                                    >
-                                        <input type="checkbox" wire:model.live="selectedAttributes.{{ $attr->id }}" value="{{ $option->id }}" class="opacity-0 absolute w-0 h-0 peer">
-                                        @if($option->meta)
-                                            <div class="w-3 h-3 shrink-0 border border-black/10 rounded-full" style="background-color: {{ $option->meta }};"></div>
-                                        @endif
-                                        <span class="text-[#1c1c1a] text-[9px] font-mono uppercase tracking-wider peer-checked:font-bold">{{ $option->value }}</span>
-                                        <!-- absolute overlay to show it's checked with a border -->
-                                        <div class="absolute inset-0 border-2 border-transparent peer-checked:border-[#1c1c1a] pointer-events-none transition-colors"></div>
-                                    </label>
-                                @else
-                                    <!-- Default Filter Output -->
-                                    <label class="flex items-center gap-3 cursor-pointer group relative" 
-                                        @if($isLarge)
-                                            x-show="searchOption === '' || '{{ strtolower(addslashes($option->value)) }}'.includes(searchOption.toLowerCase())"
-                                        @else
-                                            x-show="expanded || {{ $index }} < 5" style="display: {{ $index < 5 ? 'flex' : 'none' }};"
-                                        @endif
-                                    >
-                                        <input type="checkbox" wire:model.live="selectedAttributes.{{ $attr->id }}" value="{{ $option->id }}" class="opacity-0 absolute w-0 h-0 peer">
-                                        <div class="w-4 h-4 border border-[#d1cec9] peer-checked:bg-[#1c1c1a] peer-checked:border-[#1c1c1a] group-hover:border-[#1c1c1a] flex items-center justify-center transition-colors">
-                                            <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                        </div>
-                                        <span class="text-[#1c1c1a] text-[10px] font-mono uppercase tracking-widest peer-checked:font-bold">{{ $option->value }}</span>
-                                    </label>
-                                @endif
-
-                                @endforeach
-                            </div>
-                            @if(!$isLarge && $attr->options->count() > 5)
-                                <button @click="expanded = !expanded" class="text-[9px] text-[#615e57] hover:text-[#1c1c1a] font-mono font-bold tracking-widest mt-4 uppercase transition-colors flex items-center gap-1">
-                                    <span x-text="expanded ? '- Sembunyikan' : '+ Lihat {{ $attr->options->count() - 5 }} Lainnya'"></span>
-                                </button>
-                            @endif
-                        </div>
                         @endif
                     @endforeach
 
@@ -242,11 +242,9 @@
                     <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, selectedSizes, selectedColors, maxPrice, sort" class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 lg:gap-x-6 gap-y-12 w-full mt-4">
                         @forelse ($products as $product)
                             <div class="group block relative flex flex-col h-full">
-                                <div class="aspect-[1/1] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                                    <a href="{{ url('/product/' . $product->slug) }}" class="block w-full h-full">
-                                        @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
-                                            <div class="absolute top-3 right-3 bg-[#b91c1c] text-white font-bold text-[10px] px-2.5 py-1 z-10 tracking-wider shadow-sm">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
-                                        @endif
+                                {{-- IMAGE: Portrait 3:4 editorial --}}
+                                <div class="aspect-[3/4] bg-[#e5e2de] mb-4 overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.09)] group-hover:shadow-[0_8px_36px_rgba(0,0,0,0.15)] transition-shadow duration-500">
+                                    <a href="{{ url('/product/' . $product->slug) }}" class="block w-full h-full" aria-label="Lihat produk {{ $product->name }}">
                                         @php
                                             $imageUrl = asset('assets/images/placeholder.png');
                                             if (!empty($product->images)) {
@@ -262,74 +260,74 @@
                                                 }
                                             }
                                         @endphp
-                                        <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $product->name }}" />
-                                    </a>
-                                    <div class="absolute bottom-3 right-3 z-10">
-                                        <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-shop-'.$product->id" />
-                                    </div>
-                                </div>
-                                <a href="{{ url('/product/' . $product->slug) }}" class="block flex-1 flex flex-col">
-                                    <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-1">{{ $product->name }}</h3>
-                                
-                                <!-- Price Section -->
-                                <div class="mb-2.5">
-                                    @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
-                                        <div class="flex items-center gap-2 flex-wrap mb-1">
-                                            <span class="text-[10px] text-[#9b9b9b] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
-                                            <div class="text-[13px] font-bold text-[#1c1c1a] tracking-wide">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</div>
-                                            <span class="text-[9px] font-bold text-[#b91c1c] bg-[#fee2e2] px-1 py-0.5 rounded-sm tracking-wider">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</span>
+                                        <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]" alt="{{ $product->name }}" />
+                                        {{-- Hover overlay --}}
+                                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-500 flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100">
+                                            <span class="text-white text-[9px] font-mono tracking-[0.25em] uppercase border border-white/80 px-5 py-2.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">Lihat Detail</span>
                                         </div>
-                                    @else
-                                        <div class="text-[13px] font-bold text-[#1c1c1a] tracking-wide mb-1">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</div>
+                                    </a>
+                                    {{-- Discount Badge --}}
+                                    @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                        <div class="absolute top-3 left-3 bg-[#1c1c1a] text-white text-[9px] font-mono tracking-[0.15em] px-2.5 py-1 z-10">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
                                     @endif
+                                    {{-- Wishlist --}}
+                                    <div class="absolute top-3 right-3 z-10">
+                                        <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-shop-' . $product->id" />
+                                    </div>
                                 </div>
 
-                                <!-- Promo & Voucher Labels -->
-                                @php
-                                    $globalPromos = \App\Models\Voucher::getGlobalPromoLabels();
-                                @endphp
-                                
-                                @if($product->has_free_shipping || count($globalPromos) > 0)
-                                    <div class="flex flex-wrap gap-1.5 mb-2.5">
-                                        @if($product->has_free_shipping && !collect($globalPromos)->contains('type', 'shipping'))
-                                            <span class="text-[8px] font-bold text-[#064e3b] bg-[#e6f4ea] px-1.5 py-0.5 rounded flex items-center gap-1 border border-[#064e3b]/20 uppercase tracking-widest">
-                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                                                Gratis Ongkir
-                                            </span>
-                                        @endif
-                                        
-                                        @foreach($globalPromos as $promo)
-                                            <span class="text-[8px] font-bold {{ $promo['color'] }} {{ $promo['bg'] }} px-1.5 py-0.5 rounded flex items-center gap-1 border {{ $promo['border'] }} uppercase tracking-widest">
-                                                @if($promo['icon']) {!! $promo['icon'] !!} @endif
-                                                {{ $promo['text'] }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                @endif
+                                {{-- INFO --}}
+                                <a href="{{ url('/product/' . $product->slug) }}" class="block flex-1 flex flex-col">
+                                    <h3 class="text-[13px] font-serif italic text-[#1c1c1a] mb-1.5 line-clamp-2 leading-snug tracking-wide">{{ $product->name }}</h3>
 
-                                <!-- Rating & Sold Count -->
-                                @if($product->effective_rating > 0 || $product->effective_sold_count > 0)
-                                    <div class="flex items-center gap-1.5 text-[9px] text-[#615e57] uppercase tracking-widest font-mono">
-                                        @if($product->effective_rating > 0)
-                                            <div class="flex items-center text-[#eab308] gap-0.5">
-                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                                <span class="font-bold text-[#1c1c1a]">{{ number_format($product->effective_rating, 1, ',', '.') }}</span>
+                                    <div class="w-5 h-[1.5px] bg-[#1c1c1a]/30 mb-2.5"></div>
+
+                                    {{-- Price --}}
+                                    <div class="mb-2.5">
+                                        @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                            <div class="flex items-baseline gap-2">
+                                                <span class="text-[15px] font-bold text-[#1c1c1a]">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</span>
+                                                <span class="text-[11px] text-[#b0aca6] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
                                             </div>
-                                        @endif
-                                        
-                                        @if($product->effective_rating > 0 && $product->effective_sold_count > 0)
-                                            <div class="w-0.5 h-0.5 rounded-full bg-[#1c1c1a]"></div>
-                                        @endif
-                                        
-                                        @if($product->effective_sold_count > 0)
-                                            @php
-                                                $soldCount = $product->effective_sold_count;
-                                                $soldText = $soldCount >= 1000 ? number_format($soldCount / 1000, 1, ',', '.') . 'rb' : $soldCount;
-                                            @endphp
-                                            <span>Terjual {{ $soldText }}</span>
+                                        @else
+                                            <span class="text-[15px] font-bold text-[#1c1c1a]">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</span>
                                         @endif
                                     </div>
-                                @endif
+
+                                    {{-- Promo labels: pill style --}}
+                                    @php $globalPromos = \App\Models\Voucher::getGlobalPromoLabels(); @endphp
+                                    @if($product->has_free_shipping || count($globalPromos) > 0)
+                                        <div class="flex flex-wrap gap-1.5 mb-2.5">
+                                            @if($product->has_free_shipping && !collect($globalPromos)->contains('type', 'shipping'))
+                                                <span class="text-[8px] font-semibold text-[#064e3b] bg-[#f0faf4] border border-[#064e3b]/25 uppercase tracking-[0.1em] px-2 py-0.5 rounded-full">
+                                                    Gratis Ongkir
+                                                </span>
+                                            @endif
+                                            @foreach($globalPromos as $promo)
+                                                <span class="text-[8px] font-semibold text-[#615e57] bg-[#f5f3ef] border border-[#c4c0b8] uppercase tracking-[0.1em] px-2 py-0.5 rounded-full">
+                                                    {{ $promo['text'] }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    {{-- Rating & Sold --}}
+                                    @if($product->effective_rating > 0 || $product->effective_sold_count > 0)
+                                        <div class="flex items-center gap-1.5">
+                                            @if($product->effective_rating > 0)
+                                                <span class="text-[#d4a843] text-[11px]">★</span>
+                                                <span class="text-[10px] font-semibold text-[#1c1c1a]">{{ number_format($product->effective_rating, 1, ',', '.') }}</span>
+                                            @endif
+                                            @if($product->effective_rating > 0 && $product->effective_sold_count > 0)
+                                                <span class="text-[#c4c0b8] text-[10px]">·</span>
+                                            @endif
+                                            @if($product->effective_sold_count > 0)
+                                                @php $soldCount = $product->effective_sold_count;
+                                                $soldText = $soldCount >= 1000 ? number_format($soldCount / 1000, 1, ',', '.') . 'rb' : $soldCount; @endphp
+                                                <span class="text-[10px] text-[#9b9b9b]">{{ $soldText }} terjual</span>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </a>
                             </div>
                         @empty

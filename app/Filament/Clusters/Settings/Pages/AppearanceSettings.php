@@ -63,10 +63,11 @@ class AppearanceSettings extends Page implements HasForms
                                         'image/png' => 'PNG',
                                         'image/webp' => 'WEBP',
                                         'image/gif' => 'GIF',
+                                        'image/x-icon' => 'ICO (Favicon)',
                                         'video/mp4' => 'MP4 Video',
                                         'application/pdf' => 'PDF',
                                     ])
-                                    ->default(['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+                                    ->default(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/x-icon']),
                             ]),
                         \Filament\Schemas\Components\Tabs\Tab::make('Navbar')
                             ->components([

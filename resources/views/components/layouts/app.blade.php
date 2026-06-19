@@ -28,7 +28,15 @@
 
     <title>{{ $finalTitle }}</title>
     <meta name="description" content="{{ $finalDesc }}">
-    <link rel="icon" type="image/x-icon" href="{{ $faviconUrl }}" />
+    @php
+        $faviconMime = 'image/x-icon';
+        if (Str::endsWith(strtolower($faviconUrl), '.png')) $faviconMime = 'image/png';
+        elseif (Str::endsWith(strtolower($faviconUrl), '.jpg') || Str::endsWith(strtolower($faviconUrl), '.jpeg')) $faviconMime = 'image/jpeg';
+        elseif (Str::endsWith(strtolower($faviconUrl), '.svg')) $faviconMime = 'image/svg+xml';
+    @endphp
+    <link rel="icon" type="{{ $faviconMime }}" href="{{ $faviconUrl }}" />
+    <link rel="shortcut icon" type="{{ $faviconMime }}" href="{{ $faviconUrl }}" />
+    <link rel="apple-touch-icon" href="{{ $faviconUrl }}" />
     <link rel="canonical" href="{{ url()->current() }}" />
     
     <!-- Open Graph / Facebook -->

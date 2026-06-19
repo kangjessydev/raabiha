@@ -165,6 +165,7 @@ class RoleResource extends Resource
     }
 
     public static function getNavigationGroup(): ?string { return 'Manajemen Pengguna'; }
+    public static function getNavigationSort(): ?int { return 3; }
 
     public static function getCluster(): ?string
     {
