@@ -39,7 +39,7 @@ class MyProfile extends Page implements HasForms
         return $schema
             ->components([
                         \Filament\Schemas\Components\Group::make([
-                            \Filament\Forms\Components\View::make('components.avatar-style'),
+                            \Filament\Schemas\Components\View::make('components.avatar-style'),
                             \Awcodes\Curator\Components\Forms\CuratorPicker::make('avatar_url')
                                 ->label('')
                                 ->buttonLabel('Pilih Foto')

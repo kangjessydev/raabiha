@@ -2,6 +2,8 @@
 
 namespace App\Filament\Clusters\Settings\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -12,6 +14,8 @@ use Filament\Notifications\Notification;
 
 class AppearanceSettings extends Page implements HasForms
 {
+    use HasPageShield;
+
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-paint-brush';

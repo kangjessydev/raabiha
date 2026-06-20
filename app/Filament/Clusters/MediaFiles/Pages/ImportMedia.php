@@ -2,6 +2,8 @@
 
 namespace App\Filament\Clusters\MediaFiles\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use App\Filament\Clusters\MediaFiles;
 use App\Filament\Imports\OrderImporter;
 use App\Filament\Imports\ProductImporter;
@@ -11,6 +13,8 @@ use Filament\Pages\Page;
 
 class ImportMedia extends Page
 {
+    use HasPageShield;
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-down-tray';
 
     protected string $view = 'filament.clusters.media-files.pages.import-media';

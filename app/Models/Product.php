@@ -15,6 +15,7 @@ class Product extends Model
         'category_id',
         'name',
         'slug',
+        'sku',
         'description',
         'images',
         'price',
@@ -28,6 +29,7 @@ class Product extends Model
         'wholesale_pricing',
         'promo_rules',
         'is_active',
+        'is_hidden',
         'minimum_stock',
         'purchase_price',
         'rating',
@@ -37,6 +39,7 @@ class Product extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_hidden' => 'boolean',
         'has_variants' => 'boolean',
         'has_free_shipping' => 'boolean',
         'wholesale_pricing' => 'array',

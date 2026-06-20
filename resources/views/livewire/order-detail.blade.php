@@ -9,7 +9,7 @@
                 
                 <!-- Back Button & Header -->
                 <div class="hidden md:flex items-center gap-4 mb-8">
-                    <a href="/account" wire:navigate.hover class="w-10 h-10 border border-[#e5e2de] bg-white flex items-center justify-center hover:bg-[#f0ede9] transition-colors shrink-0">
+                    <a href="/account" class="w-10 h-10 border border-[#e5e2de] bg-white flex items-center justify-center hover:bg-[#f0ede9] transition-colors shrink-0">
                         <svg class="w-5 h-5 text-[#1c1c1a]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </a>
                     <div>

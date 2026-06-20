@@ -25,11 +25,10 @@ class ProductImporter extends Importer
                 ->exampleHeader('Nama Varian (misal: Merah XL)')
                 ->rules(['nullable'])
                 ->fillRecordUsing(fn () => null),
-            ImportColumn::make('variant_sku')
-                ->label('SKU Varian')
-                ->exampleHeader('SKU Varian')
-                ->rules(['nullable'])
-                ->fillRecordUsing(fn () => null),
+            ImportColumn::make('sku')
+                ->label('SKU')
+                ->exampleHeader('SKU')
+                ->rules(['nullable', 'string']),
             ImportColumn::make('category')
                 ->relationship('category', 'name')
                 ->label('Kategori')
@@ -58,7 +57,7 @@ class ProductImporter extends Importer
                 ->exampleHeader('Harga')
                 ->requiredMapping()
                 ->numeric()
-                ->rules(['required', 'numeric']),
+                ->rules(['nullable', 'numeric']),
             ImportColumn::make('discount_price')
                 ->label('Harga Diskon')
                 ->exampleHeader('Harga Diskon')
@@ -125,6 +124,20 @@ class ProductImporter extends Importer
                 ->exampleHeader('Meta Description')
                 ->rules(['nullable', 'max:160']),
         ];
+
+        // Dynamically append attribute columns for import
+        if (\Illuminate\Support\Facades\Schema::hasTable('attributes')) {
+            $attributes = \App\Models\Attribute::all();
+            foreach ($attributes as $attr) {
+                $columns[] = ImportColumn::make('Attr: ' . $attr->name)
+                    ->label('Attr: ' . $attr->name)
+                    ->exampleHeader('Attr: ' . $attr->name)
+                    ->rules(['nullable', 'string'])
+                    ->fillRecordUsing(fn () => null); // we handle it manually in saveRecord
+            }
+        }
+
+        return $columns;
     }
 
     public function resolveRecord(): Product
@@ -171,28 +184,59 @@ class ProductImporter extends Importer
 
                 // Cari varian berdasarkan SKU atau Nama Varian
                 $variantQuery = \App\Models\ProductVariant::where('product_id', $parent->id);
-                if (filled($this->data['variant_sku'] ?? null)) {
-                    $variantQuery->where('sku', $this->data['variant_sku']);
+                if (filled($this->data['sku'] ?? null)) {
+                    $variantQuery->where('sku', $this->data['sku']);
                 } else {
                     $variantQuery->where('name', $this->data['variant_name'] ?? 'Default');
                 }
                 
+                \Illuminate\Support\Facades\Log::info('Import Data: ', $this->data);
+
                 $variant = $variantQuery->first() ?? new \App\Models\ProductVariant();
 
                 $variant->product_id = $parent->id;
                 $variant->name = $this->data['variant_name'] ?? 'Default';
-                $variant->sku = $this->data['variant_sku'] ?? null;
-                $variant->price = $this->data['price'] ?? 0;
-                $variant->discount_price = $this->data['discount_price'] ?? null;
-                $variant->purchase_price = $this->data['purchase_price'] ?? null;
-                $variant->reseller_price = $this->data['reseller_price'] ?? null;
+                $variant->sku = $this->data['sku'] ?? null;
+                $variant->price = filled($this->data['price'] ?? null) ? $this->data['price'] : null;
+                $variant->discount_price = filled($this->data['discount_price'] ?? null) ? $this->data['discount_price'] : null;
+                $variant->purchase_price = filled($this->data['purchase_price'] ?? null) ? $this->data['purchase_price'] : null;
+                $variant->reseller_price = filled($this->data['reseller_price'] ?? null) ? $this->data['reseller_price'] : null;
                 $variant->weight = $this->data['weight'] ?? 1000;
                 $variant->stock = $this->data['stock'] ?? 0;
                 $variant->minimum_stock = $this->data['minimum_stock'] ?? null;
                 $variant->is_active = $this->data['is_active'] ?? true;
                 $variant->save();
+
+                // Assign dynamic attributes
+                $attributes = \Illuminate\Support\Facades\Schema::hasTable('attributes') ? \App\Models\Attribute::all() : collect();
+                $optionIdsToSync = [];
+                foreach ($attributes as $attr) {
+                    $columnName = 'Attr: ' . $attr->name;
+                    if (isset($this->data[$columnName]) && filled($this->data[$columnName])) {
+                        $val = $this->data[$columnName];
+                        $optionSlug = \Illuminate\Support\Str::slug($val);
+                        if (empty($optionSlug)) {
+                            $optionSlug = 'default';
+                        }
+                        $attributeOption = \App\Models\AttributeOption::firstOrCreate(
+                            ['attribute_id' => $attr->id, 'slug' => $optionSlug],
+                            ['value' => $val, 'meta' => null]
+                        );
+                        $optionIdsToSync[] = $attributeOption->id;
+                    }
+                }
+                
+                if (!empty($optionIdsToSync)) {
+                    $variant->attributeOptions()->sync($optionIdsToSync);
+                } else {
+                    $variant->attributeOptions()->detach();
+                }
             }
             return; // Jangan simpan produk dummy-nya
+        }
+
+        if (!filled($this->record->price)) {
+            $this->record->price = 0;
         }
 
         $this->record->save();

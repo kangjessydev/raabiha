@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages\Resellers;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use App\Filament\Clusters\ECommerce\ECommerceCluster;
 use App\Models\SiteSetting;
 use Filament\Forms\Components\TextInput;
@@ -16,6 +18,8 @@ use Filament\Notifications\Notification;
 
 class ResellerSettings extends Page implements HasForms
 {
+    use HasPageShield;
+
     use InteractsWithForms;
 
     protected static ?string $cluster = ECommerceCluster::class;

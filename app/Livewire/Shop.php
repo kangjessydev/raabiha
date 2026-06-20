@@ -64,7 +64,9 @@ class Shop extends Component
 
     public function render()
     {
-        $query = Product::with(['category', 'variants.attributeOptions'])->where('is_active', true);
+        $query = Product::with(['category', 'variants.attributeOptions'])
+            ->where('is_active', true)
+            ->where('is_hidden', false);
 
         if ($this->search) {
             $query->where('name', 'like', '%' . $this->search . '%');

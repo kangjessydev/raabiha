@@ -40,7 +40,7 @@
                             Unduh Invoice
                         </a>
                     @endif
-                    <a href="{{ url('/account') }}" wire:navigate.hover
+                    <a href="{{ url('/account') }}"
                        class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-8 py-4 hover:bg-[#f0ede9] transition-colors text-center">
                         Lihat Pesanan
                     </a>

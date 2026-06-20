@@ -158,8 +158,6 @@
     {!! $scriptsHeader !!}
     @endif
 
-    <!-- Phantom UI Skeleton Loader -->
-    <script src="https://cdn.jsdelivr.net/npm/@aejkatappaja/phantom-ui/dist/phantom-ui.cdn.js"></script>
     <!-- Lenis Smooth Scroll CSS -->
     <style>
         html.lenis, html.lenis body {
@@ -177,14 +175,9 @@
         .lenis.lenis-scrolling iframe {
             pointer-events: none;
         }
-        
-        /* Override Phantom UI overflow to allow sticky elements */
-        phantom-ui {
-            overflow: visible !important;
-        }
     </style>
 </head>
-<body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js" x-data="{ navLoaded: false }" x-init="$nextTick(() => { setTimeout(() => navLoaded = true, 100) })" x-on:livewire:navigating.window="navLoaded = false" x-on:livewire:navigated.window="setTimeout(() => navLoaded = true, 100)">
+<body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js">
         
     @php
         $topbar = \App\Models\TopbarAnnouncement::first();
@@ -452,11 +445,44 @@
 
     <!-- Mini Cart Overlay removed -->
 
-    <script>
-        document.addEventListener('livewire:navigated', function() {
-            if (window.raabihaNavInitialized) return;
-            window.raabihaNavInitialized = true;
+    <script data-navigate-once>
+        document.addEventListener('livewire:navigating', function() {
+            // Close mobile sidebar menu
+            const sidebar = document.getElementById('mobile-sidebar');
+            const backdrop = document.getElementById('mobile-sidebar-backdrop');
+            if (sidebar && backdrop) {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.remove('opacity-100');
+                backdrop.classList.add('opacity-0', 'pointer-events-none');
+            }
 
+            // Close mobile profile sheet
+            const sheetOverlay = document.getElementById('mobile-profile-sheet-overlay');
+            const sheetBackdrop = document.getElementById('mobile-profile-sheet-backdrop');
+            const sheetContent = document.getElementById('mobile-profile-sheet');
+            if (sheetOverlay && sheetBackdrop && sheetContent) {
+                sheetContent.classList.add('translate-y-full');
+                sheetBackdrop.classList.remove('opacity-100', 'pointer-events-auto');
+                sheetBackdrop.classList.add('opacity-0', 'pointer-events-none');
+                sheetOverlay.classList.add('pointer-events-none');
+            }
+
+            // Close search overlay
+            const searchOverlay = document.getElementById('search-overlay');
+            if (searchOverlay) {
+                searchOverlay.classList.add('-translate-y-full', 'opacity-0', 'pointer-events-none');
+            }
+
+            // Reset body overflow to normal
+            document.body.style.overflow = '';
+
+            // Close mini-cart (sidecart)
+            if (window.Livewire) {
+                Livewire.dispatch('close-mini-cart');
+            }
+        });
+
+        document.addEventListener('livewire:navigated', function() {
             // Sidebar Logic
             const toggle = document.getElementById('mobile-menu-toggle');
             const close = document.getElementById('mobile-sidebar-close');
@@ -502,6 +528,7 @@
                 }
             }
 
+            // Global close search function
             function closeSearch() {
                 if(searchOverlay) {
                     searchOverlay.classList.add('-translate-y-full', 'opacity-0', 'pointer-events-none');
@@ -510,8 +537,6 @@
 
             searchToggles.forEach(btn => btn.addEventListener('click', toggleSearch));
             if(searchClose) searchClose.addEventListener('click', closeSearch);
-
-            // Mini Cart JS Logic removed as user requested direct link to cart page
 
             // Desktop Profile Dropdown
             const profileToggle = document.getElementById('desktop-profile-toggle');
@@ -528,10 +553,18 @@
                         profileDropdown.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-2');
                     }
                 });
+            }
 
+            // Desktop Profile Dropdown Click-Outside (Attached once to document to avoid leakage)
+            if (!window.raabihaProfileClickOutsideRegistered) {
+                window.raabihaProfileClickOutsideRegistered = true;
                 document.addEventListener('click', function(e) {
-                    if(!profileToggle.contains(e.target) && !profileDropdown.contains(e.target)) {
-                        profileDropdown.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+                    const toggleBtn = document.getElementById('desktop-profile-toggle');
+                    const dropdownEl = document.getElementById('desktop-profile-dropdown');
+                    if (toggleBtn && dropdownEl) {
+                        if (!toggleBtn.contains(e.target) && !dropdownEl.contains(e.target)) {
+                            dropdownEl.classList.add('opacity-0', 'pointer-events-none', '-translate-y-2');
+                        }
                     }
                 });
             }
@@ -574,24 +607,24 @@
         @if(!$blank && !isset($header) && !request()->is('checkout') && !request()->is('cart'))
             <!-- Fixed Bottom Navigation (Mobile Only) -->
             <div class="md:hidden fixed bottom-0 left-0 right-0 bg-[#fcf9f5] border-t border-[#e5e2de] flex justify-between px-6 py-2 z-50">
-            <a href="{{ url('/') }}" wire:navigate.hover class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('/') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
+            <a href="{{ url('/') }}" class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('/') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                 <span class="text-[9px] font-mono {{ request()->is('/') ? 'font-bold' : '' }}">Home</span>
             </a>
-            <a href="{{ url('/shop') }}" wire:navigate.hover class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('shop*') || request()->is('product*') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
+            <a href="{{ url('/shop') }}" class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('shop*') || request()->is('product*') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
                 <span class="text-[9px] font-mono {{ request()->is('shop*') || request()->is('product*') ? 'font-bold' : '' }}">Shop</span>
             </a>
-            <a href="{{ url('/cart') }}" wire:navigate.hover class="cart-toggle-btn flex flex-col items-center px-4 py-1.5 transition-all duration-200 relative {{ request()->is('cart') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
+            <a href="{{ url('/cart') }}" class="cart-toggle-btn flex flex-col items-center px-4 py-1.5 transition-all duration-200 relative {{ request()->is('cart') ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
                 <div class="relative">
                     <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                     <span class="raabiha-cart-count-badge absolute -top-1 -right-2 bg-[#064e3b] text-white text-[9px] font-bold w-3 h-3 rounded-full flex items-center justify-center hidden">0</span>
                 </div>
                 <span class="text-[9px] font-mono {{ request()->is('cart') ? 'font-bold' : '' }}">Cart</span>
             </a>
-            <a href="#wishlist" class="flex flex-col items-center text-[#615e57] px-4 py-1.5 transition-all duration-200">
+            <a href="{{ url('/account?activeTab=wishlist') }}" class="flex flex-col items-center px-4 py-1.5 transition-all duration-200 {{ request()->is('account') && request('activeTab') === 'wishlist' ? 'text-[#064e3b] bg-[#064e3b]/10 rounded-2xl' : 'text-[#615e57]' }}">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                <span class="text-[9px] font-mono ">Wishlist</span>
+                <span class="text-[9px] font-mono {{ request()->is('account') && request('activeTab') === 'wishlist' ? 'font-bold' : '' }}">Wishlist</span>
             </a>
             <!-- Mobile Profile Button -->
             <button id="mobile-profile-toggle" type="button" class="flex flex-col items-center text-[#615e57] px-4 py-1.5 focus:outline-none transition-all duration-200">
@@ -629,9 +662,14 @@
                             </div>
                         </div>
                         
-                        <a href="/account" wire:navigate.hover class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f0ede9] transition-colors">
+                        <a href="/account" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f0ede9] transition-colors">
                             <svg class="w-5 h-5 text-[#615e57]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             <span class="font-sans text-sm text-[#1c1c1a]">Dasbor Pelanggan</span>
+                        </a>
+
+                        <a href="/account?activeTab=wishlist" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f0ede9] transition-colors">
+                            <svg class="w-5 h-5 text-[#615e57]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            <span class="font-sans text-sm text-[#1c1c1a]">Wishlist Saya</span>
                         </a>
                         
                         @if(auth()->user()->hasRole('super_admin'))
@@ -640,13 +678,13 @@
                                 <span class="font-sans text-sm text-[#1c1c1a]">Admin Panel</span>
                             </a>
                         @elseif(auth()->user()->hasRole('reseller'))
-                            <a href="/reseller-dashboard" wire:navigate.hover class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f0ede9] transition-colors">
+                            <a href="/reseller-dashboard" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f0ede9] transition-colors">
                                 <svg class="w-5 h-5 text-[#615e57]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                 <span class="font-sans text-sm text-[#1c1c1a]">Portal Reseller</span>
                             </a>
                         @endif
 
-                        <a href="/cart" wire:navigate.hover class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f0ede9] transition-colors">
+                        <a href="/cart" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f0ede9] transition-colors">
                             <svg class="w-5 h-5 text-[#615e57]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                             <span class="font-sans text-sm text-[#1c1c1a]">Keranjang Saya</span>
                         </a>
@@ -671,8 +709,8 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+    <script data-navigate-once>
+        document.addEventListener('livewire:navigated', function() {
             const sheetToggle = document.getElementById('mobile-profile-toggle');
             const sheetOverlay = document.getElementById('mobile-profile-sheet-overlay');
             const sheetBackdrop = document.getElementById('mobile-profile-sheet-backdrop');
@@ -706,32 +744,38 @@
     </script>
 
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let lastScrollY = window.scrollY;
-        let scrollTimeout;
-        const header = document.getElementById('smart-navbar');
+<script data-navigate-once>
+    document.addEventListener('livewire:navigated', function() {
+        var lastScrollY = window.scrollY;
+        var scrollTimeout;
         
-        if (header) {
-            window.addEventListener('scroll', () => {
-                clearTimeout(scrollTimeout);
-                
-                if (window.scrollY > lastScrollY && window.scrollY > 150) {
-                    // Scroll down: hide navbar
-                    header.style.transform = 'translateY(-100%)';
-                } else {
-                    // Scroll up: show navbar
-                    header.style.transform = 'translateY(0)';
-                }
-                
-                lastScrollY = window.scrollY;
-                
-                // Show after scroll stops
-                scrollTimeout = setTimeout(() => {
-                    header.style.transform = 'translateY(0)';
-                }, 800);
-            }, { passive: true });
+        // Remove existing listener to prevent duplicate registration
+        if (window.raabihaScrollHandler) {
+            window.removeEventListener('scroll', window.raabihaScrollHandler);
         }
+        
+        window.raabihaScrollHandler = () => {
+            clearTimeout(scrollTimeout);
+            const header = document.getElementById('smart-navbar');
+            if (!header) return;
+            
+            if (window.scrollY > lastScrollY && window.scrollY > 150) {
+                // Scroll down: hide navbar
+                header.style.transform = 'translateY(-100%)';
+            } else {
+                // Scroll up: show navbar
+                header.style.transform = 'translateY(0)';
+            }
+            
+            lastScrollY = window.scrollY;
+            
+            // Show after scroll stops
+            scrollTimeout = setTimeout(() => {
+                header.style.transform = 'translateY(0)';
+            }, 800);
+        };
+        
+        window.addEventListener('scroll', window.raabihaScrollHandler, { passive: true });
     });
 </script>
     <livewire:mini-cart />
@@ -779,15 +823,19 @@
         @endif
     @endif
     <!-- Lenis Smooth Scroll Initialization -->
-    <script src="https://unpkg.com/lenis@1.1.2/dist/lenis.min.js"></script>
-    <script>
-        let lenis;
-        let rafId;
+    <script src="https://unpkg.com/lenis@1.1.2/dist/lenis.min.js" data-navigate-once></script>
+    <script data-navigate-once>
+        var lenis;
+        var rafId;
 
         function initLenis() {
             if (lenis) {
                 lenis.destroy();
                 cancelAnimationFrame(rafId);
+            }
+
+            if (typeof Lenis === 'undefined') {
+                return;
             }
 
             lenis = new Lenis({
@@ -802,19 +850,20 @@
             });
 
             function raf(time) {
-                lenis.raf(time);
-                rafId = requestAnimationFrame(raf);
+                if (lenis) {
+                    lenis.raf(time);
+                    rafId = requestAnimationFrame(raf);
+                }
             }
 
             rafId = requestAnimationFrame(raf);
         }
-
-        document.addEventListener('DOMContentLoaded', initLenis);
 
         document.addEventListener('livewire:navigated', () => {
             window.scrollTo(0, 0);
             initLenis();
         });
     </script>
+    @livewireScripts
 </body>
 </html>

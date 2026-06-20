@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use Filament\Pages\Page;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -21,6 +23,8 @@ use Filament\Forms\Contracts\HasForms;
 
 class LaporanBisnis extends Page implements HasTable, HasForms
 {
+    use HasPageShield;
+
     use InteractsWithTable;
     use InteractsWithForms;
 

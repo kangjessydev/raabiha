@@ -2,6 +2,8 @@
 
 namespace App\Filament\Clusters\MediaFiles\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use App\Filament\Clusters\MediaFiles;
 use App\Filament\Exports\CategoryExporter;
 use App\Filament\Exports\OrderExporter;
@@ -16,6 +18,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ExportMedia extends Page
 {
+    use HasPageShield;
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-up-tray';
 
     protected string $view = 'filament.clusters.media-files.pages.export-media';
@@ -60,7 +64,7 @@ class ExportMedia extends Page
                         ]),
                 ])
                 ->action(function (array $data) {
-                    $query = \App\Models\Product::with(['category', 'variants']);
+                    $query = \App\Models\Product::with(['category', 'variants.attributeOptions.attribute']);
                     
                     if (filled($data['category_id'] ?? null)) {
                         $query->where('category_id', $data['category_id']);
@@ -75,68 +79,91 @@ class ExportMedia extends Page
                         $query->whereDate('created_at', '<=', $data['date_until']);
                     }
 
+                    $attributes = \Illuminate\Support\Facades\Schema::hasTable('attributes') ? \App\Models\Attribute::all() : collect();
+                    $attributeHeaders = $attributes->map(fn($attr) => 'Attr: ' . $attr->name)->toArray();
+
+                    $headers = array_merge(
+                        ['ID', 'Varian?', 'Nama Varian', 'SKU', 'Kategori', 'Nama Produk', 'Slug', 'Deskripsi', 'Gambar', 'Harga', 'Harga Diskon', 'Harga Beli (HPP)', 'Harga Reseller', 'Stok', 'Stok Minimum', 'Berat (gram)', 'Punya Varian?'],
+                        $attributeHeaders,
+                        ['Aktif?', 'Rating/Bintang', 'Terjual (Manual)', 'Gratis Ongkir?', 'Meta Title', 'Meta Description', 'Dibuat', 'Diperbarui']
+                    );
+
                     $csv = \League\Csv\Writer::createFromString('');
-                    $csv->insertOne([
-                        'ID', 'Varian?', 'Nama Varian', 'SKU Varian', 'Kategori', 'Nama Produk', 'Slug', 'Deskripsi', 'Gambar', 'Harga', 'Harga Diskon', 'Harga Beli (HPP)', 'Harga Reseller', 'Stok', 'Stok Minimum', 'Berat (gram)', 'Punya Varian?', 'Aktif?', 'Rating/Bintang', 'Terjual (Manual)', 'Gratis Ongkir?', 'Meta Title', 'Meta Description', 'Dibuat', 'Diperbarui'
-                    ]);
+                    $csv->insertOne($headers);
 
                     foreach ($query->cursor() as $product) {
-                        $csv->insertOne([
-                            $product->id,
-                            'Tidak',
-                            '',
-                            '',
-                            $product->category?->name ?? '',
-                            $product->name,
-                            $product->slug,
-                            trim(preg_replace('/\s+/', ' ', strip_tags((string) $product->description))),
-                            is_array($product->images) ? implode(', ', $product->images) : $product->images,
-                            $product->price,
-                            $product->discount_price,
-                            $product->purchase_price,
-                            $product->reseller_price,
-                            $product->stock,
-                            $product->minimum_stock,
-                            $product->weight,
-                            $product->has_variants ? 1 : 0,
-                            $product->is_active ? 1 : 0,
-                            $product->rating,
-                            $product->sold_count,
-                            $product->has_free_shipping ? 1 : 0,
-                            $product->meta_title,
-                            trim(preg_replace('/\s+/', ' ', strip_tags((string) $product->meta_description))),
-                            $product->created_at?->format('Y-m-d H:i:s'),
-                            $product->updated_at?->format('Y-m-d H:i:s')
-                        ]);
+                        $csv->insertOne(array_merge(
+                            [
+                                $product->id,
+                                'Tidak',
+                                '',
+                                $product->sku,
+                                $product->category?->name ?? '',
+                                $product->name,
+                                $product->slug,
+                                trim(preg_replace('/\s+/', ' ', strip_tags((string) $product->description))),
+                                is_array($product->images) ? implode(', ', $product->images) : $product->images,
+                                $product->price,
+                                $product->discount_price,
+                                $product->purchase_price,
+                                $product->reseller_price,
+                                $product->stock,
+                                $product->minimum_stock,
+                                $product->weight,
+                                $product->has_variants ? 1 : 0,
+                            ],
+                            array_fill(0, count($attributeHeaders), ''),
+                            [
+                                $product->is_active ? 1 : 0,
+                                $product->rating,
+                                $product->sold_count,
+                                $product->has_free_shipping ? 1 : 0,
+                                $product->meta_title,
+                                trim(preg_replace('/\s+/', ' ', strip_tags((string) $product->meta_description))),
+                                $product->created_at?->format('Y-m-d H:i:s'),
+                                $product->updated_at?->format('Y-m-d H:i:s')
+                            ]
+                        ));
 
                         foreach ($product->variants as $variant) {
-                            $csv->insertOne([
-                                $variant->id,
-                                'Ya',
-                                $variant->name,
-                                $variant->sku,
-                                $product->category?->name ?? '',
-                                $product->name, // Parent name
-                                '',
-                                '',
-                                '',
-                                $variant->price,
-                                $variant->discount_price,
-                                $variant->purchase_price,
-                                $variant->reseller_price,
-                                $variant->stock,
-                                $variant->minimum_stock,
-                                $variant->weight,
-                                '',
-                                $variant->is_active ? 1 : 0,
-                                '',
-                                '',
-                                '',
-                                '',
-                                '',
-                                $variant->created_at?->format('Y-m-d H:i:s'),
-                                $variant->updated_at?->format('Y-m-d H:i:s')
-                            ]);
+                            $variantOptions = [];
+                            foreach ($attributes as $attr) {
+                                $option = $variant->attributeOptions->firstWhere('attribute_id', $attr->id);
+                                $variantOptions[] = $option ? $option->value : '';
+                            }
+
+                            $csv->insertOne(array_merge(
+                                [
+                                    $variant->id,
+                                    'Ya',
+                                    $variant->name,
+                                    $variant->sku,
+                                    $product->category?->name ?? '',
+                                    $product->name, // Parent name
+                                    '',
+                                    '',
+                                    '',
+                                    $variant->getRawOriginal('price'),
+                                    $variant->getRawOriginal('discount_price'),
+                                    $variant->getRawOriginal('purchase_price'),
+                                    $variant->getRawOriginal('reseller_price'),
+                                    $variant->stock,
+                                    $variant->minimum_stock,
+                                    $variant->weight,
+                                    '',
+                                ],
+                                $variantOptions,
+                                [
+                                    $variant->is_active ? 1 : 0,
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                    $variant->created_at?->format('Y-m-d H:i:s'),
+                                    $variant->updated_at?->format('Y-m-d H:i:s')
+                                ]
+                            ));
                         }
                     }
 

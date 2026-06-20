@@ -2,6 +2,8 @@
 
 namespace App\Filament\Clusters\Settings\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -12,6 +14,8 @@ use Filament\Notifications\Notification;
 
 class GlobalSettings extends Page implements HasForms
 {
+    use HasPageShield;
+
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-globe-alt';
@@ -115,15 +119,8 @@ class GlobalSettings extends Page implements HasForms
                                 Forms\Components\Repeater::make('social_links')
                                     ->label('Daftar Sosial Media')
                                     ->components([
-                                        Forms\Components\Select::make('platform')
-                                            ->label('Platform')
-                                            ->options([
-                                                'instagram' => 'Instagram',
-                                                'tiktok' => 'TikTok',
-                                                'facebook' => 'Facebook',
-                                                'twitter' => 'Twitter / X',
-                                                'youtube' => 'YouTube',
-                                            ])
+                                        Forms\Components\TextInput::make('platform')
+                                            ->label('Nama Platform (Cth: Shopee, Pinterest)')
                                             ->required(),
                                         Forms\Components\TextInput::make('url')
                                             ->label('URL / Link Profil')
@@ -132,6 +129,18 @@ class GlobalSettings extends Page implements HasForms
                                     ])
                                     ->columns(2)
                                     ->defaultItems(0),
+                            ]),
+                        \Filament\Schemas\Components\Tabs\Tab::make('Mode Libur')
+                            ->components([
+                                Forms\Components\Toggle::make('store_holiday_mode')
+                                    ->label('Aktifkan Mode Libur (Tutup Toko)')
+                                    ->helperText('Jika diaktifkan, sebuah spanduk peringatan akan muncul di atas halaman website.')
+                                    ->default(false),
+                                Forms\Components\Textarea::make('store_holiday_message')
+                                    ->label('Pesan Pengumuman Libur')
+                                    ->helperText('Contoh: "Toko sedang libur Lebaran."')
+                                    ->default('Mohon maaf, toko kami sedang libur. Semua pesanan yang masuk akan diproses dan dikirim setelah kami kembali beroperasi.')
+                                    ->rows(3),
                             ]),
                     ])
                     ->columnSpanFull()

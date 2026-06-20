@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use App\Filament\Clusters\ECommerce\ECommerceCluster;
 use App\Models\TopbarAnnouncement as AnnouncementModel;
 use Filament\Forms\Components\ColorPicker;
@@ -17,6 +19,8 @@ use Filament\Notifications\Notification;
 
 class TopbarAnnouncement extends Page implements HasForms
 {
+    use HasPageShield;
+
     use InteractsWithForms;
 
     protected static ?string $cluster = ECommerceCluster::class;

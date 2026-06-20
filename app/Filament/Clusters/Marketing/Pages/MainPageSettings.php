@@ -2,6 +2,8 @@
 
 namespace App\Filament\Clusters\Marketing\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use App\Models\SiteSetting;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\TextInput;
@@ -20,6 +22,8 @@ use App\Filament\Clusters\Marketing\MarketingCluster;
 
 class MainPageSettings extends Page implements HasForms
 {
+    use HasPageShield;
+
     use InteractsWithForms;
 
     protected static ?string $cluster = MarketingCluster::class;

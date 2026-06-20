@@ -721,55 +721,64 @@
         </button>
     </div>
 
-    <script>
-    document.addEventListener('livewire:initialized', () => {
-        Livewire.on('product-added-to-cart', () => {
-            let activeImage = document.querySelector('.thumb-item .opacity-100')?.previousElementSibling;
-            if (!activeImage) {
-                let sliderContainer = document.querySelector('.flex.w-full.h-full.transition-transform');
-                let activeIndex = sliderContainer?.__x?.getUnobservedData()?.activeIndex || 0;
-                activeImage = sliderContainer?.children[activeIndex]?.querySelector('img');
-                if(!activeImage) {
-                    activeImage = document.querySelector('.thumb-item img');
+    <script data-navigate-once>
+        function registerCartFlyAnimation() {
+            if (window.raabihaCartFlyAnimationRegistered) return;
+            window.raabihaCartFlyAnimationRegistered = true;
+
+            Livewire.on('product-added-to-cart', () => {
+                let activeImage = document.querySelector('.thumb-item .opacity-100')?.previousElementSibling;
+                if (!activeImage) {
+                    let sliderContainer = document.querySelector('.flex.w-full.h-full.transition-transform');
+                    let activeIndex = sliderContainer?.__x?.getUnobservedData()?.activeIndex || 0;
+                    activeImage = sliderContainer?.children[activeIndex]?.querySelector('img');
+                    if(!activeImage) {
+                        activeImage = document.querySelector('.thumb-item img');
+                    }
                 }
-            }
-            
-            let targetIcon = window.innerWidth < 768 ? document.querySelector('#mobile-add-to-cart-btn') : document.querySelector('#desktop-cart-icon');
-            let originElement = window.innerWidth < 768 ? document.querySelector('#bs-qty-selector') : document.querySelector('#qty'); // QTY input as origin
-            
-            if (activeImage && targetIcon && originElement) {
-                let imgClone = activeImage.cloneNode();
-                let originRect = originElement.getBoundingClientRect();
-                let targetRect = targetIcon.getBoundingClientRect();
                 
-                imgClone.style.position = 'fixed';
-                // Center the image over the QTY input initially
-                imgClone.style.left = (originRect.left + originRect.width / 2 - 20) + 'px';
-                imgClone.style.top = (originRect.top + originRect.height / 2 - 20) + 'px';
-                imgClone.style.width = '40px';
-                imgClone.style.height = '40px';
-                imgClone.style.objectFit = 'cover';
-                imgClone.style.zIndex = '9999';
-                imgClone.style.transition = 'all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                imgClone.style.borderRadius = '50%';
-                imgClone.style.opacity = '0.9';
+                let targetIcon = window.innerWidth < 768 ? document.querySelector('#mobile-add-to-cart-btn') : document.querySelector('#desktop-cart-icon');
+                let originElement = window.innerWidth < 768 ? document.querySelector('#bs-qty-selector') : document.querySelector('#qty'); // QTY input as origin
                 
-                document.body.appendChild(imgClone);
-                
-                setTimeout(() => {
-                    imgClone.style.left = (targetRect.left + targetRect.width / 2 - 10) + 'px';
-                    imgClone.style.top = (targetRect.top + targetRect.height / 2 - 10) + 'px';
-                    imgClone.style.width = '20px';
-                    imgClone.style.height = '20px';
-                    imgClone.style.opacity = '0';
-                    imgClone.style.transform = 'scale(0.1) rotate(180deg)';
-                }, 50);
-                
-                setTimeout(() => {
-                    imgClone.remove();
-                }, 850);
-            }
-        });
-    });
+                if (activeImage && targetIcon && originElement) {
+                    let imgClone = activeImage.cloneNode();
+                    let originRect = originElement.getBoundingClientRect();
+                    let targetRect = targetIcon.getBoundingClientRect();
+                    
+                    imgClone.style.position = 'fixed';
+                    // Center the image over the QTY input initially
+                    imgClone.style.left = (originRect.left + originRect.width / 2 - 20) + 'px';
+                    imgClone.style.top = (originRect.top + originRect.height / 2 - 20) + 'px';
+                    imgClone.style.width = '40px';
+                    imgClone.style.height = '40px';
+                    imgClone.style.objectFit = 'cover';
+                    imgClone.style.zIndex = '9999';
+                    imgClone.style.transition = 'all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                    imgClone.style.borderRadius = '50%';
+                    imgClone.style.opacity = '0.9';
+                    
+                    document.body.appendChild(imgClone);
+                    
+                    setTimeout(() => {
+                        imgClone.style.left = (targetRect.left + targetRect.width / 2 - 10) + 'px';
+                        imgClone.style.top = (targetRect.top + targetRect.height / 2 - 10) + 'px';
+                        imgClone.style.width = '20px';
+                        imgClone.style.height = '20px';
+                        imgClone.style.opacity = '0';
+                        imgClone.style.transform = 'scale(0.1) rotate(180deg)';
+                    }, 50);
+                    
+                    setTimeout(() => {
+                        imgClone.remove();
+                    }, 850);
+                }
+            });
+        }
+
+        if (window.Livewire) {
+            registerCartFlyAnimation();
+        } else {
+            document.addEventListener('livewire:initialized', registerCartFlyAnimation);
+        }
     </script>
 </div>

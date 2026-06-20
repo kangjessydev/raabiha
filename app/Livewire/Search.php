@@ -22,6 +22,7 @@ class Search extends Component
         if (trim($this->q) !== '') {
             $products = Product::with(['category', 'variants'])
                 ->where('is_active', true)
+                ->where('is_hidden', false)
                 ->where(function($query) {
                     $query->where('name', 'like', '%' . $this->q . '%')
                           ->orWhere('description', 'like', '%' . $this->q . '%');

@@ -52,6 +52,12 @@ class ProductsTable
                             </div>
                         ";
                     }),
+                TextColumn::make('sku')
+                    ->label('SKU')
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->toggleable(),
                 TextColumn::make('price')
                     ->label('Harga')
                     ->money('IDR')

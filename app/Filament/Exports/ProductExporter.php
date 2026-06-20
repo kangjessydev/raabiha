@@ -28,9 +28,8 @@ class ProductExporter extends Exporter
             ExportColumn::make('variant_name')
                 ->label('Nama Varian')
                 ->state(fn() => ''),
-            ExportColumn::make('variant_sku')
-                ->label('SKU Varian')
-                ->state(fn() => ''),
+            ExportColumn::make('sku')
+                ->label('SKU'),
             ExportColumn::make('category.name')->label('Kategori'),
             ExportColumn::make('name')->label('Nama Produk'),
             ExportColumn::make('slug')->label('Slug'),

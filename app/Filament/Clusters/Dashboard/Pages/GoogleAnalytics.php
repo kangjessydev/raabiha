@@ -2,11 +2,15 @@
 
 namespace App\Filament\Clusters\Dashboard\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use BezhanSalleh\GoogleAnalytics\Pages\GoogleAnalyticsDashboard as BaseDashboard;
 use App\Filament\Clusters\Dashboard\DashboardCluster;
 
 class GoogleAnalytics extends BaseDashboard
 {
+    use HasPageShield;
+
     protected static ?string $cluster = DashboardCluster::class;
 
     protected static ?int $navigationSort = 2;

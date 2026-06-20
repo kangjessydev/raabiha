@@ -10,8 +10,9 @@
             $logoDarkUrl = $logoDarkMedia ? Storage::url($logoDarkMedia->path) : null;
 
             $footerDesc = \App\Models\SiteSetting::where('key', 'footer_description')->value('value') ?? "Architectural modesty for the modern intellectual.<br />Bridging high-fashion editorial with raw urban energy.";
-            $ig = \App\Models\SiteSetting::where('key', 'social_instagram')->value('value');
-            $tiktok = \App\Models\SiteSetting::where('key', 'social_tiktok')->value('value');
+            $rawSocialLinks = \App\Models\SiteSetting::where('key', 'social_links')->value('value');
+            $socialLinks = $rawSocialLinks ? json_decode($rawSocialLinks, true) : [];
+            if (!is_array($socialLinks)) $socialLinks = [];
             $copyright = \App\Models\SiteSetting::where('key', 'footer_copyright')->value('value') ?? '&copy; ' . date('Y') . ' ' . strtoupper($siteName) . '. ARCHITECTURAL MODESTY.';
             
             $rawFooterLinks = \App\Models\SiteSetting::where('key', 'footer_links')->value('value');
@@ -47,15 +48,18 @@
                     {!! nl2br(e($footerDesc)) !!}
                 </p>
                 <div class="flex gap-6">
-                    @if($ig)
-                        <a href="{{ $ig }}" target="_blank" class="text-[#a3a3a3] hover:text-white transition-colors text-[11px] font-medium uppercase tracking-[0.1em]">Instagram</a>
-                    @endif
-                    @if($tiktok)
-                        <a href="{{ $tiktok }}" target="_blank" class="text-[#a3a3a3] hover:text-white transition-colors text-[11px] font-medium uppercase tracking-[0.1em]">TikTok</a>
-                    @endif
-                    @if(!$ig && !$tiktok)
+                    @forelse($socialLinks as $social)
+                        @php 
+                            $platformName = ucfirst($social['platform'] ?? ''); 
+                            if(strtolower($platformName) == 'youtube') $platformName = 'YouTube';
+                            if(strtolower($platformName) == 'tiktok') $platformName = 'TikTok';
+                        @endphp
+                        @if(!empty($social['url']))
+                            <a href="{{ $social['url'] }}" target="_blank" class="text-[#a3a3a3] hover:text-white transition-colors text-[11px] font-medium uppercase tracking-[0.1em]">{{ $platformName }}</a>
+                        @endif
+                    @empty
                         <span class="text-[#a3a3a3] text-[11px] font-medium uppercase tracking-[0.1em]">Belum ada sosial media diset.</span>
-                    @endif
+                    @endforelse
                 </div>
             </div>
             <div>

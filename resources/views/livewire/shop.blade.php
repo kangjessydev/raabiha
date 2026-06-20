@@ -239,9 +239,9 @@
                     </div>
 
                     <!-- Products Grid -->
-                    <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, selectedSizes, selectedColors, maxPrice, sort" class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 lg:gap-x-6 gap-y-12 w-full mt-4">
+                    <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, selectedAttributes, maxPrice, sort" class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 lg:gap-x-6 gap-y-12 w-full mt-4">
                         @forelse ($products as $product)
-                            <div class="group block relative flex flex-col h-full">
+                            <div class="group block relative flex flex-col h-full" wire:key="product-{{ $product->id }}">
                                 {{-- IMAGE: Portrait 3:4 editorial --}}
                                 <div class="aspect-[3/4] bg-[#e5e2de] mb-4 overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.09)] group-hover:shadow-[0_8px_36px_rgba(0,0,0,0.15)] transition-shadow duration-500">
                                     <a href="{{ url('/product/' . $product->slug) }}" class="block w-full h-full" aria-label="Lihat produk {{ $product->name }}">
@@ -339,7 +339,7 @@
                     </div>
 
                     <!-- Skeleton Loading Grid -->
-                    <div wire:loading wire:target="search, selectedCategories, selectedSizes, selectedColors, maxPrice, sort" class="w-full mt-4">
+                    <div wire:loading wire:target="search, selectedCategories, selectedAttributes, maxPrice, sort" class="w-full mt-4" wire:key="skeleton-loader">
                         <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 lg:gap-x-6 gap-y-12">
                             @for ($i = 0; $i < 8; $i++)
                                 <div class="animate-pulse block">
@@ -352,8 +352,23 @@
                     </div>
 
                     @if($products->hasMorePages())
-                        <div class="mt-12 flex justify-center pb-12">
-                            <div x-data x-intersect="$wire.loadMore()" class="flex items-center gap-3 text-[#615e57]">
+                        <div class="mt-12 flex justify-center pb-12" wire:key="load-more-spinner-{{ $amount }}">
+                            <div x-data="{
+                                observer: null,
+                                init() {
+                                    this.observer = new IntersectionObserver((entries) => {
+                                        if (entries[0].isIntersecting) {
+                                            $wire.loadMore();
+                                        }
+                                    }, { threshold: 0.1 });
+                                    this.observer.observe(this.$el);
+                                },
+                                destroy() {
+                                    if (this.observer) {
+                                        this.observer.disconnect();
+                                    }
+                                }
+                            }" class="flex items-center gap-3 text-[#615e57]">
                                 <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

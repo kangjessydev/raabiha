@@ -2,6 +2,8 @@
 
 namespace App\Filament\Clusters\Settings\Pages;
 
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+
 use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -12,6 +14,8 @@ use Filament\Notifications\Notification;
 
 class TransactionSettings extends Page implements HasForms
 {
+    use HasPageShield;
+
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-shopping-bag';
@@ -64,18 +68,6 @@ class TransactionSettings extends Page implements HasForms
                                     ->label('Template Pesan WA - Selesai')
                                     ->default('Halo {name}, dana refund untuk pesanan #{order} senilai Rp{amount} telah SELESAI DITRANSFER ke rekening {bank} Anda. Silakan cek mutasi rekening Anda.')
                                     ->helperText('Tersedia parameter tambahan: {bank} (Nama bank rekening tujuan pelanggan)')
-                                    ->rows(3),
-                            ]),
-                        \Filament\Schemas\Components\Tabs\Tab::make('Mode Libur')
-                            ->components([
-                                Forms\Components\Toggle::make('store_holiday_mode')
-                                    ->label('Aktifkan Mode Libur (Tutup Toko)')
-                                    ->helperText('Jika diaktifkan, sebuah spanduk peringatan akan muncul di atas halaman website.')
-                                    ->default(false),
-                                Forms\Components\Textarea::make('store_holiday_message')
-                                    ->label('Pesan Pengumuman Libur')
-                                    ->helperText('Contoh: "Toko sedang libur Lebaran."')
-                                    ->default('Mohon maaf, toko kami sedang libur. Semua pesanan yang masuk akan diproses dan dikirim setelah kami kembali beroperasi.')
                                     ->rows(3),
                             ]),
                     ])

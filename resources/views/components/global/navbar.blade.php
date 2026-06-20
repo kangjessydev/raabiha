@@ -77,8 +77,9 @@
                                     <span class="block text-xs font-mono font-bold uppercase tracking-widest text-[#1c1c1a]">{{ auth()->user()->name }}</span>
                                 </div>
                                 <a href="/account" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Dasbor Pelanggan</a>
+                                <a href="/account?activeTab=wishlist" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Wishlist Saya</a>
                                 @if(auth()->user()->hasRole('super_admin'))
-                                    <a href="/admin" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Admin Panel</a>
+                                    <a href="/admin" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Admin Panel</a>
                                 @elseif(auth()->user()->hasRole('reseller'))
                                     <a href="/reseller-dashboard" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Portal Reseller</a>
                                 @endif
@@ -88,8 +89,8 @@
                                     <button type="submit" class="w-full text-left px-4 py-2 text-sm font-sans text-red-600 hover:bg-[#f0ede9] transition-colors">Keluar (Logout)</button>
                                 </form>
                             @else
-                                <a href="/login" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Log In</a>
-                                <a href="/register" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Daftar Akun</a>
+                                <a href="/login" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Log In</a>
+                                <a href="/register" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Daftar Akun</a>
                             @endauth
                         </div>
                     </div>
@@ -107,7 +108,7 @@
                 </button>
                 
                 <!-- Mobile Logo (Center) -->
-                <a href="{{ url('/') }}" wire:navigate.hover class="block hover:opacity-80 transition-opacity absolute left-1/2 -translate-x-1/2 h-full flex items-center">
+                <a href="{{ url('/') }}" class="block hover:opacity-80 transition-opacity absolute left-1/2 -translate-x-1/2 h-full flex items-center">
                     @if($logoMobileUrl)
                         <img src="{{ $logoMobileUrl }}" alt="{{ $siteName }}" class="h-[44px] w-auto max-w-[150px] object-contain">
                     @else

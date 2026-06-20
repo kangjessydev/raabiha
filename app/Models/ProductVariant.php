@@ -36,6 +36,15 @@ class ProductVariant extends Model
         'purchase_price' => 'decimal:2',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($variant) {
+            $rawPrice = $variant->getAttributes()['price'] ?? null;
+            $rawDiscount = $variant->getAttributes()['discount_price'] ?? null;
+            $variant->is_price_override = ($rawPrice !== null && $rawPrice > 0) || ($rawDiscount !== null && $rawDiscount > 0);
+        });
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
@@ -51,12 +60,42 @@ class ProductVariant extends Model
         return $this->belongsToMany(AttributeOption::class, 'attribute_option_product_variant');
     }
 
+    // Getters that fallback to parent product if empty
+    public function getPriceAttribute($value)
+    {
+        if ($value !== null && $value > 0) {
+            return $value;
+        }
+        return $this->product ? $this->product->price : null;
+    }
+
+    public function getPurchasePriceAttribute($value)
+    {
+        if ($value !== null && $value > 0) {
+            return $value;
+        }
+        return $this->product ? $this->product->purchase_price : null;
+    }
+
+    public function getResellerPriceAttribute($value)
+    {
+        if ($value !== null && $value > 0) {
+            return $value;
+        }
+        return $this->product ? $this->product->reseller_price : null;
+    }
+
+    public function getDiscountPriceAttribute($value)
+    {
+        return ($value !== null && $value > 0) ? $value : null;
+    }
+
     public function getSellingPriceAttribute()
     {
-        if ($this->is_price_override) {
-            return ($this->discount_price !== null && $this->discount_price > 0) ? $this->discount_price : $this->price;
+        if ($this->discount_price !== null && $this->discount_price > 0) {
+            return $this->discount_price;
         }
-        return $this->product->selling_price;
+        return $this->price;
     }
 
     public function getEffectivePriceAttribute()
@@ -64,11 +103,8 @@ class ProductVariant extends Model
         $basePrice = $this->selling_price;
         
         if (auth()->check() && auth()->user()->hasRole('reseller')) {
-            if ($this->is_price_override && $this->reseller_price !== null && $this->reseller_price > 0) {
+            if ($this->reseller_price !== null && $this->reseller_price > 0) {
                 return $this->reseller_price;
-            }
-            if (!$this->is_price_override && $this->product->reseller_price !== null && $this->product->reseller_price > 0) {
-                return $this->product->reseller_price;
             }
             
             $discountPercent = \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 20;

@@ -35,8 +35,25 @@ class VariantsRelationManager extends RelationManager
                     ->numeric()
                     ->placeholder('Batas stok minimum varian (Default: 5)'),
                 TextInput::make('price')
-                    ->label('Harga')
-                    ->numeric(),
+                    ->label('Harga Jual (Normal)')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->placeholder('Mengikuti produk induk jika kosong'),
+                TextInput::make('discount_price')
+                    ->label('Harga Promo (Diskon)')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->helperText('Hanya berlaku untuk varian ini. Jika dikosongkan, varian ini tidak menggunakan harga promo.'),
+                TextInput::make('purchase_price')
+                    ->label('Harga Modal (HPP)')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->placeholder('Mengikuti produk induk jika kosong'),
+                TextInput::make('reseller_price')
+                    ->label('Harga Reseller Khusus')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->placeholder('Mengikuti produk induk jika kosong'),
             ]);
     }
 
@@ -47,11 +64,32 @@ class VariantsRelationManager extends RelationManager
             ->poll('15s')
             ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('name')->label('Nama Varian'),
-                Tables\Columns\TextColumn::make('sku')->label('SKU'),
-                Tables\Columns\TextColumn::make('stock')->label('Stok'),
-                Tables\Columns\TextColumn::make('price')->label('HargaKhusus')
-                    ->money('IDR'),
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Nama Varian')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('sku')
+                    ->label('SKU')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('stock')
+                    ->label('Stok')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('price')
+                    ->label('Harga Jual')
+                    ->money('IDR')
+                    ->description(fn ($record) => $record->getRawOriginal('price') === null ? 'Menginduk' : 'Kustom', position: 'below'),
+                Tables\Columns\TextColumn::make('discount_price')
+                    ->label('Harga Promo')
+                    ->money('IDR')
+                    ->placeholder('Tidak Ada'),
+                Tables\Columns\TextColumn::make('purchase_price')
+                    ->label('Harga Modal')
+                    ->money('IDR')
+                    ->description(fn ($record) => $record->getRawOriginal('purchase_price') === null ? 'Menginduk' : 'Kustom', position: 'below'),
+                Tables\Columns\TextColumn::make('reseller_price')
+                    ->label('Harga Reseller')
+                    ->money('IDR')
+                    ->description(fn ($record) => $record->getRawOriginal('reseller_price') === null ? 'Menginduk' : 'Kustom', position: 'below'),
             ])
             ->filters([
                 //

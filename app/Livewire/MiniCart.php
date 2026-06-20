@@ -38,6 +38,7 @@ class MiniCart extends Component
         $this->isOpen = true;
     }
 
+    #[On('close-mini-cart')]
     public function close()
     {
         $this->isOpen = false;

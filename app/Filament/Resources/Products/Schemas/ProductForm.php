@@ -32,6 +32,10 @@ class ProductForm
                         TextInput::make('slug')
                             ->required()
                             ->unique(ignoreRecord: true),
+                        TextInput::make('sku')
+                            ->label('SKU')
+                            ->unique(ignoreRecord: true)
+                            ->required(),
                         Select::make('category_id')
                             ->label('Kategori')
                             ->relationship('category', 'name')
@@ -134,11 +138,21 @@ class ProductForm
                             ->columnSpanFull(),
                     ])->columns(2),
 
-                Section::make('Marketing')
+                Section::make('Marketing & Tampilan')
                     ->schema([
                         Toggle::make('is_active')
                             ->label('Produk Aktif?')
                             ->default(true),
+                        Toggle::make('is_hidden')
+                            ->label('Sembunyikan dari Katalog (Produk Custom)')
+                            ->helperText(function (Get $get) {
+                                if ($get('slug')) {
+                                    $url = url('/product/' . $get('slug'));
+                                    return new \Illuminate\Support\HtmlString('Jika aktif, produk tidak muncul di daftar Shop. <br>Bagikan link ini ke pemesan: <a href="'.$url.'" target="_blank" class="text-primary-600 underline">'.$url.'</a>');
+                                }
+                                return 'Jika aktif, produk tidak muncul di halaman Shop. Simpan dulu untuk mendapatkan link.';
+                            })
+                            ->default(false),
                         Toggle::make('has_free_shipping')
                             ->label('Gratis Ongkir')
                             ->default(false),

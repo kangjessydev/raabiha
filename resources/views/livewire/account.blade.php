@@ -38,7 +38,7 @@
                             <button wire:click="setTab('voucher')" @click="mobileMenuOpen = false" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'voucher' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Voucher Saya</button>
                             @php
                                 $resellerRegistrationOpen = \App\Models\SiteSetting::where('key', 'reseller_registration_open')->value('value') == '1';
-                                $validStatuses = ['active', 'pending', 'rejected'];
+                                $validStatuses = ['active', 'pending'];
                                 $hasResellerStatus = in_array(auth()->user()->reseller_status, $validStatuses);
                             @endphp
                             @if($resellerRegistrationOpen || $hasResellerStatus)

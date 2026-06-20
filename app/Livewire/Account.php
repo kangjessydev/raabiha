@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
+use Livewire\Attributes\On;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 
@@ -386,6 +387,12 @@ class Account extends Component
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    #[On('wishlist-updated')]
+    public function refreshWishlist()
+    {
+        // Re-renders the component to update the wishlist list
     }
 
     public function render()

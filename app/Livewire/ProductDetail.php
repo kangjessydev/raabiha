@@ -123,7 +123,7 @@ class ProductDetail extends Component
     public function currentOriginalPrice()
     {
         $variant = $this->getMatchedVariant();
-        if ($variant && $variant->is_price_override && $variant->price !== null) {
+        if ($variant) {
             return $variant->price * $this->quantity;
         }
         return $this->product->price * $this->quantity;
@@ -380,6 +380,8 @@ class ProductDetail extends Component
             'reviewComment' => 'required|string|min:10',
         ]);
 
+        $isApproved = $this->reviewRating >= 4;
+
         \App\Models\ProductReview::create([
             'product_id' => $this->product->id,
             'user_id' => auth()->id(),
@@ -387,11 +389,16 @@ class ProductDetail extends Component
             'customer_email' => auth()->user()->email,
             'rating' => $this->reviewRating,
             'comment' => $this->reviewComment,
-            'is_approved' => true,
+            'is_approved' => $isApproved,
         ]);
 
         $this->reset(['reviewRating', 'reviewComment', 'showReviewForm']);
-        session()->flash('review_success', 'Terima kasih! Ulasan Anda berhasil ditambahkan.');
+        
+        if ($isApproved) {
+            session()->flash('review_success', 'Terima kasih! Ulasan Anda berhasil ditambahkan dan ditayangkan.');
+        } else {
+            session()->flash('review_success', 'Terima kasih! Ulasan Anda telah diterima dan sedang menunggu moderasi admin.');
+        }
     }
 
     public function render()
@@ -412,6 +419,7 @@ class ProductDetail extends Component
     public function relatedProducts()
     {
         return Product::where('is_active', true)
+            ->where('is_hidden', false)
             ->where('category_id', $this->product->category_id)
             ->where('id', '!=', $this->product->id)
             ->inRandomOrder()

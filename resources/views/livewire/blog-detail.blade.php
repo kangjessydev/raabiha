@@ -18,7 +18,12 @@
             {{-- Text content pinned bottom --}}
             <div class="absolute bottom-0 left-0 right-0 p-6 md:p-16 max-w-4xl">
                 <p class="text-white/70 text-[9px] font-mono tracking-[0.2em] uppercase mb-3">
-                    {{ $post->category ? $post->category->name : 'Uncategorized' }} &mdash; {{ $post->published_at ? $post->published_at->format('M d, Y') : 'Draft' }}
+                    @if($post->category)
+                        <a href="{{ url('/blog?category=' . $post->category->slug) }}" wire:navigate class="hover:text-white transition-colors">{{ $post->category->name }}</a>
+                    @else
+                        Uncategorized
+                    @endif
+                    &mdash; {{ $post->published_at ? $post->published_at->format('M d, Y') : 'Draft' }}
                 </p>
                 <h1 class="text-2xl md:text-5xl lg:text-7xl font-serif text-white mb-3 leading-tight">
                     {{ $post->title }}
@@ -273,7 +278,13 @@
                                     <img src="{{ asset('assets/images/' . $fallbackImg) }}" alt="{{ $related->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 @endif
                             </div>
-                            <p class="text-[#064e3b] text-[9px] font-mono tracking-[0.2em] uppercase mb-2">{{ $related->category ? $related->category->name : 'Uncategorized' }}</p>
+                            <p class="text-[#064e3b] text-[9px] font-mono tracking-[0.2em] uppercase mb-2">
+                                @if($related->category)
+                                    <a href="{{ url('/blog?category=' . $related->category->slug) }}" wire:navigate class="hover:underline">{{ $related->category->name }}</a>
+                                @else
+                                    Uncategorized
+                                @endif
+                            </p>
                             <h3 class="text-base md:text-2xl font-serif text-[#1c1c1a] mb-2 md:mb-3 group-hover:text-[#064e3b] transition-colors leading-snug">{{ $related->title }}</h3>
                             <p class="text-[#615e57] text-xs leading-relaxed mb-4 line-clamp-2 hidden md:block">
                                 {{ $related->meta_description ?? \Illuminate\Support\Str::limit(strip_tags($related->content), 80) }}

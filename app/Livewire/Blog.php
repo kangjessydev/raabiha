@@ -7,6 +7,7 @@ use App\Models\PostCategory;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
 #[Layout('components.layouts.app')]
@@ -15,6 +16,7 @@ class Blog extends Component
 {
     use WithPagination;
 
+    #[Url]
     public $category = 'all';
 
     public function setCategory($slug)

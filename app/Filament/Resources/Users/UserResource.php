@@ -46,6 +46,18 @@ class UserResource extends Resource
         ];
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        // Kasir hanya boleh melihat daftar Pelanggan (Customer / Non-Admin) yang tidak memiliki Spatie Role
+        if (auth()->user()->hasRole('kasir') && !auth()->user()->hasRole('super_admin')) {
+            $query->doesntHave('roles');
+        }
+
+        return $query;
+    }
+
     public static function getPages(): array
     {
         return [

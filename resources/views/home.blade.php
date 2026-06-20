@@ -202,7 +202,7 @@
         
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
             @php
-                $latestProducts = \App\Models\Product::where('is_active', true)->latest()->take(4)->get();
+                $latestProducts = \App\Models\Product::where('is_active', true)->where('is_hidden', false)->latest()->take(4)->get();
             @endphp
             @forelse($latestProducts as $prod)
                 <div class="group block relative flex flex-col h-full">
@@ -326,9 +326,9 @@
                 
                 @php
                     if (!empty($lookbookProductIds)) {
-                        $featuredProducts = \App\Models\Product::whereIn('id', $lookbookProductIds)->where('is_active', true)->take(3)->get();
+                        $featuredProducts = \App\Models\Product::whereIn('id', $lookbookProductIds)->where('is_active', true)->where('is_hidden', false)->take(3)->get();
                     } else {
-                        $featuredProducts = \App\Models\Product::where('is_active', true)->inRandomOrder()->take(3)->get();
+                        $featuredProducts = \App\Models\Product::where('is_active', true)->where('is_hidden', false)->inRandomOrder()->take(3)->get();
                     }
                 @endphp
                 <div class="flex flex-col gap-4">

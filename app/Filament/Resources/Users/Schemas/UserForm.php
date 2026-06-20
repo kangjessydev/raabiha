@@ -15,7 +15,7 @@ class UserForm
                 \Filament\Schemas\Components\Section::make('Informasi Akun')
                     ->schema([
                         \Filament\Schemas\Components\Group::make([
-                            \Filament\Forms\Components\View::make('components.avatar-style'),
+                            \Filament\Schemas\Components\View::make('components.avatar-style'),
                             \Awcodes\Curator\Components\Forms\CuratorPicker::make('avatar_url')
                                 ->label('Foto Profil')
                                 ->buttonLabel('Pilih Foto Profil')
@@ -46,7 +46,8 @@ class UserForm
                             ->multiple()
                             ->preload()
                             ->searchable()
-                            ->label('Peran (Role Sistem)'),
+                            ->label('Peran (Role Sistem)')
+                            ->visible(fn() => auth()->user()->hasRole('super_admin')),
                         \Filament\Forms\Components\Select::make('reseller_status')
                             ->options([
                                 'none' => 'Bukan Reseller',
@@ -54,43 +55,34 @@ class UserForm
                                 'approved' => 'Reseller Aktif',
                             ])
                             ->default('none'),
-                        DateTimePicker::make('email_verified_at')
-                            ->label('Email Terverifikasi Pada'),
-                    ])->columns(2),
+                    ])->columns(2)->collapsed(),
 
                 \Filament\Schemas\Components\Section::make('Alamat & Kontak')
                     ->description('Daftar alamat pengiriman dan nomor telepon pelanggan.')
+                    ->collapsed()
                     ->schema([
                         \Filament\Forms\Components\Repeater::make('addresses')
                             ->relationship('addresses')
                             ->label('Daftar Alamat')
                             ->schema([
                                 \Filament\Forms\Components\TextInput::make('title')
-                                    ->label('Label Alamat (Contoh: Rumah, Kantor)')
-                                    ->required(),
+                                    ->label('Label Alamat (Contoh: Rumah, Kantor)'),
                                 \Filament\Forms\Components\TextInput::make('recipient_name')
-                                    ->label('Nama Penerima')
-                                    ->required(),
+                                    ->label('Nama Penerima'),
                                 \Filament\Forms\Components\TextInput::make('phone')
                                     ->label('Nomor Telepon')
-                                    ->tel()
-                                    ->required(),
+                                    ->tel(),
                                 \Filament\Forms\Components\TextInput::make('full_address')
                                     ->label('Alamat Lengkap')
-                                    ->required()
                                     ->columnSpanFull(),
                                 \Filament\Forms\Components\TextInput::make('province')
-                                    ->label('Provinsi')
-                                    ->required(),
+                                    ->label('Provinsi'),
                                 \Filament\Forms\Components\TextInput::make('city')
-                                    ->label('Kota/Kabupaten')
-                                    ->required(),
+                                    ->label('Kota/Kabupaten'),
                                 \Filament\Forms\Components\TextInput::make('district')
-                                    ->label('Kecamatan')
-                                    ->required(),
+                                    ->label('Kecamatan'),
                                 \Filament\Forms\Components\TextInput::make('postal_code')
-                                    ->label('Kode Pos')
-                                    ->required(),
+                                    ->label('Kode Pos'),
                                 \Filament\Forms\Components\Toggle::make('is_primary')
                                     ->label('Jadikan Alamat Utama')
                                     ->default(false),
