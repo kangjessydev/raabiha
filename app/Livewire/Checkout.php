@@ -953,7 +953,10 @@ class Checkout extends Component
         return view('livewire.checkout', [
             'paymentMethods' => $paymentMethods,
             'availableVouchers' => $availableVouchers
-        ])->title('Checkout');
+        ])->layout('components.layouts.app', [
+            'title' => 'Checkout',
+            'robots' => 'noindex, nofollow'
+        ]);
     }
 
     public function placeholder()

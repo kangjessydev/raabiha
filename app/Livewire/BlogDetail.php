@@ -89,6 +89,14 @@ class BlogDetail extends Component
 
         $title = $this->post->meta_title ?? $this->post->title;
         $description = $this->post->meta_description ?? \Illuminate\Support\Str::limit(strip_tags($this->post->content), 160);
+        
+        $image = null;
+        if ($this->post->image) {
+            $media = \Awcodes\Curator\Models\Media::find($this->post->image);
+            if ($media) {
+                $image = \Illuminate\Support\Facades\Storage::url($media->path);
+            }
+        }
 
         return view('livewire.blog-detail', [
             'relatedPosts' => $relatedPosts,
@@ -96,6 +104,7 @@ class BlogDetail extends Component
         ])->layout('components.layouts.app', [
             'title' => $title,
             'description' => $description,
+            'image' => $image,
         ]);
     }
 }

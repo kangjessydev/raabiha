@@ -21,7 +21,8 @@ class OrderDetail extends Component
     public function render()
     {
         return view('livewire.order-detail')->layout('components.layouts.app', [
-            'title' => 'Invoice Pesanan #' . $this->order->order_number
+            'title' => 'Invoice Pesanan #' . $this->order->order_number,
+            'robots' => 'noindex, nofollow'
         ]);
     }
 }

@@ -32,7 +32,8 @@ class PaymentMethodsTable
                     ->badge(),
                 \Filament\Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Aktif')
-                    ->sortable(),
+                    ->sortable()
+                    ->disabled(fn () => ! auth()->user()->can('Update:PaymentMethod')),
                 TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime()

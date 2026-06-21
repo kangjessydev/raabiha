@@ -13,8 +13,8 @@ class RoleAndUserSeeder extends Seeder
 {
     public function run()
     {
-        // Pastikan permissions ter-generate oleh Shield
-        Artisan::call('shield:generate --all');
+        // Pastikan permissions ter-generate oleh Shield secara non-interaktif
+        Artisan::call('shield:generate --all --panel=admin --option=policies_and_permissions');
 
         $roles = [
             'super_admin' => 'Super Admin',
@@ -23,6 +23,7 @@ class RoleAndUserSeeder extends Seeder
             'finance' => 'Finance',
             'logistics' => 'Warehouse / Logistik',
             'cs' => 'Customer Service',
+            'kasir' => 'Cashier / Kasir',
         ];
 
         foreach ($roles as $code => $name) {
@@ -30,39 +31,55 @@ class RoleAndUserSeeder extends Seeder
         }
 
         // Definisi Permissions untuk masing-masing role (Super Admin sudah punya semua by Shield)
-        
         $rolePermissions = [
-            'owner' => [
-                'view_any_order', 'view_order',
-                'view_any_product', 'view_product',
-                'view_any_user', 'view_user',
-                'view_any_cashflow', 'view_cashflow',
-                'widget_OrderStatsWidget', 'widget_RevenueChart',
+             'owner' => [
+                'ViewAny:Order', 'View:Order',
+                'ViewAny:Product', 'View:Product',
+                'ViewAny:User', 'View:User',
+                'ViewAny:Cashflow', 'View:Cashflow',
+                'View:LaporanBisnis',
+                'View:DashboardStatsOverview', 'View:StatsOverview',
+                'View:GoogleAnalytics', 'View:GoogleAnalyticsDashboard',
+                'ViewAny:Post', 'View:Post',
+                'ViewAny:PostCategory', 'View:PostCategory',
+                'ViewAny:PostTag', 'View:PostTag',
+                'ViewAny:Comment', 'View:Comment',
+                'ViewAny:PostComment', 'View:PostComment',
             ],
             'marketing' => [
-                'view_any_product', 'view_product', 'create_product', 'update_product',
-                'view_any_category', 'view_category', 'create_category', 'update_category',
-                'view_any_voucher', 'view_voucher', 'create_voucher', 'update_voucher',
-                'view_any_promo_banner', 'view_promo_banner', 'create_promo_banner', 'update_promo_banner',
-                'view_any_sales_page', 'view_sales_page', 'create_sales_page', 'update_sales_page',
+                'ViewAny:Product', 'View:Product', 'Create:Product', 'Update:Product',
+                'ViewAny:Category', 'View:Category', 'Create:Category', 'Update:Category',
+                'ViewAny:Voucher', 'View:Voucher', 'Create:Voucher', 'Update:Voucher',
+                'ViewAny:PromoBanner', 'View:PromoBanner', 'Create:PromoBanner', 'Update:PromoBanner',
+                'ViewAny:SalesPage', 'View:SalesPage', 'Create:SalesPage', 'Update:SalesPage',
+                'ViewAny:Post', 'View:Post', 'Create:Post', 'Update:Post',
+                'ViewAny:PostCategory', 'View:PostCategory', 'Create:PostCategory', 'Update:PostCategory',
+                'ViewAny:PostTag', 'View:PostTag', 'Create:PostTag', 'Update:PostTag',
+                'View:GoogleAnalytics', 'View:GoogleAnalyticsDashboard',
             ],
             'finance' => [
-                'view_any_order', 'view_order', 'update_order',
-                'view_any_cashflow', 'view_cashflow', 'create_cashflow', 'update_cashflow',
-                'view_any_payment_method', 'view_payment_method',
-                'widget_RevenueChart',
+                'ViewAny:Order', 'View:Order', 'Update:Order',
+                'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', 'Update:Cashflow',
+                'ViewAny:PaymentMethod', 'View:PaymentMethod',
+                'View:LaporanBisnis',
             ],
             'logistics' => [
-                'view_any_order', 'view_order', 'update_order',
-                'view_any_product', 'view_product', 'update_product', // for stock update
-                'view_any_stock_log', 'view_stock_log', 'create_stock_log',
-                'view_any_shipping_method', 'view_shipping_method',
+                'ViewAny:Order', 'View:Order', 'Update:Order',
+                'ViewAny:Product', 'View:Product', 'Update:Product', // for stock update
+                'ViewAny:ShippingMethod', 'View:ShippingMethod',
             ],
             'cs' => [
-                'view_any_inquiry', 'view_inquiry', 'update_inquiry',
-                'view_any_product_review', 'view_product_review', 'update_product_review',
-                'view_any_product', 'view_product', // Read-only for product info
-                'view_any_order', 'view_order', // Check order status for customer
+                'ViewAny:Inquiry', 'View:Inquiry', 'Update:Inquiry',
+                'ViewAny:ProductReview', 'View:ProductReview', 'Update:ProductReview',
+                'ViewAny:Product', 'View:Product', // Read-only for product info
+                'ViewAny:Order', 'View:Order', // Check order status for customer
+                'ViewAny:PostComment', 'View:PostComment', 'Update:PostComment', // Blog comments
+            ],
+            'kasir' => [
+                'ViewAny:Order', 'View:Order', 'Create:Order',
+                'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow',
+                'ViewAny:Product', 'View:Product',
+                'ViewAny:User', 'View:User', 'Create:User',
             ],
         ];
 
@@ -80,7 +97,7 @@ class RoleAndUserSeeder extends Seeder
             [
                 'name' => 'Pak Bos (Owner)',
                 'email' => 'owner@raabiha.com',
-                'roles' => ['owner', 'marketing', 'logistics'] // Micromanagement sementara
+                'roles' => ['owner'] // Micromanagement sementara
             ],
             [
                 'name' => 'Tim Marketing',
@@ -101,6 +118,11 @@ class RoleAndUserSeeder extends Seeder
                 'name' => 'Mbak CS',
                 'email' => 'cs@raabiha.com',
                 'roles' => ['cs']
+            ],
+            [
+                'name' => 'Tim Kasir',
+                'email' => 'kasir@raabiha.com',
+                'roles' => ['kasir']
             ],
         ];
 

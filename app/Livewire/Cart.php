@@ -321,6 +321,9 @@ class Cart extends Component
             'discountAmount' => $discountAmount,
             'grandTotal' => $grandTotal,
             'availableVouchers' => $availableVouchers,
+        ])->layout('components.layouts.app', [
+            'title' => 'Keranjang Belanja',
+            'robots' => 'noindex, nofollow'
         ]);
     }
 }

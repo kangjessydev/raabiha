@@ -56,6 +56,7 @@ class TopbarAnnouncement extends Page implements HasForms
         return $schema
             ->components([
                 Section::make('Konfigurasi Bilah Pengumuman')
+                    ->disabled(fn () => ! auth()->user()->can('Update:TopbarAnnouncement'))
                     ->schema([
                         \Filament\Forms\Components\RichEditor::make('text')
                             ->label('Teks Pengumuman')
@@ -96,6 +97,10 @@ class TopbarAnnouncement extends Page implements HasForms
 
     protected function getFormActions(): array
     {
+        if (! auth()->user()->can('Update:TopbarAnnouncement')) {
+            return [];
+        }
+
         return [
             Action::make('save')
                 ->label('Simpan Pengaturan')
@@ -106,6 +111,7 @@ class TopbarAnnouncement extends Page implements HasForms
 
     public function save(): void
     {
+        abort_unless(auth()->user()->can('Update:TopbarAnnouncement'), 403);
         $data = $this->form->getState();
         $announcement = AnnouncementModel::firstOrNew([]);
         $announcement->fill($data);

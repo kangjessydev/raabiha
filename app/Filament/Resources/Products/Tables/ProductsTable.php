@@ -75,7 +75,8 @@ class ProductsTable
                     ->label('Jumlah Varian')
                     ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
                 \Filament\Tables\Columns\ToggleColumn::make('is_active')
-                    ->label('Aktif?'),
+                    ->label('Aktif?')
+                    ->disabled(fn () => ! auth()->user()->can('Update:Product')),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

@@ -73,9 +73,11 @@ class MainPageSettings extends Page implements HasForms
 
     public function form(Schema $schema): Schema
     {
+        $canUpdate = auth()->user()->can('Update:MainPageSettings');
         return $schema
             ->components([
                 Tabs::make('PageSettings')
+                    ->disabled(!$canUpdate)
                     ->tabs([
                         // Tab Beranda
                         Tab::make('Beranda (Home)')
@@ -393,6 +395,10 @@ class MainPageSettings extends Page implements HasForms
 
     protected function getFormActions(): array
     {
+        if (! auth()->user()->can('Update:MainPageSettings')) {
+            return [];
+        }
+
         return [
             Action::make('save')
                 ->label('Simpan Perubahan Halaman')
@@ -403,6 +409,7 @@ class MainPageSettings extends Page implements HasForms
 
     public function save(): void
     {
+        abort_unless(auth()->user()->can('Update:MainPageSettings'), 403);
         $data = $this->form->getState();
 
         foreach ($data as $key => $value) {

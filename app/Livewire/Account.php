@@ -398,7 +398,8 @@ class Account extends Component
     public function render()
     {
         return view('livewire.account')->layout('components.layouts.app', [
-            'title' => 'Akun Saya'
+            'title' => 'Akun Saya',
+            'robots' => 'noindex, nofollow'
         ]);
     }
 }

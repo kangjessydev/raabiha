@@ -55,81 +55,82 @@ class GenerateRolesAndDemoUsers extends Command
         $this->info('Syncing Role Permissions...');
         $rolePermissions = [
             'owner' => [
-                // Cluster Dasbor & Media
+                // Cluster Dasbor & Media (Hanya Lihat)
                 'View:Dashboard', 'View:AnalyticsDashboard', 'View:LaporanBisnis',
-                'View:ExportMedia', 'View:ImportMedia', 'View:MainPageSettings',
-                'ViewAny:Media', 'View:Media', 'Create:Media', 'Update:Media', 'Delete:Media',
-                'ViewAny:SalesPage', 'View:SalesPage', 'Create:SalesPage', 'Update:SalesPage', 'Delete:SalesPage',
-                'ViewAny:StaticPage', 'View:StaticPage', 'Create:StaticPage', 'Update:StaticPage', 'Delete:StaticPage',
+                'View:GoogleAnalytics', 'View:GoogleAnalyticsDashboard',
+                'View:MainPageSettings',
+                'ViewAny:SalesPage', 'View:SalesPage',
+                'ViewAny:StaticPage', 'View:StaticPage',
                 
-                // Cluster E-Commerce (Full CRUD)
-                'ViewAny:TopbarAnnouncement', 'View:TopbarAnnouncement', 'Create:TopbarAnnouncement', 'Update:TopbarAnnouncement', 'Delete:TopbarAnnouncement',
-                'ViewAny:PromoBanner', 'View:PromoBanner', 'Create:PromoBanner', 'Update:PromoBanner', 'Delete:PromoBanner',
-                'ViewAny:Voucher', 'View:Voucher', 'Create:Voucher', 'Update:Voucher', 'Delete:Voucher',
-                'ViewAny:Order', 'View:Order', 'Create:Order', 'Update:Order', 'Delete:Order',
-                'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', 'Update:Cashflow', 'Delete:Cashflow',
-                'ViewAny:Product', 'View:Product', 'Create:Product', 'Update:Product', 'Delete:Product',
-                'ViewAny:Category', 'View:Category', 'Create:Category', 'Update:Category', 'Delete:Category',
-                'ViewAny:Attribute', 'View:Attribute', 'Create:Attribute', 'Update:Attribute', 'Delete:Attribute',
-                'ViewAny:ProductReview', 'View:ProductReview', 'Delete:ProductReview',
-                'ViewAny:StockLog', 'View:StockLog', 'Create:StockLog', 'Update:StockLog', 'Delete:StockLog',
-                'ViewAny:User', 'View:User', 'Create:User', 'Update:User', 'Delete:User', // Daftar Reseller / Pengguna
+                // Cluster Konten (Hanya Lihat)
+                'ViewAny:Post', 'View:Post',
+                'ViewAny:PostCategory', 'View:PostCategory',
+                'ViewAny:PostTag', 'View:PostTag',
+                'ViewAny:Comment', 'View:Comment',
+                'ViewAny:PostComment', 'View:PostComment',
+                
+                // Cluster E-Commerce (Hanya Lihat / Read-Only)
+                'ViewAny:Order', 'View:Order',
+                'ViewAny:Cashflow', 'View:Cashflow',
+                'ViewAny:Product', 'View:Product',
+                'ViewAny:Category', 'View:Category',
+                'ViewAny:Attribute', 'View:Attribute',
+                'ViewAny:ProductReview', 'View:ProductReview',
+                'ViewAny:User', 'View:User', // Daftar Reseller / Pengguna
                 'View:ResellerSettings', // Pengaturan Reseller
-                'ViewAny:ShippingMethod', 'View:ShippingMethod', 'Create:ShippingMethod', 'Update:ShippingMethod', 'Delete:ShippingMethod',
-                'ViewAny:PaymentMethod', 'View:PaymentMethod', 'Create:PaymentMethod', 'Update:PaymentMethod', 'Delete:PaymentMethod',
-                
-                // Cluster Pengaturan
+                'ViewAny:ShippingMethod', 'View:ShippingMethod',
+                'ViewAny:PaymentMethod', 'View:PaymentMethod',
                 'View:GlobalSettings', // Pengaturan Global
             ],
             'marketing' => [
-                // Cluster Dasbor, Konten & Media
+                // Cluster Dasbor, Konten & Media (CRUD Konten & Katalog)
                 'View:Dashboard', 'View:AnalyticsDashboard', 'View:MainPageSettings',
-                'ViewAny:SalesPage', 'View:SalesPage', 'Create:SalesPage', 'Update:SalesPage', 'Delete:SalesPage',
-                'ViewAny:StaticPage', 'View:StaticPage', 'Create:StaticPage', 'Update:StaticPage', 'Delete:StaticPage',
-                'ViewAny:Media', 'View:Media', 'Create:Media', 'Update:Media', 'Delete:Media',
-                'ViewAny:Post', 'View:Post', 'Create:Post', 'Update:Post', 'Delete:Post',
-                'ViewAny:PostCategory', 'View:PostCategory', 'Create:PostCategory', 'Update:PostCategory', 'Delete:PostCategory',
-                'ViewAny:PostTag', 'View:PostTag', 'Create:PostTag', 'Update:PostTag', 'Delete:PostTag',
+                'View:GoogleAnalytics', 'View:GoogleAnalyticsDashboard',
+                'ViewAny:SalesPage', 'View:SalesPage', 'Create:SalesPage', 'Update:SalesPage',
+                'ViewAny:StaticPage', 'View:StaticPage', 'Create:StaticPage', 'Update:StaticPage',
+                'ViewAny:Media', 'View:Media', 'Create:Media', 'Update:Media',
+                'ViewAny:Post', 'View:Post', 'Create:Post', 'Update:Post',
+                'ViewAny:PostCategory', 'View:PostCategory', 'Create:PostCategory', 'Update:PostCategory',
+                'ViewAny:PostTag', 'View:PostTag', 'Create:PostTag', 'Update:PostTag',
                 
-                // Cluster E-Commerce (CRUD Promosi & Katalog)
-                'ViewAny:TopbarAnnouncement', 'View:TopbarAnnouncement', 'Create:TopbarAnnouncement', 'Update:TopbarAnnouncement', 'Delete:TopbarAnnouncement',
-                'ViewAny:PromoBanner', 'View:PromoBanner', 'Create:PromoBanner', 'Update:PromoBanner', 'Delete:PromoBanner',
-                'ViewAny:Voucher', 'View:Voucher', 'Create:Voucher', 'Update:Voucher', 'Delete:Voucher',
-                'ViewAny:Product', 'View:Product', 'Create:Product', 'Update:Product', 'Delete:Product',
-                'ViewAny:Category', 'View:Category', 'Create:Category', 'Update:Category', 'Delete:Category',
-                'ViewAny:Attribute', 'View:Attribute', 'Create:Attribute', 'Update:Attribute', 'Delete:Attribute',
+                // Cluster E-Commerce (CRUD Promosi & Katalog - Tanpa Hapus)
+                'ViewAny:TopbarAnnouncement', 'View:TopbarAnnouncement', 'Create:TopbarAnnouncement', 'Update:TopbarAnnouncement',
+                'ViewAny:PromoBanner', 'View:PromoBanner', 'Create:PromoBanner', 'Update:PromoBanner',
+                'ViewAny:Voucher', 'View:Voucher', 'Create:Voucher', 'Update:Voucher',
+                'ViewAny:Product', 'View:Product', 'Create:Product', 'Update:Product',
+                'ViewAny:Category', 'View:Category', 'Create:Category', 'Update:Category',
+                'ViewAny:Attribute', 'View:Attribute', 'Create:Attribute', 'Update:Attribute',
             ],
             'finance' => [
                 // Cluster Dasbor & E-Commerce
-                'View:Dashboard', 'View:LaporanBisnis', 'View:ExportMedia',
-                'ViewAny:Order', 'View:Order', 'Update:Order', // Pesanan: lihat, ubah
-                'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', 'Update:Cashflow', 'Delete:Cashflow', // Buku Kas: CRUD
-                'ViewAny:PaymentMethod', 'View:PaymentMethod', 'Update:PaymentMethod', // Metode Pembayaran: lihat, ubah
+                'View:Dashboard', 'View:LaporanBisnis',
+                'ViewAny:Order', 'View:Order', 'Update:Order', // Pesanan: lihat, ubah status pembayaran
+                'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', 'Update:Cashflow', 'Delete:Cashflow', 'DeleteAny:Cashflow', // Buku Kas: CRUD
+                'ViewAny:PaymentMethod', 'View:PaymentMethod', // Metode Pembayaran: lihat
             ],
             'logistics' => [
                 // Cluster Dasbor & E-Commerce
-                'View:Dashboard', 'View:ExportMedia', 'View:ImportMedia',
-                'ViewAny:Order', 'View:Order', 'Update:Order', // Pesanan: lihat, ubah (resi/status)
-                'ViewAny:Product', 'View:Product', // Produk: lihat
-                'ViewAny:StockLog', 'View:StockLog', 'Create:StockLog', 'Update:StockLog', // Manajemen Stok: lihat, tambah, ubah
-                'ViewAny:ShippingMethod', 'View:ShippingMethod', 'Update:ShippingMethod', // Metode Pengiriman: lihat, ubah
+                'View:Dashboard',
+                'ViewAny:Order', 'View:Order', 'Update:Order', // Pesanan: lihat, ubah resi/status pengiriman
+                'ViewAny:Product', 'View:Product', 'Update:Product', // Produk: lihat, update stok
+                'ViewAny:ShippingMethod', 'View:ShippingMethod', // Metode Pengiriman: lihat
             ],
             'cs' => [
                 // Cluster Dasbor, Konten & E-Commerce
                 'View:Dashboard',
-                'ViewAny:Inquiry', 'View:Inquiry', 'Create:Inquiry', 'Update:Inquiry', 'Delete:Inquiry',
-                'ViewAny:PostComment', 'View:PostComment', 'Update:PostComment', 'Delete:PostComment',
-                'ViewAny:Order', 'View:Order', 'Create:Order', 'Update:Order', // Pesanan: lihat, buat, ubah
-                'ViewAny:Product', 'View:Product', // Produk: lihat
-                'ViewAny:ProductReview', 'View:ProductReview', 'Update:ProductReview', 'Delete:ProductReview', // Ulasan: lihat, ubah, hapus
-                'ViewAny:User', 'View:User', 'Update:User', // Daftar Reseller/User: lihat, ubah
+                'ViewAny:Inquiry', 'View:Inquiry', 'Update:Inquiry', // Hubungi Kami: lihat, tanggapi
+                'ViewAny:PostComment', 'View:PostComment', 'Update:PostComment', // Komentar Blog: lihat, moderasi
+                'ViewAny:Order', 'View:Order', // Pesanan: Hanya Lihat
+                'ViewAny:Product', 'View:Product', // Produk: Hanya Lihat
+                'ViewAny:ProductReview', 'View:ProductReview', 'Update:ProductReview', // Ulasan: lihat, moderasi/balas
             ],
             'kasir' => [
                 // Cluster Dasbor & E-Commerce
                 'View:Dashboard',
-                'ViewAny:Order', 'View:Order', 'Create:Order', // Pesanan: lihat, buat (TANPA ubah/hapus)
-                'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', // Buku Kas: lihat, buat (TANPA ubah/hapus)
-                'ViewAny:Product', 'View:Product', // Produk: lihat (katalog harga)
+                'ViewAny:Order', 'View:Order', 'Create:Order', // Pesanan: lihat, buat (POS manual)
+                'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', // Buku Kas: lihat, buat pencatatan kasir
+                'ViewAny:Product', 'View:Product', // Produk: lihat katalog harga
+                'ViewAny:User', 'View:User', 'Create:User', // Pelanggan: lihat & tambah saat POS checkout
             ],
         ];
 
@@ -146,7 +147,7 @@ class GenerateRolesAndDemoUsers extends Command
             [
                 'name' => 'Pak Bos (Owner)',
                 'email' => 'owner@raabiha.com',
-                'roles' => ['owner', 'marketing', 'logistics']
+                'roles' => ['owner']
             ],
             [
                 'name' => 'Tim Marketing',

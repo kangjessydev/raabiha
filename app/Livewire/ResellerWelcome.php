@@ -39,7 +39,8 @@ class ResellerWelcome extends Component
     public function render()
     {
         return view('livewire.reseller-welcome')->layout('components.layouts.app', [
-            'title' => 'Selamat Datang Calon Reseller'
+            'title' => 'Selamat Datang Calon Reseller',
+            'robots' => 'noindex, nofollow'
         ]);
     }
 }

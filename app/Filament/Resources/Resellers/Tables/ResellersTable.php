@@ -57,13 +57,13 @@ class ResellersTable
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->action(fn ($record) => $record->update(['reseller_status' => 'active']))
-                    ->visible(fn ($record) => $record->reseller_status === 'pending'),
+                    ->visible(fn ($record) => $record->reseller_status === 'pending' && auth()->user()->can('Update:User')),
                 \Filament\Actions\Action::make('reject')
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->action(fn ($record) => $record->update(['reseller_status' => 'rejected']))
-                    ->visible(fn ($record) => $record->reseller_status === 'pending'),
+                    ->visible(fn ($record) => $record->reseller_status === 'pending' && auth()->user()->can('Update:User')),
                 \Filament\Actions\EditAction::make(),
             ])
             ->toolbarActions([

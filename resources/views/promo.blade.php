@@ -1,4 +1,4 @@
-<x-layouts.app title="Promo & Diskon">
+<x-layouts.app title="Promo & Diskon" description="Temukan penawaran eksklusif, potongan harga khusus member, dan voucher belanja gratis ongkir dari Raabiha.">
     <div class="page-slide-in">
         <main class="site-main bg-[#fcf9f5] min-h-screen pb-24 md:pb-32 pt-32 md:pt-40">
             <!-- Header Section -->

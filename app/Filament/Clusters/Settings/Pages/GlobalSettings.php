@@ -48,9 +48,11 @@ class GlobalSettings extends Page implements HasForms
 
     public function form(Schema $schema): Schema
     {
+        $canUpdate = auth()->user()->can('Update:GlobalSettings');
         return $schema
             ->components([
                 \Filament\Schemas\Components\Tabs::make('Settings')
+                    ->disabled(!$canUpdate)
                     ->tabs([
                         \Filament\Schemas\Components\Tabs\Tab::make('Identitas Toko')
                             ->components([
@@ -150,6 +152,7 @@ class GlobalSettings extends Page implements HasForms
 
     public function submit(): void
     {
+        abort_unless(auth()->user()->can('Update:GlobalSettings'), 403);
         $data = $this->form->getState();
 
         foreach ($data as $key => $value) {

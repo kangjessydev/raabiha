@@ -62,7 +62,7 @@ class StockManagementTable
                     ->label('Edit Stok')
                     ->icon('heroicon-o-pencil-square')
                     ->color('primary')
-                    ->visible(fn($record) => !$record->has_variants)
+                    ->visible(fn($record) => !$record->has_variants && auth()->user()->can('Update:Product'))
                     ->form([
                         TextInput::make('current_stock')
                             ->label('Stok Saat Ini')
@@ -110,7 +110,7 @@ class StockManagementTable
                     ->label('Edit Stok Varian')
                     ->icon('heroicon-o-bars-3-bottom-left')
                     ->color('info')
-                    ->visible(fn($record) => $record->has_variants)
+                    ->visible(fn($record) => $record->has_variants && auth()->user()->can('Update:Product'))
                     ->form(function ($record) {
                         $schema = [];
 

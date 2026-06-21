@@ -40,7 +40,8 @@ class ResellerRegister extends Component
     public function render()
     {
         return view('livewire.reseller-register')->layout('components.layouts.app', [
-            'title' => 'Daftar Reseller'
+            'title' => 'Daftar Reseller',
+            'robots' => 'noindex, nofollow'
         ]);
     }
 }

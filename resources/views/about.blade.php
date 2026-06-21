@@ -1,4 +1,4 @@
-<x-layouts.app title="Tentang Kami">
+<x-layouts.app title="Tentang Kami" description="Pelajari lebih lanjut tentang Raabiha, brand modest fashion modern premium yang menggabungkan desain minimalis struktural dengan kenyamanan urban.">
     <main class="site-main bg-[#fcf9f5] min-h-screen pt-12 md:pt-24 pb-0">
         @php
             // Helper untuk render image Curator or Fallback

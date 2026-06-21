@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-layouts.app title="Daftar" robots="noindex, nofollow">
     <x-slot:header>
         <x-global.mobile-subnav title="Daftar Akun" backUrl="/login" />
     </x-slot:header>

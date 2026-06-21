@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-layouts.app :title="'Invoice #' . $order->order_number" robots="noindex, nofollow">
     <x-slot:header>
         <x-global.mobile-subnav title="Invoice Pesanan" backUrl="{{ url('/order-success?order=' . $order->order_number) }}" />
     </x-slot:header>

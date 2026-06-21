@@ -16,6 +16,7 @@ class ListStockManagement extends ListRecords
                 ->label('Pengaturan Stok')
                 ->icon('heroicon-o-cog-6-tooth')
                 ->color('gray')
+                ->visible(fn () => auth()->user()->can('Update:Product'))
                 ->modalHeading('Pengaturan Stok & Inventaris')
                 ->modalWidth('md')
                 ->form([

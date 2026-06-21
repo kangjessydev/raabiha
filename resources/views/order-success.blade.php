@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-layouts.app title="Pesanan Berhasil" robots="noindex, nofollow">
     <x-slot:header>
         <x-global.mobile-subnav title="Pesanan Berhasil" backUrl="/" />
     </x-slot:header>

@@ -31,7 +31,9 @@
     <!-- Latest Observations Header -->
     <section class="max-w-[1440px] mx-auto px-6 lg:px-12 py-8 border-b border-[#e5e2de] mb-12">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <h2 class="text-3xl md:text-4xl font-serif text-[#1c1c1a]">Latest Observations</h2>
+            <{{ $featuredPost ? 'h2' : 'h1' }} class="text-3xl md:text-4xl font-serif text-[#1c1c1a]">
+                {{ $category !== 'all' ? 'Kategori: ' . ($categories->firstWhere('slug', $category)->name ?? $category) : 'Latest Observations' }}
+            </{{ $featuredPost ? 'h2' : 'h1' }}>
             <div class="flex gap-6 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide text-[10px] font-mono tracking-widest uppercase text-[#615e57]">
                 <button wire:key="cat-all" wire:click="setCategory('all')" class="whitespace-nowrap {{ $category === 'all' ? 'text-[#1c1c1a] font-bold border-b border-[#1c1c1a] pb-1' : 'hover:text-[#1c1c1a] transition-colors' }}">All</button>
                 @foreach($categories as $cat)

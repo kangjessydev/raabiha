@@ -122,7 +122,8 @@ class Shop extends Component
                 });
             }])->get()
         ])->layout('components.layouts.app', [
-            'title' => 'Katalog Produk'
+            'title' => 'Katalog Produk',
+            'description' => 'Temukan koleksi pakaian modest fashion modern premium dari Raabiha. Belanja baju muslim wanita, dress elegan, hijab berkualitas dengan desain minimalis arsitektural.'
         ]);
     }
 

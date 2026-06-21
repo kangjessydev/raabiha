@@ -58,9 +58,11 @@ class ResellerSettings extends Page implements HasForms
 
     public function form(Schema $schema): Schema
     {
+        $canUpdate = auth()->user()->can('Update:User');
         return $schema
             ->components([
                 Section::make('Ketentuan & Diskon Reseller')
+                    ->disabled(!$canUpdate)
                     ->schema([
                         \Filament\Forms\Components\Toggle::make('reseller_registration_open')
                             ->label('Buka Pendaftaran Reseller')
@@ -83,6 +85,7 @@ class ResellerSettings extends Page implements HasForms
                     ])->columns(2),
                 
                 Section::make('Informasi Pembayaran (Bank)')
+                    ->disabled(!$canUpdate)
                     ->schema([
                         \Filament\Forms\Components\Repeater::make('reseller_banks')
                             ->label('Daftar Rekening Bank')
@@ -96,7 +99,7 @@ class ResellerSettings extends Page implements HasForms
                                 TextInput::make('account_name')
                                     ->label('Atas Nama')
                                     ->required(),
-                            ])
+                             ])
                             ->columns(3)
                             ->columnSpanFull()
                             ->defaultItems(1),
@@ -113,6 +116,7 @@ class ResellerSettings extends Page implements HasForms
 
     public function save(): void
     {
+        abort_unless(auth()->user()->can('Update:User'), 403);
         $data = $this->form->getState();
         foreach ($data as $key => $value) {
             $valueToSave = is_array($value) ? json_encode($value) : $value;

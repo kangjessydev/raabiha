@@ -44,7 +44,8 @@ class Search extends Component
             'products' => $products,
             'posts' => $posts,
         ])->layout('components.layouts.app', [
-            'title' => 'Pencarian: ' . ($this->q ?: 'Semua')
+            'title' => 'Pencarian: ' . ($this->q ?: 'Semua'),
+            'robots' => 'noindex, nofollow'
         ]);
     }
 }

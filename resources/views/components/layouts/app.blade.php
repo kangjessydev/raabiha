@@ -1,10 +1,14 @@
-@props(['title' => null, 'description' => null, 'image' => null, 'header' => null, 'blank' => false])
+@props(['title' => null, 'description' => null, 'image' => null, 'header' => null, 'blank' => false, 'robots' => null])
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+    @if(isset($robots))
+        <meta name="robots" content="{{ $robots }}" />
+    @else
+        <meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+    @endif
 
     @php
         $siteName = \App\Models\SiteSetting::where('key', 'site_name')->value('value') ?? 'Raabiha Olshop';
@@ -18,12 +22,22 @@
         $defaultTitle = $isHome ? ($homeMetaTitle ?: $siteName) : $siteName;
         $defaultDesc = $isHome ? ($homeMetaDesc ?: $defaultDesc) : $defaultDesc;
         
-        $finalTitle = isset($title) ? $title . ' - ' . $siteName : $defaultTitle;
+        $finalTitle = (isset($title) && !$isHome) ? $title . ' - ' . $siteName : $defaultTitle;
         $finalDesc = isset($description) ? $description : $defaultDesc;
 
         $faviconId = \App\Models\SiteSetting::where('key', 'site_favicon')->value('value');
         $faviconMedia = $faviconId ? \Awcodes\Curator\Models\Media::find($faviconId) : null;
         $faviconUrl = $faviconMedia ? Storage::url($faviconMedia->path) : asset('favicon.ico');
+
+        $finalImage = $image;
+        if (!$finalImage) {
+            $logoId = \App\Models\SiteSetting::where('key', 'site_logo_dark')->value('value') ?: \App\Models\SiteSetting::where('key', 'site_logo_light')->value('value');
+            $logoMedia = $logoId ? \Awcodes\Curator\Models\Media::find($logoId) : null;
+            $finalImage = $logoMedia ? Storage::url($logoMedia->path) : null;
+        }
+        if ($finalImage && !str_starts_with($finalImage, 'http')) {
+            $finalImage = url($finalImage);
+        }
     @endphp
 
     <title>{{ $finalTitle }}</title>
@@ -45,8 +59,8 @@
     <meta property="og:title" content="{{ $finalTitle }}" />
     <meta property="og:description" content="{{ $finalDesc }}" />
     <meta property="og:site_name" content="{{ $defaultTitle }}" />
-    @if(isset($image))
-    <meta property="og:image" content="{{ $image }}" />
+    @if($finalImage)
+    <meta property="og:image" content="{{ $finalImage }}" />
     @endif
 
     <!-- Twitter -->
@@ -54,8 +68,8 @@
     <meta name="twitter:url" content="{{ url()->current() }}" />
     <meta name="twitter:title" content="{{ $finalTitle }}" />
     <meta name="twitter:description" content="{{ $finalDesc }}" />
-    @if(isset($image))
-    <meta name="twitter:image" content="{{ $image }}" />
+    @if($finalImage)
+    <meta name="twitter:image" content="{{ $finalImage }}" />
     @endif
 
 

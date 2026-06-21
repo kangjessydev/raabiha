@@ -10,8 +10,6 @@ use Livewire\Component;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
-#[Layout('components.layouts.app')]
-#[Title('Blog - Raabiha')]
 class Blog extends Component
 {
     use WithPagination;
@@ -50,6 +48,9 @@ class Blog extends Component
             'posts' => $posts,
             'categories' => $categories,
             'featuredPost' => $featuredPost,
+        ])->layout('components.layouts.app', [
+            'title' => 'Blog',
+            'description' => 'Temukan jurnal gaya busana modest modern, inspirasi tren terbaru, panduan padupadan, dan berita terkini dari Raabiha.'
         ]);
     }
 }

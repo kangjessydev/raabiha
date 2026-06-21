@@ -1,4 +1,4 @@
-<x-layouts.app title="Galeri">
+<x-layouts.app title="Galeri Visual" description="Eksplorasi visual koleksi busana santun modern Raabiha. Lihat lookbook, studi visual, dan detail estetika arsitektural kami.">
 <main class="site-main bg-[#fcf9f5] min-h-screen pb-0">
     @php
         $rawContent = \App\Models\SiteSetting::where('key', 'gallery_content')->value('value');

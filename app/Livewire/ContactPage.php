@@ -103,7 +103,8 @@ class ContactPage extends Component
         return view('livewire.contact-page', [
             'subjects' => $subjects
         ])->layout('components.layouts.app', [
-            'title' => 'Lokasi & Kontak'
+            'title' => 'Lokasi & Kontak',
+            'description' => 'Hubungi Raabiha untuk pertanyaan umum, kemitraan grosir, layanan pelanggan, atau kunjungi lokasi showroom kami.'
         ]);
     }
 }

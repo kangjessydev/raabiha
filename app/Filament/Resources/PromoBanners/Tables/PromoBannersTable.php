@@ -43,7 +43,8 @@ class PromoBannersTable
                     ->label('Tautan')
                     ->searchable(),
                 \Filament\Tables\Columns\ToggleColumn::make('is_active')
-                    ->label('Status Aktif'),
+                    ->label('Status Aktif')
+                    ->disabled(fn () => ! auth()->user()->can('Update:PromoBanner')),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

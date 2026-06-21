@@ -39,7 +39,8 @@ class ResellerDashboard extends Component
     public function render()
     {
         return view('livewire.reseller-dashboard')->layout('components.layouts.app', [
-            'title' => 'Portal Reseller'
+            'title' => 'Portal Reseller',
+            'robots' => 'noindex, nofollow'
         ]);
     }
 
