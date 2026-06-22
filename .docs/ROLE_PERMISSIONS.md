@@ -75,6 +75,7 @@ Setelah saya lakukan testing:
 - **Akses Modul:**
     - **Buku Kas (Cashflow):** Mengelola penuh pencatatan kas (`View`, `Create`, `Update`).
     - **Pesanan (Orders):** Melihat detail dan mengubah status pembayaran (misal: dari Pending menjadi Lunas). (`View`, `Update`).
+    - **Refund Pelanggan (RefundRequests):** Melihat detail pengajuan refund, melakukan transfer dana kembali, dan menandai refund selesai/terkirim (`View`, `Update`).
     - **Metode Pembayaran:** Melihat daftar VA/Bank untuk referensi (`View`).
     - **Grafik Pendapatan:** Bisa melihat diagram laporan penjualan.
 
@@ -89,7 +90,7 @@ Setelah saya lakukan testing:
     - **Kupon Promosi (Voucher):** Membuat diskon baru (`Create`, `Read`, `Update`).
     - **Promo Banner:** Mengganti slider/banner di halaman utama (`Create`, `Read`, `Update`).
     - **Sales Page (Halaman Statis):** Membangun/mengubah konten profil perusahaan, kontak, dll. (`Create`, `Read`, `Update`).
-- **Catatan:** Tim Marketing tidak memiliki akses untuk melihat Pesanan atau Keuangan pelanggan.
+- **Catatan:** Tim Marketing tidak memiliki akses untuk melihat Pesanan, Keuangan pelanggan, serta menu **Manajemen Stok** (disembunyikan sepenuhnya).
 
 ---
 
@@ -99,9 +100,10 @@ Setelah saya lakukan testing:
 - **Fungsi Utama:** Memproses pemaketan, memperbarui nomor resi pengiriman, dan mengurus keluar/masuk stok.
 - **Akses Modul:**
     - **Pesanan (Orders):** Melihat rincian alamat dan mengubah status resi/pengiriman (`View`, `Update`).
-    - **Produk:** Bisa melihat dan menyesuaikan sisa stok produk (`View`, `Update`).
+    - **Manajemen Stok:** Mengakses menu Manajemen Stok untuk memutakhirkan sisa stok produk (Quick Edit Stok) secara langsung (`View`, `Update`).
     - **Riwayat Stok (Stock Logs):** Mencatat stok masuk (restock) atau stok keluar/rusak (`View`, `Create`).
     - **Metode Pengiriman:** Melihat daftar kurir referensi (`View`).
+- **Catatan:** Tim Gudang tidak memiliki akses ke menu utama **Produk** (disembunyikan dari navigasi) agar tidak bisa mengubah data katalog produk selain jumlah stok fisik.
 
 ---
 
