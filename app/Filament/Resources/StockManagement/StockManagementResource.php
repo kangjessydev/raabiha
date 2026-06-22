@@ -21,7 +21,7 @@ class StockManagementResource extends Resource
     protected static ?string $modelLabel = 'Manajemen Stok';
     public static function canViewAny(): bool
     {
-        return auth()->user()->hasAnyRole(['super_admin', 'owner', 'marketing', 'logistics']);
+        return auth()->user()->hasAnyRole(['super_admin', 'owner', 'logistics']);
     }
 
     protected static ?string $pluralModelLabel = 'Manajemen Stok';

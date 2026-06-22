@@ -11,6 +11,16 @@ class Order extends Model
 {
     use HasFactory;
 
+    protected static function booted()
+    {
+        static::updated(function ($order) {
+            $order->orderRequests()
+                ->where('type', 'change')
+                ->where('status', 'approved')
+                ->update(['status' => 'completed']);
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'order_number',
@@ -57,5 +67,10 @@ class Order extends Model
     public function refundRequest(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(RefundRequest::class);
+    }
+
+    public function orderRequests(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderRequest::class);
     }
 }

@@ -69,10 +69,12 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 ## Backlog / Ekstensi Bisnis (Sprint 3 / Fase 3)
 
 - [x] **Fitur Wishlist Pelanggan:** Membuat tabel `wishlists` (user_id, product_id) dan fitur simpan produk untuk pengguna terdaftar yang dapat diakses langsung dari halaman katalog dan dashboard akun.
+- [ ] **daftar & login akun customer** Customer membuat akun melalui form regsiter atau button google, customer login akun melalui form login atau button google. Ada notifikasi ke email untuk konfirmasi
 - [x] **Role & Manajemen Akses Lanjutan (Spatie):**
     - Mendefinisikan hak akses CRUD untuk Owner, Marketing, Finance, Logistics, CS, dan Admin Kasir.
     - Membatasi akses menu _Integrasi & API_ khusus untuk Super Admin saja.
-    - [ ] **Uji Coba Role:** (_To Do_) Klien atau developer perlu mencoba _login_ menggunakan akun demo (kasir, finance, dll) untuk memverifikasi fungsionalitas UI secara langsung.
+    - [x] **Uji Coba Role:** Uji coba login menggunakan akun demo (Owner, dll) untuk memverifikasi fungsionalitas pembatasan UI secara langsung telah selesai dilaksanakan.
+    - [x] **Sistem Pengajuan Perubahan/Pembatalan Pesanan Kasir:** Membuat tabel dan alur pengajuan persetujuan ke Owner agar Kasir dapat melakukan perubahan/pembatalan pesanan secara aman.
 - [x] **Fitur Refund Pelanggan:** Merancang tabel `refund_requests` dan alur antarmuka (UI) khusus di Dasbor Customer & Admin Panel untuk menangani pengembalian dana.
 - [x] **Simpan Alamat Otomatis di Checkout:** Menambahkan _checkbox_ kecil ("Simpan alamat ini ke akun saya") di halaman Checkout khusus bagi pelanggan yang belum memiliki alamat tersimpan, agar alamat otomatis masuk ke daftar alamat di akun mereka.
 - [x] **Validasi Import/Export Media Cluster:** Memastikan fungsi ekspor data (Produk, Pesanan, User, dsb.) yang berada di cluster _Media Files_ berjalan dengan benar dan tersinkronisasi dengan perubahan _database_ terbaru.

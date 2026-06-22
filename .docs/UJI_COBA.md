@@ -37,6 +37,12 @@ Dokumen ini mencatat fitur-fitur yang sudah selesai dilakukan pengujian secara m
   - Layout halaman khusus Sales Page otomatis dalam mode "Blank" (tanpa Navigasi, Footer, dan Bottom bar).
 - [x] **CMS Halaman Utama**
   - Modul pengaturan tampilan halaman utama dari panel admin sudah bekerja dan terhubung secara *real-time* ke *frontend*.
+- [x] **Manajemen Hak Akses & Peran (Role & Permission)**
+  - Pembatasan hak akses untuk peran Owner (Pemilik) telah diuji coba sepenuhnya dan berjalan 100% aman.
+  - Menu sensitif (Media Files, Topbar Announcement, Banner Promosi, dan Voucher) berhasil disembunyikan total dari navigasi Owner.
+  - Halaman-halaman lainnya (Produk, Pesanan, Kategori, Atribut, Manajemen Stok, Pelanggan, Reseller, dan seluruh modul Konten/CMS) dibatasi hanya bisa melihat (Read-Only) dengan menonaktifkan form, tombol simpan, tombol tambah/edit/hapus, serta toggle status.
+  - Izin melihat Analitik Pengunjung (Google Analytics) berhasil dibuka untuk peran Owner dan Marketing.
+  - Pembatasan hak akses untuk peran Kasir (Tim Kasir) telah sukses diuji: Kasir dapat membuat pesanan baru (POS manual/offline), namun saat mengedit pesanan lama secara mandiri, semua kolom penting dikunci. Untuk melakukan perubahan, Kasir menggunakan tombol **Ajukan Perubahan** yang mengarahkannya ke halaman edit pesanan dengan kolom terbuka, lalu tombol simpan berubah menjadi **Ajukan Perubahan** untuk menyimpan rancangan proposal. Setelah disetujui Owner via menu **Permintaan Kasir**, perubahan tersebut otomatis diterapkan langsung ke pesanan. Tombol persetujuan Reseller (Setujui/Tolak) serta tombol pembuatan reseller baru (Buat Reseller) berhasil disembunyikan secara khusus dari pandangan Kasir.
 
 ---
 *Dokumen ini akan terus diperbarui seiring dengan berjalannya proses pengujian modul-modul lainnya.*

@@ -15,8 +15,19 @@ class OrderForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
-            ->components([
-                \Filament\Schemas\Components\Group::make()
+            ->components(array_merge(
+                self::isRequestChangeActive() ? [
+                    Section::make('Alasan Pengajuan Perubahan')
+                        ->schema([
+                            Textarea::make('change_reason')
+                                ->label('Alasan Perubahan')
+                                ->placeholder('Jelaskan alasan mengapa data pesanan ini perlu diubah...')
+                                ->required()
+                                ->rows(3),
+                        ])
+                ] : [],
+                [
+                    \Filament\Schemas\Components\Group::make()
                     ->schema([
                         Section::make('Daftar Belanja')
                             ->schema([
@@ -35,6 +46,7 @@ class OrderForm
                                     ->collapsible()
                                     ->defaultItems(1)
                                     ->itemLabel(fn(array $state): ?string => $state['name'] ?? null)
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('items', $operation))
                                     ->schema([
                                         Select::make('product_id')
                                             ->label('Product')
@@ -174,7 +186,8 @@ class OrderForm
                                     ->required()
                                     ->numeric()
                                     ->prefix('Rp')
-                                    ->readOnly()
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('subtotal', $operation))
+                                    ->dehydrated()
                                     ->default(0),
                                 TextInput::make('shipping_cost')
                                     ->required()
@@ -182,6 +195,7 @@ class OrderForm
                                     ->default(0)
                                     ->prefix('Rp')
                                     ->live(onBlur: true)
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('shipping_cost', $operation))
                                     ->afterStateUpdated(fn(Set $set, Get $get) => self::updateTotals($get, $set, false)),
                                 TextInput::make('discount_total')
                                     ->required()
@@ -189,12 +203,14 @@ class OrderForm
                                     ->default(0)
                                     ->prefix('Rp')
                                     ->live(onBlur: true)
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('discount_total', $operation))
                                     ->afterStateUpdated(fn(Set $set, Get $get) => self::updateTotals($get, $set, false)),
                                 TextInput::make('grand_total')
                                     ->required()
                                     ->numeric()
                                     ->prefix('Rp')
-                                    ->readOnly()
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('grand_total', $operation))
+                                    ->dehydrated()
                                     ->default(0),
                                 TextInput::make('amount_received')
                                     ->label('Uang Diterima (Cash)')
@@ -203,6 +219,7 @@ class OrderForm
                                     ->dehydrated(false)
                                     ->visible(fn(Get $get) => $get('source') === 'offline')
                                     ->live(onBlur: true)
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('amount_received', $operation))
                                     ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                         $grandTotal = floatval($get('grand_total') ?? 0);
                                         $received = floatval($state ?? 0);
@@ -212,7 +229,7 @@ class OrderForm
                                     ->label('Kembalian')
                                     ->numeric()
                                     ->prefix('Rp')
-                                    ->readOnly()
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('change_amount', $operation))
                                     ->dehydrated(false)
                                     ->visible(fn(Get $get) => $get('source') === 'offline')
                                     ->default(0),
@@ -229,6 +246,7 @@ class OrderForm
                                     ->allowHtml()
                                     ->searchable()
                                     ->native(false)
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('user_id', $operation))
                                     ->getSearchResultsUsing(function (string $search) {
                                         return \App\Models\User::where('name', 'like', "%{$search}%")
                                             ->orWhere('email', 'like', "%{$search}%")
@@ -286,6 +304,7 @@ class OrderForm
                                     ->required()
                                     ->native(false)
                                     ->live()
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('source', $operation))
                                     ->afterStateUpdated(function ($state, Set $set) {
                                         if ($state === 'offline') {
                                             $set('status', 'completed');
@@ -295,30 +314,41 @@ class OrderForm
                                     }),
                                 Select::make('status')
                                     ->label('Status Pesanan')
-                                    ->options([
-                                        'pending' => 'Menunggu Pembayaran',
-                                        'paid' => 'Sudah Dibayar',
-                                        'packed' => 'Sedang Dikemas',
-                                        'sent' => 'Sedang Dikirim',
-                                        'completed' => 'Selesai',
-                                        'cancelled' => 'Dibatalkan',
-                                    ])
+                                    ->options(function ($record) {
+                                        $options = [
+                                            'pending' => 'Menunggu Pembayaran',
+                                            'paid' => 'Sudah Dibayar',
+                                            'packed' => 'Sedang Dikemas',
+                                            'sent' => 'Sedang Dikirim',
+                                            'completed' => 'Selesai',
+                                        ];
+
+                                        if (($record && $record->status === 'cancelled') || !auth()->user()?->hasRole('kasir')) {
+                                             $options['cancelled'] = 'Dibatalkan';
+                                        }
+
+                                        return $options;
+                                    })
                                     ->required()
                                     ->default('completed')
-                                    ->native(false),
+                                    ->native(false)
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('status', $operation)),
                                 \Filament\Forms\Components\Radio::make('payment_status')
                                     ->label('Status Pembayaran')
                                     ->options([
                                         'pending' => 'Belum Lunas',
                                         'paid' => 'Lunas',
                                         'failed' => 'Gagal',
+                                        'refunded' => 'Dikembalikan',
                                     ])
                                     ->required()
                                     ->inline()
-                                    ->default('paid'),
+                                    ->default('paid')
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('payment_status', $operation)),
                                 Select::make('payment_method')
                                     ->label('Metode Pembayaran')
                                     ->native(false)
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('payment_method', $operation))
                                     ->options(function (Get $get) {
                                         $source = $get('source');
                                         $query = \App\Models\PaymentMethod::where('is_active', true);
@@ -344,6 +374,7 @@ class OrderForm
                                 Select::make('voucher_id')
                                     ->label('Voucher / Diskon')
                                     ->native(false)
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('voucher_id', $operation))
                                     ->options(function () {
                                         return \App\Models\Voucher::where('is_active', true)->get()->mapWithKeys(function ($v) {
                                             $discountStr = $v->discount_type === 'percent'
@@ -385,6 +416,7 @@ class OrderForm
                             ->extraAttributes(['class' => 'custom-pengiriman'])
                             ->schema([
                                 \Filament\Schemas\Components\Fieldset::make('Alamat Pengiriman')
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('shipping_address', $operation))
                                     ->schema([
                                         \Filament\Forms\Components\Toggle::make('shipping_address.is_pickup')
                                             ->label('Ambil di Toko? (Tidak perlu pengiriman)')
@@ -400,14 +432,14 @@ class OrderForm
                                             ->columnSpanFull(),
                                         TextInput::make('shipping_address.first_name')
                                             ->label('Nama Depan')
-                                            ->required(fn(Get $get) => $get('shipping_address.is_pickup') !== true)
+                                            ->required(fn(Get $get, string $operation) => $operation === 'create' && $get('shipping_address.is_pickup') !== true)
                                             ->hidden(fn(Get $get) => $get('shipping_address.is_pickup') === true),
                                         TextInput::make('shipping_address.last_name')
                                             ->label('Nama Belakang')
                                             ->hidden(fn(Get $get) => $get('shipping_address.is_pickup') === true),
                                         TextInput::make('shipping_address.phone')
                                             ->label('Telepon')
-                                            ->required(fn(Get $get) => $get('shipping_address.is_pickup') !== true)
+                                            ->required(fn(Get $get, string $operation) => $operation === 'create' && $get('shipping_address.is_pickup') !== true)
                                             ->hidden(fn(Get $get) => $get('shipping_address.is_pickup') === true),
                                         TextInput::make('shipping_address.email')
                                             ->label('Email')
@@ -416,7 +448,7 @@ class OrderForm
                                         Textarea::make('shipping_address.address')
                                             ->label('Alamat Lengkap (Jalan, RT/RW, Patokan)')
                                             ->columnSpanFull()
-                                            ->required(fn(Get $get) => $get('shipping_address.is_pickup') !== true)
+                                            ->required(fn(Get $get, string $operation) => $operation === 'create' && $get('shipping_address.is_pickup') !== true)
                                             ->hidden(fn(Get $get) => $get('shipping_address.is_pickup') === true),
                                         \Filament\Forms\Components\Toggle::make('shipping_address.is_manual')
                                             ->label('Ketik Manual? (Gunakan jika pencarian otomatis error)')
@@ -490,6 +522,7 @@ class OrderForm
                                         Select::make('courier')
                                             ->label('Kurir (Layanan)')
                                             ->native(false)
+                                            ->disabled(fn (string $operation) => self::isFieldDisabled('courier', $operation))
                                             ->options(function (Get $get) {
                                                 $districtRaw = $get('shipping_address.district');
                                                 $currentCourier = $get('courier');
@@ -589,14 +622,18 @@ class OrderForm
                                                 $set('shipping_cost', $price);
                                                 self::updateTotals($get, $set, false);
                                             }),
-                                        TextInput::make('awb_number')->label('Nomor Resi'),
+                                        TextInput::make('awb_number')
+                                            ->label('Nomor Resi')
+                                            ->disabled(fn (string $operation) => self::isFieldDisabled('awb_number', $operation)),
                                     ])->columns(1),
                                 Textarea::make('notes')
                                     ->label('Catatan Pesanan')
-                                    ->columnSpanFull(),
+                                    ->columnSpanFull()
+                                    ->disabled(fn (string $operation) => self::isFieldDisabled('notes', $operation)),
                             ])->columns(1),
                     ])->columnSpan(['lg' => 1]),
-            ])->columns(3);
+                ]
+            ))->columns(3);
     }
 
     public static function updateTotals(Get $get, Set $set, bool $isFromRepeater = false): void
@@ -622,5 +659,115 @@ class OrderForm
         } else {
             $set($prefix . 'change_amount', 0);
         }
+    }
+
+    protected static function isFieldDisabled(string $fieldName, string $operation, ?\Illuminate\Database\Eloquent\Model $record = null): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return true;
+        }
+
+        // Super Admin & Admin can edit everything
+        if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
+            return false;
+        }
+
+        // In Create mode, anyone who has Create permission can fill all fields
+        if ($operation === 'create') {
+            return false;
+        }
+
+        // Resolve the record from route if not passed
+        if (! $record) {
+            $routeRecord = request()->route('record');
+            if ($routeRecord) {
+                if ($routeRecord instanceof \App\Models\Order) {
+                    $record = $routeRecord;
+                } elseif (is_numeric($routeRecord) || is_string($routeRecord)) {
+                    $record = \App\Models\Order::find($routeRecord);
+                }
+            } else {
+                // Fallback to parsing the HTTP referer for Livewire requests
+                $referer = request()->headers->get('referer');
+                if ($referer) {
+                    $path = parse_url($referer, PHP_URL_PATH);
+                    if ($path) {
+                        // Path pattern: /admin/e-commerce/orders/{id}/edit
+                        $segments = explode('/', trim($path, '/'));
+                        $editIndex = array_search('edit', $segments);
+                        if ($editIndex !== false && $editIndex > 0) {
+                            $id = $segments[$editIndex - 1];
+                            if (is_numeric($id)) {
+                                $record = \App\Models\Order::find($id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // In Edit mode, apply role restrictions
+        if ($user->hasRole('kasir')) {
+            if ($record instanceof \App\Models\Order) {
+                if (self::isRequestChangeActive()) {
+                    // If there is an active pending request, lock everything (read-only)
+                    $hasPendingRequest = $record->orderRequests()
+                        ->where('type', 'change')
+                        ->where('status', 'pending')
+                        ->exists();
+                    if ($hasPendingRequest) {
+                        return true;
+                    }
+
+                    // If there is an approved request, unlock everything so they can save
+                    $hasApprovedRequest = $record->orderRequests()
+                        ->where('type', 'change')
+                        ->where('status', 'approved')
+                        ->exists();
+                    if ($hasApprovedRequest) {
+                        return false;
+                    }
+
+                    // If no pending or approved request, unlock everything so they can prepare their change request proposal
+                    return false;
+                }
+
+                // Normal Edit mode without request_change query parameter:
+                // Cashier can only edit: status, payment_status, awb_number
+                return ! in_array($fieldName, ['status', 'payment_status', 'awb_number']);
+            }
+        }
+
+        if ($user->hasRole('logistics')) {
+            // Logistics can edit: status, awb_number
+            return ! in_array($fieldName, ['status', 'awb_number']);
+        }
+
+        if ($user->hasRole('finance')) {
+            // Finance can edit: status, payment_status
+            return ! in_array($fieldName, ['status', 'payment_status']);
+        }
+
+        // Default: if role not recognized but has edit permission, disable everything
+        return true;
+    }
+
+    protected static function isRequestChangeActive(): bool
+    {
+        if (request()->query('request_change') === '1') {
+            return true;
+        }
+
+        $referer = request()->headers->get('referer');
+        if ($referer) {
+            $query = parse_url($referer, PHP_URL_QUERY);
+            if ($query) {
+                parse_str($query, $queryParams);
+                return isset($queryParams['request_change']) && $queryParams['request_change'] === '1';
+            }
+        }
+
+        return false;
     }
 }

@@ -62,10 +62,11 @@ class RoleAndUserSeeder extends Seeder
                 'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', 'Update:Cashflow',
                 'ViewAny:PaymentMethod', 'View:PaymentMethod',
                 'View:LaporanBisnis',
+                'ViewAny:RefundRequest', 'View:RefundRequest', 'Update:RefundRequest',
             ],
             'logistics' => [
                 'ViewAny:Order', 'View:Order', 'Update:Order',
-                'ViewAny:Product', 'View:Product', 'Update:Product', // for stock update
+                'View:Product', 'Update:Product', // for stock update
                 'ViewAny:ShippingMethod', 'View:ShippingMethod',
             ],
             'cs' => [
@@ -76,7 +77,7 @@ class RoleAndUserSeeder extends Seeder
                 'ViewAny:PostComment', 'View:PostComment', 'Update:PostComment', // Blog comments
             ],
             'kasir' => [
-                'ViewAny:Order', 'View:Order', 'Create:Order',
+                'ViewAny:Order', 'View:Order', 'Create:Order', 'Update:Order',
                 'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow',
                 'ViewAny:Product', 'View:Product',
                 'ViewAny:User', 'View:User', 'Create:User',

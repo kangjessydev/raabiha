@@ -25,21 +25,22 @@ _(Standar Password untuk semua akun demo: `password`)_
     - **Produk:** Hanya melihat (_Read-Only_).
     - **User/Pelanggan:** Hanya melihat (_Read-Only_).
     - **Buku Kas (Cashflow):** Hanya melihat (_Read-Only_).
+    - **Cluster Konten (Hanya Lihat):** Artikel, Kategori Artikel, Tag Artikel, Komentar, CMS Halaman Utama, Sales Page, Halaman Statis.
 - **Hak Akses Tambahan:** _(Pada konfigurasi demo default, akun Owner juga dirangkap dengan role Marketing & Logistik untuk keperluan micromanagement, namun secara murni hak Owner hanya Read-Only)._
 
-setelah testing (Semua Berhasil Diperbaiki & Dibatasi):
+Setelah testing (Semua Berhasil Diperbaiki & Dibatasi):
 
-- [x] masih bisa melihat media di cluster Media Files (Memang diizinkan untuk melihat/read-only)
+- [x] masih bisa melihat media di cluster Media Files (Sudah disembunyikan/hide sepenuhnya dari navigasi Owner)
 - [x] masih bisa mengedit pesanan (orders) (Sudah dibatasi hanya Read-Only via Spatie permissions)
-- [x] masih bisa mengelola pengumuman (topbar) (Sudah dibatasi menjadi Read-Only: field disabled & tombol simpan disembunyikan)
-- [x] masih bisa mengelola banner promosi (Sudah dibatasi menjadi Read-Only: toggle dinonaktifkan)
-- [x] masih bisa mengelola voucher (Sudah dibatasi hanya Read-Only via Spatie permissions)
+- [x] masih bisa mengelola pengumuman (topbar) (Sudah disembunyikan/hide sepenuhnya dari navigasi Owner)
+- [x] masih bisa mengelola banner promosi (Sudah disembunyikan/hide sepenuhnya dari navigasi Owner)
+- [x] masih bisa mengelola voucher (Sudah disembunyikan/hide sepenuhnya dari navigasi Owner)
 - [x] masih bisa menambah dan mengubah produk dan mengatur aktif/nonaktif produk (Sudah dibatasi menjadi Read-Only: toggle dinonaktifkan)
 - [x] masih bisa mengelola kategori dan atribut produk (Sudah dibatasi hanya Read-Only via Spatie permissions)
 - [x] masih bisa mengedit stok produk melalui manajemen stok dan masih bisa mengatur minimum stok (Sudah dibatasi: tombol edit stok & pengaturan stok disembunyikan)
 - [x] masih bisa mengelola reseller dan pengaturan reseller (Sudah dibatasi: tombol approve/reject & tombol simpan pengaturan disembunyikan, field disabled)
 - [x] masih bisa mengelola metode pengiriman dan metode pembayaran (Sudah dibatasi menjadi Read-Only: toggle dinonaktifkan)
-- [x] masih bisa mengelola CMS di cluster konten (Sudah dibatasi hanya Read-Only via Spatie permissions)
+- [x] masih bisa mengelola CMS di cluster konten (Sudah dibatasi menjadi Read-Only: seluruh modul CMS/konten hanya bisa dilihat, form homepage CMS disabled)
 - [x] masih bisa mengelola pengaturan global (Sudah dibatasi menjadi Read-Only: field disabled & tombol simpan disembunyikan)
 - [x] apakah owner tidak memiliki akses untuk melihat analisa pengunjung? (Sudah diperbaiki: akses Analitik Pengunjung telah dibuka untuk Owner & Marketing)
 
@@ -55,6 +56,15 @@ setelah testing (Semua Berhasil Diperbaiki & Dibatasi):
     - **Produk:** Melihat daftar produk dan harganya sebagai referensi (`View`, `ViewAny`). Tidak bisa mengedit produk.
     - **Pelanggan (Customers):** Melihat daftar pelanggan dan membuat akun pelanggan baru saat checkout POS (`ViewAny`, `View`, `Create`).
     - **Dashboard:** Melihat halaman depan Dasbor.
+
+Setelah saya lakukan testing:
+
+- [x] **Akses Edit & Pengajuan Perubahan Kasir:**
+      * **Edit Biasa (Tanpa Izin):** Kasir tetap memiliki tombol **Ubah (Edit)** default. Di halaman edit biasa ini, Kasir **hanya diperbolehkan** mengubah kolom **Nomor Resi (awb_number)**, **Status Pesanan (status)**, dan **Status Pembayaran (payment_status)**. Kolom-kolom lainnya (item belanja, alamat, harga, voucher, dll.) dikunci/disabled secara dinamis.
+      * **Ajukan Perubahan (Perlu Izin Owner):** Jika ingin mengubah item/kalkulasi biaya, Kasir mengklik tombol **Ajukan Perubahan** (ikon pensil kuning) di daftar pesanan. Kasir akan diarahkan ke halaman edit khusus (`?request_change=1`) dengan semua kolom terbuka beserta kolom tambahan wajib **Alasan Perubahan**. Tombol simpan di bawah halaman akan berubah menjadi **Ajukan Perubahan**. Setelah diklik, perubahan disimpan beserta alasannya sebagai proposal rancangan (`pending`) dan Kasir diredirect kembali tanpa langsung mengubah pesanan asli.
+      * **Persetujuan Owner:** Owner memiliki menu **Permintaan Kasir** di bawah navigasi *Transaksi* untuk menyetujui rancangan perubahan tersebut (jika disetujui, perubahan otomatis diterapkan langsung ke pesanan) atau menolaknya.
+      * **Ajukan Pembatalan:** Kasir mengklik tombol **Ajukan Pembatalan** (ikon larangan merah) untuk mengirimkan alasan pembatalan ke Owner. Jika disetujui, pesanan otomatis menjadi `cancelled`.
+- [x] **Pemberian Izin & Pembuatan Reseller:** Terkonfirmasi aman. Kasir dibatasi agar tidak bisa membuat reseller baru (tombol **Buat Reseller** disembunyikan khusus dari tampilan Kasir). Selain itu, Kasir tidak memiliki izin untuk menyetujui atau menolak pendaftaran reseller (`Update:User`), sehingga tombol **Setujui** dan **Tolak** juga tersembunyi sepenuhnya dari dashboard mereka, namun mereka tetap dapat melihat daftar reseller (`ViewAny:User`).
 
 ---
 

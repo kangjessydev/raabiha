@@ -37,6 +37,42 @@ class ResellerResource extends Resource
         return parent::getEloquentQuery()->whereNot('reseller_status', 'none');
     }
 
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+        if ($user->hasRole('kasir')) {
+            return false;
+        }
+        return parent::canCreate();
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+        if ($user->hasRole('kasir')) {
+            return false;
+        }
+        return parent::canEdit($record);
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+        if ($user->hasRole('kasir')) {
+            return false;
+        }
+        return parent::canDelete($record);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ResellerForm::configure($schema);

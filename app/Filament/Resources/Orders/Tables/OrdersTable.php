@@ -87,7 +87,60 @@ class OrdersTable
                 DeleteAction::make()
                     ->icon('heroicon-o-trash')
                     ->iconButton()
-                    ->tooltip('Hapus'),
+                    ->tooltip('Hapus')
+                    ->visible(fn () => ! auth()->user()?->hasRole('kasir')),
+                \Filament\Actions\Action::make('review_request')
+                    ->label('Tinjau Pengajuan')
+                    ->icon('heroicon-o-shield-check')
+                    ->color('info')
+                    ->iconButton()
+                    ->tooltip('Tinjau Pengajuan Kasir')
+                    ->url(fn ($record) => \App\Filament\Resources\OrderRequestResource::getUrl('index') . '?tableSearch=' . urlencode($record->order_number))
+                    ->visible(fn ($record) => 
+                        auth()->user()?->hasRole(['super_admin', 'admin', 'owner']) && 
+                        $record->orderRequests()->where('status', 'pending')->exists()
+                    ),
+                \Filament\Actions\Action::make('request_change')
+                    ->label('Ajukan Perubahan')
+                    ->icon('heroicon-o-pencil')
+                    ->color('warning')
+                    ->iconButton()
+                    ->tooltip('Ajukan Perubahan')
+                    ->url(fn ($record) => \App\Filament\Resources\Orders\OrderResource::getUrl('edit', ['record' => $record]) . '?request_change=1')
+                    ->visible(fn ($record) => 
+                        auth()->user()?->hasRole('kasir') && 
+                        !in_array($record->status, ['completed', 'cancelled']) &&
+                        !$record->orderRequests()->where('status', 'pending')->where('type', 'change')->exists()
+                    ),
+                \Filament\Actions\Action::make('request_cancel')
+                    ->label('Ajukan Pembatalan')
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    ->iconButton()
+                    ->tooltip('Ajukan Pembatalan')
+                    ->schema([
+                        \Filament\Forms\Components\Textarea::make('reason')
+                            ->label('Alasan Pembatalan/Penghapusan')
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $record->orderRequests()->create([
+                            'user_id' => auth()->id(),
+                            'type' => 'cancel',
+                            'reason' => $data['reason'],
+                            'status' => 'pending',
+                        ]);
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pengajuan pembatalan pesanan berhasil dikirim')
+                            ->success()
+                            ->send();
+                    })
+                    ->visible(fn ($record) => 
+                        auth()->user()?->hasRole('kasir') && 
+                        $record->status !== 'cancelled' &&
+                        !$record->orderRequests()->where('status', 'pending')->where('type', 'cancel')->exists()
+                    ),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

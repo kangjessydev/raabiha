@@ -107,12 +107,13 @@ class GenerateRolesAndDemoUsers extends Command
                 'ViewAny:Order', 'View:Order', 'Update:Order', // Pesanan: lihat, ubah status pembayaran
                 'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', 'Update:Cashflow', 'Delete:Cashflow', 'DeleteAny:Cashflow', // Buku Kas: CRUD
                 'ViewAny:PaymentMethod', 'View:PaymentMethod', // Metode Pembayaran: lihat
+                'ViewAny:RefundRequest', 'View:RefundRequest', 'Update:RefundRequest',
             ],
             'logistics' => [
                 // Cluster Dasbor & E-Commerce
                 'View:Dashboard',
                 'ViewAny:Order', 'View:Order', 'Update:Order', // Pesanan: lihat, ubah resi/status pengiriman
-                'ViewAny:Product', 'View:Product', 'Update:Product', // Produk: lihat, update stok
+                'View:Product', 'Update:Product', // Produk: update stok (without ViewAny)
                 'ViewAny:ShippingMethod', 'View:ShippingMethod', // Metode Pengiriman: lihat
             ],
             'cs' => [
@@ -127,7 +128,7 @@ class GenerateRolesAndDemoUsers extends Command
             'kasir' => [
                 // Cluster Dasbor & E-Commerce
                 'View:Dashboard',
-                'ViewAny:Order', 'View:Order', 'Create:Order', // Pesanan: lihat, buat (POS manual)
+                'ViewAny:Order', 'View:Order', 'Create:Order', 'Update:Order', // Pesanan: lihat, buat (POS manual), edit resi/status
                 'ViewAny:Cashflow', 'View:Cashflow', 'Create:Cashflow', // Buku Kas: lihat, buat pencatatan kasir
                 'ViewAny:Product', 'View:Product', // Produk: lihat katalog harga
                 'ViewAny:User', 'View:User', 'Create:User', // Pelanggan: lihat & tambah saat POS checkout

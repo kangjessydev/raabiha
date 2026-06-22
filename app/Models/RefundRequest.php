@@ -10,6 +10,19 @@ class RefundRequest extends Model
 {
     use HasFactory;
 
+    protected static function booted()
+    {
+        static::updated(function (RefundRequest $refundRequest) {
+            if ($refundRequest->isDirty('status') && $refundRequest->status === 'completed') {
+                if ($refundRequest->order) {
+                    $refundRequest->order->update([
+                        'payment_status' => 'refunded',
+                    ]);
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'user_id',
         'order_id',
