@@ -85,6 +85,17 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Dashboard Metrik Lanjutan:** Menambahkan kumpulan _Widget_ statistik di _Homepage_ Admin (Total Penjualan Hari Ini, Pesanan Masuk, Pengeluaran, Laba Bersih Harian) yang diolah secara _real-time_ dari data pesanan dan buku kas. Dilengkapi _Line Chart_ tren penjualan vs pengeluaran 30 hari terakhir dengan cache 5 menit untuk efisiensi VPS.
 - [x] _Script_ Backup Database otomatis di VPS CloudPanel.
 - [ ] **File Impor Produk:** Menyiapkan file template impor produk (.xlsx / .csv) yang lengkap dan siap digunakan untuk migrasi data massal.
+- [ ] **Sistem Notifikasi Email Otomatis:** Mengimplementasikan kelas Mailable Laravel untuk mengirim email otomatis pada kejadian berikut:
+    - **Untuk Customer:**
+        - Registrasi User Baru (Welcome Email & Link Verifikasi).
+        - Pembuatan Pesanan Baru (Konfirmasi Order & Detail Pembayaran).
+        - Pembayaran Berhasil (Tanda Terima Pembayaran/Kuitansi).
+        - Pesanan Gagal/Dibatalkan (Pemberitahuan Pembatalan).
+        - Pesanan Dikirim (Notifikasi Nomor Resi & Status Pengiriman).
+    - **Untuk Admin/Tim Toko:**
+        - Notifikasi Pesanan Baru Masuk (Untuk CS & Owner).
+        - Notifikasi Pembayaran Diterima (Untuk Finance).
+        - Notifikasi Permintaan Perubahan/Pembatalan Baru dari Kasir (Untuk Owner).
 
 ---
 
