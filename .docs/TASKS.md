@@ -69,7 +69,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 ## Backlog / Ekstensi Bisnis (Sprint 3 / Fase 3)
 
 - [x] **Fitur Wishlist Pelanggan:** Membuat tabel `wishlists` (user_id, product_id) dan fitur simpan produk untuk pengguna terdaftar yang dapat diakses langsung dari halaman katalog dan dashboard akun.
-- [ ] **daftar & login akun customer** Customer membuat akun melalui form regsiter atau button google, customer login akun melalui form login atau button google. Ada notifikasi ke email untuk konfirmasi
+- [ ] **Fitur Login & Register Customer (Frontend):** Membuat formulir pendaftaran (Register) dan masuk (Login) untuk pelanggan di frontend (mendukung email & password, opsi Google OAuth), serta pengiriman email konfirmasi/verifikasi.
 - [x] **Role & Manajemen Akses Lanjutan (Spatie):**
     - Mendefinisikan hak akses CRUD untuk Owner, Marketing, Finance, Logistics, CS, dan Admin Kasir.
     - Membatasi akses menu _Integrasi & API_ khusus untuk Super Admin saja.
@@ -84,3 +84,13 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Quick Edit & Log Stok:** Membuat halaman khusus untuk mengetik/mengubah jumlah stok secara langsung dilengkapi tabel _Log Keluar-Masuk_ barang yang ringan.
 - [x] **Dashboard Metrik Lanjutan:** Menambahkan kumpulan _Widget_ statistik di _Homepage_ Admin (Total Penjualan Hari Ini, Pesanan Masuk, Pengeluaran, Laba Bersih Harian) yang diolah secara _real-time_ dari data pesanan dan buku kas. Dilengkapi _Line Chart_ tren penjualan vs pengeluaran 30 hari terakhir dengan cache 5 menit untuk efisiensi VPS.
 - [x] _Script_ Backup Database otomatis di VPS CloudPanel.
+- [ ] **File Impor Produk:** Menyiapkan file template impor produk (.xlsx / .csv) yang lengkap dan siap digunakan untuk migrasi data massal.
+
+---
+
+## 🚀 Fase Rilis & Optimasi (VPS & SEO)
+
+- [ ] **Deploy ke VPS:** Melakukan migrasi database, SSL setup, build assets, dan deployment aplikasi Raabiha ke CloudPanel VPS agar dapat diakses publik.
+- [ ] **Daftar Search Console:** Mendaftarkan sitemap e-commerce ke Google Search Console untuk memastikan indeksasi halaman produk dan artikel.
+- [ ] **Daftar Google Bisnisku (Google Business):** Membuat profil Google Business Profil (GBP) resmi untuk meningkatkan SEO lokal.
+- [ ] **Cek Performance & Core Web Vitals:** Melakukan audit performa frontend via Google PageSpeed Insights dan optimasi gambar/asset jika diperlukan.
