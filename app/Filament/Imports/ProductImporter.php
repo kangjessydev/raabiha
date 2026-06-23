@@ -23,6 +23,7 @@ class ProductImporter extends Importer
                 $disk = config('livewire.temporary_file_upload.disk') ?: 'local';
                 $dir = config('livewire.temporary_file_upload.directory') ?: 'livewire-tmp';
                 $path = \Illuminate\Support\Facades\Storage::disk($disk)->path($dir . '/' . $tempFileName);
+                \Illuminate\Support\Facades\Log::info('Resolved Temp File Path: ' . $path . ' (Exists: ' . (file_exists($path) ? 'YES' : 'NO') . ')');
                 
                 if (file_exists($path) && ($handle = fopen($path, 'r')) !== false) {
                     $headerLine = fgets($handle);
