@@ -128,7 +128,7 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 
 ### Tahap 4: Go-Live (Rilis)
 
-- [ ] **Deploy ke VPS:**
+- [x] **Deploy ke VPS:**
     - Melakukan migrasi database, setup HTTPS SSL, build assets produksi, dan deployment aplikasi Raabiha ke CloudPanel VPS agar dapat diakses publik.
 
 ### Tahap 5: SEO & Optimasi (Pasca-Deploy)

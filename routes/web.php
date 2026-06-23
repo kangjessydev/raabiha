@@ -98,6 +98,9 @@ Route::get('/promo', function () {
 Route::post('/webhook/tripay', [\App\Http\Controllers\Webhook\TripayWebhookController::class, 'handle']);
 Route::post('/webhook/xendit', [\App\Http\Controllers\Webhook\XenditWebhookController::class, 'handle']);
 
+// Sitemap
+Route::get('/sitemap.xml', [\App\Http\Controllers\SitemapController::class, 'index']);
+
 // Dynamic Pages (Catch-all route)
 Route::get('/{slug}', function ($slug) {
     // Cek di Halaman Statis
