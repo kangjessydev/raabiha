@@ -69,7 +69,6 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 ## Backlog / Ekstensi Bisnis (Sprint 3 / Fase 3)
 
 - [x] **Fitur Wishlist Pelanggan:** Membuat tabel `wishlists` (user_id, product_id) dan fitur simpan produk untuk pengguna terdaftar yang dapat diakses langsung dari halaman katalog dan dashboard akun.
-- [ ] **Fitur Login & Register Customer (Frontend):** Membuat formulir pendaftaran (Register) dan masuk (Login) untuk pelanggan di frontend (mendukung email & password, opsi Google OAuth), serta pengiriman email konfirmasi/verifikasi.
 - [x] **Role & Manajemen Akses Lanjutan (Spatie):**
     - Mendefinisikan hak akses CRUD untuk Owner, Marketing, Finance, Logistics, CS, dan Admin Kasir.
     - Membatasi akses menu _Integrasi & API_ khusus untuk Super Admin saja.
@@ -84,8 +83,19 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Quick Edit & Log Stok:** Membuat halaman khusus untuk mengetik/mengubah jumlah stok secara langsung dilengkapi tabel _Log Keluar-Masuk_ barang yang ringan.
 - [x] **Dashboard Metrik Lanjutan:** Menambahkan kumpulan _Widget_ statistik di _Homepage_ Admin (Total Penjualan Hari Ini, Pesanan Masuk, Pengeluaran, Laba Bersih Harian) yang diolah secara _real-time_ dari data pesanan dan buku kas. Dilengkapi _Line Chart_ tren penjualan vs pengeluaran 30 hari terakhir dengan cache 5 menit untuk efisiensi VPS.
 - [x] _Script_ Backup Database otomatis di VPS CloudPanel.
-- [ ] **File Impor Produk:** Menyiapkan file template impor produk (.xlsx / .csv) yang lengkap dan siap digunakan untuk migrasi data massal.
-- [ ] **Sistem Notifikasi Email Otomatis:** Mengimplementasikan kelas Mailable Laravel untuk mengirim email otomatis pada kejadian berikut:
+
+---
+
+## 📅 Rencana Kerja Baru (Sprint 3)
+
+### Tahap 1: Fitur Core Frontend
+- [ ] **Fitur Login & Register Customer (Frontend):**
+    - Membuat formulir pendaftaran (Register) dan masuk (Login) untuk pelanggan di frontend.
+    - Mendukung email & password, opsi login sosial (Google OAuth).
+    - Halaman/fitur verifikasi email setelah pendaftaran baru.
+
+### Tahap 2: Notifikasi & Komunikasi
+- [ ] **Sistem Notifikasi Email Otomatis:**
     - **Untuk Customer:**
         - Registrasi User Baru (Welcome Email & Link Verifikasi).
         - Pembuatan Pesanan Baru (Konfirmasi Order & Detail Pembayaran).
@@ -97,11 +107,15 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
         - Notifikasi Pembayaran Diterima (Untuk Finance).
         - Notifikasi Permintaan Perubahan/Pembatalan Baru dari Kasir (Untuk Owner).
 
----
+### Tahap 3: Kesiapan Data
+- [ ] **File Impor Produk:**
+    - Menyiapkan file template impor produk (.xlsx / .csv) yang lengkap dan siap digunakan untuk migrasi data massal.
 
-## 🚀 Fase Rilis & Optimasi (VPS & SEO)
+### Tahap 4: Go-Live (Rilis)
+- [ ] **Deploy ke VPS:**
+    - Melakukan migrasi database, setup HTTPS SSL, build assets produksi, dan deployment aplikasi Raabiha ke CloudPanel VPS agar dapat diakses publik.
 
-- [ ] **Deploy ke VPS:** Melakukan migrasi database, SSL setup, build assets, dan deployment aplikasi Raabiha ke CloudPanel VPS agar dapat diakses publik.
-- [ ] **Daftar Search Console:** Mendaftarkan sitemap e-commerce ke Google Search Console untuk memastikan indeksasi halaman produk dan artikel.
-- [ ] **Daftar Google Bisnisku (Google Business):** Membuat profil Google Business Profil (GBP) resmi untuk meningkatkan SEO lokal.
+### Tahap 5: SEO & Optimasi (Pasca-Deploy)
+- [ ] **Daftar Search Console:** Mendaftarkan sitemap e-commerce ke Google Search Console untuk memastikan indeksasi seluruh halaman produk dan artikel.
+- [ ] **Daftar Google Bisnisku (Google Business):** Membuat profil Google Business Profile resmi untuk meningkatkan SEO lokal.
 - [ ] **Cek Performance & Core Web Vitals:** Melakukan audit performa frontend via Google PageSpeed Insights dan optimasi gambar/asset jika diperlukan.
