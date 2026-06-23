@@ -133,6 +133,6 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 
 ### Tahap 5: SEO & Optimasi (Pasca-Deploy)
 
-- [ ] **Daftar Search Console:** Mendaftarkan sitemap e-commerce ke Google Search Console untuk memastikan indeksasi seluruh halaman produk dan artikel.
-- [ ] **Daftar Google Bisnisku (Google Business):** Membuat profil Google Business Profile resmi untuk meningkatkan SEO lokal.
+- [x] **Daftar Search Console:** Mendaftarkan sitemap e-commerce ke Google Search Console untuk memastikan indeksasi seluruh halaman produk dan artikel.
+- [x] **Daftar Google Bisnisku (Google Business):** Membuat profil Google Business Profile resmi untuk meningkatkan SEO lokal.
 - [ ] **Cek Performance & Core Web Vitals:** Melakukan audit performa frontend via Google PageSpeed Insights dan optimasi gambar/asset jika diperlukan.
