@@ -13,11 +13,13 @@ class Register extends Component
     public string $name = '';
     public string $email = '';
     public string $password = '';
+    public bool $agree_terms = false;
 
     protected array $rules = [
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users,email',
         'password' => 'required|string|min:8',
+        'agree_terms' => 'accepted',
     ];
 
     protected array $messages = [
@@ -27,6 +29,7 @@ class Register extends Component
         'email.unique' => 'Email sudah terdaftar.',
         'password.required' => 'Password wajib diisi.',
         'password.min' => 'Password minimal harus 8 karakter.',
+        'agree_terms.accepted' => 'Anda harus menyetujui syarat dan ketentuan untuk mendaftar.',
     ];
 
     public function register()

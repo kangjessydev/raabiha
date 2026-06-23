@@ -20,6 +20,16 @@ class User extends Authenticatable implements HasAvatar, MustVerifyEmail
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
 
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new \App\Notifications\CustomVerifyEmail);
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\CustomResetPassword($token));
+    }
+
     public function getFilamentAvatarUrl(): ?string
     {
         if ($this->avatar_url) {

@@ -40,6 +40,7 @@ class OrderRequest extends Model
             $orderNumber = $orderRequest->order->order_number ?? 'Pesanan';
 
             foreach ($recipients as $recipient) {
+                // Database Notification
                 \Filament\Notifications\Notification::make()
                     ->icon($orderRequest->type === 'change' ? 'heroicon-o-pencil-square' : 'heroicon-o-no-symbol')
                     ->iconColor($orderRequest->type === 'change' ? 'warning' : 'danger')
@@ -52,6 +53,22 @@ class OrderRequest extends Model
                             ->url(route('filament.admin.e-commerce.resources.order-requests.index')),
                     ])
                     ->sendToDatabase($recipient);
+
+                // Email Notification
+                try {
+                    \Illuminate\Support\Facades\Mail::to($recipient->email)->send(new \App\Mail\StoreMail(
+                        subject: "[Persetujuan Kasir] Pengajuan {$typeLabel} Pesanan #{$orderNumber}",
+                        view: 'emails.layout',
+                        data: [
+                            'greeting' => "Halo, {$recipient->name}!",
+                            'messageBody' => "Kasir <strong>{$cashierName}</strong> mengajukan permintaan <strong>{$typeLabel}</strong> untuk pesanan <strong>#{$orderNumber}</strong> dengan alasan:<br><br><em>\"{$orderRequest->reason}\"</em>.<br><br>Silakan masuk ke panel admin untuk meninjau dan memberikan keputusan persetujuan.",
+                            'actionUrl' => route('filament.admin.e-commerce.resources.order-requests.index'),
+                            'actionText' => 'Tinjau Pengajuan'
+                        ]
+                    ));
+                } catch (\Exception $e) {
+                    logger()->error("Gagal mengirim email pengajuan kasir ke admin/owner: " . $e->getMessage());
+                }
             }
         });
     }

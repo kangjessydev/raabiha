@@ -101,28 +101,30 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
     - [x] opsi google login skip saja
     - [x] setelah user mendaftar, akan diarahkan ke halaman verifikasi email dan ada tombol untuk kirim ulang verifikasi, nanti user harus klik dulu link verifikasi yg dikirim ke emailnya buat verifikasi akunnya.
     - [x] kalau customer belum verifikasi akun, di akun customer ada pesan harus verifikasi email (verifikasi bukan syarat mutlak untuk checkout ya, ini hanya verifikasi akun saja)
+    - [x] kewajiban mencentang Syarat & Ketentuan saat melakukan registrasi akun baru (tombol daftar dinonaktifkan jika belum dicentang).
+    - [x] Fitur Lupa Password & Reset Password untuk customer (mengirimkan tautan reset ke email dan melakukan pembaruan password secara aman).
 
 ### Tahap 2: Notifikasi & Komunikasi
 
-- [ ] **Sistem Notifikasi Email Otomatis:**
+- [x] **Sistem Notifikasi Email Otomatis:**
     - **Untuk Customer:**
-        - Registrasi User Baru (Welcome Email & Link Verifikasi).
-        - Pembuatan Pesanan Baru (Konfirmasi Order & Detail Pembayaran).
-        - Pembayaran Berhasil (Tanda Terima Pembayaran/Kuitansi).
-        - Pesanan Gagal/Dibatalkan (Pemberitahuan Pembatalan).
-        - Pesanan Dikirim (Notifikasi Nomor Resi & Status Pengiriman).
+        - [x] Registrasi User Baru (Welcome Email & Link Verifikasi).
+        - [x] Pembuatan Pesanan Baru (Konfirmasi Order & Detail Pembayaran).
+        - [x] Pembayaran Berhasil (Tanda Terima Pembayaran/Kuitansi).
+        - [x] Pesanan Gagal/Dibatalkan (Pemberitahuan Pembatalan).
+        - [x] Pesanan Dikirim (Notifikasi Nomor Resi & Status Pengiriman).
     - **Untuk Admin/Tim Toko:**
-        - Notifikasi Pesanan Baru Masuk (Untuk CS & Owner).
-        - Notifikasi Pembayaran Diterima (Untuk Finance).
-        - Notifikasi Permintaan Perubahan/Pembatalan Baru dari Kasir (Untuk Owner).
+        - [x] Notifikasi Pesanan Baru Masuk (Untuk CS & Owner).
+        - [x] Notifikasi Pembayaran Diterima (Untuk Finance).
+        - [x] Notifikasi Permintaan Perubahan/Pembatalan Baru dari Kasir (Untuk Owner).
 
     note:
-    - ada juga notif refund ke admin dan customer
+    - [x] ada juga notif refund ke admin dan customer
 
 ### Tahap 3: Kesiapan Data
 
-- [ ] **File Impor Produk:**
-    - Menyiapkan file template impor produk (.xlsx / .csv) yang lengkap dan siap digunakan untuk migrasi data massal.
+- [x] **File Impor Produk:**
+    - [x] Menyiapkan file template impor produk (.xlsx / .csv) yang lengkap dan siap digunakan untuk migrasi data massal.
 
 ### Tahap 4: Go-Live (Rilis)
 

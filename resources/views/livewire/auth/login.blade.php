@@ -10,6 +10,12 @@
                 <h1 class="font-serif text-[32px] md:text-[40px] font-bold text-[#1c1c1a] tracking-tight mb-2 text-center">Log In</h1>
                 <p class="font-sans text-[14px] text-[#615e57] text-center mb-10">Selamat datang kembali di Raabiha.</p>
 
+                @if (session()->has('success'))
+                    <div class="mb-6 p-4 bg-green-50 border border-green-200 text-[#064e3b] text-sm font-sans">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
                 <form wire:submit.prevent="login" class="flex flex-col gap-6">
                     <div class="flex flex-col gap-2">
                         <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Username / Email *</label>
@@ -22,7 +28,7 @@
                     <div class="flex flex-col gap-2">
                         <div class="flex justify-between items-center">
                             <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Password *</label>
-                            <a href="#" class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] hover:text-[#1c1c1a] underline decoration-[#e5e2de] underline-offset-4">Lupa Password?</a>
+                            <a href="{{ route('password.request') }}" class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] hover:text-[#1c1c1a] underline decoration-[#e5e2de] underline-offset-4">Lupa Password?</a>
                         </div>
                         <input type="password" wire:model="password" class="w-full h-12 bg-transparent border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors @error('password') border-red-500 @enderror" placeholder="••••••••">
                         @error('password')

@@ -27,11 +27,17 @@ class Login extends Component
     {
         $this->validate();
 
-        $email = $this->loginInput;
+        $loginInput = trim($this->loginInput);
+        $email = $loginInput;
 
-        // Auto-fallback to @raabiha.com if '@' is not present
-        if (! str_contains($email, '@')) {
-            $email = $email . '@raabiha.com';
+        // Jika input tidak mengandung '@', cari user yang email-nya berawalan 'username@'
+        if (! str_contains($loginInput, '@')) {
+            $matchedUser = \App\Models\User::where('email', 'like', $loginInput . '@%')->first();
+            if ($matchedUser) {
+                $email = $matchedUser->email;
+            } else {
+                $email = $loginInput . '@raabiha.com'; // fallback default
+            }
         }
 
         if (Auth::attempt(['email' => $email, 'password' => $this->password], $this->remember)) {

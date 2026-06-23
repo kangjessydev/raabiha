@@ -19,10 +19,15 @@ class Login extends BaseLogin
 
     protected function getCredentialsFromFormData(array $data): array
     {
-        $loginInput = $data['email'];
+        $loginInput = trim($data['email']);
 
         if (! str_contains($loginInput, '@')) {
-            $loginInput = $loginInput . '@raabiha.com';
+            $matchedUser = \App\Models\User::where('email', 'like', $loginInput . '@%')->first();
+            if ($matchedUser) {
+                $loginInput = $matchedUser->email;
+            } else {
+                $loginInput = $loginInput . '@raabiha.com';
+            }
         }
 
         return [

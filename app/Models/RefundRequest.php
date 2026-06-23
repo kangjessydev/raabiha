@@ -12,12 +12,79 @@ class RefundRequest extends Model
 
     protected static function booted()
     {
+        static::created(function (RefundRequest $refundRequest) {
+            $orderNumber = $refundRequest->order->order_number ?? 'Pesanan';
+            $customerName = $refundRequest->user->name ?? 'Pelanggan';
+
+            // Notifikasi ke Admin/Owner/Finance
+            try {
+                $existingRoles = \Spatie\Permission\Models\Role::whereIn('name', ['super_admin', 'owner', 'finance'])->pluck('name')->toArray();
+                $recipients = !empty($existingRoles) ? User::role($existingRoles)->get() : collect();
+                if ($recipients->isEmpty()) {
+                    $recipients = User::whereIn('id', [1, 2])->get();
+                }
+
+                foreach ($recipients as $recipient) {
+                    \Illuminate\Support\Facades\Mail::to($recipient->email)->send(new \App\Mail\StoreMail(
+                        subject: "[Pengajuan Refund] Pesanan #{$orderNumber}",
+                        view: 'emails.layout',
+                        data: [
+                            'greeting' => "Halo, {$recipient->name}!",
+                            'messageBody' => "Pelanggan <strong>{$customerName}</strong> mengajukan permintaan pengembalian dana (refund) untuk pesanan <strong>#{$orderNumber}</strong> sebesar <strong>Rp" . number_format($refundRequest->refund_amount, 0, ',', '.') . "</strong>.<br><br>Alasan Pengajuan:<br><em>\"{$refundRequest->reason}\"</em>.<br><br>Detail Rekening:<br>Bank: {$refundRequest->bank_name}<br>Nama Rekening: {$refundRequest->bank_account_name}<br>No Rekening: {$refundRequest->bank_account_number}<br><br>Silakan masuk ke panel admin untuk memproses refund ini.",
+                            'actionUrl' => route('filament.admin.e-commerce.resources.refund-requests.index'),
+                            'actionText' => 'Tinjau Pengajuan Refund'
+                        ]
+                    ));
+                }
+            } catch (\Exception $e) {
+                logger()->error("Gagal mengirim email pengajuan refund ke admin: " . $e->getMessage());
+            }
+        });
+
         static::updated(function (RefundRequest $refundRequest) {
-            if ($refundRequest->isDirty('status') && $refundRequest->status === 'completed') {
-                if ($refundRequest->order) {
-                    $refundRequest->order->update([
-                        'payment_status' => 'refunded',
-                    ]);
+            $orderNumber = $refundRequest->order->order_number ?? 'Pesanan';
+
+            if ($refundRequest->isDirty('status')) {
+                if ($refundRequest->status === 'completed') {
+                    if ($refundRequest->order) {
+                        $refundRequest->order->update([
+                            'payment_status' => 'refunded',
+                        ]);
+                    }
+
+                    // Email ke customer: Refund disetujui & selesai
+                    $customerEmail = $refundRequest->user->email ?? $refundRequest->order->shipping_address['email'] ?? null;
+                    if ($customerEmail) {
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($customerEmail)->send(new \App\Mail\StoreMail(
+                                subject: "Pengajuan Refund Disetujui - Pesanan #{$orderNumber}",
+                                view: 'emails.layout',
+                                data: [
+                                    'greeting' => "Halo, " . ($refundRequest->user->name ?? 'Pelanggan') . "!",
+                                    'messageBody' => "Kabar baik, pengajuan pengembalian dana (refund) Anda untuk pesanan <strong>#{$orderNumber}</strong> sebesar <strong>Rp" . number_format($refundRequest->refund_amount, 0, ',', '.') . "</strong> telah disetujui dan berhasil diproses oleh tim kami.<br><br>Dana telah dikirim ke rekening berikut:<br>Bank: {$refundRequest->bank_name}<br>Nama Rekening: {$refundRequest->bank_account_name}<br>No Rekening: {$refundRequest->bank_account_number}<br><br>Terima kasih atas kesabaran Anda bertransaksi di Raabiha."
+                                ]
+                            ));
+                        } catch (\Exception $e) {
+                            logger()->error("Gagal mengirim email refund selesai ke customer: " . $e->getMessage());
+                        }
+                    }
+                } elseif ($refundRequest->status === 'rejected') {
+                    // Email ke customer: Refund ditolak
+                    $customerEmail = $refundRequest->user->email ?? $refundRequest->order->shipping_address['email'] ?? null;
+                    if ($customerEmail) {
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($customerEmail)->send(new \App\Mail\StoreMail(
+                                subject: "Pengajuan Refund Ditolak - Pesanan #{$orderNumber}",
+                                view: 'emails.layout',
+                                data: [
+                                    'greeting' => "Halo, " . ($refundRequest->user->name ?? 'Pelanggan') . "!",
+                                    'messageBody' => "Mohon maaf, pengajuan pengembalian dana (refund) Anda untuk pesanan <strong>#{$orderNumber}</strong> ditolak oleh tim verifikasi kami dengan catatan berikut:<br><br><em>\"" . ($refundRequest->admin_notes ?? 'Tidak memenuhi syarat pengembalian.') . "\"</em>.<br><br>Jika Anda membutuhkan bantuan lebih lanjut, silakan hubungi Customer Service kami."
+                                ]
+                            ));
+                        } catch (\Exception $e) {
+                            logger()->error("Gagal mengirim email refund ditolak ke customer: " . $e->getMessage());
+                        }
+                    }
                 }
             }
         });

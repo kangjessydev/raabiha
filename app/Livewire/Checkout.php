@@ -511,9 +511,47 @@ class Checkout extends Component
             return;
         }
 
-        DB::beginTransaction();
+        // 1. Atomic Lock to prevent double submit (network/concurrency issues)
+        $lockKey = 'checkout_lock_' . (auth()->id() ?? session()->getId());
+        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 30);
+
+        if (!$lock->get()) {
+            session()->flash('error', 'Pesanan Anda sedang diproses. Silakan tunggu beberapa saat.');
+            return;
+        }
 
         try {
+            DB::beginTransaction();
+
+            // 2. Validate quantity & Stock with lockForUpdate to prevent race conditions and negative quantity hacks
+            foreach ($items as $item) {
+                if ($item->quantity <= 0) {
+                    throw new \Exception("Jumlah produk '{$item->product->name}' tidak valid (harus lebih besar dari 0).");
+                }
+
+                if ($item->product_variant_id) {
+                    $variant = \App\Models\ProductVariant::where('id', $item->product_variant_id)
+                        ->lockForUpdate()
+                        ->first();
+                    if (!$variant) {
+                        throw new \Exception("Varian produk '{$item->product->name}' tidak ditemukan.");
+                    }
+                    if ($variant->stock < $item->quantity) {
+                        throw new \Exception("Stok produk '{$item->product->name}' (Varian: {$variant->name}) tidak mencukupi. Tersedia: {$variant->stock}.");
+                    }
+                } else {
+                    $product = \App\Models\Product::where('id', $item->product_id)
+                        ->lockForUpdate()
+                        ->first();
+                    if (!$product) {
+                        throw new \Exception("Produk '{$item->product->name}' tidak ditemukan.");
+                    }
+                    if ($product->stock < $item->quantity) {
+                        throw new \Exception("Stok produk '{$product->name}' tidak mencukupi. Tersedia: {$product->stock}.");
+                    }
+                }
+            }
+
             // Generate order number
             $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
 
@@ -594,10 +632,13 @@ class Checkout extends Component
                     'purchase_price' => $purchasePrice,
                 ]);
 
-                // Reduce stock & Log it
-                if ($item->variant) {
-                    $before = $item->variant->stock;
-                    $item->variant->decrement('stock', $item->quantity);
+                // Reduce stock & Log it (using locked instances to ensure correct stock logs and prevent race condition data leakage)
+                if ($item->product_variant_id) {
+                    $lockedVariant = \App\Models\ProductVariant::where('id', $item->product_variant_id)
+                        ->lockForUpdate()
+                        ->first();
+                    $before = $lockedVariant->stock;
+                    $lockedVariant->decrement('stock', $item->quantity);
                     $after = $before - $item->quantity;
 
                     \App\Models\StockLog::create([
@@ -612,8 +653,11 @@ class Checkout extends Component
                         'user_id'            => auth()->id(),
                     ]);
                 } else {
-                    $before = $item->product->stock;
-                    $item->product->decrement('stock', $item->quantity);
+                    $lockedProduct = \App\Models\Product::where('id', $item->product_id)
+                        ->lockForUpdate()
+                        ->first();
+                    $before = $lockedProduct->stock;
+                    $lockedProduct->decrement('stock', $item->quantity);
                     $after = $before - $item->quantity;
 
                     \App\Models\StockLog::create([
@@ -847,6 +891,8 @@ class Checkout extends Component
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'Terjadi kesalahan saat memproses pesanan Anda: ' . $e->getMessage());
+        } finally {
+            $lock->release();
         }
     }
 

@@ -35,14 +35,26 @@
                         @enderror
                     </div>
 
-                    <p class="font-sans text-[12px] text-[#615e57] leading-relaxed">
-                        Dengan mendaftar, Anda menyetujui Syarat & Ketentuan serta Kebijakan Privasi kami.
-                    </p>
+                    <div x-data="{ agree: @entangle('agree_terms') }" class="flex flex-col gap-2">
+                        <div class="flex items-start gap-3">
+                            <div class="flex items-center h-5 mt-0.5">
+                                <input type="checkbox" id="agree_terms" x-model="agree" class="w-4 h-4 text-[#064e3b] bg-transparent border-[#e5e2de] focus:ring-[#064e3b] rounded-sm transition-colors cursor-pointer">
+                            </div>
+                            <label for="agree_terms" class="font-sans text-[12px] text-[#615e57] leading-relaxed cursor-pointer">
+                                Saya telah membaca dan menyetujui <a href="{{ url('/syarat-ketentuan') }}" target="_blank" class="underline text-[#064e3b]">Syarat dan Ketentuan</a> serta <a href="{{ url('/kebijakan-privasi') }}" target="_blank" class="underline text-[#064e3b]">Kebijakan Privasi</a>.
+                            </label>
+                        </div>
+                        @error('agree_terms')
+                            <span class="text-xs text-red-500 font-sans mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
 
-                    <button type="submit" class="w-full bg-[#1c1c1a] hover:bg-[#000000] text-white py-4 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors flex items-center justify-center gap-2">
-                        <span wire:loading wire:target="register" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        <span>DAFTAR SEKARANG</span>
-                    </button>
+                    <div x-data="{ agree: @entangle('agree_terms') }">
+                        <button type="submit" :disabled="!agree" :class="agree ? 'bg-[#1c1c1a] hover:bg-[#000000] text-white' : 'bg-[#e5e2de] text-[#a3a19b] cursor-not-allowed'" class="w-full py-4 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors flex items-center justify-center gap-2">
+                            <span wire:loading wire:target="register" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                            <span>DAFTAR SEKARANG</span>
+                        </button>
+                    </div>
                 </form>
 
                 <div class="mt-8 text-center border-t border-[#e5e2de] pt-8">

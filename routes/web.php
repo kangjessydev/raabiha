@@ -69,6 +69,14 @@ Route::get('/register', \App\Livewire\Auth\Register::class)
     ->middleware('guest')
     ->name('register');
 
+Route::get('/forgot-password', \App\Livewire\Auth\ForgotPassword::class)
+    ->middleware('guest')
+    ->name('password.request');
+
+Route::get('/reset-password/{token}', \App\Livewire\Auth\ResetPassword::class)
+    ->middleware('guest')
+    ->name('password.reset');
+
 Route::get('/email/verify', \App\Livewire\Auth\VerifyEmail::class)
     ->middleware('auth')
     ->name('verification.notice');

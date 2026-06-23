@@ -411,6 +411,7 @@
                             </div>
                             <button type="button" 
                                     wire:click="processCheckout" 
+                                    wire:loading.attr="disabled"
                                     :disabled="!agree"
                                     :class="agree ? 'bg-[#064e3b] hover:bg-[#043326] text-white' : 'bg-[#e5e2de] text-[#a3a19b] cursor-not-allowed'"
                                     class="flex justify-center items-center gap-2 w-full py-5 px-6 font-mono text-[10px] md:text-[12px] lg:text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors">
