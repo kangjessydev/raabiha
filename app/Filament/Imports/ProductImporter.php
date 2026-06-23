@@ -30,13 +30,13 @@ class ProductImporter extends Importer
                 ->exampleHeader('SKU')
                 ->rules(['nullable', 'string']),
             ImportColumn::make('category')
-                ->relationship(resolveUsing: function (string $state): ?int {
-                    $category = \App\Models\Category::firstOrCreate(
+                ->relationship(resolveUsing: function (string $state): ?\App\Models\Category {
+                    return \App\Models\Category::firstOrCreate(
                         ['slug' => \Illuminate\Support\Str::slug($state)],
                         ['name' => $state]
                     );
-                    return $category->id;
                 })
+                ->rules(['nullable'])
                 ->label('Kategori')
                 ->exampleHeader('Kategori'),
             ImportColumn::make('name')
