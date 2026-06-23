@@ -14,7 +14,45 @@ class ProductImporter extends Importer
 
     public static function getColumns(): array
     {
-        return [
+        // Auto-detect and create attributes from uploaded CSV headers
+        try {
+            $tempFileName = self::findLivewireTempFileInRequest(request()->all());
+            if ($tempFileName) {
+                $disk = config('livewire.temporary_file_upload.disk') ?: 'local';
+                $dir = config('livewire.temporary_file_upload.directory') ?: 'livewire-tmp';
+                $path = \Illuminate\Support\Facades\Storage::disk($disk)->path($dir . '/' . $tempFileName);
+                
+                if (file_exists($path) && ($handle = fopen($path, 'r')) !== false) {
+                    $headerLine = fgets($handle);
+                    fclose($handle);
+                    
+                    if ($headerLine) {
+                        $delimiter = ',';
+                        if (str_contains($headerLine, ';')) {
+                            $delimiter = ';';
+                        }
+                        $headers = str_getcsv($headerLine, $delimiter);
+                        
+                        foreach ($headers as $header) {
+                            $header = trim($header);
+                            if (str_starts_with($header, 'Attr: ')) {
+                                $attrName = trim(substr($header, 6));
+                                if (filled($attrName) && \Illuminate\Support\Facades\Schema::hasTable('attributes')) {
+                                    \App\Models\Attribute::firstOrCreate(
+                                        ['slug' => \Illuminate\Support\Str::slug($attrName)],
+                                        ['name' => $attrName, 'type' => 'text']
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Auto-attribute creation failed: ' . $e->getMessage());
+        }
+
+        $columns = [
             ImportColumn::make('is_variant')
                 ->label('Varian?')
                 ->exampleHeader('Varian? (ya/tidak)')
@@ -277,5 +315,27 @@ class ProductImporter extends Importer
         }
 
         return $body;
+    }
+
+    private static function findLivewireTempFileInRequest(mixed $data): ?string
+    {
+        if (is_string($data)) {
+            if (str_starts_with($data, '{') || str_starts_with($data, '[')) {
+                $decoded = json_decode($data, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $res = self::findLivewireTempFileInRequest($decoded);
+                    if ($res) return $res;
+                }
+            }
+            if (str_starts_with($data, 'livewire-file:')) {
+                return str_replace('livewire-file:', '', $data);
+            }
+        } elseif (is_array($data)) {
+            foreach ($data as $val) {
+                $res = self::findLivewireTempFileInRequest($val);
+                if ($res) return $res;
+            }
+        }
+        return null;
     }
 }
