@@ -20,7 +20,7 @@ class ProductImporter extends Importer
             $tempFileName = self::findLivewireTempFileInRequest(request()->all());
             \Illuminate\Support\Facades\Log::info('Detected Temp File Name: ' . ($tempFileName ?: 'NULL'));
             if ($tempFileName) {
-                $disk = config('livewire.temporary_file_upload.disk') ?: 'local';
+                $disk = config('livewire.temporary_file_upload.disk') ?: config('filesystems.default');
                 $dir = config('livewire.temporary_file_upload.directory') ?: 'livewire-tmp';
                 $path = \Illuminate\Support\Facades\Storage::disk($disk)->path($dir . '/' . $tempFileName);
                 \Illuminate\Support\Facades\Log::info('Resolved Temp File Path: ' . $path . ' (Exists: ' . (file_exists($path) ? 'YES' : 'NO') . ')');
