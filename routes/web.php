@@ -61,13 +61,22 @@ Route::get('/invoice/{orderNumber}', function ($orderNumber) {
     return view('invoice', compact('order'));
 })->name('invoice');
 
-Route::get('/login', function () {
-    return view('login');
-})->name('login');
+Route::get('/login', \App\Livewire\Auth\Login::class)
+    ->middleware('guest')
+    ->name('login');
 
-Route::get('/register', function () {
-    return view('register');
-})->name('register');
+Route::get('/register', \App\Livewire\Auth\Register::class)
+    ->middleware('guest')
+    ->name('register');
+
+Route::get('/email/verify', \App\Livewire\Auth\VerifyEmail::class)
+    ->middleware('auth')
+    ->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect()->route('account')->with('success', 'Email Anda berhasil diverifikasi!');
+})->middleware(['auth', 'signed'])->name('verification.verify');
 
 Route::get('/reseller-register', \App\Livewire\ResellerRegister::class);
 Route::get('/reseller-welcome', \App\Livewire\ResellerWelcome::class);

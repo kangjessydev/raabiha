@@ -89,12 +89,21 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 ## 📅 Rencana Kerja Baru (Sprint 3)
 
 ### Tahap 1: Fitur Core Frontend
-- [ ] **Fitur Login & Register Customer (Frontend):**
+
+- [x] **Fitur Login & Register Customer (Frontend):**
     - Membuat formulir pendaftaran (Register) dan masuk (Login) untuk pelanggan di frontend.
-    - Mendukung email & password, opsi login sosial (Google OAuth).
+    - Mendukung email & password, opsi login sosial (Google OAuth dilewati/skip).
     - Halaman/fitur verifikasi email setelah pendaftaran baru.
 
+    note:
+    - [x] pendaftaran buat simpel aja, nama lengkap, email, password. login buat simpel aja jadi email/username (username diambil langsung dari email tanpa @blablbaa.com), dan password.
+    - [x] form login harus cerdas, bisa membedakan customer dan tim admin. Kalau yg login customer, arahkan ke halaman customer dashboard, kalau admin, arahkan ke halaman admin dashboard.
+    - [x] opsi google login skip saja
+    - [x] setelah user mendaftar, akan diarahkan ke halaman verifikasi email dan ada tombol untuk kirim ulang verifikasi, nanti user harus klik dulu link verifikasi yg dikirim ke emailnya buat verifikasi akunnya.
+    - [x] kalau customer belum verifikasi akun, di akun customer ada pesan harus verifikasi email (verifikasi bukan syarat mutlak untuk checkout ya, ini hanya verifikasi akun saja)
+
 ### Tahap 2: Notifikasi & Komunikasi
+
 - [ ] **Sistem Notifikasi Email Otomatis:**
     - **Untuk Customer:**
         - Registrasi User Baru (Welcome Email & Link Verifikasi).
@@ -107,15 +116,21 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
         - Notifikasi Pembayaran Diterima (Untuk Finance).
         - Notifikasi Permintaan Perubahan/Pembatalan Baru dari Kasir (Untuk Owner).
 
+    note:
+    - ada juga notif refund ke admin dan customer
+
 ### Tahap 3: Kesiapan Data
+
 - [ ] **File Impor Produk:**
     - Menyiapkan file template impor produk (.xlsx / .csv) yang lengkap dan siap digunakan untuk migrasi data massal.
 
 ### Tahap 4: Go-Live (Rilis)
+
 - [ ] **Deploy ke VPS:**
     - Melakukan migrasi database, setup HTTPS SSL, build assets produksi, dan deployment aplikasi Raabiha ke CloudPanel VPS agar dapat diakses publik.
 
 ### Tahap 5: SEO & Optimasi (Pasca-Deploy)
+
 - [ ] **Daftar Search Console:** Mendaftarkan sitemap e-commerce ke Google Search Console untuk memastikan indeksasi seluruh halaman produk dan artikel.
 - [ ] **Daftar Google Bisnisku (Google Business):** Membuat profil Google Business Profile resmi untuk meningkatkan SEO lokal.
 - [ ] **Cek Performance & Core Web Vitals:** Melakukan audit performa frontend via Google PageSpeed Insights dan optimasi gambar/asset jika diperlukan.
