@@ -16,7 +16,9 @@ class ProductImporter extends Importer
     {
         // Auto-detect and create attributes from uploaded CSV headers
         try {
+            \Illuminate\Support\Facades\Log::info('ProductImporter::getColumns() called. Request: ', request()->all());
             $tempFileName = self::findLivewireTempFileInRequest(request()->all());
+            \Illuminate\Support\Facades\Log::info('Detected Temp File Name: ' . ($tempFileName ?: 'NULL'));
             if ($tempFileName) {
                 $disk = config('livewire.temporary_file_upload.disk') ?: 'local';
                 $dir = config('livewire.temporary_file_upload.directory') ?: 'livewire-tmp';
