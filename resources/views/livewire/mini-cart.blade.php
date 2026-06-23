@@ -48,7 +48,7 @@
                             <div class="flex flex-col flex-1 min-w-0 pr-6">
                                 <div class="flex justify-between items-start gap-2">
                                     <h3 class="font-serif text-sm font-semibold text-[#1c1c1a] leading-tight line-clamp-2">
-                                        <a href="/product/{{ $item->product->slug }}" wire:navigate.hover class="hover:text-[#615e57] transition-colors">{{ $item->product->name }}</a>
+                                        <a href="/product/{{ $item->product->slug }}" class="hover:text-[#615e57] transition-colors">{{ $item->product->name }}</a>
                                     </h3>
                                 </div>
                                 <div class="font-sans text-xs text-[#1c1c1a] mt-1">Rp{{ number_format($price, 0, ',', '.') }}</div>
@@ -89,8 +89,8 @@
                 <span class="font-serif text-[20px] font-semibold text-[#1c1c1a]">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <a href="/cart" wire:navigate.hover class="flex items-center justify-center border border-[#1c1c1a] text-[#1c1c1a] py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#f2efe8] transition-colors leading-tight">LIHAT KERANJANG</a>
-                <a href="/checkout" wire:navigate.hover class="flex items-center justify-center bg-[#064e3b] text-white py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#043326] transition-colors leading-tight">LANJUT PEMBAYARAN</a>
+                <a href="/cart" class="flex items-center justify-center border border-[#1c1c1a] text-[#1c1c1a] py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#f2efe8] transition-colors leading-tight">LIHAT KERANJANG</a>
+                <a href="/checkout" class="flex items-center justify-center bg-[#064e3b] text-white py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#043326] transition-colors leading-tight">LANJUT PEMBAYARAN</a>
             </div>
         </div>
         @endif

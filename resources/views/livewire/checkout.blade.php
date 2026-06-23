@@ -11,9 +11,9 @@
                 
                 <div class="mb-10 md:mb-16 hidden md:block">
                     <nav class="font-mono text-[9px] uppercase tracking-[0.2em] text-[#615e57] mb-6 flex items-center gap-2">
-                        <a href="{{ url('/') }}" wire:navigate.hover class="hover:text-[#064e3b] transition-colors">Home</a>
+                        <a href="{{ url('/') }}" class="hover:text-[#064e3b] transition-colors">Home</a>
                         <span class="text-[#d1cec9]">/</span>
-                        <a href="{{ url('/cart') }}" wire:navigate.hover class="hover:text-[#064e3b] transition-colors">Keranjang</a>
+                        <a href="{{ url('/cart') }}" class="hover:text-[#064e3b] transition-colors">Keranjang</a>
                         <span class="text-[#d1cec9]">/</span>
                         <span class="text-[#1c1c1a] font-bold">Checkout</span>
                     </nav>

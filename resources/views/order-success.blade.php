@@ -44,7 +44,7 @@
                        class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-8 py-4 hover:bg-[#f0ede9] transition-colors text-center">
                         Lihat Pesanan
                     </a>
-                    <a href="{{ url('/') }}" wire:navigate.hover
+                    <a href="{{ url('/') }}"
                        class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-8 py-4 hover:bg-[#043326] transition-colors text-center">
                         Kembali ke Beranda
                     </a>

@@ -450,7 +450,7 @@
                             $path = ltrim(parse_url($link['url'], PHP_URL_PATH) ?? '', '/');
                             $isActive = $path === '' ? request()->is('/') : (request()->is($path) || request()->is($path . '/*') || ($path === 'shop' && request()->is('product*')));
                         @endphp
-                        <li><a href="{{ url($link['url']) }}" wire:navigate.hover class="block hover:text-[#064e3b] transition-colors {{ $isActive ? 'text-[#064e3b] font-bold' : '' }}">{{ $link['label'] }}</a></li>
+                        <li><a href="{{ url($link['url']) }}" class="block hover:text-[#064e3b] transition-colors {{ $isActive ? 'text-[#064e3b] font-bold' : '' }}">{{ $link['label'] }}</a></li>
                     @endforeach
                 </ul>
             </div>
@@ -496,7 +496,24 @@
             }
         });
 
-        document.addEventListener('livewire:navigated', function() {
+        window.onPageLoad = function(name, callback) {
+            const run = () => {
+                if (window['__has_run_' + name]) return;
+                window['__has_run_' + name] = true;
+                callback();
+            };
+            document.addEventListener('livewire:navigating', () => {
+                window['__has_run_' + name] = false;
+            });
+            if (document.readyState === 'interactive' || document.readyState === 'complete') {
+                run();
+            } else {
+                document.addEventListener('DOMContentLoaded', run);
+            }
+            document.addEventListener('livewire:navigated', run);
+        };
+
+        window.onPageLoad('sidebar_search', function() {
             // Sidebar Logic
             const toggle = document.getElementById('mobile-menu-toggle');
             const close = document.getElementById('mobile-sidebar-close');
@@ -724,7 +741,7 @@
     </div>
 
     <script data-navigate-once>
-        document.addEventListener('livewire:navigated', function() {
+        window.onPageLoad('profile_sheet', function() {
             const sheetToggle = document.getElementById('mobile-profile-toggle');
             const sheetOverlay = document.getElementById('mobile-profile-sheet-overlay');
             const sheetBackdrop = document.getElementById('mobile-profile-sheet-backdrop');
@@ -759,7 +776,7 @@
 
 
 <script data-navigate-once>
-    document.addEventListener('livewire:navigated', function() {
+    window.onPageLoad('scroll_navbar', function() {
         var lastScrollY = window.scrollY;
         var scrollTimeout;
         
@@ -873,7 +890,7 @@
             rafId = requestAnimationFrame(raf);
         }
 
-        document.addEventListener('livewire:navigated', () => {
+        window.onPageLoad('lenis_scroll', () => {
             window.scrollTo(0, 0);
             initLenis();
         });

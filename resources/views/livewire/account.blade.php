@@ -70,7 +70,7 @@
                                         <p class="font-sans text-[12px] text-[#ba1a1a]/80 mt-0.5">Silakan cek email Anda untuk memverifikasi akun agar Anda dapat menerima pembaruan pesanan dengan lancar.</p>
                                     </div>
                                 </div>
-                                <a href="{{ route('verification.notice') }}" wire:navigate.hover class="shrink-0 font-mono text-[9px] font-bold tracking-[0.2em] uppercase text-[#ba1a1a] border border-[#ba1a1a] px-4 py-2 hover:bg-[#ba1a1a] hover:text-white transition-colors text-center w-full sm:w-auto">Verifikasi Sekarang</a>
+                                <a href="{{ route('verification.notice') }}" class="shrink-0 font-mono text-[9px] font-bold tracking-[0.2em] uppercase text-[#ba1a1a] border border-[#ba1a1a] px-4 py-2 hover:bg-[#ba1a1a] hover:text-white transition-colors text-center w-full sm:w-auto">Verifikasi Sekarang</a>
                             </div>
                         @endif
 
@@ -175,7 +175,7 @@
                                         @endif
                                     </p>
                                     @if(empty($searchPesanan))
-                                        <a href="/shop" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Mulai Belanja</a>
+                                        <a href="/shop" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Mulai Belanja</a>
                                     @else
                                         <button wire:click="$set('searchPesanan', '')" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Reset Pencarian</button>
                                     @endif
@@ -300,7 +300,7 @@
                                                 @endif
                                                 <a href="{{ url('/order-detail?id=' . $order->id) }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#c4c7c7] px-6 py-2.5 hover:border-[#1c1c1a] hover:text-[#1c1c1a] transition-colors w-full sm:w-auto text-center inline-block">Lihat Invoice</a>
                                                 @if($order->items->first() && $order->items->first()->product)
-                                                    <a href="{{ url('/product/' . $order->items->first()->product->slug) }}" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#1c1c1a] hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Beli Lagi</a>
+                                                    <a href="{{ url('/product/' . $order->items->first()->product->slug) }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#1c1c1a] hover:text-white transition-colors w-full sm:w-auto text-center inline-block">Beli Lagi</a>
                                                 @endif
                                             @endif
                                         </div>
@@ -448,7 +448,7 @@
                                 <div class="flex flex-col items-center justify-center py-16 text-center border border-[#e5e2de] bg-white">
                                     <svg class="w-12 h-12 text-[#c4c7c7] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
                                     <p class="font-sans text-[14px] text-[#615e57] mb-4">Anda belum menyimpan produk ke wishlist.</p>
-                                    <a href="/shop" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Mulai Belanja</a>
+                                    <a href="/shop" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors">Mulai Belanja</a>
                                 </div>
                             @else
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
@@ -468,7 +468,7 @@
                                         @endphp
                                         @if($product)
                                             <div class="border border-[#e5e2de] bg-white relative group flex flex-col">
-                                                <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="block">
+                                                <a href="{{ url('/product/' . $product->slug) }}" class="block">
                                                     <div class="aspect-[1/1] bg-[#e5e5e5] overflow-hidden relative">
                                                         @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
                                                             <div class="absolute top-2 right-2 bg-[#b91c1c] text-white font-bold text-[9px] px-2 py-0.5 z-10 tracking-wider shadow-sm">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
@@ -482,7 +482,7 @@
                                                 </div>
                                                 <div class="p-4 flex-1 flex flex-col">
                                                     <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-2">
-                                                        <a href="{{ url('/product/' . $product->slug) }}" wire:navigate.hover class="hover:underline">{{ $product->name }}</a>
+                                                        <a href="{{ url('/product/' . $product->slug) }}" class="hover:underline">{{ $product->name }}</a>
                                                     </h3>
                                                     <div class="mt-auto">
                                                         @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
@@ -716,7 +716,7 @@
                                         <h3 class="font-serif font-bold text-[20px] text-[#1c1c1a] mb-2">Tingkatkan Keuntungan Anda!</h3>
                                         <p class="font-sans text-[13px] text-[#615e57] max-w-md mx-auto">Gabung menjadi mitra reseller Raabiha dan dapatkan potongan harga eksklusif untuk setiap pembelian tanpa minimal order. Daftarkan diri Anda sekarang!</p>
                                     </div>
-                                    <a href="/reseller-register" wire:navigate.hover class="mt-2 w-full sm:w-auto text-center inline-block bg-[#064e3b] text-white px-6 py-3.5 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-colors">
+                                    <a href="/reseller-register" class="mt-2 w-full sm:w-auto text-center inline-block bg-[#064e3b] text-white px-6 py-3.5 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-black transition-colors">
                                         Daftar Menjadi Reseller
                                     </a>
                                 </div>

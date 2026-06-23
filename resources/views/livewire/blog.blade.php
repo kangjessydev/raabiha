@@ -3,7 +3,7 @@
     <!-- Hero Featured Article -->
     @if($featuredPost)
     <section class="max-w-[1440px] mx-auto px-6 lg:px-12 py-8 md:py-12">
-        <a href="{{ url('/blog/' . $featuredPost->slug) }}" wire:navigate.hover class="block relative w-full aspect-[4/3] md:aspect-[21/9] overflow-hidden group">
+        <a href="{{ url('/blog/' . $featuredPost->slug) }}" class="block relative w-full aspect-[4/3] md:aspect-[21/9] overflow-hidden group">
             @if($featuredPost->image && $media = \Awcodes\Curator\Models\Media::find($featuredPost->image))
                 <img src="{{ Storage::url($media->path) }}" alt="{{ $featuredPost->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
             @else
@@ -62,7 +62,7 @@
                     @foreach($postsToLoop as $index => $post)
                         @if($index % 2 == 0)
                             <article wire:key="post-left-{{ $post->id }}" class="group cursor-pointer">
-                                <a href="{{ url('/blog/' . $post->slug) }}" wire:navigate.hover class="block">
+                                <a href="{{ url('/blog/' . $post->slug) }}" class="block">
                                     <div class="w-full aspect-[4/5] overflow-hidden mb-6">
                                         @if($post->image && $media = \Awcodes\Curator\Models\Media::find($post->image))
                                             <img src="{{ Storage::url($media->path) }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
@@ -87,7 +87,7 @@
                     @foreach($postsToLoop as $index => $post)
                         @if($index % 2 != 0)
                             <article wire:key="post-right-{{ $post->id }}" class="group cursor-pointer">
-                                <a href="{{ url('/blog/' . $post->slug) }}" wire:navigate.hover class="block">
+                                <a href="{{ url('/blog/' . $post->slug) }}" class="block">
                                     <div class="w-full aspect-[4/5] overflow-hidden mb-6 {{ $index % 4 == 3 ? 'bg-[#f0ede9]' : '' }}">
                                         @if($post->image && $media = \Awcodes\Curator\Models\Media::find($post->image))
                                             <img src="{{ Storage::url($media->path) }}" alt="{{ $post->title }}" class="w-full h-full object-cover {{ $index % 4 == 3 ? 'mix-blend-multiply' : '' }} group-hover:scale-105 transition-transform duration-700">

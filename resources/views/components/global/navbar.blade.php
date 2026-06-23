@@ -27,7 +27,7 @@
             <div class="flex items-center justify-between px-12 h-[80px] relative z-50 bg-[#fcf9f5]">
                 <!-- Desktop Logo -->
                 <div class="w-[180px] shrink-0">
-                    <a href="{{ url('/') }}" wire:navigate.hover class="block hover:opacity-80 transition-opacity h-full flex items-center">
+                    <a href="{{ url('/') }}" class="block hover:opacity-80 transition-opacity h-full flex items-center">
                         @if($logoLightUrl)
                             <img src="{{ $logoLightUrl }}" alt="{{ $siteName }}" class="h-[56px] w-auto max-w-[200px] object-contain">
                         @else
@@ -48,7 +48,7 @@
                         $path = ltrim(parse_url($link['url'], PHP_URL_PATH) ?? '', '/');
                         $isActive = $path === '' ? request()->is('/') : (request()->is($path) || request()->is($path . '/*') || ($path === 'shop' && request()->is('product*')));
                     @endphp
-                    <li class="group"><a href="{{ url($link['url']) }}" wire:navigate.hover class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ $isActive ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">{{ $link['label'] }}</a></li>
+                    <li class="group"><a href="{{ url($link['url']) }}" class="text-xs font-medium tracking-widest uppercase transition-colors whitespace-nowrap {{ $isActive ? 'text-[#064e3b] border-b border-[#064e3b] pb-0.5' : 'text-neutral-500 hover:text-neutral-900' }}">{{ $link['label'] }}</a></li>
                 @endforeach
                 </ul></nav>            
                 <div class="flex items-center gap-5 w-[180px] justify-end shrink-0">
@@ -76,21 +76,21 @@
                                 <div class="px-4 py-2 border-b border-[#e5e2de] mb-1">
                                     <span class="block text-xs font-mono font-bold uppercase tracking-widest text-[#1c1c1a]">{{ auth()->user()->name }}</span>
                                 </div>
-                                <a href="/account" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Dasbor Pelanggan</a>
-                                <a href="/account?activeTab=wishlist" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Wishlist Saya</a>
+                                <a href="/account" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Dasbor Pelanggan</a>
+                                <a href="/account?activeTab=wishlist" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Wishlist Saya</a>
                                 @if(auth()->user()->hasRole('super_admin'))
-                                    <a href="/admin" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Admin Panel</a>
+                                    <a href="/admin" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Admin Panel</a>
                                 @elseif(auth()->user()->hasRole('reseller'))
-                                    <a href="/reseller-dashboard" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Portal Reseller</a>
+                                    <a href="/reseller-dashboard" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Portal Reseller</a>
                                 @endif
-                                <a href="/cart" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Keranjang Saya</a>
+                                <a href="/cart" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Keranjang Saya</a>
                                 <form method="POST" action="{{ route('logout') }}" class="block m-0">
                                     @csrf
                                     <button type="submit" class="w-full text-left px-4 py-2 text-sm font-sans text-red-600 hover:bg-[#f0ede9] transition-colors">Keluar (Logout)</button>
                                 </form>
                             @else
-                                <a href="/login" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Log In</a>
-                                <a href="/register" wire:navigate.hover class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Daftar Akun</a>
+                                <a href="/login" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Log In</a>
+                                <a href="/register" class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Daftar Akun</a>
                             @endauth
                         </div>
                     </div>

@@ -47,7 +47,7 @@
 
                 <div class="mt-8 text-center border-t border-[#e5e2de] pt-8">
                     <p class="font-sans text-[13px] text-[#615e57] mb-4">Sudah memiliki akun?</p>
-                    <a href="{{ url('/login') }}" wire:navigate.hover class="inline-block font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-8 py-3 hover:bg-[#f0ede9] transition-colors">
+                    <a href="{{ url('/login') }}" class="inline-block font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-8 py-3 hover:bg-[#f0ede9] transition-colors">
                         Log In di Sini
                     </a>
                 </div>

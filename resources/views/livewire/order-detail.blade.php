@@ -122,7 +122,7 @@
                                         <img src="{{ $image }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover">
                                     </div>
                                     <div class="flex-1">
-                                        <a href="/product/{{ $item->product->slug }}" wire:navigate.hover class="font-serif text-[15px] md:text-[16px] font-semibold text-[#1c1c1a] leading-tight mb-1 hover:text-[#064e3b] transition-colors line-clamp-1">{{ $item->product->name }}</a>
+                                        <a href="/product/{{ $item->product->slug }}" class="font-serif text-[15px] md:text-[16px] font-semibold text-[#1c1c1a] leading-tight mb-1 hover:text-[#064e3b] transition-colors line-clamp-1">{{ $item->product->name }}</a>
                                         <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-1">
                                             {{ $variantText }}
                                         </p>
@@ -133,7 +133,7 @@
                                                 $hasReviewed = \App\Models\ProductReview::where('product_id', $item->product_id)->where('user_id', auth()->id())->exists();
                                             @endphp
                                             @if(!$hasReviewed)
-                                                <a href="/product/{{ $item->product->slug }}" wire:navigate class="inline-block border border-[#1c1c1a] px-3 py-1.5 text-[8px] font-mono font-bold uppercase tracking-[0.1em] hover:bg-[#1c1c1a] hover:text-white text-[#1c1c1a] transition-colors focus:outline-none">
+                                                <a href="/product/{{ $item->product->slug }}" class="inline-block border border-[#1c1c1a] px-3 py-1.5 text-[8px] font-mono font-bold uppercase tracking-[0.1em] hover:bg-[#1c1c1a] hover:text-white text-[#1c1c1a] transition-colors focus:outline-none">
                                                     Beri Ulasan
                                                 </a>
                                             @else
@@ -191,7 +191,7 @@
                             Bayar Sekarang
                         </a>
                     @elseif(in_array($order->status, ['completed', 'cancelled']))
-                        <a href="/shop" wire:navigate.hover class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#1c1c1a] px-8 py-3 hover:bg-black transition-colors flex items-center justify-center">
+                        <a href="/shop" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#1c1c1a] px-8 py-3 hover:bg-black transition-colors flex items-center justify-center">
                             Belanja Lagi
                         </a>
                     @endif

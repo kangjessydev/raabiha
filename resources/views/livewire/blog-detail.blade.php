@@ -19,7 +19,7 @@
             <div class="absolute bottom-0 left-0 right-0 p-6 md:p-16 max-w-4xl">
                 <p class="text-white/70 text-[9px] font-mono tracking-[0.2em] uppercase mb-3">
                     @if($post->category)
-                        <a href="{{ url('/blog?category=' . $post->category->slug) }}" wire:navigate class="hover:text-white transition-colors">{{ $post->category->name }}</a>
+                        <a href="{{ url('/blog?category=' . $post->category->slug) }}" class="hover:text-white transition-colors">{{ $post->category->name }}</a>
                     @else
                         Uncategorized
                     @endif
@@ -267,7 +267,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-12">
                     @foreach($relatedPosts as $index => $related)
                     <article class="group cursor-pointer {{ $index == 2 ? 'hidden md:block' : '' }}">
-                        <a href="{{ url('/blog/' . $related->slug) }}" wire:navigate.hover class="block">
+                        <a href="{{ url('/blog/' . $related->slug) }}" class="block">
                             <div class="w-full aspect-[4/5] overflow-hidden mb-4 md:mb-6">
                                 @if($related->image && $media = \Awcodes\Curator\Models\Media::find($related->image))
                                     <img src="{{ Storage::url($media->path) }}" alt="{{ $related->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
@@ -280,7 +280,7 @@
                             </div>
                             <p class="text-[#064e3b] text-[9px] font-mono tracking-[0.2em] uppercase mb-2">
                                 @if($related->category)
-                                    <a href="{{ url('/blog?category=' . $related->category->slug) }}" wire:navigate class="hover:underline">{{ $related->category->name }}</a>
+                                    <a href="{{ url('/blog?category=' . $related->category->slug) }}" class="hover:underline">{{ $related->category->name }}</a>
                                 @else
                                     Uncategorized
                                 @endif
