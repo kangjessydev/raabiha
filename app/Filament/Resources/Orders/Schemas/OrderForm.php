@@ -589,6 +589,11 @@ class OrderForm
                                                                 continue;
                                                             }
 
+                                                            // Filter using dynamic shipping rules (custom or global)
+                                                            if (!$courier->shouldShowService($rawServiceName, $totalWeight, $originCityRaw, $districtRaw)) {
+                                                                continue;
+                                                            }
+
                                                             $serviceName = $rawServiceName;
                                                             if (!empty($courierConfig['service_aliases']) && is_array($courierConfig['service_aliases'])) {
                                                                 foreach ($courierConfig['service_aliases'] as $rawCode => $alias) {

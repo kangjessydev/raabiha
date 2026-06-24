@@ -214,6 +214,11 @@ class Checkout extends Component
                             if (!empty($allowedServices) && !in_array($rawServiceName, $allowedServices)) {
                                 continue;
                             }
+
+                            // Filter using dynamic shipping rules (custom or global)
+                            if (!$courier->shouldShowService($rawServiceName, $totalWeight, $originCityRaw, $this->selectedDestinationLabel)) {
+                                continue;
+                            }
                             
                             $price = $cost['cost'] ?? 0;
                             $etd = $cost['etd'] ?? '';

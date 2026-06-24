@@ -155,6 +155,48 @@ class ShippingMethodForm
                             )
                             ->columnSpanFull(),
                     ]),
+
+                Section::make('Aturan Tampilan Layanan (Shipping Rules)')
+                    ->description('Buat aturan kustom untuk menyembunyikan atau hanya menampilkan layanan tertentu berdasarkan berat belanjaan atau wilayah tujuan. Jika tidak ada aturan kustom yang cocok untuk kurir ini, sistem otomatis menggunakan Aturan Global.')
+                    ->schema([
+                        \Filament\Forms\Components\Repeater::make('config.custom_rules')
+                            ->label('Aturan Kustom')
+                            ->createItemButtonLabel('Tambah Aturan Baru')
+                            ->schema([
+                                \Filament\Forms\Components\Select::make('condition')
+                                    ->label('Kondisi')
+                                    ->options([
+                                        'weight_less_than' => 'Berat Kurang Dari (<) Gram',
+                                        'weight_greater_than' => 'Berat Lebih Dari (>=) Gram',
+                                        'is_local_province' => 'Tujuan Dalam Provinsi',
+                                        'is_outside_province' => 'Tujuan Luar Provinsi',
+                                    ])
+                                    ->required()
+                                    ->live()
+                                    ->native(false),
+                                \Filament\Forms\Components\TextInput::make('value')
+                                    ->label('Nilai Parameter (Gram)')
+                                    ->numeric()
+                                    ->required(fn ($get) => in_array($get('condition'), ['weight_less_than', 'weight_greater_than']))
+                                    ->hidden(fn ($get) => !in_array($get('condition'), ['weight_less_than', 'weight_greater_than'])),
+                                \Filament\Forms\Components\Select::make('action')
+                                    ->label('Aksi')
+                                    ->options([
+                                        'hide' => 'Sembunyikan Layanan',
+                                        'allow_only' => 'Hanya Tampilkan Layanan',
+                                    ])
+                                    ->required()
+                                    ->native(false),
+                                \Filament\Forms\Components\TagsInput::make('services')
+                                    ->label('Kode Layanan')
+                                    ->placeholder('Ketik kode layanan (misal: JTR, REG) lalu tekan Enter')
+                                    ->required()
+                                    ->helperText('Gunakan kode asli dari RajaOngkir (seperti REG, YES, JTR, ND, DLL).')
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(3)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 }
