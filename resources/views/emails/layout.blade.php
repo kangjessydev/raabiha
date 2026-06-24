@@ -142,7 +142,7 @@
         </div>
         <div class="footer">
             &copy; {{ date('Y') }} {{ $siteName ?? 'Raabiha' }}. All rights reserved.<br>
-            Jika Anda memiliki pertanyaan, hubungi kami di <a href="mailto:{{ $siteEmail ?? 'support@raabiha.com' }}">{{ $siteEmail ?? 'support@raabiha.com' }}</a>
+            Jika Anda memiliki pertanyaan, hubungi kami melalui <a href="{{ url('/contact') }}">halaman kontak</a> kami.
         </div>
     </div>
 </body>
