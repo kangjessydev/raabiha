@@ -197,7 +197,7 @@ class Checkout extends Component
                     $results = $response->json('data');
                     if (!empty($results)) {
                         foreach ($results as $cost) {
-                            $courierName = $cost['name'];
+                            $courierName = $courier->name;
                             $rawServiceName = strtoupper($cost['service']);
                             
                             $serviceName = $rawServiceName;

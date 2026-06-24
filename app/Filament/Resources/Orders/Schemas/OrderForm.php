@@ -601,7 +601,7 @@ class OrderForm
 
                                                             $price = $cost['cost'] ?? 0;
                                                             $key = $courier->code . '|' . $rawServiceName . '|' . $price;
-                                                            $options[$key] = "{$cost['name']} - {$serviceName} (Rp " . number_format($price, 0, ',', '.') . ")";
+                                                            $options[$key] = "{$courier->name} - {$serviceName} (Rp " . number_format($price, 0, ',', '.') . ")";
                                                         }
                                                     }
                                                 }
