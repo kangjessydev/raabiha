@@ -183,17 +183,17 @@
                                                     <button 
                                                         type="button"
                                                         @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                                        class="flex flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer' }}">
+                                                        class="flex flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' }}">
                                                         <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 {{ $isSelected ? 'border-[#1c1c1a]' : 'border-transparent ' . ($isAvailable ? 'hover:border-gray-300' : '') }}">
-                                                            <div class="w-full h-full rounded-full border border-black/10 relative overflow-hidden" style="background-color: {{ $hex }}">
+                                                            <div class="w-full h-full rounded-full border border-black/10 relative overflow-hidden" style="background-color: {{ $hex }}; @if(!$isAvailable) filter: grayscale(90%) contrast(0.8); @endif">
                                                                 @if(!$isAvailable)
                                                                     <div class="absolute inset-0 flex items-center justify-center">
-                                                                        <div class="w-full h-[1px] bg-red-500 transform rotate-45"></div>
+                                                                        <div class="w-full h-[1.5px] bg-[#9e9a92] transform rotate-45"></div>
                                                                     </div>
                                                                 @endif
                                                             </div>
                                                         </div>
-                                                        <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : 'text-[#a09e99] ' . ($isAvailable ? 'group-hover:text-[#615e57]' : '') }}">{{ $val }}</span>
+                                                        <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : ($isAvailable ? 'text-[#a09e99] group-hover:text-[#615e57]' : 'text-[#b8b5ae] line-through') }}">{{ $val }}</span>
                                                     </button>
                                                 @endforeach
                                             </div>
@@ -633,17 +633,17 @@
                                 @endphp
                                 <button type="button" 
                                     @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                    class="flex flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer' }}">
+                                    class="flex flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' }}">
                                     <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 {{ $isSelected ? 'border-[#1c1c1a]' : 'border-transparent ' . ($isAvailable ? 'hover:border-gray-300' : '') }}">
-                                        <div class="w-full h-full rounded-full border border-black/10 relative overflow-hidden" style="background-color: {{ $hex }}">
+                                        <div class="w-full h-full rounded-full border border-black/10 relative overflow-hidden" style="background-color: {{ $hex }}; @if(!$isAvailable) filter: grayscale(90%) contrast(0.8); @endif">
                                             @if(!$isAvailable)
                                                 <div class="absolute inset-0 flex items-center justify-center">
-                                                    <div class="w-full h-[1px] bg-red-500 transform rotate-45"></div>
+                                                    <div class="w-full h-[1.5px] bg-[#9e9a92] transform rotate-45"></div>
                                                 </div>
                                             @endif
                                         </div>
                                     </div>
-                                    <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : 'text-[#a09e99] ' . ($isAvailable ? 'group-hover:text-[#615e57]' : '') }}">{{ $val }}</span>
+                                    <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : ($isAvailable ? 'text-[#a09e99] group-hover:text-[#615e57]' : 'text-[#b8b5ae] line-through') }}">{{ $val }}</span>
                                 </button>
                             @endforeach
                         </div>
