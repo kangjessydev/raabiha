@@ -18,18 +18,39 @@ class RefundRequest extends Model
 
             // Notifikasi ke Admin/Owner/Finance
             try {
-                $existingRoles = \Spatie\Permission\Models\Role::whereIn('name', ['super_admin', 'owner', 'finance'])->pluck('name')->toArray();
-                $recipients = !empty($existingRoles) ? User::role($existingRoles)->get() : collect();
-                if ($recipients->isEmpty()) {
-                    $recipients = User::whereIn('id', [1, 2])->get();
+                $emails = [];
+                $siteEmail = \App\Models\SiteSetting::where('key', 'store_email')->value('value');
+                if ($siteEmail && filter_var($siteEmail, FILTER_VALIDATE_EMAIL)) {
+                    $emails[] = $siteEmail;
                 }
+                try {
+                    $existingRoles = \Spatie\Permission\Models\Role::whereIn('name', ['super_admin', 'owner', 'finance'])->pluck('name')->toArray();
+                    $users = !empty($existingRoles) ? User::role($existingRoles)->get() : collect();
+                    foreach ($users as $u) {
+                        if ($u->email && filter_var($u->email, FILTER_VALIDATE_EMAIL)) {
+                            $emails[] = $u->email;
+                        }
+                    }
+                } catch (\Exception $roleEx) {
+                    // Abaikan jika relasi/role Spatie bermasalah
+                }
+                if (empty($emails)) {
+                    $fallbackUsers = User::whereIn('id', [1, 2])->get();
+                    foreach ($fallbackUsers as $u) {
+                        if ($u->email && filter_var($u->email, FILTER_VALIDATE_EMAIL)) {
+                            $emails[] = $u->email;
+                        }
+                    }
+                }
+                $emails = array_unique($emails);
 
-                foreach ($recipients as $recipient) {
-                    \Illuminate\Support\Facades\Mail::to($recipient->email)->send(new \App\Mail\StoreMail(
+                foreach ($emails as $email) {
+                    $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
+                    \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\StoreMail(
                         subject: "[Pengajuan Refund] Pesanan #{$orderNumber}",
                         view: 'emails.layout',
                         data: [
-                            'greeting' => "Halo, {$recipient->name}!",
+                            'greeting' => "Halo, {$recipientName}!",
                             'messageBody' => "Pelanggan <strong>{$customerName}</strong> mengajukan permintaan pengembalian dana (refund) untuk pesanan <strong>#{$orderNumber}</strong> sebesar <strong>Rp" . number_format($refundRequest->refund_amount, 0, ',', '.') . "</strong>.<br><br>Alasan Pengajuan:<br><em>\"{$refundRequest->reason}\"</em>.<br><br>Detail Rekening:<br>Bank: {$refundRequest->bank_name}<br>Nama Rekening: {$refundRequest->bank_account_name}<br>No Rekening: {$refundRequest->bank_account_number}<br><br>Silakan masuk ke panel admin untuk memproses refund ini.",
                             'actionUrl' => route('filament.admin.e-commerce.resources.refund-requests.index'),
                             'actionText' => 'Tinjau Pengajuan Refund'

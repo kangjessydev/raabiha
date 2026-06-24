@@ -20,6 +20,45 @@ class OrderObserver
     }
 
     /**
+     * Helper: Ambil email admin/toko untuk notifikasi.
+     */
+    private function getAdminEmails(): array
+    {
+        $emails = [];
+
+        // 1. Dari SiteSetting 'store_email'
+        $siteEmail = \App\Models\SiteSetting::where('key', 'store_email')->value('value');
+        if ($siteEmail && filter_var($siteEmail, FILTER_VALIDATE_EMAIL)) {
+            $emails[] = $siteEmail;
+        }
+
+        // 2. Tambahan: Super Admin, Owner, Finance
+        try {
+            $adminRoles = ['super_admin', 'owner', 'finance'];
+            $admins = User::role($adminRoles)->get();
+            foreach ($admins as $admin) {
+                if ($admin->email && filter_var($admin->email, FILTER_VALIDATE_EMAIL)) {
+                    $emails[] = $admin->email;
+                }
+            }
+        } catch (\Exception $e) {
+            // Abaikan jika relasi/role Spatie bermasalah
+        }
+
+        // 3. Fallback jika kosong sama sekali
+        if (empty($emails)) {
+            $fallbacks = User::whereIn('id', [1, 2])->get();
+            foreach ($fallbacks as $f) {
+                if ($f->email && filter_var($f->email, FILTER_VALIDATE_EMAIL)) {
+                    $emails[] = $f->email;
+                }
+            }
+        }
+
+        return array_unique($emails);
+    }
+
+    /**
      * Saat pesanan baru dibuat (termasuk POS Manual yang langsung paid).
      */
     public function created(Order $order): void
@@ -36,14 +75,21 @@ class OrderObserver
         $customerEmail = $this->getCustomerEmail($order);
         if ($customerEmail) {
             try {
+                $emailData = [
+                    'order' => $order,
+                    'greeting' => "Halo, " . ($order->shipping_address['name'] ?? $order->user->name ?? 'Pelanggan') . "!",
+                    'messageBody' => "Terima kasih atas pesanan Anda. Kami telah menerima pesanan #{$order->order_number} dan saat ini sedang menunggu pembayaran."
+                ];
+
+                if ($order->payment_status === 'pending' && $order->payment_url) {
+                    $emailData['actionUrl'] = $order->payment_url;
+                    $emailData['actionText'] = 'Selesaikan Pembayaran';
+                }
+
                 Mail::to($customerEmail)->send(new StoreMail(
                     subject: "Konfirmasi Pesanan Anda #{$order->order_number}",
                     view: 'emails.order-details',
-                    data: [
-                        'order' => $order,
-                        'greeting' => "Halo, " . ($order->shipping_address['name'] ?? $order->user->name ?? 'Pelanggan') . "!",
-                        'messageBody' => "Terima kasih atas pesanan Anda. Kami telah menerima pesanan #{$order->order_number} dan saat ini sedang menunggu pembayaran."
-                    ]
+                    data: $emailData
                 ));
             } catch (\Exception $e) {
                 logger()->error("Gagal mengirim email konfirmasi order ke customer: " . $e->getMessage());
@@ -52,19 +98,15 @@ class OrderObserver
 
         // 2. Kirim Email Notifikasi ke Admin/Owner/CS
         try {
-            $adminRoles = ['super_admin', 'owner', 'cs'];
-            $adminRecipients = User::role($adminRoles)->get();
-            if ($adminRecipients->isEmpty()) {
-                $adminRecipients = User::whereIn('id', [1, 2])->get();
-            }
-
-            foreach ($adminRecipients as $admin) {
-                Mail::to($admin->email)->send(new StoreMail(
+            $adminEmails = $this->getAdminEmails();
+            foreach ($adminEmails as $email) {
+                $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
+                Mail::to($email)->send(new StoreMail(
                     subject: "[Pesanan Baru] Pesanan #{$order->order_number} Telah Diterima",
                     view: 'emails.order-details',
                     data: [
                         'order' => $order,
-                        'greeting' => "Halo, {$admin->name} (Tim Raabiha)!",
+                        'greeting' => "Halo, {$recipientName} (Tim Raabiha)!",
                         'messageBody' => "Pesanan baru #{$order->order_number} telah masuk ke sistem dan sedang menunggu pembayaran."
                     ]
                 ));
@@ -115,25 +157,21 @@ class OrderObserver
 
             // 2. Email Pembayaran Berhasil ke Admin/Finance/Owner
             try {
-                $financeRoles = ['finance', 'super_admin', 'owner'];
-                $financeRecipients = User::role($financeRoles)->get();
-                if ($financeRecipients->isEmpty()) {
-                    $financeRecipients = User::whereIn('id', [1, 2])->get();
-                }
-
-                foreach ($financeRecipients as $finance) {
-                    Mail::to($finance->email)->send(new StoreMail(
+                $adminEmails = $this->getAdminEmails();
+                foreach ($adminEmails as $email) {
+                    $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
+                    Mail::to($email)->send(new StoreMail(
                         subject: "[Pembayaran Lunas] Pesanan #{$order->order_number}",
                         view: 'emails.order-details',
                         data: [
                             'order' => $order,
-                            'greeting' => "Halo, {$finance->name} (Tim Keuangan)!",
+                            'greeting' => "Halo, {$recipientName} (Tim Raabiha)!",
                             'messageBody' => "Pembayaran untuk pesanan #{$order->order_number} senilai Rp" . number_format($order->grand_total, 0, ',', '.') . " telah berhasil divalidasi dan lunas."
                         ]
                     ));
                 }
             } catch (\Exception $e) {
-                logger()->error("Gagal mengirim email lunas ke finance: " . $e->getMessage());
+                logger()->error("Gagal mengirim email lunas ke admin: " . $e->getMessage());
             }
         }
 
@@ -174,13 +212,19 @@ class OrderObserver
             // Email pembatalan ke customer
             if ($customerEmail) {
                 try {
+                    $isFailedPayment = $order->payment_status === 'failed';
+                    $subject = $isFailedPayment ? "Batas Waktu Pembayaran Habis - Pesanan #{$order->order_number}" : "Pembatalan Pesanan #{$order->order_number}";
+                    $messageBody = $isFailedPayment 
+                        ? "Batas waktu pembayaran untuk pesanan Anda <strong>#{$order->order_number}</strong> telah habis (kadaluarsa/gagal). Pesanan Anda secara otomatis dibatalkan oleh sistem. Silakan lakukan pemesanan ulang jika Anda masih ingin membeli produk tersebut."
+                        : "Pesanan Anda <strong>#{$order->order_number}</strong> telah dibatalkan. Jika Anda sudah melakukan transfer pembayaran, silakan hubungi tim CS kami untuk bantuan proses pengembalian dana.";
+
                     Mail::to($customerEmail)->send(new StoreMail(
-                        subject: "Pembatalan Pesanan #{$order->order_number}",
+                        subject: $subject,
                         view: 'emails.order-details',
                         data: [
                             'order' => $order,
                             'greeting' => "Halo, " . ($order->shipping_address['name'] ?? $order->user->name ?? 'Pelanggan') . "!",
-                            'messageBody' => "Pesanan Anda #{$order->order_number} telah dibatalkan. Jika Anda sudah melakukan transfer pembayaran, silakan hubungi tim CS kami untuk bantuan proses pengembalian dana."
+                            'messageBody' => $messageBody
                         ]
                     ));
                 } catch (\Exception $e) {
