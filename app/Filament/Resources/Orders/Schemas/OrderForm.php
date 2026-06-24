@@ -527,6 +527,7 @@ class OrderForm
                                                 $districtRaw = $get('shipping_address.district');
                                                 $currentCourier = $get('courier');
                                                 $options = [];
+                                                $ratesList = [];
 
                                                 if (!$districtRaw || strpos($districtRaw, '::') === false) {
                                                     if ($currentCourier) {
@@ -606,9 +607,22 @@ class OrderForm
 
                                                             $price = $cost['cost'] ?? 0;
                                                             $key = $courier->code . '|' . $rawServiceName . '|' . $price;
-                                                            $options[$key] = "{$courier->name} - {$serviceName} (Rp " . number_format($price, 0, ',', '.') . ")";
+                                                            $ratesList[] = [
+                                                                'key' => $key,
+                                                                'label' => "{$courier->name} - {$serviceName} (Rp " . number_format($price, 0, ',', '.') . ")",
+                                                                'price' => $price
+                                                            ];
                                                         }
                                                     }
+                                                }
+
+                                                // Urutkan tarif dari termurah ke termahal
+                                                usort($ratesList, function ($a, $b) {
+                                                    return $a['price'] <=> $b['price'];
+                                                });
+
+                                                foreach ($ratesList as $rate) {
+                                                    $options[$rate['key']] = $rate['label'];
                                                 }
                                                 
                                                 if ($currentCourier && !isset($options[$currentCourier])) {

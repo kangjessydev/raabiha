@@ -222,6 +222,20 @@ class Checkout extends Component
                             
                             $price = $cost['cost'] ?? 0;
                             $etd = $cost['etd'] ?? '';
+
+                            // Hitung potongan voucher untuk layanan ini jika voucher ongkir aktif
+                            $discountedPrice = $price;
+                            if ($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher']) {
+                                $discountValue = $this->appliedVoucher['discount_type'] === 'fixed'
+                                    ? $this->appliedVoucher['discount_amount']
+                                    : $price * ($this->appliedVoucher['discount_amount'] / 100);
+
+                                if ($this->appliedVoucher['max_discount'] > 0 && $discountValue > $this->appliedVoucher['max_discount']) {
+                                    $discountValue = $this->appliedVoucher['max_discount'];
+                                }
+
+                                $discountedPrice = max(0, $price - $discountValue);
+                            }
                             
                             $this->shippingRates[] = [
                                 'id' => $courierCode . '|' . $rawServiceName . '|' . $price,
@@ -229,6 +243,8 @@ class Checkout extends Component
                                 'service_name' => $serviceName,
                                 'duration' => $etd,
                                 'price' => $price,
+                                'original_price' => $price,
+                                'discounted_price' => $discountedPrice,
                                 'logo' => $courier->logo,
                             ];
                         }
@@ -238,6 +254,11 @@ class Checkout extends Component
                 // Log or ignore courier error
             }
         }
+
+        // Urutkan opsi pengiriman berdasarkan harga setelah diskon (dari termurah ke termahal)
+        usort($this->shippingRates, function ($a, $b) {
+            return $a['discounted_price'] <=> $b['discounted_price'];
+        });
         
         // Set default shipping method to the first available if not set or invalid
         if (empty($this->shipping_method) || !collect($this->shippingRates)->contains('id', $this->shipping_method)) {
@@ -372,6 +393,7 @@ class Checkout extends Component
         $this->appliedVoucher = null;
         $this->discountAmount = 0;
         session()->forget('applied_voucher');
+        $this->generateShippingRates();
     }
     
     public function applyVoucher()
@@ -449,6 +471,7 @@ class Checkout extends Component
         session(['applied_voucher' => $this->appliedVoucher]);
         $this->voucherCode = '';
         
+        $this->generateShippingRates();
         $this->dispatch('close-voucher-sheet');
     }
 

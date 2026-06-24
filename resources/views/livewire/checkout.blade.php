@@ -181,10 +181,21 @@
                                         @endif
                                         <div>
                                             <span class="block font-serif text-base text-[#1c1c1a]">{{ $rate['courier_name'] }} {{ $rate['service_name'] }}</span>
-                                            <span class="block font-sans text-xs text-[#615e57] mt-1">Estimasi {{ $rate['duration'] }}</span>
+                                            <span class="block font-sans text-xs text-[#615e57] mt-1">
+                                                {{ !empty($rate['duration']) ? 'Estimasi ' . $rate['duration'] . (is_numeric($rate['duration']) || preg_match('/^\d+-\d+$/', $rate['duration']) ? ' hari' : '') : 'Estimasi tidak tersedia' }}
+                                            </span>
                                         </div>
                                     </div>
-                                    <span class="font-sans text-sm font-semibold text-[#1c1c1a]">Rp {{ number_format($rate['price'], 0, ',', '.') }}</span>
+                                    <div>
+                                        @if(isset($rate['discounted_price']) && $rate['discounted_price'] < $rate['original_price'])
+                                            <span class="font-sans text-xs line-through text-gray-400 mr-1.5">Rp {{ number_format($rate['original_price'], 0, ',', '.') }}</span>
+                                            <span class="font-sans text-sm font-semibold text-[#064e3b]">
+                                                {{ $rate['discounted_price'] > 0 ? 'Rp ' . number_format($rate['discounted_price'], 0, ',', '.') : 'Gratis' }}
+                                            </span>
+                                        @else
+                                            <span class="font-sans text-sm font-semibold text-[#1c1c1a]">Rp {{ number_format($rate['price'], 0, ',', '.') }}</span>
+                                        @endif
+                                    </div>
                                 </label>
                                 @empty
                                 <div class="text-sm text-[#615e57] p-4 bg-[#f0ede9] rounded text-center">
@@ -321,12 +332,24 @@
                                         $selectedRate = collect($this->shippingRates)->firstWhere('id', $this->shipping_method);
                                     @endphp
                                     @if($selectedRate)
-                                        <span class="font-mono text-[9px] uppercase tracking-[0.08em] text-[#615e57]">{{ $selectedRate['courier_name'] ?? '' }} {{ $selectedRate['service_name'] ?? '' }} &middot; est. {{ $selectedRate['duration'] ?? '' }}</span>
+                                        <span class="font-mono text-[9px] uppercase tracking-[0.08em] text-[#615e57]">
+                                            {{ $selectedRate['courier_name'] ?? '' }} {{ $selectedRate['service_name'] ?? '' }} &middot; 
+                                            {{ !empty($selectedRate['duration']) ? 'est. ' . $selectedRate['duration'] . (is_numeric($selectedRate['duration']) || preg_match('/^\d+-\d+$/', $selectedRate['duration']) ? ' hari' : '') : 'est. tidak tersedia' }}
+                                        </span>
                                     @elseif(!$this->selectedDestinationId)
                                         <span class="font-mono text-[9px] uppercase tracking-[0.08em] text-[#999]">Pilih destinasi dulu</span>
                                     @endif
                                 </div>
-                                <span>{{ $this->shipping_cost > 0 ? 'Rp'.number_format($this->shipping_cost, 0, ',', '.') : 'Rp0' }}</span>
+                                <span>
+                                    @if($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher'] && $this->discountAmount > 0)
+                                        <span class="line-through text-gray-400 mr-1.5">Rp{{ number_format($this->shipping_cost, 0, ',', '.') }}</span>
+                                        <span class="text-[#064e3b] font-semibold">
+                                            {{ ($this->shipping_cost - $this->discountAmount) > 0 ? 'Rp'.number_format($this->shipping_cost - $this->discountAmount, 0, ',', '.') : 'Gratis' }}
+                                        </span>
+                                    @else
+                                        {{ $this->shipping_cost > 0 ? 'Rp'.number_format($this->shipping_cost, 0, ',', '.') : 'Rp0' }}
+                                    @endif
+                                </span>
                             </div>
                             @if($this->discountAmount > 0)
                             <div class="flex justify-between py-4 border-b border-[#e5e2de] lg:border-none lg:py-0 text-[#064e3b]">
