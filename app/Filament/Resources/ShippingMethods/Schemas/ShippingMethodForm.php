@@ -69,7 +69,7 @@ class ShippingMethodForm
                                 Action::make('generateAliases')
                                     ->label('Generate Otomatis')
                                     ->icon('heroicon-m-sparkles')
-                                    ->action(function (\Filament\Forms\Set $set, \Filament\Forms\Get $get) {
+                                    ->action(function ($set, $get) {
                                         $aliases = $get('config.service_aliases') ?? [];
                                         if (!is_array($aliases)) $aliases = [];
                                         
