@@ -483,20 +483,25 @@ class Checkout extends Component
 
     public function processCheckout()
     {
-        $this->validate([
-            'email' => 'nullable|email',
+        $rules = [
+            'email' => auth()->check() ? 'nullable|email' : 'required|email',
             'phone' => 'nullable|string',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'address' => 'required|string',
             'selectedDestinationId' => 'required',
             'agree_terms' => 'accepted',
-        ], [
+        ];
+
+        $messages = [
+            'email.required' => 'Email wajib diisi untuk menerima rincian invoice dan notifikasi pesanan.',
             'selectedDestinationId.required' => 'Silakan pilih lokasi tujuan pengiriman (Kecamatan/Kota).',
             'agree_terms.accepted' => 'Anda harus menyetujui Syarat dan Ketentuan untuk melanjutkan.',
-        ]);
+        ];
 
-        if (empty($this->email) && empty($this->phone)) {
+        $this->validate($rules, $messages);
+
+        if (auth()->check() && empty($this->email) && empty($this->phone)) {
             $this->addError('email', 'Isi salah satu: Email atau No. WhatsApp.');
             return;
         }
