@@ -66,12 +66,12 @@ class ShippingMethodForm
                             ->addActionLabel('Tambah Alias Baru')
                             ->helperText('Gunakan fitur ini jika Anda ingin mengubah nama layanan dari RajaOngkir agar lebih mudah dipahami pembeli. (Misal: CTC diubah menjadi JNE Reguler).')
                             ->hintAction(
-                                Action::make('generateAliases')
+                                \Filament\Forms\Components\Actions\Action::make('generateAliases')
                                     ->label('Generate Otomatis')
                                     ->icon('heroicon-m-sparkles')
-                                    ->action(function ($set, $get) {
-                                        $allowedServices = $get('config.allowed_services') ?? [];
+                                    ->action(function (\Filament\Forms\Set $set, \Filament\Forms\Get $get) {
                                         $aliases = $get('config.service_aliases') ?? [];
+                                        if (!is_array($aliases)) $aliases = [];
                                         
                                         $commonMappings = [
                                             'CTC' => 'Reguler (Lokal)',
@@ -81,13 +81,16 @@ class ShippingMethodForm
                                             'YES' => 'Besok Sampai (YES)',
                                             'OKE' => 'Ekonomi (OKE)',
                                             'EZ' => 'Reguler',
-                                            'ECO' => 'Ekonomi'
+                                            'ECO' => 'Ekonomi',
+                                            'Pos Reguler' => 'Reguler',
+                                            'Paket Kilat Khusus' => 'Kilat',
+                                            'Express' => 'Express',
+                                            'ONS' => 'Besok Sampai (ONS)'
                                         ];
 
-                                        foreach ($allowedServices as $service) {
-                                            $service = strtoupper(trim($service));
-                                            if (!isset($aliases[$service])) {
-                                                $aliases[$service] = $commonMappings[$service] ?? $service;
+                                        foreach ($commonMappings as $code => $name) {
+                                            if (!array_key_exists($code, $aliases)) {
+                                                $aliases[$code] = $name;
                                             }
                                         }
                                         
