@@ -66,7 +66,7 @@ class ShippingMethodForm
                             ->addActionLabel('Tambah Alias Baru')
                             ->helperText('Gunakan fitur ini jika Anda ingin mengubah nama layanan dari RajaOngkir agar lebih mudah dipahami pembeli. (Misal: CTC diubah menjadi JNE Reguler).')
                             ->hintAction(
-                                \Filament\Forms\Components\Actions\Action::make('generateAliases')
+                                Action::make('generateAliases')
                                     ->label('Generate Otomatis')
                                     ->icon('heroicon-m-sparkles')
                                     ->action(function (\Filament\Forms\Set $set, \Filament\Forms\Get $get) {
