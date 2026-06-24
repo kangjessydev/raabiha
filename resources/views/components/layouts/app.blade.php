@@ -416,7 +416,7 @@
                     <div class="md:hidden">
                         {{ $header }}
                     </div>
-                    <div class="hidden md:block">
+                    <div class="hidden md:block sticky top-0 z-[100]">
                         <x-global.navbar />
                     </div>
                 @else

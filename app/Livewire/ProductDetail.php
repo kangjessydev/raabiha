@@ -327,6 +327,7 @@ class ProductDetail extends Component
             ]);
         }
 
+        $this->quantity = 1;
         $this->dispatch('cart-updated');
         session()->flash('success', 'Produk berhasil ditambahkan ke keranjang.');
         $this->bsOpen = false;
