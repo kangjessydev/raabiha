@@ -69,8 +69,8 @@ class ShippingMethodForm
                                 Action::make('generateAliases')
                                     ->label('Generate Otomatis')
                                     ->icon('heroicon-m-sparkles')
-                                    ->action(function ($set, $get) {
-                                        $aliases = $get('config.service_aliases') ?? [];
+                                    ->action(function (\Filament\Schemas\Components\Utilities\Get $schemaGet, \Filament\Schemas\Components\Utilities\Set $schemaSet) {
+                                        $aliases = $schemaGet('config.service_aliases') ?? [];
                                         if (!is_array($aliases)) $aliases = [];
                                         
                                         $commonMappings = [
@@ -83,8 +83,8 @@ class ShippingMethodForm
                                             'EZ' => 'Reguler',
                                             'ECO' => 'Ekonomi',
                                             'Pos Reguler' => 'Reguler',
-                                            'Paket Kilat Khusus' => 'Kilat',
-                                            'Express' => 'Express',
+                                            'Paket Kilat Khusus' => 'Kilat Khusus',
+                                            'Express' => 'Kargo/Express',
                                             'ONS' => 'Besok Sampai (ONS)'
                                         ];
 
@@ -94,7 +94,7 @@ class ShippingMethodForm
                                             }
                                         }
                                         
-                                        $set('config.service_aliases', $aliases);
+                                        $schemaSet('config.service_aliases', $aliases);
                                     })
                             )
                             ->columnSpanFull(),
