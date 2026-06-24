@@ -73,24 +73,74 @@ class ShippingMethodForm
                                         $aliases = $schemaGet('config.service_aliases') ?? [];
                                         if (!is_array($aliases)) $aliases = [];
                                         
-                                        $commonMappings = [
-                                            'CTC' => 'Reguler (Lokal)',
-                                            'CTCYES' => 'YES (Lokal)',
-                                            'JTR' => 'Kargo (Trucking)',
-                                            'REG' => 'Reguler',
-                                            'YES' => 'Besok Sampai (YES)',
-                                            'OKE' => 'Ekonomi (OKE)',
-                                            'EZ' => 'Reguler',
-                                            'ECO' => 'Ekonomi',
-                                            'Pos Reguler' => 'Reguler',
-                                            'Paket Kilat Khusus' => 'Kilat Khusus',
-                                            'Express' => 'Kargo/Express',
-                                            'ONS' => 'Besok Sampai (ONS)'
+                                        $courierCode = strtolower($schemaGet('code') ?? '');
+                                        
+                                        $courierMappings = [
+                                            'jne' => [
+                                                'REG' => 'JNE Reguler',
+                                                'YES' => 'JNE YES (Yakin Esok Sampai)',
+                                                'OKE' => 'JNE OKE (Ongkos Kirim Ekonomis)',
+                                                'JTR' => 'JNE Kargo (JTR)',
+                                                'CTC' => 'JNE Reguler Lokal',
+                                                'CTCYES' => 'JNE YES Lokal',
+                                            ],
+                                            'jnt' => [
+                                                'EZ' => 'J&T Reguler (EZ)',
+                                                'J&T ECO' => 'J&T Ekonomi',
+                                                'J&T Super' => 'J&T Super',
+                                            ],
+                                            'sicepat' => [
+                                                'REG' => 'SiCepat Reguler',
+                                                'BEST' => 'SiCepat BEST (Besok Sampai)',
+                                                'GOKIL' => 'SiCepat Kargo (GOKIL)',
+                                                'HALU' => 'SiCepat HALU (Halu Ekonomis)',
+                                                'SIUNTUNG' => 'SiCepat SIUNTUNG',
+                                            ],
+                                            'pos' => [
+                                                'Pos Reguler' => 'POS Reguler',
+                                                'Paket Kilat Khusus' => 'POS Kilat Khusus',
+                                                'Express' => 'POS Express',
+                                            ],
+                                            'anteraja' => [
+                                                'Reguler' => 'AnterAja Reguler',
+                                                'Next Day' => 'AnterAja Next Day',
+                                                'Ekonomi' => 'AnterAja Ekonomi',
+                                                'Cargo' => 'AnterAja Kargo',
+                                            ],
+                                            'tiki' => [
+                                                'REG' => 'TIKI Reguler',
+                                                'ECO' => 'TIKI Ekonomi (ECO)',
+                                                'ONS' => 'TIKI ONS (Over Night Service)',
+                                                'TRC' => 'TIKI Kargo (TRC)',
+                                            ],
+                                            'ninja' => [
+                                                'Standard' => 'Ninja Standard',
+                                                'Fast' => 'Ninja Fast',
+                                            ],
+                                            'lion' => [
+                                                'REGPACK' => 'Lion Parcel Reguler',
+                                                'ONEPACK' => 'Lion Parcel Besok Sampai',
+                                                'BOSSPACK' => 'Lion Parcel BossPack',
+                                                'JAGOPACK' => 'Lion Parcel JagoPack (Ekonomi)',
+                                                'BIGPACK' => 'Lion Parcel Kargo',
+                                            ],
+                                            'ide' => [
+                                                'Standard' => 'ID Express Standard',
+                                                'Lite' => 'ID Express Lite',
+                                                'Half Day' => 'ID Express Half Day',
+                                            ],
                                         ];
 
-                                        foreach ($commonMappings as $code => $name) {
-                                            if (!array_key_exists($code, $aliases)) {
-                                                $aliases[$code] = $name;
+                                        $mappingsToUse = $courierMappings[$courierCode] ?? [
+                                            'REG' => 'Reguler',
+                                            'YES' => 'Besok Sampai',
+                                            'ECO' => 'Ekonomi',
+                                            'EZ' => 'Reguler',
+                                        ];
+
+                                        foreach ($mappingsToUse as $kodeLayanan => $namaLayanan) {
+                                            if (!array_key_exists($kodeLayanan, $aliases)) {
+                                                $aliases[$kodeLayanan] = $namaLayanan;
                                             }
                                         }
                                         
