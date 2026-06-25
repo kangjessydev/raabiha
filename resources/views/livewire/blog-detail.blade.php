@@ -11,7 +11,7 @@
             @if($post->image && $media = \Awcodes\Curator\Models\Media::find($post->image))
                 <img src="{{ Storage::url($media->path) }}" alt="{{ $post->title }}" class="w-full h-full object-cover">
             @else
-                <img src="{{ asset('assets/images/gallery-3.png') }}" alt="{{ $post->title }}" class="w-full h-full object-cover">
+                <img src="{{ asset('assets/images/gallery-3.webp') }}" alt="{{ $post->title }}" class="w-full h-full object-cover">
             @endif
             {{-- Gradient overlay --}}
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10"></div>
@@ -273,7 +273,7 @@
                                     <img src="{{ Storage::url($media->path) }}" alt="{{ $related->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 @else
                                     @php
-                                        $fallbackImg = ['blog-white-suit.png', 'blog-coat.png', 'blog-pool.png'][$index % 3];
+                                        $fallbackImg = ['blog-white-suit.webp', 'blog-coat.webp', 'blog-pool.webp'][$index % 3];
                                     @endphp
                                     <img src="{{ asset('assets/images/' . $fallbackImg) }}" alt="{{ $related->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 @endif

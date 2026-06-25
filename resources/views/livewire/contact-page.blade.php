@@ -44,7 +44,7 @@
     <!-- Hero Section -->
     <section class="max-w-[1440px] mx-auto px-6 lg:px-12 py-12 md:py-20">
         <div class="relative w-full aspect-[4/3] md:aspect-[21/9] overflow-hidden">
-            <img src="{{ $resolveImage($contactHeroImage, asset('assets/images/contact-hero.png')) }}" alt="Raabiha Store Location" class="w-full h-full object-cover">
+            <img src="{{ $resolveImage($contactHeroImage, asset('assets/images/contact-hero.webp')) }}" alt="Raabiha Store Location" class="w-full h-full object-cover">
             
             <!-- Locations Badge -->
             <div class="absolute bottom-0 left-0 bg-white px-8 py-6 max-w-sm hidden md:block">

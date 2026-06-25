@@ -26,7 +26,7 @@
                                     @endforeach
                                 @else
                                     <div class="w-full h-full shrink-0">
-                                        <img src="{{ asset('assets/images/placeholder.png') }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                                        <img src="{{ asset('assets/images/placeholder.webp') }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
                                     </div>
                                 @endif
                             </div>
@@ -55,7 +55,7 @@
                                     @endforeach
                                 @else
                                     <li class="thumb-item relative shrink-0 cursor-pointer overflow-hidden bg-[#ebebeb] transition-all" style="width: 20%; aspect-ratio: 4/5;">
-                                        <img src="{{ asset('assets/images/placeholder.png') }}" alt="Placeholder" class="w-full h-full object-cover pointer-events-none">
+                                        <img src="{{ asset('assets/images/placeholder.webp') }}" alt="Placeholder" class="w-full h-full object-cover pointer-events-none">
                                     </li>
                                 @endif
                             </ol>
@@ -467,7 +467,7 @@
                                     @endif
                                     
                                     @php
-                                        $imgUrl = asset('assets/images/placeholder.png');
+                                        $imgUrl = asset('assets/images/placeholder.webp');
                                         if (!empty($related->images)) {
                                             if (is_numeric($related->images[0])) {
                                                 $media = \Awcodes\Curator\Models\Media::find($related->images[0]);
@@ -591,7 +591,7 @@
         <div class="flex items-center justify-between px-5 pb-4 border-b border-[#e5e2de]">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-16 bg-[#e5e2de] rounded-sm overflow-hidden shrink-0">
-                    <img src="{{ $galleryUrls[0] ?? asset('assets/images/placeholder.png') }}" class="w-full h-full object-cover">
+                    <img src="{{ $galleryUrls[0] ?? asset('assets/images/placeholder.webp') }}" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <div id="bs-product-name" class="text-[#1c1c1a] text-sm font-serif font-bold uppercase leading-tight">{{ $product->name }}</div>

@@ -246,7 +246,7 @@
                                 <div class="aspect-[3/4] bg-[#e5e2de] mb-4 overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.09)] group-hover:shadow-[0_8px_36px_rgba(0,0,0,0.15)] transition-shadow duration-500">
                                     <a href="{{ url('/product/' . $product->slug) }}" class="block w-full h-full" aria-label="Lihat produk {{ $product->name }}">
                                         @php
-                                            $imageUrl = asset('assets/images/placeholder.png');
+                                            $imageUrl = asset('assets/images/placeholder.webp');
                                             if (!empty($product->images)) {
                                                 if (is_numeric($product->images[0])) {
                                                     $media = \Awcodes\Curator\Models\Media::find($product->images[0]);

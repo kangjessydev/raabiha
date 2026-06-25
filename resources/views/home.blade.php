@@ -67,7 +67,7 @@
         
         <!-- Desktop Image Column -->
         <div class="w-full h-full relative overflow-hidden">
-            <img src="{{ $resolveImage($homeHeroImage, asset('assets/images/hero_model_1779445106838.png')) }}" alt="Hero" class="absolute inset-0 w-full h-full object-cover" fetchpriority="high">
+            <img src="{{ $resolveImage($homeHeroImage, asset('assets/images/hero_model_1779445106838.webp')) }}" alt="Hero" class="absolute inset-0 w-full h-full object-cover" fetchpriority="high">
         </div>
     </section>
 
@@ -75,7 +75,7 @@
     <section class="relative w-full h-[calc(100vh-64px)] flex items-center justify-center md:hidden overflow-hidden">
         <!-- Background Image -->
         <div class="absolute inset-0 z-0">
-            <img src="{{ $resolveImage($homeHeroImage, asset('assets/images/hero_model_1779445106838.png')) }}" alt="Hero" class="w-full h-full object-cover" fetchpriority="high">
+            <img src="{{ $resolveImage($homeHeroImage, asset('assets/images/hero_model_1779445106838.webp')) }}" alt="Hero" class="w-full h-full object-cover" fetchpriority="high">
             <!-- Mobile Dark Gradient Overlay (Centered) -->
             <div class="absolute inset-0 bg-black/40"></div>
         </div>
@@ -210,7 +210,7 @@
                     <div class="aspect-[3/4] bg-[#e5e2de] mb-4 overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.09)] group-hover:shadow-[0_8px_36px_rgba(0,0,0,0.15)] transition-shadow duration-500">
                         <a href="{{ url('/product/' . $prod->slug) }}" class="block w-full h-full" aria-label="Lihat produk {{ $prod->name }}">
                             @php
-                                $imageUrl = asset('assets/images/placeholder.png');
+                                $imageUrl = asset('assets/images/placeholder.webp');
                                 if (!empty($prod->images)) {
                                     if (is_numeric($prod->images[0])) {
                                         $media = \Awcodes\Curator\Models\Media::find($prod->images[0]);
@@ -306,7 +306,7 @@
         <div class="max-w-[1400px] mx-auto md:grid md:grid-cols-[1.2fr_1fr] gap-12 lg:gap-24 items-center">
             <!-- Image (Mobile overlay vs Desktop side-by-side) -->
             <div class="relative w-full h-[65vh] md:h-auto">
-                <img src="{{ $resolveImage($homeLookbookImage, asset('assets/images/lookbook_hero_1779445259756.png')) }}" alt="Lookbook" class="w-full h-full md:aspect-[4/3] object-cover" loading="lazy">
+                <img src="{{ $resolveImage($homeLookbookImage, asset('assets/images/lookbook_hero_1779445259756.webp')) }}" alt="Lookbook" class="w-full h-full md:aspect-[4/3] object-cover" loading="lazy">
                 <!-- Mobile gradient overlay -->
                 <div class="absolute inset-0 bg-black/60 md:hidden"></div>
                 

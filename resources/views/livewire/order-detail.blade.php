@@ -106,7 +106,7 @@
                             @foreach($order->items as $item)
                                 @php
                                     $imageId = is_array($item->product->images) ? ($item->product->images[0] ?? null) : null;
-                                    $image = asset('assets/images/placeholder.png');
+                                    $image = asset('assets/images/placeholder.webp');
                                     if ($imageId) {
                                         if (is_numeric($imageId)) {
                                             $media = \Awcodes\Curator\Models\Media::find($imageId);

@@ -44,7 +44,7 @@
 
                             @foreach($cart->items as $item)
                                 @php
-                                    $imageUrl = asset('assets/images/placeholder.png');
+                                    $imageUrl = asset('assets/images/placeholder.webp');
                                     if (!empty($item->product->images)) {
                                         if (is_numeric($item->product->images[0])) {
                                             $media = \Awcodes\Curator\Models\Media::find($item->product->images[0]);

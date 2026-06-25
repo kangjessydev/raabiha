@@ -53,7 +53,7 @@
                     <!-- Item -->
                     <div class="p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 md:items-center">
                         <div class="w-16 h-20 bg-[#e5e2de] shrink-0">
-                            <img src="{{ asset('assets/images/gallery-5.png') }}" alt="Product" class="w-full h-full object-cover">
+                            <img src="{{ asset('assets/images/gallery-5.webp') }}" alt="Product" class="w-full h-full object-cover">
                         </div>
                         <div class="flex-1">
                             <h4 class="font-serif text-[16px] font-semibold text-[#1c1c1a] leading-tight mb-1">Structured Trousers</h4>

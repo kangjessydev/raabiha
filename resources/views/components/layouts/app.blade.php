@@ -4,6 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Preload Critical Styles -->
+    <link rel="preload" href="{{ asset('assets/css/main-CPG7ZTQy.css') }}" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" as="style">
+
     @if(isset($robots))
         <meta name="robots" content="{{ $robots }}" />
     @else
@@ -72,16 +79,9 @@
     <meta name="twitter:image" content="{{ $finalImage }}" />
     @endif
 
-
-
-<link rel='stylesheet' id='raabiha-fonts-css' href='https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap' media='all' />
-<link rel='stylesheet' id='raabiha-dashboard-css-0-css' href="{{ asset('assets/css/main-CPG7ZTQy.css') }}" media='all' />
-<link rel='stylesheet' id='raabiha-dashboard-fonts-css' href='https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap' media='all' />
-
-	
-    <!-- Google Fonts Preconnect -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fonts & Core Stylesheet -->
+    <link rel="stylesheet" id="raabiha-fonts-css" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" media="all" />
+    <link rel="stylesheet" id="raabiha-dashboard-css-0-css" href="{{ asset('assets/css/main-CPG7ZTQy.css') }}" media="all" />
 
     <!-- Compiled Assets via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

@@ -7,7 +7,7 @@
             @if($featuredPost->image && $media = \Awcodes\Curator\Models\Media::find($featuredPost->image))
                 <img src="{{ Storage::url($media->path) }}" alt="{{ $featuredPost->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
             @else
-                <img src="{{ asset('assets/images/blog-hero.png') }}" alt="{{ $featuredPost->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                <img src="{{ asset('assets/images/blog-hero.webp') }}" alt="{{ $featuredPost->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
             @endif
             <div class="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-500"></div>
             <div class="absolute inset-0 p-8 md:p-16 flex flex-col justify-end max-w-3xl">
@@ -93,7 +93,7 @@
                                             <img src="{{ Storage::url($media->path) }}" alt="{{ $post->title }}" class="w-full h-full object-cover {{ $index % 4 == 3 ? 'mix-blend-multiply' : '' }} group-hover:scale-105 transition-transform duration-700">
                                         @else
                                             @php
-                                                $fallbackImg = $index % 4 == 3 ? 'blog-objects.png' : 'gallery-2.png';
+                                                $fallbackImg = $index % 4 == 3 ? 'blog-objects.webp' : 'gallery-2.webp';
                                             @endphp
                                             <img src="{{ asset('assets/images/' . $fallbackImg) }}" alt="{{ $post->title }}" class="w-full h-full object-cover {{ $index % 4 == 3 ? 'mix-blend-multiply' : '' }} group-hover:scale-105 transition-transform duration-700">
                                         @endif

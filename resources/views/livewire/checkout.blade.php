@@ -273,7 +273,7 @@
                                     @php
                                         $price = $item->variant && $item->variant->price !== null ? $item->variant->price : $item->product->price;
                                         $imageId = $item->product->images && count($item->product->images) > 0 ? $item->product->images[0] : null;
-                                        $image = asset('assets/images/placeholder.png');
+                                        $image = asset('assets/images/placeholder.webp');
                                         if ($imageId) {
                                             if (is_numeric($imageId)) {
                                                 $media = \Awcodes\Curator\Models\Media::find($imageId);

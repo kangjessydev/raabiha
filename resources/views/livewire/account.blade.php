@@ -239,7 +239,7 @@
                                         @foreach($order->items as $item)
                                             @php
                                                 $imageId = ($item->product && is_array($item->product->images)) ? ($item->product->images[0] ?? null) : null;
-                                                $image = asset('assets/images/placeholder.png');
+                                                $image = asset('assets/images/placeholder.webp');
                                                 if ($imageId) {
                                                     if (is_numeric($imageId)) {
                                                         $media = \Awcodes\Curator\Models\Media::find($imageId);
@@ -455,7 +455,7 @@
                                     @foreach($this->wishlists as $wishlist)
                                         @php 
                                             $product = $wishlist->product;
-                                            $image = asset('assets/images/placeholder.png');
+                                            $image = asset('assets/images/placeholder.webp');
                                             if ($product && is_array($product->images) && !empty($product->images)) {
                                                 $imgData = $product->images[0];
                                                 if (is_numeric($imgData)) {

@@ -74,7 +74,7 @@
                         class="absolute top-4 left-4 bg-[#1c1c1a] text-white text-[9px] uppercase tracking-widest px-3 py-1.5 z-10">
                         {{ $aboutAtelierBadge }}
                     </div>
-                    <img src="{{ $resolveImage($aboutAtelierImage, asset('assets/images/about-atelier.png')) }}"
+                    <img src="{{ $resolveImage($aboutAtelierImage, asset('assets/images/about-atelier.webp')) }}"
                         alt="Raabiha Atelier Process"
                         class="w-full h-auto object-cover shadow-lg aspect-[4/3] md:aspect-auto">
                 </div>
