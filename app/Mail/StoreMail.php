@@ -35,8 +35,14 @@ class StoreMail extends Mailable
         $this->viewData['siteEmail'] = $siteEmail;
         $this->viewData['title'] = $this->subject;
 
-        return $this->from(config('mail.from.address'), config('mail.from.name'))
-                    ->view($this->emailView)
+        $fromAddress = config('mail.from.address');
+        $fromName = config('mail.from.name');
+
+        if (!empty($fromAddress)) {
+            $this->from($fromAddress, $fromName ?? '');
+        }
+
+        return $this->view($this->emailView)
                     ->with($this->viewData);
     }
 }
