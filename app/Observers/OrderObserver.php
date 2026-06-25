@@ -35,7 +35,12 @@ class OrderObserver
         // 2. Tambahan: Super Admin, Owner, Finance
         try {
             $adminRoles = ['super_admin', 'owner', 'finance'];
-            $admins = User::role($adminRoles)->get();
+            $existingRoles = \Spatie\Permission\Models\Role::whereIn('name', $adminRoles)
+                ->where('guard_name', 'web')
+                ->pluck('name')
+                ->toArray();
+
+            $admins = !empty($existingRoles) ? User::role($existingRoles)->get() : collect();
             foreach ($admins as $admin) {
                 if ($admin->email && filter_var($admin->email, FILTER_VALIDATE_EMAIL)) {
                     $emails[] = $admin->email;
