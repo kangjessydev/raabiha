@@ -60,7 +60,7 @@ class NotificationSettings extends Page implements HasForms
 
                                 Forms\Components\Placeholder::make('driver_info')
                                     ->label('')
-                                    ->content(function (Forms\Get $get) {
+                                    ->content(function (\Filament\Schemas\Components\Utilities\Get $get) {
                                         $driver = $get('mail_driver');
                                         if ($driver === 'gmail') {
                                             return new HtmlString('
@@ -121,7 +121,7 @@ class NotificationSettings extends Page implements HasForms
                                         ->required()
                                         ->columnSpanFull(),
                                 ])
-                                    ->visible(fn (Forms\Get $get) => $get('mail_driver') === 'gmail')
+                                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('mail_driver') === 'gmail')
                                     ->columnSpanFull(),
 
                                 // Kredensial Brevo
@@ -138,7 +138,7 @@ class NotificationSettings extends Page implements HasForms
                                         ->required()
                                         ->columnSpanFull(),
                                 ])
-                                    ->visible(fn (Forms\Get $get) => $get('mail_driver') === 'brevo')
+                                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('mail_driver') === 'brevo')
                                     ->columnSpanFull(),
 
                                 // Kredensial Custom SMTP
@@ -169,7 +169,7 @@ class NotificationSettings extends Page implements HasForms
                                         ->password()
                                         ->nullable(),
                                 ])
-                                    ->visible(fn (Forms\Get $get) => $get('mail_driver') === 'custom')
+                                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('mail_driver') === 'custom')
                                     ->columns(3)
                                     ->columnSpanFull(),
                             ]),
