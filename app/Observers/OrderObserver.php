@@ -26,6 +26,12 @@ class OrderObserver
     {
         $emails = [];
 
+        // 0. Dari SiteSetting 'mail_admin_recipient' (Penerima Khusus Notifikasi Admin)
+        $adminRecipient = \App\Models\SiteSetting::where('key', 'mail_admin_recipient')->value('value');
+        if ($adminRecipient && filter_var($adminRecipient, FILTER_VALIDATE_EMAIL)) {
+            $emails[] = $adminRecipient;
+        }
+
         // 1. Dari SiteSetting 'store_email'
         $siteEmail = \App\Models\SiteSetting::where('key', 'store_email')->value('value');
         if ($siteEmail && filter_var($siteEmail, FILTER_VALIDATE_EMAIL)) {

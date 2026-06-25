@@ -19,6 +19,10 @@ class RefundRequest extends Model
             // Notifikasi ke Admin/Owner/Finance
             try {
                 $emails = [];
+                $adminRecipient = \App\Models\SiteSetting::where('key', 'mail_admin_recipient')->value('value');
+                if ($adminRecipient && filter_var($adminRecipient, FILTER_VALIDATE_EMAIL)) {
+                    $emails[] = $adminRecipient;
+                }
                 $siteEmail = \App\Models\SiteSetting::where('key', 'store_email')->value('value');
                 if ($siteEmail && filter_var($siteEmail, FILTER_VALIDATE_EMAIL)) {
                     $emails[] = $siteEmail;

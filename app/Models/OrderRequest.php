@@ -39,6 +39,26 @@ class OrderRequest extends Model
             $cashierName = $orderRequest->user->name ?? 'Kasir';
             $orderNumber = $orderRequest->order->order_number ?? 'Pesanan';
 
+            $sentEmails = [];
+            $adminRecipient = \App\Models\SiteSetting::where('key', 'mail_admin_recipient')->value('value');
+            if ($adminRecipient && filter_var($adminRecipient, FILTER_VALIDATE_EMAIL)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($adminRecipient)->send(new \App\Mail\StoreMail(
+                        subject: "[Persetujuan Kasir] Pengajuan {$typeLabel} Pesanan #{$orderNumber}",
+                        view: 'emails.layout',
+                        data: [
+                            'greeting' => "Halo Admin Raabiha!",
+                            'messageBody' => "Kasir <strong>{$cashierName}</strong> mengajukan permintaan <strong>{$typeLabel}</strong> untuk pesanan <strong>#{$orderNumber}</strong> dengan alasan:<br><br><em>\"{$orderRequest->reason}\"</em>.<br><br>Silakan masuk ke panel admin untuk meninjau dan memberikan keputusan persetujuan.",
+                            'actionUrl' => route('filament.admin.e-commerce.resources.order-requests.index'),
+                            'actionText' => 'Tinjau Pengajuan'
+                        ]
+                    ));
+                    $sentEmails[] = $adminRecipient;
+                } catch (\Exception $e) {
+                    logger()->error("Gagal mengirim email pengajuan kasir ke admin recipient: " . $e->getMessage());
+                }
+            }
+ 
             foreach ($recipients as $recipient) {
                 // Database Notification
                 \Filament\Notifications\Notification::make()
@@ -53,8 +73,12 @@ class OrderRequest extends Model
                             ->url(route('filament.admin.e-commerce.resources.order-requests.index')),
                     ])
                     ->sendToDatabase($recipient);
-
+ 
                 // Email Notification
+                if (in_array($recipient->email, $sentEmails)) {
+                    continue;
+                }
+
                 try {
                     \Illuminate\Support\Facades\Mail::to($recipient->email)->send(new \App\Mail\StoreMail(
                         subject: "[Persetujuan Kasir] Pengajuan {$typeLabel} Pesanan #{$orderNumber}",
@@ -66,6 +90,7 @@ class OrderRequest extends Model
                             'actionText' => 'Tinjau Pengajuan'
                         ]
                     ));
+                    $sentEmails[] = $recipient->email;
                 } catch (\Exception $e) {
                     logger()->error("Gagal mengirim email pengajuan kasir ke admin/owner: " . $e->getMessage());
                 }

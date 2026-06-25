@@ -58,6 +58,48 @@ class AppServiceProvider extends ServiceProvider
                         $component->acceptedFileTypes($allowedTypes);
                     }
                 });
+
+                // Dynamic Mail/SMTP Settings
+                $mailDriver = \App\Models\SiteSetting::where('key', 'mail_driver')->value('value') ?? 'log';
+                $host = null;
+                $port = null;
+                $encryption = null;
+                $username = null;
+                $password = null;
+
+                if ($mailDriver === 'gmail') {
+                    $host = 'smtp.gmail.com';
+                    $port = 587;
+                    $encryption = 'tls';
+                    $username = \App\Models\SiteSetting::where('key', 'gmail_username')->value('value');
+                    $password = \App\Models\SiteSetting::where('key', 'gmail_password')->value('value');
+                } elseif ($mailDriver === 'brevo') {
+                    $host = 'smtp-relay.brevo.com';
+                    $port = 587;
+                    $encryption = 'tls';
+                    $username = \App\Models\SiteSetting::where('key', 'brevo_username')->value('value');
+                    $password = \App\Models\SiteSetting::where('key', 'brevo_password')->value('value');
+                } elseif ($mailDriver === 'custom') {
+                    $host = \App\Models\SiteSetting::where('key', 'custom_host')->value('value');
+                    $port = \App\Models\SiteSetting::where('key', 'custom_port')->value('value') ?? 587;
+                    $encryption = \App\Models\SiteSetting::where('key', 'custom_encryption')->value('value') ?? 'tls';
+                    $username = \App\Models\SiteSetting::where('key', 'custom_username')->value('value');
+                    $password = \App\Models\SiteSetting::where('key', 'custom_password')->value('value');
+                }
+
+                $fromAddress = \App\Models\SiteSetting::where('key', 'mail_from_address')->value('value') ?? 'noreply@raabiha.com';
+                $fromName = \App\Models\SiteSetting::where('key', 'mail_from_name')->value('value') ?? 'Raabiha Store';
+
+                config([
+                    'mail.default' => $mailDriver === 'log' ? 'log' : 'smtp',
+                    'mail.mailers.smtp.host' => $host,
+                    'mail.mailers.smtp.port' => (int) $port,
+                    'mail.mailers.smtp.encryption' => $encryption === 'none' ? null : $encryption,
+                    'mail.mailers.smtp.username' => $username,
+                    'mail.mailers.smtp.password' => $password,
+                    'mail.from.address' => $fromAddress,
+                    'mail.from.name' => $fromName,
+                ]);
             }
         } catch (\Exception $e) {
             // Ignore during migrations
