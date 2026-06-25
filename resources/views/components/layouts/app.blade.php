@@ -80,7 +80,10 @@
     @endif
 
     <!-- Fonts & Core Stylesheet -->
-    <link rel="stylesheet" id="raabiha-fonts-css" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" media="all" />
+    <link rel="stylesheet" id="raabiha-fonts-css" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+    </noscript>
     <link rel="stylesheet" id="raabiha-dashboard-css-0-css" href="{{ asset('assets/css/main-CPG7ZTQy.css') }}" media="all" />
 
     <!-- Compiled Assets via Vite -->
