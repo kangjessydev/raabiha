@@ -231,6 +231,31 @@ class OrderObserver
                     logger()->error("Gagal mengirim email pembatalan ke customer: " . $e->getMessage());
                 }
             }
+
+            // Email pembatalan ke admin
+            try {
+                $adminEmails = $this->getAdminEmails();
+                foreach ($adminEmails as $email) {
+                    $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
+                    $isFailedPayment = $order->payment_status === 'failed';
+                    $subject = $isFailedPayment ? "[Pesanan Gagal/Expired] Pesanan #{$order->order_number}" : "[Pesanan Dibatalkan] Pesanan #{$order->order_number}";
+                    $messageBody = $isFailedPayment 
+                        ? "Batas waktu pembayaran untuk pesanan #{$order->order_number} telah habis. Pesanan dibatalkan secara otomatis oleh sistem."
+                        : "Pesanan #{$order->order_number} telah dibatalkan.";
+
+                    Mail::to($email)->send(new StoreMail(
+                        subject: $subject,
+                        view: 'emails.order-details',
+                        data: [
+                            'order' => $order,
+                            'greeting' => "Halo, {$recipientName} (Tim Raabiha)!",
+                            'messageBody' => $messageBody
+                        ]
+                    ));
+                }
+            } catch (\Exception $e) {
+                logger()->error("Gagal mengirim email pembatalan ke admin: " . $e->getMessage());
+            }
         }
 
         // Notif saat pesanan dikirim (awb_number set atau status berubah ke 'sent')

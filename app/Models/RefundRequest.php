@@ -60,6 +60,23 @@ class RefundRequest extends Model
             } catch (\Exception $e) {
                 logger()->error("Gagal mengirim email pengajuan refund ke admin: " . $e->getMessage());
             }
+
+            // Notifikasi ke Customer
+            $customerEmail = $refundRequest->user->email ?? $refundRequest->order->shipping_address['email'] ?? null;
+            if ($customerEmail) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($customerEmail)->send(new \App\Mail\StoreMail(
+                        subject: "Pengajuan Refund Diterima - Pesanan #{$orderNumber}",
+                        view: 'emails.layout',
+                        data: [
+                            'greeting' => "Halo, " . ($refundRequest->user->name ?? 'Pelanggan') . "!",
+                            'messageBody' => "Kami telah menerima permohonan pengembalian dana (refund) untuk pesanan <strong>#{$orderNumber}</strong> sebesar <strong>Rp" . number_format($refundRequest->refund_amount, 0, ',', '.') . "</strong>.<br><br>Rincian Rekening Anda:<br>Bank: {$refundRequest->bank_name}<br>Nama Rekening: {$refundRequest->bank_account_name}<br>No Rekening: {$refundRequest->bank_account_number}<br><br>Pengajuan Anda sedang diproses dan diverifikasi oleh tim kami. Kami akan segera mengirimkan email konfirmasi setelah status pengajuan Anda diperbarui.",
+                        ]
+                    ));
+                } catch (\Exception $e) {
+                    logger()->error("Gagal mengirim email pengajuan refund ke customer: " . $e->getMessage());
+                }
+            }
         });
 
         static::updated(function (RefundRequest $refundRequest) {
