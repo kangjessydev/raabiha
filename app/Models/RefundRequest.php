@@ -47,7 +47,7 @@ class RefundRequest extends Model
                 foreach ($emails as $email) {
                     $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
                     \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\StoreMail(
-                        subject: "[Pengajuan Refund] Pesanan #{$orderNumber}",
+                        subject: "⚠️ [Pengajuan Refund] Permintaan Refund Baru - Pesanan #{$orderNumber}",
                         view: 'emails.layout',
                         data: [
                             'greeting' => "Halo, {$recipientName}!",
@@ -66,7 +66,7 @@ class RefundRequest extends Model
             if ($customerEmail) {
                 try {
                     \Illuminate\Support\Facades\Mail::to($customerEmail)->send(new \App\Mail\StoreMail(
-                        subject: "Pengajuan Refund Diterima - Pesanan #{$orderNumber}",
+                        subject: "📩 [Pengajuan Refund] Permintaan Refund Diterima - Pesanan #{$orderNumber}",
                         view: 'emails.layout',
                         data: [
                             'greeting' => "Halo, " . ($refundRequest->user->name ?? 'Pelanggan') . "!",
@@ -95,7 +95,7 @@ class RefundRequest extends Model
                     if ($customerEmail) {
                         try {
                             \Illuminate\Support\Facades\Mail::to($customerEmail)->send(new \App\Mail\StoreMail(
-                                subject: "Pengajuan Refund Disetujui - Pesanan #{$orderNumber}",
+                                subject: "✅ [Refund Selesai] Pengembalian Dana Disetujui - Pesanan #{$orderNumber}",
                                 view: 'emails.layout',
                                 data: [
                                     'greeting' => "Halo, " . ($refundRequest->user->name ?? 'Pelanggan') . "!",
@@ -112,7 +112,7 @@ class RefundRequest extends Model
                     if ($customerEmail) {
                         try {
                             \Illuminate\Support\Facades\Mail::to($customerEmail)->send(new \App\Mail\StoreMail(
-                                subject: "Pengajuan Refund Ditolak - Pesanan #{$orderNumber}",
+                                subject: "❌ [Refund Ditolak] Pengembalian Dana Ditolak - Pesanan #{$orderNumber}",
                                 view: 'emails.layout',
                                 data: [
                                     'greeting' => "Halo, " . ($refundRequest->user->name ?? 'Pelanggan') . "!",

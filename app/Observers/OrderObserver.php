@@ -87,7 +87,7 @@ class OrderObserver
                 }
 
                 Mail::to($customerEmail)->send(new StoreMail(
-                    subject: "Konfirmasi Pesanan Anda #{$order->order_number}",
+                    subject: "🛍️ [Pesanan Baru] Selesaikan Pembayaran Pesanan #{$order->order_number}",
                     view: 'emails.order-details',
                     data: $emailData
                 ));
@@ -102,7 +102,7 @@ class OrderObserver
             foreach ($adminEmails as $email) {
                 $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
                 Mail::to($email)->send(new StoreMail(
-                    subject: "[Pesanan Baru] Pesanan #{$order->order_number} Telah Diterima",
+                    subject: "🔔 [Pesanan Baru] Pesanan #{$order->order_number} Diterima",
                     view: 'emails.order-details',
                     data: [
                         'order' => $order,
@@ -142,7 +142,7 @@ class OrderObserver
             if ($customerEmail) {
                 try {
                     Mail::to($customerEmail)->send(new StoreMail(
-                        subject: "Pembayaran Berhasil - Pesanan #{$order->order_number}",
+                        subject: "✅ [Pembayaran Lunas] Pembayaran Diterima untuk Pesanan #{$order->order_number}",
                         view: 'emails.order-details',
                         data: [
                             'order' => $order,
@@ -161,7 +161,7 @@ class OrderObserver
                 foreach ($adminEmails as $email) {
                     $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
                     Mail::to($email)->send(new StoreMail(
-                        subject: "[Pembayaran Lunas] Pesanan #{$order->order_number}",
+                        subject: "💰 [Pembayaran Lunas] Pesanan #{$order->order_number} Telah Dibayar",
                         view: 'emails.order-details',
                         data: [
                             'order' => $order,
@@ -213,7 +213,9 @@ class OrderObserver
             if ($customerEmail) {
                 try {
                     $isFailedPayment = $order->payment_status === 'failed';
-                    $subject = $isFailedPayment ? "Batas Waktu Pembayaran Habis - Pesanan #{$order->order_number}" : "Pembatalan Pesanan #{$order->order_number}";
+                    $subject = $isFailedPayment 
+                        ? "⏰ [Pesanan Expired] Batas Waktu Pembayaran Habis - Pesanan #{$order->order_number}" 
+                        : "❌ [Pesanan Dibatalkan] Pesanan #{$order->order_number} Dibatalkan";
                     $messageBody = $isFailedPayment 
                         ? "Batas waktu pembayaran untuk pesanan Anda <strong>#{$order->order_number}</strong> telah habis (kadaluarsa/gagal). Pesanan Anda secara otomatis dibatalkan oleh sistem. Silakan lakukan pemesanan ulang jika Anda masih ingin membeli produk tersebut."
                         : "Pesanan Anda <strong>#{$order->order_number}</strong> telah dibatalkan. Jika Anda sudah melakukan transfer pembayaran, silakan hubungi tim CS kami untuk bantuan proses pengembalian dana.";
@@ -238,7 +240,9 @@ class OrderObserver
                 foreach ($adminEmails as $email) {
                     $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
                     $isFailedPayment = $order->payment_status === 'failed';
-                    $subject = $isFailedPayment ? "[Pesanan Gagal/Expired] Pesanan #{$order->order_number}" : "[Pesanan Dibatalkan] Pesanan #{$order->order_number}";
+                    $subject = $isFailedPayment 
+                        ? "⏰ [Pesanan Expired] Pesanan #{$order->order_number} Gagal" 
+                        : "❌ [Pesanan Dibatalkan] Pesanan #{$order->order_number} Telah Dibatalkan";
                     $messageBody = $isFailedPayment 
                         ? "Batas waktu pembayaran untuk pesanan #{$order->order_number} telah habis. Pesanan dibatalkan secara otomatis oleh sistem."
                         : "Pesanan #{$order->order_number} telah dibatalkan.";
@@ -265,7 +269,7 @@ class OrderObserver
         if (($isSentDirty || $isAwbDirty) && $customerEmail) {
             try {
                 Mail::to($customerEmail)->send(new StoreMail(
-                    subject: "Pesanan Anda #{$order->order_number} Telah Dikirim",
+                    subject: "🚚 [Pesanan Dikirim] Pesanan #{$order->order_number} Telah Dikirim",
                     view: 'emails.order-details',
                     data: [
                         'order' => $order,
@@ -275,6 +279,45 @@ class OrderObserver
                 ));
             } catch (\Exception $e) {
                 logger()->error("Gagal mengirim email resi pengiriman ke customer: " . $e->getMessage());
+            }
+        }
+
+        // Notif saat pesanan selesai/completed
+        if ($order->isDirty('status') && $order->status === 'completed') {
+            // Email ke customer
+            if ($customerEmail) {
+                try {
+                    Mail::to($customerEmail)->send(new StoreMail(
+                        subject: "🏁 [Pesanan Selesai] Pesanan #{$order->order_number} Telah Selesai",
+                        view: 'emails.order-details',
+                        data: [
+                            'order' => $order,
+                            'greeting' => "Halo, " . ($order->shipping_address['name'] ?? $order->user->name ?? 'Pelanggan') . "!",
+                            'messageBody' => "Terima kasih! Pesanan Anda #{$order->order_number} telah selesai dan diterima dengan baik. Terima kasih telah berbelanja di Raabiha E-Commerce!"
+                        ]
+                    ));
+                } catch (\Exception $e) {
+                    logger()->error("Gagal mengirim email selesai ke customer: " . $e->getMessage());
+                }
+            }
+
+            // Email ke admin
+            try {
+                $adminEmails = $this->getAdminEmails();
+                foreach ($adminEmails as $email) {
+                    $recipientName = User::where('email', $email)->value('name') ?? 'Admin';
+                    Mail::to($email)->send(new StoreMail(
+                        subject: "🏁 [Pesanan Selesai] Pesanan #{$order->order_number} Selesai",
+                        view: 'emails.order-details',
+                        data: [
+                            'order' => $order,
+                            'greeting' => "Halo, {$recipientName} (Tim Raabiha)!",
+                            'messageBody' => "Pesanan #{$order->order_number} telah selesai diproses dan diterima oleh customer."
+                        ]
+                    ));
+                }
+            } catch (\Exception $e) {
+                logger()->error("Gagal mengirim email selesai ke admin: " . $e->getMessage());
             }
         }
     }
