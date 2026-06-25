@@ -79,37 +79,12 @@
 <link rel='stylesheet' id='raabiha-dashboard-fonts-css' href='https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap' media='all' />
 
 	
-    <!-- Tailwind CSS CDN and configuration -->
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              raabiha: {
-                primary:   '#222523',
-                secondary: '#615E57',
-                emerald:   '#0B4E26',
-                ivory:     '#FAF7F0',
-                tertiary:  '#2F0D05',
-                surface: {
-                  DEFAULT: '#FAF7F0',
-                  2:       '#F2EFE8',
-                  3:       '#E5E1D8',
-                },
-              },
-            },
-            fontFamily: {
-              sans: ['"Poppins"', 'sans-serif'],
-              serif: ['"Playfair Display"', 'Georgia', 'serif'],
-              mono: ['"JetBrains Mono"', 'monospace'],
-              playfair: ['"Playfair Display"', 'Georgia', 'serif'],
-              inter: ['"Inter"', 'system-ui', 'sans-serif'],
-            },
-          }
-        }
-      }
-    </script>
+    <!-- Google Fonts Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Compiled Assets via Vite -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @php
         $gaId = \App\Models\SiteSetting::where('key', 'google_analytics_id')->value('value');

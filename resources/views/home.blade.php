@@ -67,7 +67,7 @@
         
         <!-- Desktop Image Column -->
         <div class="w-full h-full relative overflow-hidden">
-            <img src="{{ $resolveImage($homeHeroImage, asset('assets/images/hero_model_1779445106838.png')) }}" alt="Hero" class="absolute inset-0 w-full h-full object-cover">
+            <img src="{{ $resolveImage($homeHeroImage, asset('assets/images/hero_model_1779445106838.png')) }}" alt="Hero" class="absolute inset-0 w-full h-full object-cover" fetchpriority="high">
         </div>
     </section>
 
@@ -75,7 +75,7 @@
     <section class="relative w-full h-[calc(100vh-64px)] flex items-center justify-center md:hidden overflow-hidden">
         <!-- Background Image -->
         <div class="absolute inset-0 z-0">
-            <img src="{{ $resolveImage($homeHeroImage, asset('assets/images/hero_model_1779445106838.png')) }}" alt="Hero" class="w-full h-full object-cover">
+            <img src="{{ $resolveImage($homeHeroImage, asset('assets/images/hero_model_1779445106838.png')) }}" alt="Hero" class="w-full h-full object-cover" fetchpriority="high">
             <!-- Mobile Dark Gradient Overlay (Centered) -->
             <div class="absolute inset-0 bg-black/40"></div>
         </div>
@@ -157,7 +157,7 @@
                     @php
                         $catImageUrl = $resolveCatImage($cat->image, 'https://placehold.co/800x1000/e5e2de/615e57?text=' . urlencode($cat->name));
                     @endphp
-                    <img src="{{ $catImageUrl }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-50" alt="{{ $cat->name }}">
+                    <img src="{{ $catImageUrl }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90 group-hover:opacity-50" alt="{{ $cat->name }}" loading="lazy">
                     
                     <!-- Gradient Overlay -->
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/20 group-hover:bg-black/40 transition-colors duration-500 z-10"></div>
@@ -181,7 +181,7 @@
                         @php
                             $catImageUrl = $resolveCatImage($cat->image, 'https://placehold.co/100x100/e5e2de/615e57?text=' . urlencode($cat->name));
                         @endphp
-                        <img src="{{ $catImageUrl }}" class="w-full h-full object-cover" alt="{{ $cat->name }}">
+                        <img src="{{ $catImageUrl }}" class="w-full h-full object-cover" alt="{{ $cat->name }}" loading="lazy">
                     </div>
                     <span class="text-[9px] font-mono tracking-[0.1em] uppercase text-[#1c1c1a] text-center line-clamp-1 w-full">{{ $cat->name }}</span>
                 </a>
@@ -224,7 +224,7 @@
                                     }
                                 }
                             @endphp
-                            <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]" alt="{{ $prod->name }}" />
+                            <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]" alt="{{ $prod->name }}" loading="lazy" />
                             {{-- Hover overlay --}}
                             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-500 flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100">
                                 <span class="text-white text-[9px] font-mono tracking-[0.25em] uppercase border border-white/80 px-5 py-2.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">Lihat Detail</span>
@@ -306,7 +306,7 @@
         <div class="max-w-[1400px] mx-auto md:grid md:grid-cols-[1.2fr_1fr] gap-12 lg:gap-24 items-center">
             <!-- Image (Mobile overlay vs Desktop side-by-side) -->
             <div class="relative w-full h-[65vh] md:h-auto">
-                <img src="{{ $resolveImage($homeLookbookImage, asset('assets/images/lookbook_hero_1779445259756.png')) }}" alt="Lookbook" class="w-full h-full md:aspect-[4/3] object-cover">
+                <img src="{{ $resolveImage($homeLookbookImage, asset('assets/images/lookbook_hero_1779445259756.png')) }}" alt="Lookbook" class="w-full h-full md:aspect-[4/3] object-cover" loading="lazy">
                 <!-- Mobile gradient overlay -->
                 <div class="absolute inset-0 bg-black/60 md:hidden"></div>
                 
@@ -339,7 +339,7 @@
                                     $fpImages = $fp->images;
                                     $fpImg = is_array($fpImages) && count($fpImages) > 0 ? $fpImages[0] : null;
                                 @endphp
-                                <img src="{{ $resolveImage($fpImg) }}" class="w-12 h-12 object-cover">
+                                <img src="{{ $resolveImage($fpImg) }}" class="w-12 h-12 object-cover" loading="lazy">
                                 <div>
                                     <div class="text-[10px] font-semibold tracking-[0.1em] uppercase mb-1">{{ $fp->name }}</div>
                                     @if($fp->discount_price !== null && $fp->discount_price > 0)

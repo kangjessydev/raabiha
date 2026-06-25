@@ -260,7 +260,7 @@
                                                 }
                                             }
                                         @endphp
-                                        <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]" alt="{{ $product->name }}" />
+                                        <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]" alt="{{ $product->name }}" loading="lazy" />
                                         {{-- Hover overlay --}}
                                         <div class="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-500 flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100">
                                             <span class="text-white text-[9px] font-mono tracking-[0.25em] uppercase border border-white/80 px-5 py-2.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">Lihat Detail</span>

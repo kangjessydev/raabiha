@@ -5,6 +5,21 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Custom Fonts */
+    --font-sans: 'Poppins', sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-playfair: 'Playfair Display', Georgia, serif;
+    --font-inter: 'Inter', system-ui, sans-serif;
+
+    /* Custom Colors */
+    --color-raabiha-primary: #222523;
+    --color-raabiha-secondary: #615E57;
+    --color-raabiha-emerald: #0B4E26;
+    --color-raabiha-ivory: #FAF7F0;
+    --color-raabiha-tertiary: #2F0D05;
+    
+    --color-raabiha-surface: #FAF7F0;
+    --color-raabiha-surface-2: #F2EFE8;
+    --color-raabiha-surface-3: #E5E1D8;
 }
