@@ -23,6 +23,12 @@
                     </div>
                 @endif
 
+                @if (session()->has('error'))
+                    <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-sans">
+                        {{ session('error') }}
+                    </div>
+                @endif
+
                 <form wire:submit.prevent="login" class="flex flex-col gap-6">
                     <div class="flex flex-col gap-2">
                         <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Username / Email *</label>

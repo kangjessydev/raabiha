@@ -81,10 +81,35 @@ Route::get('/email/verify', \App\Livewire\Auth\VerifyEmail::class)
     ->middleware('auth')
     ->name('verification.notice');
 
-Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
-    $request->fulfill();
+Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Http\Request $request, $id, $hash) {
+    if (!auth()->check()) {
+        return redirect()->route('login');
+    }
+    
+    $user = auth()->user();
+    
+    if ((string) $id !== (string) $user->getKey()) {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect()->route('login')->with('error', 'Anda mengakses tautan verifikasi untuk akun lain. Silakan login dengan akun yang sesuai.');
+    }
+    
+    if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        abort(403, 'Tautan verifikasi tidak valid.');
+    }
+    
+    if ($user->hasVerifiedEmail()) {
+        return redirect()->route('account')->with('success', 'Email Anda sudah terverifikasi sebelumnya.');
+    }
+    
+    if ($user->markEmailAsVerified()) {
+        event(new \Illuminate\Auth\Events\Verified($user));
+    }
+    
     return redirect()->route('account')->with('success', 'Email Anda berhasil diverifikasi!');
-})->middleware(['auth', 'signed'])->name('verification.verify');
+})->middleware(['signed'])->name('verification.verify');
 
 Route::get('/reseller-register', \App\Livewire\ResellerRegister::class);
 Route::get('/reseller-welcome', \App\Livewire\ResellerWelcome::class);
