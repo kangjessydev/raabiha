@@ -814,7 +814,7 @@
 
     <!-- Refund Modal -->
     @if($showRefundForm)
-    <div x-data x-init="document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' }" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = '' }" class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50">
         <div class="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl relative">
             <div class="p-6 md:p-8">
                 <div class="flex justify-between items-start mb-6">
@@ -826,7 +826,7 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-
+ 
                 <form wire:submit.prevent="submitRefund" class="space-y-4">
                     <div>
                         <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Alasan Refund</label>
@@ -845,7 +845,7 @@
                         <textarea wire:model="refundForm.description" rows="3" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Jelaskan masalah secara detail..." required></textarea>
                         @error('refundForm.description') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
                     </div>
-
+ 
                     <div class="border-t border-[#e5e2de] pt-4 mt-4">
                         <p class="font-mono text-[10px] uppercase tracking-widest text-[#615e57] mb-4">Informasi Rekening Pengembalian</p>
                         
@@ -861,7 +861,7 @@
                                 <input type="text" wire:model="refundForm.bank_account_number" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: 1234567890" required>
                                 @error('refundForm.bank_account_number') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
                             </div>
-
+ 
                             <div>
                                 <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nama Pemilik Rekening</label>
                                 <input type="text" wire:model="refundForm.bank_account_name" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: Budi Santoso" required>
@@ -869,7 +869,7 @@
                             </div>
                         </div>
                     </div>
-
+ 
                     <div class="pt-4 flex justify-end gap-3">
                         <button type="button" wire:click="closeRefundForm" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] hover:text-[#1c1c1a] px-6 py-3 transition-colors">Batal</button>
                         <button type="submit" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-red-600 px-6 py-3 hover:bg-red-700 transition-colors flex items-center justify-center min-w-[120px]">
@@ -882,11 +882,11 @@
         </div>
     </div>
     @endif
-
+ 
     <!-- Refund Status Modal -->
     @if($showRefundStatusModal && $refundStatusData)
-    <div x-data="{ open: true }" x-init="$watch('open', value => { if(!value) @this.closeRefundStatus() })" 
-         x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <div x-data="{ open: true }" x-init="$watch('open', value => { if(!value) @this.closeRefundStatus() }); document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = '' }" 
+         x-show="open" class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6">
         
         <div x-show="open" x-transition.opacity class="fixed inset-0 bg-[#1c1c1a]/40 backdrop-blur-sm" @click="open = false"></div>
         
