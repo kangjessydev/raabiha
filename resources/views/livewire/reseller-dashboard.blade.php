@@ -48,34 +48,33 @@
         }
 
         /* Fix Cascade Layer conflict with legacy unlayered resets */
-        .reseller-dashboard-layout button,
-        .reseller-dashboard-layout a.inline-block,
-        .reseller-dashboard-layout input[type="text"],
-        .reseller-dashboard-layout input[type="email"],
-        .reseller-dashboard-layout input[type="password"],
-        .reseller-dashboard-sidebar button {
+        .reseller-dashboard-content button,
+        .reseller-dashboard-content a.inline-block,
+        .reseller-dashboard-content input[type="text"],
+        .reseller-dashboard-content input[type="email"],
+        .reseller-dashboard-content input[type="password"] {
             display: inline-flex !important;
             align-items: center !important;
             line-height: 1.2 !important;
             height: auto !important;
         }
         
-        .reseller-dashboard-layout button,
-        .reseller-dashboard-layout a.inline-block {
+        .reseller-dashboard-content button,
+        .reseller-dashboard-content a.inline-block {
             justify-content: center !important;
         }
 
         /* Restore padding for dashboard inputs & buttons */
-        .reseller-dashboard-layout .py-3\.5 { padding-top: 14px !important; padding-bottom: 14px !important; }
-        .reseller-dashboard-layout .py-3 { padding-top: 12px !important; padding-bottom: 12px !important; }
-        .reseller-dashboard-layout .py-2\.5 { padding-top: 10px !important; padding-bottom: 10px !important; }
-        .reseller-dashboard-layout .py-2 { padding-top: 8px !important; padding-bottom: 8px !important; }
+        .reseller-dashboard-content .py-3\.5 { padding-top: 14px !important; padding-bottom: 14px !important; }
+        .reseller-dashboard-content .py-3 { padding-top: 12px !important; padding-bottom: 12px !important; }
+        .reseller-dashboard-content .py-2\.5 { padding-top: 10px !important; padding-bottom: 10px !important; }
+        .reseller-dashboard-content .py-2 { padding-top: 8px !important; padding-bottom: 8px !important; }
         
-        .reseller-dashboard-layout .px-8 { padding-left: 32px !important; padding-right: 32px !important; }
-        .reseller-dashboard-layout .px-6 { padding-left: 24px !important; padding-right: 24px !important; }
-        .reseller-dashboard-layout .px-4 { padding-left: 16px !important; padding-right: 16px !important; }
-        .reseller-dashboard-layout .px-3 { padding-left: 12px !important; padding-right: 12px !important; }
-        .reseller-dashboard-layout .pl-10 { padding-left: 40px !important; }
+        .reseller-dashboard-content .px-8 { padding-left: 32px !important; padding-right: 32px !important; }
+        .reseller-dashboard-content .px-6 { padding-left: 24px !important; padding-right: 24px !important; }
+        .reseller-dashboard-content .px-4 { padding-left: 16px !important; padding-right: 16px !important; }
+        .reseller-dashboard-content .px-3 { padding-left: 12px !important; padding-right: 12px !important; }
+        .reseller-dashboard-content .pl-10 { padding-left: 40px !important; }
         </style>
 
         <main class="site-main bg-[#fcf9f5] min-h-screen pb-20 md:pb-0">
