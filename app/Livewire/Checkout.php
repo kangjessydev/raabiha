@@ -764,6 +764,15 @@ class Checkout extends Component
                 $item->delete();
             }
 
+            // Kirim email konfirmasi pesanan setelah semua item selesai dibuat
+            // agar $order->items tidak kosong saat email digenerate
+            $order->load('items');
+            try {
+                (new \App\Observers\OrderObserver())->sendNewOrderEmails($order);
+            } catch (\Exception $e) {
+                logger()->error("Gagal mengirim email pesanan baru: " . $e->getMessage());
+            }
+
             // Save address automatically if requested and user is authenticated
             if (auth()->check() && $this->save_address) {
                 // Set all other addresses to non-primary

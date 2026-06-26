@@ -74,7 +74,8 @@ class OrderObserver
      */
     public function created(Order $order): void
     {
-        // Notifikasi ke semua admin — pesanan baru masuk
+        // Notifikasi Filament ke semua admin — pesanan baru masuk
+        // Email dikirim dari Checkout.php SETELAH semua item dibuat agar $order->items tidak kosong.
         $this->sendOrderNotification(
             icon: 'heroicon-o-shopping-bag',
             iconColor: 'success',
@@ -82,6 +83,17 @@ class OrderObserver
             body: "Pesanan #{$order->order_number} baru saja diterima." . ($order->grand_total ? ' Total: Rp ' . number_format($order->grand_total, 0, ',', '.') : ''),
         );
 
+        if ($order->payment_status === 'paid') {
+            $this->recordCashIn($order);
+        }
+    }
+
+    /**
+     * Kirim email konfirmasi pesanan baru ke customer dan admin.
+     * Dipanggil dari Checkout.php setelah semua OrderItem selesai dibuat.
+     */
+    public function sendNewOrderEmails(Order $order): void
+    {
         // 1. Kirim Email Konfirmasi ke Customer
         $customerEmail = $this->getCustomerEmail($order);
         if ($customerEmail) {
@@ -124,10 +136,6 @@ class OrderObserver
             }
         } catch (\Exception $e) {
             logger()->error("Gagal mengirim email pesanan baru ke admin: " . $e->getMessage());
-        }
-
-        if ($order->payment_status === 'paid') {
-            $this->recordCashIn($order);
         }
     }
 
