@@ -66,6 +66,15 @@ class User extends Authenticatable implements HasAvatar, MustVerifyEmail, Filame
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole('super_admin') || $this->hasRole('panel_user');
+        return $this->hasAnyRole([
+            'super_admin',
+            'panel_user',
+            'owner',
+            'marketing',
+            'finance',
+            'logistics',
+            'cs',
+            'kasir'
+        ]);
     }
 }
