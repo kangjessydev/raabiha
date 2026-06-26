@@ -100,7 +100,8 @@ class Checkout extends Component
     public function updatedSearchLocation($value)
     {
         $this->locationError = null;
-        if (strlen($value) < 3) {
+        $value = trim($value);
+        if (strlen($value) < 4) {
             $this->destinationOptions = [];
             return;
         }
@@ -111,6 +112,16 @@ class Checkout extends Component
             return;
         }
 
+        $cacheKey = 'location_search_v1_' . md5(strtolower($value));
+
+        if (cache()->has($cacheKey)) {
+            $cached = cache()->get($cacheKey);
+            if (is_array($cached) && !empty($cached)) {
+                $this->destinationOptions = $cached;
+                return;
+            }
+        }
+
         try {
             $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
                 ->timeout(10)
@@ -119,7 +130,11 @@ class Checkout extends Component
                 ]);
                 
             if ($response->successful()) {
-                $this->destinationOptions = $response->json('data') ?? [];
+                $data = $response->json('data') ?? [];
+                $this->destinationOptions = $data;
+                if (!empty($data)) {
+                    cache()->put($cacheKey, $data, now()->addDays(7));
+                }
             } else {
                 $this->destinationOptions = [];
                 $json = $response->json();
@@ -207,18 +222,36 @@ class Checkout extends Component
             }
 
             try {
-                $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
-                    ->asForm()
-                    ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
-                        'origin' => $originCity,
-                        'destination' => $this->selectedDestinationId,
-                        'weight' => $totalWeight,
-                        'courier' => $courierCode
-                    ]);
+                $cacheKey = 'ship_rate_v1_' . md5($originCity . '_' . $this->selectedDestinationId . '_' . $totalWeight . '_' . $courierCode);
+                $results = null;
 
-                if ($response->successful()) {
-                    $results = $response->json('data');
-                    if (!empty($results)) {
+                if (cache()->has($cacheKey)) {
+                    $cachedCosts = cache()->get($cacheKey);
+                    if (is_array($cachedCosts)) {
+                        $results = $cachedCosts;
+                    }
+                }
+
+                if ($results === null) {
+                    $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
+                        ->asForm()
+                        ->timeout(10)
+                        ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
+                            'origin' => $originCity,
+                            'destination' => $this->selectedDestinationId,
+                            'weight' => $totalWeight,
+                            'courier' => $courierCode
+                        ]);
+
+                    if ($response->successful()) {
+                        $results = $response->json('data') ?? [];
+                        if (!empty($results)) {
+                            cache()->put($cacheKey, $results, now()->addHours(6));
+                        }
+                    }
+                }
+
+                if (!empty($results)) {
                         foreach ($results as $cost) {
                             $courierName = $courier->name;
                             $rawServiceName = strtoupper($cost['service']);
@@ -272,7 +305,6 @@ class Checkout extends Component
                             ];
                         }
                     }
-                }
             } catch (\Exception $e) {
                 // Log or ignore courier error
             }

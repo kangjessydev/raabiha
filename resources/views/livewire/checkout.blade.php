@@ -118,10 +118,10 @@
                                         }
                                     }">
                                         <input type="text" 
-                                               wire:model.live.debounce.500ms="searchLocation" 
+                                               wire:model.live.debounce.1200ms="searchLocation" 
                                                @focus="open = true"
                                                @click.outside="open = false"
-                                               placeholder="Ketik minimal 3 huruf kecamatan/kota..." 
+                                               placeholder="Ketik minimal 4 huruf kecamatan/kota..." 
                                                class="w-full h-12 bg-transparent border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors" autocomplete="off">
                                                
                                         <div x-show="open && options.length > 0" class="absolute z-50 w-full mt-1 bg-[#fcf9f5] border border-[#e5e2de] shadow-xl max-h-60 flex flex-col">
