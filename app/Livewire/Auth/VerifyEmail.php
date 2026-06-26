@@ -38,7 +38,8 @@ class VerifyEmail extends Component
         return view('livewire.auth.verify-email')
             ->layout('components.layouts.app', [
                 'title' => 'Verifikasi Email',
-                'robots' => 'noindex, nofollow'
+                'robots' => 'noindex, nofollow',
+                'blank' => true,
             ]);
     }
 }

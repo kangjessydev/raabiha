@@ -55,7 +55,8 @@ class Register extends Component
         return view('livewire.auth.register')
             ->layout('components.layouts.app', [
                 'title' => 'Daftar Akun',
-                'robots' => 'noindex, nofollow'
+                'robots' => 'noindex, nofollow',
+                'blank' => true,
             ]);
     }
 }

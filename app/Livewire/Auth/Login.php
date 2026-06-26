@@ -62,7 +62,8 @@ class Login extends Component
         return view('livewire.auth.login')
             ->layout('components.layouts.app', [
                 'title' => 'Masuk',
-                'robots' => 'noindex, nofollow'
+                'robots' => 'noindex, nofollow',
+                'blank' => true,
             ]);
     }
 }

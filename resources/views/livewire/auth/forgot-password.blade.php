@@ -7,6 +7,13 @@
         <main class="site-main bg-[#fcf9f5] min-h-screen flex items-center justify-center py-20">
             <div class="max-w-[440px] w-full mx-auto px-6">
                 
+                <div class="mb-8 text-center">
+                    <a href="/" class="inline-flex items-center gap-2 text-xs font-mono tracking-widest text-[#615e57] hover:text-[#1c1c1a] transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        KEMBALI KE BERANDA
+                    </a>
+                </div>
+
                 <h1 class="font-serif text-[32px] md:text-[40px] font-bold text-[#1c1c1a] tracking-tight mb-2 text-center">Reset Password</h1>
                 <p class="font-sans text-[14px] text-[#615e57] text-center mb-10">Masukkan alamat email Anda untuk menerima tautan reset password.</p>
 

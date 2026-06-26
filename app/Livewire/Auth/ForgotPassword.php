@@ -40,7 +40,8 @@ class ForgotPassword extends Component
         return view('livewire.auth.forgot-password')
             ->layout('components.layouts.app', [
                 'title' => 'Lupa Password',
-                'robots' => 'noindex, nofollow'
+                'robots' => 'noindex, nofollow',
+                'blank' => true,
             ]);
     }
 }

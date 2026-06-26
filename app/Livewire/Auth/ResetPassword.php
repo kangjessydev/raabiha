@@ -66,7 +66,8 @@ class ResetPassword extends Component
         return view('livewire.auth.reset-password')
             ->layout('components.layouts.app', [
                 'title' => 'Reset Password',
-                'robots' => 'noindex, nofollow'
+                'robots' => 'noindex, nofollow',
+                'blank' => true,
             ]);
     }
 }
