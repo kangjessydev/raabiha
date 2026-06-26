@@ -134,6 +134,11 @@
                                             </ul>
                                         </div>
                                     </div>
+                                    @if($locationError)
+                                        <div class="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded font-sans">
+                                            {{ $locationError }}
+                                        </div>
+                                    @endif
                                     @if($selectedDestinationLabel)
                                         <div class="mt-2 text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-[#f0ede9] p-3 rounded">
                                             <span class="truncate">{{ $selectedDestinationLabel }}</span>

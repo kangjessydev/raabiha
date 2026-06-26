@@ -40,6 +40,7 @@ class Checkout extends Component
     public $destinationOptions = [];
     public $selectedDestinationId = '';
     public $selectedDestinationLabel = '';
+    public $locationError = null;
     
     // Coupon state
     public $voucherCode = '';
@@ -98,21 +99,43 @@ class Checkout extends Component
     // Direct Autocomplete Logic
     public function updatedSearchLocation($value)
     {
+        $this->locationError = null;
         if (strlen($value) < 3) {
             $this->destinationOptions = [];
             return;
         }
 
         $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
-        if (!$apiKey) return;
+        if (!$apiKey) {
+            $this->locationError = 'API Key RajaOngkir belum dikonfigurasi di Pengaturan Admin.';
+            return;
+        }
 
-        $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
-            ->get('https://rajaongkir.komerce.id/api/v1/destination/domestic-destination', [
-                'search' => $value
-            ]);
-            
-        if ($response->successful()) {
-            $this->destinationOptions = $response->json('data') ?? [];
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
+                ->timeout(10)
+                ->get('https://rajaongkir.komerce.id/api/v1/destination/domestic-destination', [
+                    'search' => $value
+                ]);
+                
+            if ($response->successful()) {
+                $this->destinationOptions = $response->json('data') ?? [];
+            } else {
+                $this->destinationOptions = [];
+                $json = $response->json();
+                if (isset($json['meta']['message'])) {
+                    if (str_contains(strtolower($json['meta']['message']), 'limit')) {
+                        $this->locationError = 'Batas pencarian wilayah RajaOngkir (Daily Limit Exceeded) hari ini telah terlampaui. Silakan hubungi admin toko via WhatsApp untuk checkout manual.';
+                    } else {
+                        $this->locationError = 'Gagal memuat lokasi: ' . $json['meta']['message'];
+                    }
+                } else {
+                    $this->locationError = 'Gagal menghubungi server kurir (Status ' . $response->status() . ').';
+                }
+            }
+        } catch (\Exception $e) {
+            $this->destinationOptions = [];
+            $this->locationError = 'Masalah koneksi ke server RajaOngkir: ' . $e->getMessage();
         }
     }
 
