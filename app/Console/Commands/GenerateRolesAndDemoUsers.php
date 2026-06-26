@@ -57,7 +57,7 @@ class GenerateRolesAndDemoUsers extends Command
             'owner' => [
                 // Cluster Dasbor & Media (Hanya Lihat)
                 'View:Dashboard', 'View:AnalyticsDashboard', 'View:LaporanBisnis',
-                'View:GoogleAnalytics', 'View:GoogleAnalyticsDashboard',
+                'View:VisitorAnalytics',
                 'View:MainPageSettings',
                 'ViewAny:SalesPage', 'View:SalesPage',
                 'ViewAny:StaticPage', 'View:StaticPage',
@@ -85,7 +85,7 @@ class GenerateRolesAndDemoUsers extends Command
             'marketing' => [
                 // Cluster Dasbor, Konten & Media (CRUD Konten & Katalog)
                 'View:Dashboard', 'View:AnalyticsDashboard', 'View:MainPageSettings',
-                'View:GoogleAnalytics', 'View:GoogleAnalyticsDashboard',
+                'View:VisitorAnalytics',
                 'ViewAny:SalesPage', 'View:SalesPage', 'Create:SalesPage', 'Update:SalesPage',
                 'ViewAny:StaticPage', 'View:StaticPage', 'Create:StaticPage', 'Update:StaticPage',
                 'ViewAny:Media', 'View:Media', 'Create:Media', 'Update:Media',

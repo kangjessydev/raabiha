@@ -21,20 +21,24 @@ class TrackPageviews
     {
         $response = $next($request);
 
-        // Hanya melacak permintaan sukses GET, bukan AJAX/Livewire/API/Admin
+        // Hanya melacak permintaan sukses GET, bukan API/JSON
         if ($request->isMethod('GET') 
             && $response->getStatusCode() === 200
-            && !$request->ajax() 
             && !$request->wantsJson()) {
             
             $path = trim($request->getPathInfo(), '/');
             
-            // Hiraukan halaman admin, api, livewire, dan file statis
+            // Hiraukan halaman admin, api, livewire, file statis, dan rute internal
             if (str_starts_with($path, 'admin') 
                 || str_starts_with($path, 'livewire') 
                 || str_starts_with($path, 'api') 
                 || str_starts_with($path, 'filament')
-                || str_starts_with($path, 'webhook')) {
+                || str_starts_with($path, 'webhook')
+                || $path === 'up'
+                || str_starts_with($path, 'sitemap')
+                || $path === 'robots.txt'
+                || str_starts_with($path, 'favicon')
+                || str_starts_with($path, 'assets')) {
                 return $response;
             }
 

@@ -9,7 +9,7 @@ use App\Models\Pageview;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-class GoogleAnalytics extends Page
+class VisitorAnalytics extends Page
 {
     use HasPageShield;
 
@@ -19,7 +19,7 @@ class GoogleAnalytics extends Page
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chart-bar';
     
-    protected string $view = 'filament.clusters.dashboard.pages.google-analytics';
+    protected string $view = 'filament.clusters.dashboard.pages.visitor-analytics';
 
     public string $period = 'today';
     public ?string $startDate = null;
@@ -76,7 +76,7 @@ class GoogleAnalytics extends Page
         if ($yesterdayUnique > 0) {
             $todayGrowth = (($todayUnique - $yesterdayUnique) / $yesterdayUnique) * 100;
         } elseif ($todayUnique > 0) {
-            $todayGrowth = 100; // naik 100% jika kemarin 0 dan hari ini ada
+            $todayGrowth = 100;
         }
 
         // 3. Hitung Pertumbuhan Bulan Ini vs Bulan Lalu (Unique Visitors)
@@ -96,7 +96,7 @@ class GoogleAnalytics extends Page
             $monthGrowth = 100;
         }
 
-        // 4. Halaman Populer (Page Type: other, static_page, sales_page, home)
+        // 4. Halaman Populer
         $topPages = (clone $query)
             ->select('url', 'title', DB::raw('count(*) as views_count'), DB::raw('count(distinct session_id) as visitors_count'))
             ->groupBy('url', 'title')
@@ -104,7 +104,7 @@ class GoogleAnalytics extends Page
             ->limit(8)
             ->get();
 
-        // 5. Produk Populer (Page Type: product)
+        // 5. Produk Populer
         $topProducts = (clone $query)
             ->where('page_type', 'product')
             ->select('model_id', 'title', DB::raw('count(*) as views_count'), DB::raw('count(distinct session_id) as visitors_count'))
@@ -113,7 +113,7 @@ class GoogleAnalytics extends Page
             ->limit(8)
             ->get();
 
-        // 6. Artikel Populer (Page Type: post)
+        // 6. Artikel Populer
         $topPosts = (clone $query)
             ->where('page_type', 'post')
             ->select('model_id', 'title', DB::raw('count(*) as views_count'), DB::raw('count(distinct session_id) as visitors_count'))
