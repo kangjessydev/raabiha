@@ -3,6 +3,50 @@
         <x-global.mobile-subnav title="Portal Reseller" />
     </x-slot:header>
 
+    <style>
+    .reseller-dashboard-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 24px !important;
+        align-items: stretch !important;
+        width: 100% !important;
+    }
+    .reseller-dashboard-sidebar {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+        border-bottom: 1px solid #e5e2de !important;
+        padding-bottom: 24px !important;
+        width: 100% !important;
+        flex-shrink: 0 !important;
+    }
+    .reseller-dashboard-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    @media (min-width: 768px) {
+        .reseller-dashboard-layout {
+            flex-direction: row !important;
+            gap: 40px !important;
+            align-items: start !important;
+        }
+        .reseller-dashboard-sidebar {
+            width: 240px !important;
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .reseller-dashboard-layout {
+            gap: 64px !important;
+        }
+        .reseller-dashboard-sidebar {
+            width: 280px !important;
+        }
+    }
+    </style>
+
     <div class="page-slide-in">
         <main class="site-main bg-[#fcf9f5] min-h-screen pb-20 md:pb-0">
             <div class="max-w-[1440px] mx-auto px-6 md:px-[64px] py-12 md:py-24">
@@ -13,17 +57,17 @@
                     <p class="font-mono text-[10px] font-medium tracking-[0.2em] text-[#615e57] uppercase mt-2">Selamat Datang, {{ auth()->user()->name }} | Status: {{ ucfirst(auth()->user()->reseller_status) }}</p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-10 lg:gap-16 items-start">
+                <div class="reseller-dashboard-layout">
                     
                     <!-- Left Sidebar Menu -->
-                    <aside class="flex flex-col gap-1 border-b border-[#e5e2de] pb-6 md:border-none md:pb-0">
+                    <aside class="reseller-dashboard-sidebar">
                         <button wire:click="$set('activeTab', 'overview')" class="font-mono text-[11px] font-bold tracking-[0.15em] uppercase px-4 py-3 transition-colors text-left {{ $activeTab == 'overview' ? 'text-[#1c1c1a] bg-[#e5e2de]' : 'text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Overview</button>
                         <button wire:click="$set('activeTab', 'pesanan')" class="font-mono text-[11px] font-bold tracking-[0.15em] uppercase px-4 py-3 transition-colors text-left {{ $activeTab == 'pesanan' ? 'text-[#1c1c1a] bg-[#e5e2de]' : 'text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Histori Pesanan</button>
                         <button wire:click="logout" class="font-mono text-[11px] font-semibold tracking-[0.15em] uppercase text-[#ba1a1a] hover:bg-[#ba1a1a]/10 mt-4 px-4 py-3 transition-colors text-left">Keluar</button>
                     </aside>
-
+ 
                     <!-- Right Content Area -->
-                    <div class="flex-1 w-full">
+                    <div class="reseller-dashboard-content">
                         <!-- Skeleton Loading -->
                         <div wire:loading wire:target="activeTab" class="w-full">
                             <div class="animate-pulse flex flex-col gap-8">

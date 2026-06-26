@@ -1,4 +1,59 @@
 <div>
+    <style>
+    .customer-account-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 24px !important;
+        align-items: stretch !important;
+        width: 100% !important;
+    }
+    .customer-account-sidebar {
+        width: 100% !important;
+        flex-shrink: 0 !important;
+    }
+    .customer-account-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    .customer-account-aside {
+        display: none !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+        border-bottom: 1px solid #e5e2de !important;
+        padding-bottom: 24px !important;
+        margin-bottom: 24px !important;
+        width: 100% !important;
+    }
+    .customer-account-aside.mobile-open {
+        display: flex !important;
+    }
+    @media (min-width: 768px) {
+        .customer-account-layout {
+            flex-direction: row !important;
+            gap: 40px !important;
+            align-items: start !important;
+        }
+        .customer-account-sidebar {
+            width: 240px !important;
+        }
+        .customer-account-aside {
+            display: flex !important;
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .customer-account-layout {
+            gap: 64px !important;
+        }
+        .customer-account-sidebar {
+            width: 280px !important;
+        }
+    }
+    </style>
+
     <x-slot:header>
         <x-global.mobile-subnav title="Akun Saya" />
     </x-slot:header>
@@ -20,17 +75,17 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-10 lg:gap-16 items-start">
+                <div class="customer-account-layout">
                     
                     <!-- Left Sidebar Menu -->
-                    <div x-data="{ mobileMenuOpen: false }" class="w-full">
+                    <div x-data="{ mobileMenuOpen: false }" class="customer-account-sidebar">
                         <!-- Mobile Toggle Button -->
                         <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden w-full flex justify-between items-center bg-white border border-[#e5e2de] px-4 py-4 mb-6">
                             <span class="font-mono text-[11px] uppercase tracking-[0.15em] font-bold text-[#1c1c1a]">Navigasi Akun</span>
                             <svg :class="{'rotate-180': mobileMenuOpen}" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
-
-                        <aside :class="{'hidden': !mobileMenuOpen, 'flex': mobileMenuOpen}" class="md:!flex flex-col gap-1 border-b border-[#e5e2de] pb-6 mb-6 md:border-none md:pb-0 md:mb-0 w-full hidden">
+ 
+                        <aside :class="{'mobile-open': mobileMenuOpen}" class="customer-account-aside">
                             <button wire:click="setTab('dasbor')" @click="mobileMenuOpen = false" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'dasbor' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Dasbor</button>
                             <button wire:click="setTab('pesanan')" @click="mobileMenuOpen = false" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'pesanan' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pesanan Saya</button>
                             <button wire:click="setTab('alamat')" @click="mobileMenuOpen = false" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'alamat' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Alamat Tersimpan</button>
@@ -58,9 +113,9 @@
                             </form>
                         </aside>
                     </div>
-
+ 
                     <!-- Right Content Area -->
-                    <div class="flex flex-col gap-8">
+                    <div class="customer-account-content flex flex-col gap-8">
                         @if(auth()->check() && !auth()->user()->hasVerifiedEmail())
                             <div class="bg-[#ba1a1a]/10 border border-[#ba1a1a]/20 text-[#ba1a1a] p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div class="flex items-start gap-3">
