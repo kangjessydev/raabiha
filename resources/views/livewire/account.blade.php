@@ -1,64 +1,64 @@
 <div>
-    <style>
-    .customer-account-layout {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 24px !important;
-        align-items: stretch !important;
-        width: 100% !important;
-    }
-    .customer-account-sidebar {
-        width: 100% !important;
-        flex-shrink: 0 !important;
-    }
-    .customer-account-content {
-        flex: 1 !important;
-        min-width: 0 !important;
-        width: 100% !important;
-    }
-    .customer-account-aside {
-        display: none !important;
-        flex-direction: column !important;
-        gap: 4px !important;
-        border-bottom: 1px solid #e5e2de !important;
-        padding-bottom: 24px !important;
-        margin-bottom: 24px !important;
-        width: 100% !important;
-    }
-    .customer-account-aside.mobile-open {
-        display: flex !important;
-    }
-    @media (min-width: 768px) {
-        .customer-account-layout {
-            flex-direction: row !important;
-            gap: 40px !important;
-            align-items: start !important;
-        }
-        .customer-account-sidebar {
-            width: 240px !important;
-        }
-        .customer-account-aside {
-            display: flex !important;
-            border-bottom: none !important;
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
-        }
-    }
-    @media (min-width: 1024px) {
-        .customer-account-layout {
-            gap: 64px !important;
-        }
-        .customer-account-sidebar {
-            width: 280px !important;
-        }
-    }
-    </style>
-
     <x-slot:header>
         <x-global.mobile-subnav title="Akun Saya" />
     </x-slot:header>
 
     <div class="page-slide-in">
+        <style wire:ignore>
+        .customer-account-layout {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 24px !important;
+            align-items: stretch !important;
+            width: 100% !important;
+        }
+        .customer-account-sidebar {
+            width: 100% !important;
+            flex-shrink: 0 !important;
+        }
+        .customer-account-content {
+            flex: 1 !important;
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+        .customer-account-aside {
+            display: none !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            border-bottom: 1px solid #e5e2de !important;
+            padding-bottom: 24px !important;
+            margin-bottom: 24px !important;
+            width: 100% !important;
+        }
+        .customer-account-aside.mobile-open {
+            display: flex !important;
+        }
+        @media (min-width: 768px) {
+            .customer-account-layout {
+                flex-direction: row !important;
+                gap: 40px !important;
+                align-items: start !important;
+            }
+            .customer-account-sidebar {
+                width: 240px !important;
+            }
+            .customer-account-aside {
+                display: flex !important;
+                border-bottom: none !important;
+                padding-bottom: 0 !important;
+                margin-bottom: 0 !important;
+            }
+        }
+        @media (min-width: 1024px) {
+            .customer-account-layout {
+                gap: 64px !important;
+            }
+            .customer-account-sidebar {
+                width: 280px !important;
+            }
+        }
+        </style>
+
         <main class="site-main bg-[#fcf9f5] min-h-screen pb-20 md:pb-0">
             <div class="max-w-[1440px] mx-auto px-6 md:px-[64px] py-12 md:py-24">
                 
