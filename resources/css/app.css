@@ -37,41 +37,54 @@
 /* Unlayered class overrides to bypass CSS Cascade Layer priority issue with main-CPG7ZTQy.css */
 .translate-x-full {
     --tw-translate-x: 100%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .translate-x-0 {
     --tw-translate-x: 0%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .-translate-x-full {
     --tw-translate-x: -100%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .-translate-x-1\/2 {
     --tw-translate-x: -50%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 
 .translate-y-full {
     --tw-translate-y: 100%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .translate-y-24 {
     --tw-translate-y: 6rem;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .translate-y-8 {
     --tw-translate-y: 2rem;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .translate-y-4 {
     --tw-translate-y: 1rem;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .translate-y-2 {
     --tw-translate-y: 0.5rem;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .translate-y-0 {
     --tw-translate-y: 0%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .-translate-y-full {
     --tw-translate-y: -100%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .-translate-y-2 {
     --tw-translate-y: -0.5rem;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }
 .-translate-y-1\/2 {
     --tw-translate-y: -50%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
 }

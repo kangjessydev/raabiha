@@ -57,6 +57,36 @@
                 width: 280px !important;
             }
         }
+
+        /* Fix Cascade Layer conflict with legacy unlayered resets */
+        .customer-account-layout button,
+        .customer-account-layout a.inline-block,
+        .customer-account-layout input[type="text"],
+        .customer-account-layout input[type="email"],
+        .customer-account-layout input[type="password"],
+        .customer-account-sidebar button {
+            display: inline-flex !important;
+            align-items: center !important;
+            line-height: 1.2 !important;
+            height: auto !important;
+        }
+        
+        .customer-account-layout button,
+        .customer-account-layout a.inline-block {
+            justify-content: center !important;
+        }
+
+        /* Restore padding for dashboard inputs & buttons */
+        .customer-account-layout .py-3\.5 { padding-top: 14px !important; padding-bottom: 14px !important; }
+        .customer-account-layout .py-3 { padding-top: 12px !important; padding-bottom: 12px !important; }
+        .customer-account-layout .py-2\.5 { padding-top: 10px !important; padding-bottom: 10px !important; }
+        .customer-account-layout .py-2 { padding-top: 8px !important; padding-bottom: 8px !important; }
+        
+        .customer-account-layout .px-8 { padding-left: 32px !important; padding-right: 32px !important; }
+        .customer-account-layout .px-6 { padding-left: 24px !important; padding-right: 24px !important; }
+        .customer-account-layout .px-4 { padding-left: 16px !important; padding-right: 16px !important; }
+        .customer-account-layout .px-3 { padding-left: 12px !important; padding-right: 12px !important; }
+        .customer-account-layout .pl-10 { padding-left: 40px !important; }
         </style>
 
         <main class="site-main bg-[#fcf9f5] min-h-screen pb-20 md:pb-0">
