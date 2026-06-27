@@ -5,7 +5,7 @@
         <x-global.mobile-subnav title="Checkout" />
     </x-slot:header>
 
-    <div class="page-slide-in">
+    <div>
         <main class="site-main bg-[#fcf9f5] min-h-screen pb-0">
             <div class="max-w-[1440px] mx-auto px-6 md:px-[64px] py-12 md:py-24">
                 
