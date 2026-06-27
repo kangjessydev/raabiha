@@ -157,13 +157,13 @@
                                 @endif
 
                                 @if($addressMode === 'api' && $activeShippingProvider === 'binderbyte')
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-20">
-                                    <div class="md:col-span-3 flex justify-end mb-[-8px]">
-                                        <button type="button" wire:click="switchToManualMode" class="group flex items-center gap-1.5 text-[9px] text-[#064e3b] font-mono uppercase tracking-wider font-bold hover:opacity-80 transition-opacity">
-                                            <svg class="w-3 h-3 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                            <span class="border-b border-transparent group-hover:border-[#064e3b]">Tidak menemukan lokasi? Klik di sini</span>
-                                        </button>
-                                    </div>
+                                <div class="flex justify-end mb-[-8px] relative z-20">
+                                    <button type="button" wire:click="switchToManualMode" class="group flex items-center gap-1.5 text-[9px] text-[#064e3b] font-mono uppercase tracking-wider font-bold hover:opacity-80 transition-opacity">
+                                        <svg class="w-3 h-3 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                        <span class="border-b border-transparent group-hover:border-[#064e3b]">Tidak menemukan lokasi? Klik di sini</span>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-20">
                                     <div class="flex flex-col gap-2">
                                         <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Provinsi Tujuan *</label>
                                         <select wire:model.live="selectedProvinceId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer">
@@ -182,7 +182,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="flex flex-col gap-2">
+                                    <div class="flex flex-col gap-2 md:col-span-2">
                                         <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kecamatan Tujuan *</label>
                                         <select wire:model.live="selectedDistrictId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer" {{ empty($selectedCityId) ? 'disabled' : '' }}>
                                             <option value="">-- Pilih Kecamatan --</option>
@@ -192,27 +192,27 @@
                                         </select>
                                     </div>
                                     @if($locationError)
-                                        <div class="md:col-span-3 text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded font-sans">
+                                        <div class="md:col-span-2 text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded font-sans">
                                             {{ $locationError }}
                                         </div>
                                     @endif
                                     @if($selectedDestinationLabel)
-                                        <div class="md:col-span-3 text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-[#f0ede9] p-3 rounded">
+                                        <div class="md:col-span-2 text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-[#f0ede9] p-3 rounded">
                                             <span class="truncate">Wilayah terpilih: {{ $selectedDestinationLabel }}</span>
                                         </div>
                                     @endif
-                                    @error('selectedDestinationId') <span class="md:col-span-3 text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    @error('selectedDestinationId') <span class="md:col-span-2 text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 @endif
 
                                 @if($addressMode === 'manual')
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative z-20">
-                                    <div class="md:col-span-3 flex justify-end mb-[-8px]">
-                                        <button type="button" wire:click="switchToApiMode" class="group flex items-center gap-1.5 text-[9px] text-[#064e3b] font-mono uppercase tracking-wider font-bold hover:opacity-80 transition-opacity">
-                                            <svg class="w-3 h-3 transition-transform group-hover:-rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                            <span class="border-b border-transparent group-hover:border-[#064e3b]">Kembali ke pilih otomatis via kurir</span>
-                                        </button>
-                                    </div>
+                                <div class="flex justify-end mb-[-8px] relative z-20">
+                                    <button type="button" wire:click="switchToApiMode" class="group flex items-center gap-1.5 text-[9px] text-[#064e3b] font-mono uppercase tracking-wider font-bold hover:opacity-80 transition-opacity">
+                                        <svg class="w-3 h-3 transition-transform group-hover:-rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                        <span class="border-b border-transparent group-hover:border-[#064e3b]">Kembali ke pilih otomatis via kurir</span>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-20">
                                     <div class="flex flex-col gap-2">
                                         <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Provinsi Tujuan (Manual) *</label>
                                         <select wire:model.live="selectedProvinceId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer">
@@ -231,7 +231,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="flex flex-col gap-2">
+                                    <div class="flex flex-col gap-2 md:col-span-2">
                                         <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kecamatan Tujuan (Manual) *</label>
                                         <select wire:model.live="selectedDistrictId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer" {{ empty($selectedCityId) ? 'disabled' : '' }}>
                                             <option value="">-- Pilih Kecamatan --</option>
@@ -241,16 +241,16 @@
                                         </select>
                                     </div>
                                     @if($locationError)
-                                        <div class="md:col-span-3 text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded font-sans">
+                                        <div class="md:col-span-2 text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded font-sans">
                                             {{ $locationError }}
                                         </div>
                                     @endif
                                     @if($selectedDestinationLabel)
-                                        <div class="md:col-span-3 text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-[#f0ede9] p-3 rounded">
+                                        <div class="md:col-span-2 text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-[#f0ede9] p-3 rounded">
                                             <span class="truncate">Wilayah terpilih: {{ $selectedDestinationLabel }}</span>
                                         </div>
                                     @endif
-                                    @error('selectedDestinationId') <span class="md:col-span-3 text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    @error('selectedDestinationId') <span class="md:col-span-2 text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 @endif
 
