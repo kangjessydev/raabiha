@@ -101,19 +101,13 @@ class Checkout extends Component
                     $this->selectedDestinationId = $address->destination_id ?? '';
                     $this->selectedDestinationLabel = $address->destination_label ?? '';
                 } elseif ($this->activeShippingProvider === 'binderbyte') {
-                    $this->loadProvinces();
-                    $this->selectedProvinceId = $address->province ?? '';
-                    if ($this->selectedProvinceId) {
-                        $this->updatedSelectedProvinceId($this->selectedProvinceId);
-                        $this->selectedCityId = $address->city ?? '';
-                        if ($this->selectedCityId) {
-                            $this->updatedSelectedCityId($this->selectedCityId);
-                            $this->selectedDistrictId = $address->district ?? '';
-                            if ($this->selectedDistrictId) {
-                                $this->updatedSelectedDistrictId($this->selectedDistrictId);
-                            }
-                        }
-                    }
+                    $this->selectedDestinationId = $address->destination_id ?? '';
+                    $this->selectedDestinationLabel = $address->destination_label ?? '';
+                    $this->province = $address->province ?? '';
+                    $this->city = $address->city ?? '';
+                    $this->district = $address->district ?? '';
+                    $this->village = $address->village ?? '';
+                    $this->loadProvinces(); // Still load provinces in case they want to change
                 }
             }
         } else {

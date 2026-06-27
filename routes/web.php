@@ -31,6 +31,7 @@ Route::get('/blog/{slug}', \App\Livewire\BlogDetail::class);
 Route::middleware(['auth'])->group(function () {
     Route::get('/account', \App\Livewire\Account::class)->name('account');
     Route::get('/order-detail', \App\Livewire\OrderDetail::class)->name('order.detail');
+    Route::get('/order/{id}/track', \App\Livewire\OrderTrack::class)->name('order.track');
 
     Route::post('/logout', function (\Illuminate\Http\Request $request) {
         auth()->logout();

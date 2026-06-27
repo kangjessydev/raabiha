@@ -88,6 +88,16 @@
         .customer-account-content .pl-10 { padding-left: 40px !important; }
         </style>
 
+        <div x-data="{ show: false, message: '' }" 
+             @address-saved.window="show = true; message = $event.detail.message; setTimeout(() => show = false, 3000)"
+             class="fixed bottom-5 right-5 z-50 transition-all duration-300 transform"
+             x-show="show" x-transition:enter="translate-y-10 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="translate-y-0 opacity-100" x-transition:leave-end="translate-y-10 opacity-0" style="display: none;">
+            <div class="bg-[#064e3b] text-white px-6 py-3 shadow-xl font-sans text-sm flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <span x-text="message"></span>
+            </div>
+        </div>
+
         <main class="site-main bg-[#fcf9f5] min-h-screen pb-20 md:pb-0">
             <div class="max-w-[1440px] mx-auto px-6 md:px-[64px] py-12 md:py-24">
                 
@@ -126,14 +136,14 @@
                                 $hasResellerStatus = in_array(auth()->user()->reseller_status, $validStatuses);
                             @endphp
                             @if($resellerRegistrationOpen || $hasResellerStatus)
-                            <button wire:click="setTab('reseller')" @click="mobileMenuOpen = false" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors flex justify-between items-center {{ $activeTab === 'reseller' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">
-                                Portal Reseller
-                                @if(auth()->user()->reseller_status === 'active')
-                                    <span class="bg-[#064e3b] text-white text-[8px] px-1.5 py-0.5 rounded-sm ml-2">AKTIF</span>
-                                @elseif(auth()->user()->reseller_status === 'pending')
-                                    <span class="bg-[#ca8a04] text-white text-[8px] px-1.5 py-0.5 rounded-sm ml-2">PENDING</span>
-                                @endif
-                            </button>
+                                <button wire:click="setTab('reseller')" @click="mobileMenuOpen = false" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors flex justify-between items-center {{ $activeTab === 'reseller' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">
+                                    Portal Reseller
+                                    @if(auth()->user()->reseller_status === 'active')
+                                        <span class="bg-[#064e3b] text-white text-[8px] px-1.5 py-0.5 rounded-sm ml-2">AKTIF</span>
+                                    @elseif(auth()->user()->reseller_status === 'pending')
+                                        <span class="bg-[#ca8a04] text-white text-[8px] px-1.5 py-0.5 rounded-sm ml-2">PENDING</span>
+                                    @endif
+                                </button>
                             @endif
                             <button wire:click="setTab('akun')" @click="mobileMenuOpen = false" class="font-mono text-[11px] uppercase tracking-[0.15em] px-4 py-3 text-left transition-colors {{ $activeTab === 'akun' ? 'font-bold text-[#1c1c1a] bg-[#e5e2de]' : 'font-semibold text-[#615e57] hover:bg-[#f0ede9] hover:text-[#1c1c1a]' }}">Pengaturan Akun</button>
                             <form method="POST" action="{{ route('logout') }}" class="m-0 p-0">
@@ -161,7 +171,7 @@
                         @if($activeTab === 'dasbor')
                             <div wire:key="tab-dasbor" class="contents">
                             <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Dasbor</h2>
-                            
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <!-- Total Orders -->
                                 <div class="bg-[#fcf9f5] border border-[#e5e2de] p-6 md:p-8 flex flex-col items-start gap-4">
@@ -177,7 +187,7 @@
                                         <span><strong class="text-[#064e3b]">{{ $this->dashboard_stats['completed_orders'] }}</strong> Selesai</span>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Total Spent -->
                                 <div class="bg-[#064e3b] text-white p-6 md:p-8 flex flex-col items-start gap-4">
                                     <div class="p-3 bg-[#043326] rounded-sm">
@@ -190,28 +200,20 @@
                                     <p class="font-sans text-[12px] text-[#c4c7c7] mt-2">Total belanja untuk pesanan sukses.</p>
                                 </div>
                             </div>
-                            
+
                             <!-- Simple Spending Chart -->
                             <div class="bg-white border border-[#e5e2de] p-6 md:p-8 mt-6">
                                 <h3 class="font-serif text-[18px] font-semibold text-[#1c1c1a] mb-6">Aktivitas Belanja (6 Bulan Terakhir)</h3>
-                                <div class="flex items-end justify-between gap-2 h-40 pt-4 border-b border-[#e5e2de]">
+                                <div class="flex items-end justify-between gap-2 h-48 pt-4 border-b border-[#e5e2de]">
                                     @php
-                                        // Mock data for chart, could be dynamic in the future
-                                        $months = [
-                                            ['label' => now()->subMonths(5)->format('M'), 'height' => '20%'],
-                                            ['label' => now()->subMonths(4)->format('M'), 'height' => '45%'],
-                                            ['label' => now()->subMonths(3)->format('M'), 'height' => '30%'],
-                                            ['label' => now()->subMonths(2)->format('M'), 'height' => '60%'],
-                                            ['label' => now()->subMonths(1)->format('M'), 'height' => '15%'],
-                                            ['label' => now()->format('M'), 'height' => '85%'],
-                                        ];
+                                        $months = $this->dashboard_stats['chart_data'];
                                     @endphp
                                     @foreach($months as $month)
-                                        <div class="w-full flex flex-col items-center gap-2 relative group">
+                                        <div class="w-full flex flex-col items-center justify-end gap-2 relative group h-full">
                                             <div class="w-full max-w-[40px] bg-[#e5e2de] hover:bg-[#064e3b] transition-colors relative" style="height: {{ $month['height'] }};">
                                                 <!-- Tooltip on hover -->
-                                                <div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1c1c1a] text-white font-mono text-[9px] py-1 px-2 rounded-sm whitespace-nowrap pointer-events-none transition-opacity">
-                                                    Info
+                                                <div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1c1c1a] text-white font-mono text-[9px] py-1 px-2 rounded-sm whitespace-nowrap pointer-events-none transition-opacity z-10">
+                                                    Rp{{ number_format($month['spent'], 0, ',', '.') }}
                                                 </div>
                                             </div>
                                             <span class="font-mono text-[10px] text-[#615e57] uppercase">{{ $month['label'] }}</span>
@@ -219,14 +221,14 @@
                                     @endforeach
                                 </div>
                             </div>
-                            
+
                             <!-- Banner -->
                             <div class="mt-4 bg-[#f0ede9] p-6 border-l-4 border-[#1c1c1a] flex flex-col md:flex-row gap-6 justify-between items-center">
                                 <div>
                                     <h3 class="font-serif text-[18px] font-semibold text-[#1c1c1a] mb-2">Ada pertanyaan tentang pesanan Anda?</h3>
                                     <p class="font-sans text-[13px] text-[#615e57]">Tim layanan pelanggan kami siap membantu Anda 24/7.</p>
                                 </div>
-                                <a href="https://wa.me/6281234567890" target="_blank" class="shrink-0 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors text-center w-full md:w-auto">Hubungi CS</a>
+                                <a href="/contact" target="_blank" class="shrink-0 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#1c1c1a] hover:text-white transition-colors text-center w-full md:w-auto">Hubungi CS</a>
                             </div>
 
                             </div>
@@ -276,13 +278,13 @@
                                             'cancelled' => 'Dibatalkan',
                                         ];
                                         $statusLabel = $statusLabels[$order->status] ?? ucfirst($order->status);
-                                        
+
                                         // Primary styling for active orders, dim for completed/cancelled
                                         $isInactive = in_array($order->status, ['completed', 'cancelled']);
                                         $cardClass = $isInactive ? 'opacity-75 hover:opacity-100 transition-opacity' : '';
                                         $headerBg = $isInactive ? 'bg-white' : 'bg-[#f0ede9]';
                                         $textBase = $isInactive ? 'text-[#615e57]' : 'text-[#1c1c1a]';
-                                        
+
                                         // Status badge styling
                                         if ($order->status == 'completed') {
                                             $badgeStyle = 'bg-[#064e3b]/10 text-[#064e3b] border border-[#064e3b]/20';
@@ -318,7 +320,7 @@
                                                 {{ $statusLabel }}
                                             </div>
                                         </div>
-                                        
+
                                         <!-- Order Items -->
                                         @foreach($order->items as $item)
                                             @php
@@ -327,7 +329,8 @@
                                                 if ($imageId) {
                                                     if (is_numeric($imageId)) {
                                                         $media = \Awcodes\Curator\Models\Media::find($imageId);
-                                                        if ($media) $image = $media->url;
+                                                        if ($media)
+                                                            $image = $media->url;
                                                     } else {
                                                         $image = Storage::url($imageId);
                                                     }
@@ -347,6 +350,25 @@
                                                 </div>
                                             </div>
                                         @endforeach
+
+                                        <!-- Shipping Info for Sent/Completed Orders -->
+                                        @if(in_array($order->status, ['sent', 'completed']) && $order->awb_number)
+                                            <div class="border-t border-[#e5e2de] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 {{ $isInactive ? 'bg-white' : 'bg-[#fcf9f5]' }}">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 border border-[#064e3b]/20 bg-[#064e3b]/5 flex items-center justify-center shrink-0">
+                                                        <svg class="w-5 h-5 text-[#064e3b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path></svg>
+                                                    </div>
+                                                    <div>
+                                                        <p class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-0.5">Kurir: {{ explode('|', $order->courier)[0] }}</p>
+                                                        <p class="font-mono text-[13px] font-bold text-[#064e3b] tracking-wider">{{ $order->awb_number }}</p>
+                                                    </div>
+                                                </div>
+                                                <a href="{{ url('/order/' . $order->id . '/track') }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-6 py-2.5 hover:bg-[#043326] transition-colors w-full sm:w-auto text-center flex items-center justify-center gap-2">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                                    Lacak Pesanan
+                                                </a>
+                                            </div>
+                                        @endif
 
                                         <!-- Order Footer Actions -->
                                         <div class="border-t border-[#e5e2de] p-4 flex flex-col sm:flex-row justify-end gap-3 {{ $isInactive ? 'bg-white' : 'bg-[#fcf9f5]' }}">
@@ -425,27 +447,79 @@
                                                 @error('addressForm.recipient_name') <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span> @enderror
                                             </div>
                                         </div>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div class="grid grid-cols-1 gap-5">
                                             <div>
                                                 <label class="block font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57] mb-2">Nomor Telepon *</label>
                                                 <input type="tel" wire:model="addressForm.phone" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors">
                                                 @error('addressForm.phone') <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span> @enderror
                                             </div>
-                                            <div>
-                                                <label class="block font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57] mb-2">Provinsi *</label>
-                                                <input type="text" wire:model="addressForm.province" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors">
-                                                @error('addressForm.province') <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span> @enderror
+                                        </div>
+
+                                        <!-- Location API Integration -->
+                                        <div x-data="{ changeLocation: {{ empty($addressForm['destination_id']) ? 'true' : 'false' }} }">
+                                            <div x-show="!changeLocation" class="mb-5 bg-[#fcf9f5] border border-[#064e3b]/30 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                                <div>
+                                                    <p class="font-mono text-[9px] uppercase tracking-widest text-[#064e3b] mb-1">Lokasi Tersimpan</p>
+                                                    <p class="font-sans text-[13px] font-bold text-[#1c1c1a]">
+                                                        {{ $addressForm['destination_label'] ?: ($addressForm['district'] ? $addressForm['district'] . ', ' : '') . $addressForm['city'] . ', ' . $addressForm['province'] }}
+                                                    </p>
+                                                </div>
+                                                <button type="button" @click="changeLocation = true; $wire.set('addressForm.destination_id', ''); $wire.set('addressForm.destination_label', '')" class="shrink-0 text-[10px] font-mono font-bold tracking-[0.1em] uppercase text-[#064e3b] border border-[#064e3b] px-4 py-2 hover:bg-[#064e3b] hover:text-white transition-colors">Ganti Lokasi</button>
+                                            </div>
+
+                                            <div x-show="changeLocation" class="bg-[#fcf9f5] border border-[#e5e2de] p-4 flex flex-col gap-4">
+                                                <div class="pb-2 border-b border-[#e5e2de]">
+                                                    <p class="font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#1c1c1a]">Pilih Wilayah Tujuan</p>
+                                                    <p class="font-sans text-[12px] text-[#615e57]">Pilih dari daftar di bawah agar ongkos kirim bisa dihitung otomatis.</p>
+                                                </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="block font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-2">Provinsi *</label>
+                                                        <select wire:model.live="selectedProvinceId" class="w-full bg-white border border-[#e5e2de] px-4 py-3 font-sans text-[13px] focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer">
+                                                            <option value="">-- Pilih Provinsi --</option>
+                                                            @foreach($provinces as $p)
+                                                                <option value="{{ $p['id'] }}">{{ $p['name'] }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-2">Kota/Kabupaten *</label>
+                                                        <select wire:model.live="selectedCityId" class="w-full bg-white border border-[#e5e2de] px-4 py-3 font-sans text-[13px] focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer" {{ empty($selectedProvinceId) ? 'disabled' : '' }}>
+                                                            <option value="">-- Pilih Kota/Kabupaten --</option>
+                                                            @foreach($cities as $c)
+                                                                <option value="{{ $c['id'] }}">{{ $c['name'] }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="md:col-span-2">
+                                                        <label class="block font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-2">Kecamatan *</label>
+                                                        <select wire:model.live="selectedDistrictId" class="w-full bg-white border border-[#e5e2de] px-4 py-3 font-sans text-[13px] focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer" {{ empty($selectedCityId) ? 'disabled' : '' }}>
+                                                            <option value="">-- Pilih Kecamatan --</option>
+                                                            @foreach($districts as $d)
+                                                                <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                @if($locationError)
+                                                    <div class="text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded font-sans">
+                                                        {{ $locationError }}
+                                                    </div>
+                                                @endif
+                                                @if($addressForm['destination_label'])
+                                                    <div class="text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-white p-3 rounded border border-[#064e3b]/20">
+                                                        <span class="truncate">Wilayah terpilih: {{ $addressForm['destination_label'] }}</span>
+                                                    </div>
+                                                @endif
+                                                @error('addressForm.destination_id') <span class="text-red-500 text-[11px]">{{ $message }}</span> @enderror
                                             </div>
                                         </div>
-                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                             <div>
-                                                <label class="block font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57] mb-2">Kota/Kabupaten *</label>
-                                                <input type="text" wire:model="addressForm.city" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors">
-                                                @error('addressForm.city') <span class="text-red-500 text-[11px] mt-1">{{ $message }}</span> @enderror
-                                            </div>
-                                            <div>
-                                                <label class="block font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57] mb-2">Kecamatan</label>
-                                                <input type="text" wire:model="addressForm.district" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors">
+                                                <label class="block font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57] mb-2">Kelurahan/Desa</label>
+                                                <input type="text" wire:model="addressForm.village" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans text-[#1c1c1a] focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors placeholder-[#a3a3a3]" placeholder="Opsional">
                                             </div>
                                             <div>
                                                 <label class="block font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57] mb-2">Kode Pos</label>
@@ -461,7 +535,7 @@
                                             <input type="checkbox" wire:model="addressForm.is_primary" id="is_primary" class="w-4 h-4 text-[#064e3b] border-[#e5e2de] rounded focus:ring-[#064e3b]">
                                             <label for="is_primary" class="font-sans text-[13px] text-[#1c1c1a] cursor-pointer">Jadikan sebagai alamat utama</label>
                                         </div>
-                                        
+
                                         <div class="flex flex-col sm:flex-row gap-3 mt-4">
                                             <button type="button" wire:click="toggleAddressForm" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-8 py-3 hover:bg-[#f0ede9] transition-colors w-full sm:w-auto text-center">Batal</button>
                                             <button type="submit" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-8 py-3 hover:bg-[#043326] transition-colors w-full sm:w-auto text-center flex justify-center">
@@ -486,7 +560,7 @@
                                             @if($address->is_primary)
                                                 <div class="absolute top-0 right-0 bg-[#064e3b] text-white font-mono text-[8px] font-bold tracking-widest uppercase px-3 py-1">Utama</div>
                                             @endif
-                                            
+
                                             <div class="mb-4">
                                                 <div class="flex items-center gap-2 mb-1">
                                                     <h3 class="font-serif text-[18px] font-semibold text-[#1c1c1a]">{{ $address->recipient_name }}</h3>
@@ -496,19 +570,19 @@
                                                 </div>
                                                 <p class="font-sans text-[13px] text-[#615e57]">{{ $address->phone }}</p>
                                             </div>
-                                            
+
                                             <p class="font-sans text-[13px] text-[#1c1c1a] leading-relaxed mb-6 flex-1">
                                                 {{ $address->full_address }}<br>
                                                 {{ $address->district ? $address->district . ', ' : '' }}{{ $address->city }}<br>
                                                 {{ $address->province }} {{ $address->postal_code }}
                                             </p>
-                                            
+
                                             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-4 border-t border-[#e5e2de] mt-auto">
                                                 <div class="flex items-center gap-4 w-full sm:w-auto">
                                                     <button wire:click="editAddress({{ $address->id }})" class="flex-1 sm:flex-none text-center font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#064e3b] border sm:border-0 border-[#e5e2de] py-2 sm:py-0 hover:bg-[#fcf9f5] sm:hover:bg-transparent transition-colors">Ubah</button>
                                                     <button wire:click="deleteAddress({{ $address->id }})" wire:confirm="Apakah Anda yakin ingin menghapus alamat ini?" class="flex-1 sm:flex-none text-center font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#ba1a1a] border sm:border-0 border-[#e5e2de] py-2 sm:py-0 hover:bg-[#fcf9f5] sm:hover:bg-transparent transition-colors">Hapus</button>
                                                 </div>
-                                                
+
                                                 @if(!$address->is_primary)
                                                     <div class="sm:ml-auto w-full sm:w-auto mt-2 sm:mt-0">
                                                         <button wire:click="setPrimaryAddress({{ $address->id }})" class="w-full sm:w-auto font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#615e57] border border-[#e5e2de] px-3 py-2.5 hover:border-[#1c1c1a] hover:text-[#1c1c1a] transition-colors">Jadikan Utama</button>
@@ -538,13 +612,14 @@
                                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                                     @foreach($this->wishlists as $wishlist)
                                         @php 
-                                            $product = $wishlist->product;
+                                                                            $product = $wishlist->product;
                                             $image = asset('assets/images/placeholder.webp');
                                             if ($product && is_array($product->images) && !empty($product->images)) {
                                                 $imgData = $product->images[0];
                                                 if (is_numeric($imgData)) {
                                                     $media = \Awcodes\Curator\Models\Media::find($imgData);
-                                                    if ($media) $image = $media->url;
+                                                    if ($media)
+                                                        $image = $media->url;
                                                 } else {
                                                     $image = Storage::url($imgData);
                                                 }
@@ -562,7 +637,7 @@
                                                 </a>
                                                 <!-- Quick remove button -->
                                                 <div class="absolute top-2 left-2 z-10">
-                                                    <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-'.$wishlist->id" />
+                                                    <livewire:wishlist-toggle :product_id="$product->id" :key="'wishlist-' . $wishlist->id" />
                                                 </div>
                                                 <div class="p-4 flex-1 flex flex-col">
                                                     <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1.5 line-clamp-2">
@@ -607,7 +682,7 @@
                                                 <div class="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-white"></div>
                                                 <div class="absolute -bottom-3 -right-3 w-6 h-6 rounded-full bg-white"></div>
                                             </div>
-                                            
+
                                             <!-- Voucher Content -->
                                             <div class="p-6 flex-1 bg-[#fcf9f5]">
                                                 <div class="flex items-center justify-between mb-1">
@@ -619,7 +694,7 @@
                                                 <div class="font-sans text-[16px] font-bold text-[#1c1c1a] mb-2">
                                                     Diskon {{ $voucher->discount_type === 'percentage' ? rtrim(rtrim(number_format($voucher->discount_amount, 2, ',', '.'), '0'), ',') . '%' : 'Rp' . number_format($voucher->discount_amount, 0, ',', '.') }}
                                                 </div>
-                                                
+
                                                 <div class="font-sans text-[12px] text-[#615e57] mb-4 space-y-1">
                                                     @if($voucher->min_purchase > 0)
                                                         <p>Min. belanja Rp{{ number_format($voucher->min_purchase, 0, ',', '.') }}</p>
@@ -633,7 +708,7 @@
                                                         <p>Tanpa batas waktu</p>
                                                     @endif
                                                 </div>
-                                                
+
                                                 <button onclick="navigator.clipboard.writeText('{{ $voucher->code }}'); alert('Kode voucher disalin!');" class="font-mono text-[10px] font-bold tracking-[0.1em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-4 py-2 hover:bg-[#1c1c1a] hover:text-white transition-colors">Salin Kode</button>
                                             </div>
                                         </div>
@@ -645,11 +720,11 @@
                         @elseif($activeTab === 'akun')
                             <div wire:key="tab-akun" class="contents">
                             <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Pengaturan Akun</h2>
-                            
+
                             <!-- Profile Information Form -->
                             <div class="bg-white border border-[#e5e2de] p-6 md:p-8">
                                 <h3 class="font-mono text-[12px] font-bold tracking-widest uppercase text-[#1c1c1a] mb-6">Informasi Pribadi</h3>
-                                
+
                                 @if (session()->has('profile_success'))
                                     <div class="bg-[#064e3b]/10 border border-[#064e3b]/20 text-[#064e3b] px-4 py-3 mb-6 flex items-center gap-2">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -678,7 +753,7 @@
                             <!-- Update Password Form -->
                             <div class="bg-white border border-[#e5e2de] p-6 md:p-8">
                                 <h3 class="font-mono text-[12px] font-bold tracking-widest uppercase text-[#1c1c1a] mb-6">Ubah Kata Sandi</h3>
-                                
+
                                 @if (session()->has('password_success'))
                                     <div class="bg-[#064e3b]/10 border border-[#064e3b]/20 text-[#064e3b] px-4 py-3 mb-6 flex items-center gap-2">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -711,7 +786,7 @@
                         @elseif($activeTab === 'reseller')
                             <div wire:key="tab-reseller" class="contents">
                             <h2 class="font-serif text-[24px] font-semibold text-[#1c1c1a] hidden md:block">Laporan Pembelian Reseller</h2>
-                            
+
                             @if(auth()->user()->reseller_status === 'active')
                                 <div class="bg-[#064e3b] text-white p-6 md:p-8 flex flex-col items-start gap-4 mb-6">
                                     <div class="p-3 bg-white/20 rounded-sm">
@@ -725,7 +800,7 @@
                                         Berlaku untuk semua pembelian produk tanpa batas.
                                     </div>
                                 </div>
-                                
+
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div class="bg-[#fcf9f5] border border-[#e5e2de] p-6 flex flex-col items-start gap-3">
                                         <p class="font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-[#615e57]">Total Pembelian Reseller</p>
@@ -752,38 +827,38 @@
                                     $whatsapp = $settings['reseller_whatsapp_payment'] ?? '';
                                 @endphp
                                 @if($depositFee > 0)
-                                <div class="mt-4 bg-[#fcf9f5] border border-[#e5e2de] p-6 flex flex-col items-start gap-4">
-                                    <p class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Tindakan Diperlukan</p>
-                                    <div class="w-full">
-                                        <p class="font-sans text-[16px] font-bold text-[#1c1c1a]">Pembayaran Deposit Awal: Rp{{ number_format($depositFee, 0, ',', '.') }}</p>
-                                        <p class="font-sans text-[13px] text-[#615e57] mt-1 mb-4">Sistem mendeteksi bahwa Anda belum melakukan pembayaran. Silakan transfer ke rekening admin dan konfirmasi via WhatsApp untuk mengaktifkan diskon Anda.</p>
-                                        
-                                        @if(count($banks) > 0)
-                                        <div class="bg-white border border-[#e5e2de] p-4 mb-4">
-                                            <p class="font-mono text-[9px] uppercase tracking-widest text-[#1c1c1a] font-bold mb-3 border-b border-[#e5e2de] pb-2">Tujuan Transfer</p>
-                                            <div class="flex flex-col gap-3">
-                                                @foreach($banks as $bank)
-                                                <div class="flex flex-col gap-1">
-                                                    <span class="font-sans text-[13px] font-bold text-[#1c1c1a] uppercase">{{ $bank['bank_name'] ?? '' }}</span>
-                                                    <span class="font-mono text-[14px] text-[#064e3b] font-bold tracking-wider">{{ $bank['account_number'] ?? '' }}</span>
-                                                    <span class="font-sans text-[11px] text-[#615e57] uppercase">A.N {{ $bank['account_name'] ?? '' }}</span>
-                                                </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                        @endif
+                                    <div class="mt-4 bg-[#fcf9f5] border border-[#e5e2de] p-6 flex flex-col items-start gap-4">
+                                        <p class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Tindakan Diperlukan</p>
+                                        <div class="w-full">
+                                            <p class="font-sans text-[16px] font-bold text-[#1c1c1a]">Pembayaran Deposit Awal: Rp{{ number_format($depositFee, 0, ',', '.') }}</p>
+                                            <p class="font-sans text-[13px] text-[#615e57] mt-1 mb-4">Sistem mendeteksi bahwa Anda belum melakukan pembayaran. Silakan transfer ke rekening admin dan konfirmasi via WhatsApp untuk mengaktifkan diskon Anda.</p>
 
-                                        @if($whatsapp)
-                                        @php
-                                            $waMsg = "Halo Admin Raabiha, saya ingin mengkonfirmasi pembayaran pendaftaran akun Reseller dengan rincian sebagai berikut:%0A%0ANama: " . auth()->user()->name . "%0AEmail: " . auth()->user()->email . "%0ATanggal: " . now()->format('d M Y');
-                                        @endphp
-                                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $whatsapp) }}?text={{ $waMsg }}" target="_blank" class="w-full bg-[#25D366] text-white px-6 py-3 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-[#128C7E] transition-colors inline-flex justify-center items-center gap-2">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-                                            Kirim Bukti Pembayaran ke WhatsApp
-                                        </a>
-                                        @endif
+                                            @if(count($banks) > 0)
+                                                <div class="bg-white border border-[#e5e2de] p-4 mb-4">
+                                                    <p class="font-mono text-[9px] uppercase tracking-widest text-[#1c1c1a] font-bold mb-3 border-b border-[#e5e2de] pb-2">Tujuan Transfer</p>
+                                                    <div class="flex flex-col gap-3">
+                                                        @foreach($banks as $bank)
+                                                            <div class="flex flex-col gap-1">
+                                                                <span class="font-sans text-[13px] font-bold text-[#1c1c1a] uppercase">{{ $bank['bank_name'] ?? '' }}</span>
+                                                                <span class="font-mono text-[14px] text-[#064e3b] font-bold tracking-wider">{{ $bank['account_number'] ?? '' }}</span>
+                                                                <span class="font-sans text-[11px] text-[#615e57] uppercase">A.N {{ $bank['account_name'] ?? '' }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            @if($whatsapp)
+                                                @php
+                                                    $waMsg = "Halo Admin Raabiha, saya ingin mengkonfirmasi pembayaran pendaftaran akun Reseller dengan rincian sebagai berikut:%0A%0ANama: " . auth()->user()->name . "%0AEmail: " . auth()->user()->email . "%0ATanggal: " . now()->format('d M Y');
+                                                @endphp
+                                                <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $whatsapp) }}?text={{ $waMsg }}" target="_blank" class="w-full bg-[#25D366] text-white px-6 py-3 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-[#128C7E] transition-colors inline-flex justify-center items-center gap-2">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                                                    Kirim Bukti Pembayaran ke WhatsApp
+                                                </a>
+                                            @endif
+                                        </div>
                                     </div>
-                                </div>
                                 @endif
                             @elseif(auth()->user()->reseller_status === 'rejected')
                                 <div class="bg-red-50 border border-red-200 text-red-800 p-6 flex items-start gap-4">
@@ -814,137 +889,137 @@
 
     <!-- Refund Modal -->
     @if($showRefundForm)
-    <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = '' }" class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50">
-        <div class="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl relative">
-            <div class="p-6 md:p-8">
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h3 class="font-serif text-[24px] font-semibold text-[#1c1c1a]">Ajukan Refund</h3>
-                        <p class="font-sans text-[13px] text-[#615e57] mt-1">Pesanan #{{ \App\Models\Order::find($refundOrderId)->order_number ?? '' }}</p>
-                    </div>
-                    <button wire:click="closeRefundForm" class="text-[#a3a3a3] hover:text-[#1c1c1a] transition-colors focus:outline-none">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
- 
-                <form wire:submit.prevent="submitRefund" class="space-y-4">
-                    <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Alasan Refund</label>
-                        <select wire:model="refundForm.reason" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" required>
-                            <option value="">Pilih Alasan</option>
-                            <option value="Produk Rusak/Cacat">Produk Rusak/Cacat</option>
-                            <option value="Salah Kirim Produk">Salah Kirim Produk</option>
-                            <option value="Pesanan Tidak Lengkap">Pesanan Tidak Lengkap</option>
-                            <option value="Lainnya">Lainnya</option>
-                        </select>
-                        @error('refundForm.reason') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-                    
-                    <div>
-                        <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Penjelasan Detail</label>
-                        <textarea wire:model="refundForm.description" rows="3" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Jelaskan masalah secara detail..." required></textarea>
-                        @error('refundForm.description') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
-                    </div>
- 
-                    <div class="border-t border-[#e5e2de] pt-4 mt-4">
-                        <p class="font-mono text-[10px] uppercase tracking-widest text-[#615e57] mb-4">Informasi Rekening Pengembalian</p>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nama Bank</label>
-                                <input type="text" wire:model="refundForm.bank_name" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: BCA, Mandiri, dll" required>
-                                @error('refundForm.bank_name') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
-                            </div>
-                            
-                            <div>
-                                <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nomor Rekening</label>
-                                <input type="text" wire:model="refundForm.bank_account_number" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: 1234567890" required>
-                                @error('refundForm.bank_account_number') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
-                            </div>
- 
-                            <div>
-                                <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nama Pemilik Rekening</label>
-                                <input type="text" wire:model="refundForm.bank_account_name" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: Budi Santoso" required>
-                                @error('refundForm.bank_account_name') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
-                            </div>
+        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = '' }" class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50">
+            <div class="bg-white max-w-lg w-full max-h-[90vh] overflow-y-auto overscroll-contain shadow-2xl relative">
+                <div class="p-6 md:p-8">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="font-serif text-[24px] font-semibold text-[#1c1c1a]">Ajukan Refund</h3>
+                            <p class="font-sans text-[13px] text-[#615e57] mt-1">Pesanan #{{ \App\Models\Order::find($refundOrderId)->order_number ?? '' }}</p>
                         </div>
-                    </div>
- 
-                    <div class="pt-4 flex justify-end gap-3">
-                        <button type="button" wire:click="closeRefundForm" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] hover:text-[#1c1c1a] px-6 py-3 transition-colors">Batal</button>
-                        <button type="submit" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-red-600 px-6 py-3 hover:bg-red-700 transition-colors flex items-center justify-center min-w-[120px]">
-                            <span wire:loading.remove wire:target="submitRefund">Kirim Pengajuan</span>
-                            <span wire:loading wire:target="submitRefund" class="inline-block animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                        <button wire:click="closeRefundForm" class="text-[#a3a3a3] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
-                </form>
+
+                    <form wire:submit.prevent="submitRefund" class="space-y-4">
+                        <div>
+                            <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Alasan Refund</label>
+                            <select wire:model="refundForm.reason" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" required>
+                                <option value="">Pilih Alasan</option>
+                                <option value="Produk Rusak/Cacat">Produk Rusak/Cacat</option>
+                                <option value="Salah Kirim Produk">Salah Kirim Produk</option>
+                                <option value="Pesanan Tidak Lengkap">Pesanan Tidak Lengkap</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                            @error('refundForm.reason') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Penjelasan Detail</label>
+                            <textarea wire:model="refundForm.description" rows="3" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Jelaskan masalah secara detail..." required></textarea>
+                            @error('refundForm.description') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="border-t border-[#e5e2de] pt-4 mt-4">
+                            <p class="font-mono text-[10px] uppercase tracking-widest text-[#615e57] mb-4">Informasi Rekening Pengembalian</p>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nama Bank</label>
+                                    <input type="text" wire:model="refundForm.bank_name" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: BCA, Mandiri, dll" required>
+                                    @error('refundForm.bank_name') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nomor Rekening</label>
+                                    <input type="text" wire:model="refundForm.bank_account_number" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: 1234567890" required>
+                                    @error('refundForm.bank_account_number') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block font-mono text-[10px] uppercase tracking-widest text-[#1c1c1a] mb-2">Nama Pemilik Rekening</label>
+                                    <input type="text" wire:model="refundForm.bank_account_name" class="w-full bg-[#fcf9f5] border border-[#e5e2de] px-4 py-3 text-[13px] font-sans focus:outline-none focus:border-[#064e3b] focus:ring-0 transition-colors" placeholder="Contoh: Budi Santoso" required>
+                                    @error('refundForm.bank_account_name') <span class="text-red-500 text-[11px] mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex justify-end gap-3">
+                            <button type="button" wire:click="closeRefundForm" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] hover:text-[#1c1c1a] px-6 py-3 transition-colors">Batal</button>
+                            <button type="submit" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-red-600 px-6 py-3 hover:bg-red-700 transition-colors flex items-center justify-center min-w-[120px]">
+                                <span wire:loading.remove wire:target="submitRefund">Kirim Pengajuan</span>
+                                <span wire:loading wire:target="submitRefund" class="inline-block animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
     @endif
  
     <!-- Refund Status Modal -->
     @if($showRefundStatusModal && $refundStatusData)
-    <div x-data="{ open: true }" x-init="$watch('open', value => { if(!value) @this.closeRefundStatus() }); document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = '' }" 
-         x-show="open" class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6">
-        
-        <div x-show="open" x-transition.opacity class="fixed inset-0 bg-[#1c1c1a]/40 backdrop-blur-sm" @click="open = false"></div>
-        
-        <div x-show="open" 
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
-             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-             x-transition:leave-end="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
-             class="bg-white border border-[#e5e2de] w-full max-w-lg relative z-10 max-h-[90vh] overflow-y-auto shadow-2xl">
-            
-            <div class="p-6 sm:p-8">
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h3 class="font-serif text-[24px] font-semibold text-[#1c1c1a]">Detail Status Refund</h3>
-                        @if($refundStatusData['status'] === 'approved')
-                            <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#064e3b] mt-2">Disetujui</p>
-                        @elseif($refundStatusData['status'] === 'rejected')
-                            <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-red-600 mt-2">Ditolak</p>
-                        @elseif($refundStatusData['status'] === 'completed')
-                            <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#064e3b] mt-2">Selesai</p>
-                        @endif
-                    </div>
-                    <button wire:click="closeRefundStatus" class="text-[#a3a3a3] hover:text-[#1c1c1a] transition-colors focus:outline-none">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-                
-                <div class="space-y-6">
-                    <div class="bg-[#fcf9f5] border border-[#e5e2de] p-5 relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-1 h-full {{ $refundStatusData['status'] === 'rejected' ? 'bg-red-500' : 'bg-[#064e3b]' }}"></div>
-                        <p class="font-sans text-[13px] text-[#1c1c1a] leading-relaxed whitespace-pre-wrap">{{ $refundStatusData['message'] }}</p>
+        <div x-data="{ open: true }" x-init="$watch('open', value => { if(!value) @this.closeRefundStatus() }); document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = '' }" 
+             x-show="open" class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6">
+
+            <div x-show="open" x-transition.opacity class="fixed inset-0 bg-[#1c1c1a]/40 backdrop-blur-sm" @click="open = false"></div>
+
+            <div x-show="open" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-8 sm:translate-y-0 sm:scale-95"
+                 class="bg-white border border-[#e5e2de] w-full max-w-lg relative z-10 max-h-[90vh] overflow-y-auto shadow-2xl">
+
+                <div class="p-6 sm:p-8">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="font-serif text-[24px] font-semibold text-[#1c1c1a]">Detail Status Refund</h3>
+                            @if($refundStatusData['status'] === 'approved')
+                                <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#064e3b] mt-2">Disetujui</p>
+                            @elseif($refundStatusData['status'] === 'rejected')
+                                <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-red-600 mt-2">Ditolak</p>
+                            @elseif($refundStatusData['status'] === 'completed')
+                                <p class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#064e3b] mt-2">Selesai</p>
+                            @endif
+                        </div>
+                        <button wire:click="closeRefundStatus" class="text-[#a3a3a3] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
                     </div>
 
-                    <div class="space-y-3 pt-4 border-t border-[#e5e2de]">
-                        <div class="flex justify-between items-start">
-                            <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Alasan Klaim</span>
-                            <span class="font-sans text-[12px] text-[#1c1c1a] text-right max-w-[60%]">{{ $refundStatusData['reason'] }}</span>
+                    <div class="space-y-6">
+                        <div class="bg-[#fcf9f5] border border-[#e5e2de] p-5 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full {{ $refundStatusData['status'] === 'rejected' ? 'bg-red-500' : 'bg-[#064e3b]' }}"></div>
+                            <p class="font-sans text-[13px] text-[#1c1c1a] leading-relaxed whitespace-pre-wrap">{{ $refundStatusData['message'] }}</p>
                         </div>
-                        <div class="flex justify-between items-start">
-                            <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Nominal</span>
-                            <span class="font-sans text-[12px] font-semibold text-[#1c1c1a]">Rp{{ $refundStatusData['amount'] }}</span>
-                        </div>
-                        @if($refundStatusData['admin_notes'])
-                        <div class="flex justify-between items-start">
-                            <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Catatan Admin</span>
-                            <span class="font-sans text-[12px] text-[#1c1c1a] text-right max-w-[60%]">{{ $refundStatusData['admin_notes'] }}</span>
-                        </div>
-                        @endif
-                    </div>
-                </div>
 
-                <div class="pt-6 mt-6 flex justify-end gap-3 border-t border-[#e5e2de]">
-                    <button type="button" wire:click="closeRefundStatus" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#f0ede9] transition-colors w-full">Tutup</button>
+                        <div class="space-y-3 pt-4 border-t border-[#e5e2de]">
+                            <div class="flex justify-between items-start">
+                                <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Alasan Klaim</span>
+                                <span class="font-sans text-[12px] text-[#1c1c1a] text-right max-w-[60%]">{{ $refundStatusData['reason'] }}</span>
+                            </div>
+                            <div class="flex justify-between items-start">
+                                <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Nominal</span>
+                                <span class="font-sans text-[12px] font-semibold text-[#1c1c1a]">Rp{{ $refundStatusData['amount'] }}</span>
+                            </div>
+                            @if($refundStatusData['admin_notes'])
+                                <div class="flex justify-between items-start">
+                                    <span class="font-mono text-[10px] uppercase tracking-widest text-[#615e57]">Catatan Admin</span>
+                                    <span class="font-sans text-[12px] text-[#1c1c1a] text-right max-w-[60%]">{{ $refundStatusData['admin_notes'] }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="pt-6 mt-6 flex justify-end gap-3 border-t border-[#e5e2de]">
+                        <button type="button" wire:click="closeRefundStatus" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#f0ede9] transition-colors w-full">Tutup</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     @endif
 </div>

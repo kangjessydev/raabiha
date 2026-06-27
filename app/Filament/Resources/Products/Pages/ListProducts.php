@@ -28,4 +28,11 @@ class ListProducts extends ListRecords
             CreateAction::make(),
         ];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\Products\Widgets\ProductStatsWidget::class,
+        ];
+    }
 }

@@ -58,4 +58,11 @@ class ProductResource extends Resource
             'edit' => EditProduct::route('/{record}/edit'),
         ];
     }
+
+    public static function getWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\Products\Widgets\ProductStatsWidget::class,
+        ];
+    }
 }

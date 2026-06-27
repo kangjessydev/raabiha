@@ -14,4 +14,11 @@ class ManageRefundRequests extends ManageRecords
     {
         return [];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\RefundRequests\Widgets\RefundStatsWidget::class,
+        ];
+    }
 }

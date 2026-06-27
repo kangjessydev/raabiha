@@ -1,28 +1,71 @@
-<div x-data="{ bsVoucherOpen: false }" 
-     x-effect="document.body.style.overflow = bsVoucherOpen ? 'hidden' : ''"
+<div x-data="{ bsVoucherOpen: false, bsSummaryOpen: false }" 
+     x-effect="document.body.style.overflow = (bsVoucherOpen || bsSummaryOpen) ? 'hidden' : ''"
      @close-voucher-sheet.window="bsVoucherOpen = false">
     <x-slot:header>
         <x-global.mobile-subnav title="Checkout" />
     </x-slot:header>
 
-    <div>
-        <main class="site-main bg-[#fcf9f5] min-h-screen pb-0">
-            <div class="max-w-[1440px] mx-auto px-6 md:px-[64px] py-12 md:py-24">
-                
-                <div class="mb-10 md:mb-16 hidden md:block">
-                    <nav class="font-mono text-[9px] uppercase tracking-[0.2em] text-[#615e57] mb-6 flex items-center gap-2">
-                        <a href="{{ url('/') }}" class="hover:text-[#064e3b] transition-colors">Home</a>
-                        <span class="text-[#d1cec9]">/</span>
-                        <a href="{{ url('/cart') }}" class="hover:text-[#064e3b] transition-colors">Keranjang</a>
-                        <span class="text-[#d1cec9]">/</span>
-                        <span class="text-[#1c1c1a] font-bold">Checkout</span>
-                    </nav>
-                    <h1 class="font-serif text-[32px] md:text-[48px] font-bold text-[#1c1c1a] tracking-tight uppercase">Checkout</h1>
-                </div>
+    <style>
+        @media (min-width: 1024px) {
+            .split-layout { display: flex; min-height: 100vh; background-color: #ffffff; }
+            .split-left { width: 55%; display: flex; justify-content: flex-end; }
+            .split-left-inner { width: 100%; max-width: 48rem; padding: 3rem 3rem 4rem 4rem; }
+            .split-right { width: 45%; background-color: #f0ede9; border-left: 1px solid #e5e2de; position: sticky; top: 0; height: 100vh; overflow: hidden; box-shadow: -20px 0 40px rgba(0,0,0,0.02); }
+            .split-right-inner { width: 100%; max-width: 35rem; padding: 2.25rem 4rem 2rem 3rem; display: flex; flex-direction: column; height: 100%; }
+            .order-summary-content { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+            .order-items-scroll { flex: 1; overflow-y: auto; padding-right: 0.5rem; min-height: 80px; margin-bottom: 1rem; }
+            
+            /* Custom Scrollbar */
+            .order-items-scroll::-webkit-scrollbar { width: 4px; }
+            .order-items-scroll::-webkit-scrollbar-track { background: transparent; }
+            .order-items-scroll::-webkit-scrollbar-thumb { background: #d1cec9; border-radius: 4px; }
+        }
+        @media (max-width: 1023px) {
+            .split-layout { display: block; background-color: #ffffff; padding-bottom: 100px; }
+            .split-left { width: 100%; }
+            .split-left-inner { padding: 1.5rem 1.5rem 3rem 1.5rem; width: 100%; }
+            
+            /* Mobile Bottom Sheet for Order Summary */
+            .split-right { 
+                position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: 75vh;
+                background-color: #fcf9f5; z-index: 85;
+                border-top-left-radius: 1.5rem; border-top-right-radius: 1.5rem;
+                box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                transform: translateY(100%);
+            }
+            .split-right.is-open { transform: translateY(0); }
+            .split-right-inner { padding: 1.5rem 1.5rem 6rem 1.5rem; width: 100%; max-width: 100%; overflow-y: auto; height: 100%; }
+            
+            /* Backdrop for Mobile Summary */
+            .mobile-summary-backdrop {
+                position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+                z-index: 80; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            }
+            .mobile-summary-backdrop.is-open { opacity: 1; pointer-events: auto; }
+            
+            .desktop-pay-btn { display: none !important; }
+        }
+    </style>
 
-                <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 lg:gap-16 items-start">
+    <div>
+        <main class="site-main split-layout">
+            
+            <!-- Left Column: Checkout Forms (Scrollable normally) -->
+            <div class="split-left">
+                <div class="split-left-inner">
                     
-                    <!-- Left Column: Checkout Forms -->
+                    <div class="mb-10 lg:mb-16 hidden lg:block">
+                        <nav class="font-mono text-[9px] uppercase tracking-[0.2em] text-[#615e57] mb-6 flex items-center gap-2">
+                            <a href="{{ url('/') }}" class="hover:text-[#064e3b] transition-colors">Home</a>
+                            <span class="text-[#d1cec9]">/</span>
+                            <a href="{{ url('/cart') }}" class="hover:text-[#064e3b] transition-colors">Keranjang</a>
+                            <span class="text-[#d1cec9]">/</span>
+                            <span class="text-[#1c1c1a] font-bold">Checkout</span>
+                        </nav>
+                        <h1 class="font-serif text-[32px] md:text-[48px] font-bold text-[#1c1c1a] tracking-tight uppercase">Checkout</h1>
+                    </div>
+
                     <div class="flex flex-col gap-10">
                         
                         @if($guest_mode === null)
@@ -157,51 +200,58 @@
                                 @endif
 
                                 @if($addressMode === 'api' && $activeShippingProvider === 'binderbyte')
-                                <div class="flex justify-end mb-[-8px] relative z-20">
-                                    <button type="button" wire:click="switchToManualMode" class="group flex items-center gap-1.5 text-[9px] text-[#064e3b] font-mono uppercase tracking-wider font-bold hover:opacity-80 transition-opacity">
-                                        <svg class="w-3 h-3 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                        <span class="border-b border-transparent group-hover:border-[#064e3b]">Tidak menemukan lokasi? Klik di sini</span>
-                                    </button>
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-20">
-                                    <div class="flex flex-col gap-2">
-                                        <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Provinsi Tujuan *</label>
-                                        <select wire:model.live="selectedProvinceId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer">
-                                            <option value="">-- Pilih Provinsi --</option>
-                                            @foreach($provinces as $p)
-                                                <option value="{{ $p['id'] }}">{{ $p['name'] }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="flex flex-col gap-2">
-                                        <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kota/Kabupaten Tujuan *</label>
-                                        <select wire:model.live="selectedCityId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer" {{ empty($selectedProvinceId) ? 'disabled' : '' }}>
-                                            <option value="">-- Pilih Kota/Kabupaten --</option>
-                                            @foreach($cities as $c)
-                                                <option value="{{ $c['id'] }}">{{ $c['name'] }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="flex flex-col gap-2 md:col-span-2">
-                                        <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kecamatan Tujuan *</label>
-                                        <select wire:model.live="selectedDistrictId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer" {{ empty($selectedCityId) ? 'disabled' : '' }}>
-                                            <option value="">-- Pilih Kecamatan --</option>
-                                            @foreach($districts as $d)
-                                                <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    @if($locationError)
-                                        <div class="md:col-span-2 text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded font-sans">
-                                            {{ $locationError }}
+                                <div x-data="{ changeLocation: {{ empty($selectedDestinationId) ? 'true' : 'false' }} }">
+                                    <div x-show="!changeLocation" class="mb-4 bg-[#f0ede9] p-3 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border border-[#064e3b]/20">
+                                        <div>
+                                            <span class="text-[#064e3b] font-semibold text-xs block mb-1">Wilayah Tujuan Pengiriman:</span>
+                                            <span class="text-sm font-sans">{{ $selectedDestinationLabel }}</span>
                                         </div>
-                                    @endif
-                                    @if($selectedDestinationLabel)
-                                        <div class="md:col-span-2 text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-[#f0ede9] p-3 rounded">
-                                            <span class="truncate">Wilayah terpilih: {{ $selectedDestinationLabel }}</span>
+                                        <button type="button" @click="changeLocation = true; $wire.set('selectedDestinationId', ''); $wire.set('selectedDestinationLabel', ''); $wire.set('shipping_cost', 0)" class="shrink-0 text-xs font-mono font-bold uppercase text-red-600 hover:text-red-800 underline">Ganti Lokasi</button>
+                                    </div>
+
+                                    <div x-show="changeLocation">
+                                        <div class="flex justify-end mb-[-8px] relative z-20">
+                                            <button type="button" wire:click="switchToManualMode" class="group flex items-center gap-1.5 text-[9px] text-[#064e3b] font-mono uppercase tracking-wider font-bold hover:opacity-80 transition-opacity">
+                                                <svg class="w-3 h-3 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                                <span class="border-b border-transparent group-hover:border-[#064e3b]">Tidak menemukan lokasi? Klik di sini</span>
+                                            </button>
                                         </div>
-                                    @endif
-                                    @error('selectedDestinationId') <span class="md:col-span-2 text-red-500 text-xs">{{ $message }}</span> @enderror
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-20">
+                                            <div class="flex flex-col gap-2">
+                                                <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Provinsi Tujuan *</label>
+                                                <select wire:model.live="selectedProvinceId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer">
+                                                    <option value="">-- Pilih Provinsi --</option>
+                                                    @foreach($provinces as $p)
+                                                        <option value="{{ $p['id'] }}">{{ $p['name'] }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="flex flex-col gap-2">
+                                                <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kota/Kabupaten Tujuan *</label>
+                                                <select wire:model.live="selectedCityId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer" {{ empty($selectedProvinceId) ? 'disabled' : '' }}>
+                                                    <option value="">-- Pilih Kota/Kabupaten --</option>
+                                                    @foreach($cities as $c)
+                                                        <option value="{{ $c['id'] }}">{{ $c['name'] }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="flex flex-col gap-2 md:col-span-2">
+                                                <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kecamatan Tujuan *</label>
+                                                <select wire:model.live="selectedDistrictId" class="w-full h-12 bg-white border border-[#e5e2de] px-4 font-sans text-sm focus:outline-none focus:border-[#064e3b] transition-colors cursor-pointer" {{ empty($selectedCityId) ? 'disabled' : '' }}>
+                                                    <option value="">-- Pilih Kecamatan --</option>
+                                                    @foreach($districts as $d)
+                                                        <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            @if($locationError)
+                                                <div class="md:col-span-2 text-xs text-red-600 bg-red-50 border border-red-200 p-3 rounded font-sans">
+                                                    {{ $locationError }}
+                                                </div>
+                                            @endif
+                                            @error('selectedDestinationId') <span class="md:col-span-2 text-red-500 text-xs">{{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
                                 </div>
                                 @endif
 
@@ -348,12 +398,34 @@
                          </section>
 
                     @endif {{-- end @else (form shown) --}}
+                    
+                        <!-- Terms and Conditions Checkbox (Left Column Mobile Fallback) -->
+                        <div x-data="{ agree: @entangle('agree_terms') }" class="mt-8 border-t border-[#e5e2de] pt-8 lg:hidden">
+                            <div class="flex items-start gap-3">
+                                <div class="flex items-center h-5 mt-0.5">
+                                    <input type="checkbox" id="agree_terms_left" x-model="agree" class="w-4 h-4 text-[#064e3b] bg-transparent border-[#1c1c1a] focus:ring-[#064e3b] rounded-sm transition-colors cursor-pointer">
+                                </div>
+                                <label for="agree_terms_left" class="font-sans text-[12px] text-[#615e57] leading-relaxed cursor-pointer">
+                                    Saya telah membaca dan menyetujui <a href="{{ url('/syarat-ketentuan') }}" target="_blank" class="underline text-[#064e3b]">Syarat dan Ketentuan</a> serta <a href="{{  url('/kebijakan-privasi') }}" target="_blank" class="underline text-[#064e3b]">kebijakan privasi</a> situs ini.
+                                </label>
+                            </div>
+                            @error('agree_terms') <span class="text-red-500 text-xs mt-1 block font-sans">{{ $message }}</span> @enderror
+                        </div>
 
                     </div>
+                </div>
+            </div>
 
-                    <!-- Right Column: Order Summary -->
-                    <div class="bg-transparent lg:bg-[#f0ede9] p-0 lg:p-10 sticky top-8">
-                        <h2 class="font-mono text-[10px] font-bold tracking-[0.2em] text-[#1c1c1a] uppercase mb-8 hidden lg:block">Ringkasan Pesanan</h2>
+            <!-- Mobile Backdrop (with touchmove.prevent to lock scroll) -->
+            <div class="mobile-summary-backdrop lg:hidden" :class="{ 'is-open': bsSummaryOpen }" @click="bsSummaryOpen = false" @touchmove.prevent></div>
+
+            <!-- Right Column: Order Summary (Sticky Sidebar Desktop / Bottom Sheet Mobile) -->
+            <div class="split-right" :class="{ 'is-open': bsSummaryOpen }">
+                <!-- Mobile Drag Handle -->
+                <div class="w-12 h-1.5 bg-[#e5e2de] rounded-full mx-auto mt-4 mb-2 lg:hidden cursor-pointer" @click="bsSummaryOpen = false"></div>
+                
+                <div class="split-right-inner" data-lenis-prevent>
+                    <h2 class="font-mono text-[10px] font-bold tracking-[0.2em] text-[#1c1c1a] uppercase mb-4 lg:mb-6 hidden lg:block flex-shrink-0">Ringkasan Pesanan</h2>
                         
                         @if (session()->has('error'))
                             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -389,9 +461,9 @@
                         </div>
 
                         <!-- Actual Content -->
-                        <div wire:loading.remove wire:target="shipping_method, payment_method" class="w-full">
+                        <div wire:loading.remove wire:target="shipping_method, payment_method" class="w-full order-summary-content">
                             <!-- Order Items Mini -->
-                            <div class="flex flex-col gap-4 mb-8">
+                            <div class="flex flex-col gap-4 mb-4 lg:mb-0 order-items-scroll" data-lenis-prevent>
                             @if($this->checkoutItems && $this->checkoutItems->count() > 0)
                                 @foreach($this->checkoutItems as $item)
                                     @php
@@ -438,7 +510,8 @@
                             @endif
                         </div>
 
-                        <div class="flex flex-col gap-0 lg:gap-4 font-sans text-[14px] text-[#1c1c1a]">
+                        <div class="flex-shrink-0">
+                        <div class="flex flex-col gap-0 lg:gap-2 font-sans text-[14px] text-[#1c1c1a]">
                             <div class="flex justify-between py-4 border-b border-[#e5e2de] lg:border-none lg:py-0">
                                 <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[#615e57] lg:text-[#1c1c1a] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Subtotal</span>
                                 <span>Rp{{ number_format($this->subtotal, 0, ',', '.') }}</span>
@@ -449,21 +522,8 @@
                                 <span>-Rp{{ number_format($this->reseller_discount, 0, ',', '.') }}</span>
                             </div>
                             @endif
-                            <div class="flex justify-between items-start py-4 border-b border-[#e5e2de] lg:border-none lg:py-0">
-                                <div class="flex flex-col gap-0.5">
-                                    <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[#615e57] lg:text-[#1c1c1a] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Pengiriman</span>
-                                    @php
-                                        $selectedRate = collect($this->shippingRates)->firstWhere('id', $this->shipping_method);
-                                    @endphp
-                                    @if($selectedRate)
-                                        <span class="font-mono text-[9px] uppercase tracking-[0.08em] text-[#615e57]">
-                                            {{ $selectedRate['courier_name'] ?? '' }} {{ $selectedRate['service_name'] ?? '' }} &middot; 
-                                            {{ !empty($selectedRate['duration']) ? 'est. ' . $selectedRate['duration'] . (is_numeric($selectedRate['duration']) || preg_match('/^\d+-\d+$/', $selectedRate['duration']) ? ' hari' : '') : 'est. tidak tersedia' }}
-                                        </span>
-                                    @elseif(!$this->selectedDestinationId)
-                                        <span class="font-mono text-[9px] uppercase tracking-[0.08em] text-[#999]">Pilih destinasi dulu</span>
-                                    @endif
-                                </div>
+                            <div class="flex justify-between items-center py-4 border-b border-[#e5e2de] lg:border-none lg:py-0">
+                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[#615e57] lg:text-[#1c1c1a] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Pengiriman</span>
                                 <span>
                                     @if($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher'] && $this->discountAmount > 0)
                                         <span class="line-through text-gray-400 mr-1.5">Rp{{ number_format($this->shipping_cost, 0, ',', '.') }}</span>
@@ -487,15 +547,7 @@
                             @endphp
                             @if($selectedPayment)
                             <div class="flex justify-between items-center py-4 border-b border-[#e5e2de] lg:border-none lg:py-0">
-                                <div class="flex flex-col gap-0.5">
-                                    <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[#615e57] lg:text-[#1c1c1a] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Metode Bayar</span>
-                                    <span class="font-mono text-[9px] uppercase tracking-[0.08em] text-[#615e57] flex items-center gap-1.5">
-                                        @if($selectedPayment->logo)
-                                            <img src="{{ Storage::url($selectedPayment->logo) }}" alt="{{ $selectedPayment->name }}" class="h-3 object-contain">
-                                        @endif
-                                        {{ $selectedPayment->name }}
-                                    </span>
-                                </div>
+                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[#615e57] lg:text-[#1c1c1a] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Metode Bayar</span>
                                 @php $payFee = $this->paymentFee; @endphp
                                 <span class="{{ $payFee > 0 ? 'text-[#1c1c1a]' : 'text-[#999]' }}">
                                     {{ $payFee > 0 ? 'Rp'.number_format($payFee, 0, ',', '.') : 'Gratis' }}
@@ -509,7 +561,6 @@
                         
                         <!-- Promo Code -->
                         <div class="mb-6 lg:mb-10 py-4 lg:py-0">
-                            <label class="font-mono text-[9px] font-semibold tracking-[0.2em] text-[#615e57] uppercase mb-4 hidden lg:block">Kode Promo / Voucher</label>
                             @if($appliedVoucher)
                             <div class="w-full border py-3 px-4 flex justify-between items-center text-left bg-[#f0ede9] border-[#064e3b]">
                                 <div class="flex flex-col">
@@ -543,8 +594,8 @@
                             </div>
                         @endif
                         
-                        <!-- Terms and Conditions Checkbox -->
-                        <div x-data="{ agree: @entangle('agree_terms') }">
+                        <!-- Terms and Conditions Checkbox (Desktop) -->
+                        <div x-data="{ agree: @entangle('agree_terms') }" class="desktop-pay-btn">
                             <div class="mb-6">
                                 <div class="flex items-start gap-3">
                                     <div class="flex items-center h-5 mt-0.5">
@@ -560,8 +611,7 @@
                                     wire:click="processCheckout" 
                                     wire:loading.attr="disabled"
                                     :disabled="!agree"
-                                    :class="agree ? 'bg-[#064e3b] hover:bg-[#043326] text-white' : 'bg-[#e5e2de] text-[#a3a19b] cursor-not-allowed'"
-                                    class="flex justify-center items-center gap-2 w-full py-5 px-6 font-mono text-[10px] md:text-[12px] lg:text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors">
+                                    class="flex justify-center items-center gap-2 w-full py-5 px-6 bg-[#064e3b] text-white font-mono text-[10px] md:text-[12px] lg:text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors disabled:bg-[#e5e2de] disabled:text-[#a3a19b] disabled:cursor-not-allowed">
                                 <span class="block" wire:loading.remove wire:target="processCheckout">BAYAR SEKARANG</span>
                                 <span class="block" wire:loading wire:target="processCheckout">MEMPROSES...</span>
                             </button>
@@ -575,15 +625,15 @@
                             </div>
                         </div>
 
+                        </div> <!-- End flex-shrink-0 -->
                         </div> <!-- End wire:loading.remove -->
-                    </div>
                 </div>
             </div>
         </main>
     </div>
     
     <!-- Voucher Bottom Sheet / Modal -->
-    <div x-show="bsVoucherOpen" style="display: none;" class="fixed inset-0 z-[100] lg:flex lg:items-center lg:justify-center">
+    <div x-show="bsVoucherOpen" style="display: none;" class="fixed inset-0 z-[100] flex items-end justify-center lg:items-center">
         <!-- Backdrop -->
         <div x-show="bsVoucherOpen" 
              x-transition.opacity.duration.300ms
@@ -592,13 +642,13 @@
              
         <!-- Sheet -->
         <div x-show="bsVoucherOpen" 
-             x-transition:enter="transition-transform duration-300 lg:transition-opacity lg:duration-200 lg:ease-out"
+             x-transition:enter="transition-transform duration-300 lg:transition-all lg:duration-200 lg:ease-out"
              x-transition:enter-start="translate-y-full lg:translate-y-0 lg:scale-95 lg:opacity-0"
              x-transition:enter-end="translate-y-0 lg:scale-100 lg:opacity-100"
-             x-transition:leave="transition-transform duration-300 lg:transition-opacity lg:duration-200 lg:ease-in"
+             x-transition:leave="transition-transform duration-300 lg:transition-all lg:duration-200 lg:ease-in"
              x-transition:leave-start="translate-y-0 lg:scale-100 lg:opacity-100"
              x-transition:leave-end="translate-y-full lg:translate-y-0 lg:scale-95 lg:opacity-0"
-             class="absolute bottom-0 left-0 right-0 bg-[#fcf9f5] rounded-t-2xl lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:w-full lg:max-w-[480px]">
+             class="relative w-full max-w-full lg:max-w-[480px] bg-[#fcf9f5] rounded-t-2xl lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10">
              
             <!-- Handle -->
             <div class="flex lg:hidden justify-center pt-3 pb-2" @click="bsVoucherOpen = false">
@@ -682,6 +732,27 @@
                     </div>
                 @endif
             </div>
+        </div>
+    </div>
+    <!-- Mobile Sticky Bottom Bar -->
+    <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e2de] z-[90] shadow-[0_-5px_15px_rgba(0,0,0,0.05)] pb-safe" x-data="{ agree: @entangle('agree_terms') }">
+        <div class="px-5 py-4 flex justify-between items-center gap-4">
+            <div class="flex flex-col min-w-0 flex-1 cursor-pointer" @click="bsSummaryOpen = !bsSummaryOpen">
+                <span class="font-mono text-[9px] uppercase tracking-[0.1em] text-[#615e57] mb-1 flex items-center gap-1">
+                    TOTAL DIBAYAR
+                    <svg class="w-3 h-3 text-[#1c1c1a] transition-transform duration-300" :class="{ 'rotate-180': bsSummaryOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                </span>
+                <span class="font-serif text-[18px] font-semibold text-[#1c1c1a] leading-none truncate">Rp{{ number_format($this->total, 0, ',', '.') }}</span>
+            </div>
+            
+            <button type="button" 
+                    wire:click="processCheckout" 
+                    wire:loading.attr="disabled"
+                    :disabled="!agree"
+                    class="font-mono text-[10px] font-bold tracking-[0.1em] uppercase transition-colors flex-shrink-0 min-w-[130px] flex items-center justify-center py-4 px-5 bg-[#064e3b] text-white disabled:bg-[#e5e2de] disabled:text-[#a3a19b] disabled:cursor-not-allowed">
+                <span wire:loading.remove wire:target="processCheckout">BAYAR SEKARANG</span>
+                <span wire:loading wire:target="processCheckout">TUNGGU...</span>
+            </button>
         </div>
     </div>
 </div>

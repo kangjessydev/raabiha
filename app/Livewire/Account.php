@@ -29,9 +29,23 @@ class Account extends Component
         'province' => '',
         'city' => '',
         'district' => '',
+        'village' => '',
         'postal_code' => '',
         'is_primary' => false,
-    ];    // Profile fields
+        'destination_id' => '',
+        'destination_label' => '',
+    ];
+
+    // Location API
+    public $provinces = [];
+    public $cities = [];
+    public $districts = [];
+    public $selectedProvinceId = '';
+    public $selectedCityId = '';
+    public $selectedDistrictId = '';
+    public $locationError = null;
+
+    // Profile fields
     public $name;
     public $email;
     
@@ -70,6 +84,13 @@ class Account extends Component
         $this->showAddressForm = !$this->showAddressForm;
         if (!$this->showAddressForm) {
             $this->resetAddressForm();
+        } else {
+            // Load provinces when form is opened
+            try {
+                $this->provinces = \App\Services\BinderByteService::getProvinces();
+            } catch (\Exception $e) {
+                $this->locationError = 'Gagal memuat data provinsi: ' . $e->getMessage();
+            }
         }
     }
 
@@ -84,9 +105,18 @@ class Account extends Component
             'province' => '',
             'city' => '',
             'district' => '',
+            'village' => '',
             'postal_code' => '',
             'is_primary' => false,
+            'destination_id' => '',
+            'destination_label' => '',
         ];
+        $this->selectedProvinceId = '';
+        $this->selectedCityId = '';
+        $this->selectedDistrictId = '';
+        $this->cities = [];
+        $this->districts = [];
+        $this->locationError = null;
     }
 
     public function editAddress($id)
@@ -95,6 +125,72 @@ class Account extends Component
         $this->editingAddressId = $address->id;
         $this->addressForm = $address->toArray();
         $this->showAddressForm = true;
+        
+        // Reset location selectors since we don't have province/city IDs saved, 
+        // user will need to re-select if they want to change the location.
+        // We'll keep the existing text values in addressForm so they are preserved if not changed.
+        try {
+            $this->provinces = \App\Services\BinderByteService::getProvinces();
+        } catch (\Exception $e) {
+            $this->locationError = 'Gagal memuat data provinsi: ' . $e->getMessage();
+        }
+    }
+
+    public function updatedSelectedProvinceId($id)
+    {
+        $this->locationError = null;
+        $this->selectedCityId = '';
+        $this->selectedDistrictId = '';
+        $this->cities = [];
+        $this->districts = [];
+        $this->addressForm['destination_id'] = '';
+        $this->addressForm['destination_label'] = '';
+
+        if ($id) {
+            try {
+                $this->cities = \App\Services\BinderByteService::getCities($id);
+            } catch (\Exception $e) {
+                $this->locationError = 'Gagal memuat data kota: ' . $e->getMessage();
+            }
+        }
+    }
+
+    public function updatedSelectedCityId($id)
+    {
+        $this->locationError = null;
+        $this->selectedDistrictId = '';
+        $this->districts = [];
+        $this->addressForm['destination_id'] = '';
+        $this->addressForm['destination_label'] = '';
+
+        if ($id) {
+            try {
+                $this->districts = \App\Services\BinderByteService::getDistricts($id);
+            } catch (\Exception $e) {
+                $this->locationError = 'Gagal memuat data kecamatan: ' . $e->getMessage();
+            }
+        }
+    }
+
+    public function updatedSelectedDistrictId($id)
+    {
+        $this->locationError = null;
+        $this->addressForm['destination_id'] = '';
+        $this->addressForm['destination_label'] = '';
+
+        if ($id) {
+            // Get names from lists
+            $provName = collect($this->provinces)->firstWhere('id', $this->selectedProvinceId)['name'] ?? '';
+            $cityName = collect($this->cities)->firstWhere('id', $this->selectedCityId)['name'] ?? '';
+            $distName = collect($this->districts)->firstWhere('id', $id)['name'] ?? '';
+
+            $this->addressForm['destination_id'] = $id;
+            $this->addressForm['destination_label'] = trim(sprintf('%s, %s, %s', $distName, $cityName, $provName), ', ');
+            
+            $this->addressForm['province'] = $provName;
+            $this->addressForm['city'] = $cityName;
+            $this->addressForm['district'] = $distName;
+        }
     }
 
     public function deleteAddress($id)
@@ -238,6 +334,13 @@ class Account extends Component
             'addressForm.full_address' => 'required|string',
             'addressForm.province' => 'required|string',
             'addressForm.city' => 'required|string',
+            'addressForm.district' => 'required|string',
+            'addressForm.destination_id' => 'required|string',
+            'addressForm.village' => 'nullable|string',
+            'addressForm.postal_code' => 'nullable|string',
+        ], [
+            'addressForm.destination_id.required' => 'Silakan pilih lokasi (Provinsi, Kota, Kecamatan) dari pilihan yang tersedia.',
+            'addressForm.district.required' => 'Kecamatan harus diisi.'
         ]);
 
         if ($this->addressForm['is_primary']) {
@@ -259,6 +362,7 @@ class Account extends Component
 
         $this->toggleAddressForm();
         session()->flash('address_success', 'Alamat berhasil disimpan.');
+        $this->dispatch('address-saved', message: 'Alamat berhasil disimpan!');
     }
 
     public function updateProfile()
@@ -321,11 +425,47 @@ class Account extends Component
     public function getDashboardStatsProperty()
     {
         $orders = Order::where('user_id', Auth::id())->get();
+        
+        // Calculate chart data (last 6 months spending)
+        $chartData = [];
+        $maxSpending = 0;
+        
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthYear = $date->format('Y-m');
+            
+            $spent = $orders->whereIn('status', ['paid', 'packed', 'sent', 'completed'])
+                ->filter(function($order) use ($monthYear) {
+                    return $order->created_at->format('Y-m') === $monthYear;
+                })
+                ->sum('grand_total');
+                
+            if ($spent > $maxSpending) {
+                $maxSpending = $spent;
+            }
+                
+            $chartData[] = [
+                'label' => $date->translatedFormat('M'),
+                'spent' => $spent,
+                'height' => '0%' // Will calculate relative to max later
+            ];
+        }
+        
+        // Calculate heights relative to max
+        if ($maxSpending > 0) {
+            foreach ($chartData as &$data) {
+                // Minimum 5% height so the bar is visible even if spending is small
+                $percent = max(5, ($data['spent'] / $maxSpending) * 100);
+                $data['height'] = $percent . '%';
+            }
+        }
+
         return [
             'total_orders' => $orders->count(),
             'total_spent' => $orders->whereIn('status', ['paid', 'packed', 'sent', 'completed'])->sum('grand_total'),
             'pending_orders' => $orders->where('status', 'pending')->count(),
             'completed_orders' => $orders->where('status', 'completed')->count(),
+            'chart_data' => $chartData,
         ];
     }
 

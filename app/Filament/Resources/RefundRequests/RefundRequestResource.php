@@ -207,4 +207,11 @@ class RefundRequestResource extends Resource
             'index' => ManageRefundRequests::route('/'),
         ];
     }
+
+    public static function getWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\RefundRequests\Widgets\RefundStatsWidget::class,
+        ];
+    }
 }

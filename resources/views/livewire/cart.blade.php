@@ -268,7 +268,7 @@
     @endif
 
     <!-- Voucher Bottom Sheet / Modal -->
-    <div x-show="bsVoucherOpen" style="display: none;" class="fixed inset-0 z-[100] lg:flex lg:items-center lg:justify-center">
+    <div x-show="bsVoucherOpen" style="display: none;" class="fixed inset-0 z-[100] flex items-end justify-center lg:items-center">
         <!-- Backdrop -->
         <div x-show="bsVoucherOpen" 
              x-transition.opacity.duration.300ms
@@ -277,13 +277,13 @@
              
         <!-- Sheet -->
         <div x-show="bsVoucherOpen" 
-             x-transition:enter="transition-transform duration-300 lg:transition-opacity lg:duration-200 lg:ease-out"
+             x-transition:enter="transition-transform duration-300 lg:transition-all lg:duration-200 lg:ease-out"
              x-transition:enter-start="translate-y-full lg:translate-y-0 lg:scale-95 lg:opacity-0"
              x-transition:enter-end="translate-y-0 lg:scale-100 lg:opacity-100"
-             x-transition:leave="transition-transform duration-300 lg:transition-opacity lg:duration-200 lg:ease-in"
+             x-transition:leave="transition-transform duration-300 lg:transition-all lg:duration-200 lg:ease-in"
              x-transition:leave-start="translate-y-0 lg:scale-100 lg:opacity-100"
              x-transition:leave-end="translate-y-full lg:translate-y-0 lg:scale-95 lg:opacity-0"
-             class="absolute bottom-0 left-0 right-0 bg-[#fcf9f5] rounded-t-2xl lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden lg:relative lg:bottom-auto lg:left-auto lg:right-auto lg:w-full lg:max-w-[480px]">
+             class="relative w-full max-w-full lg:max-w-[480px] bg-[#fcf9f5] rounded-t-2xl lg:rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10">
              
             <!-- Handle -->
             <div class="flex lg:hidden justify-center pt-3 pb-2" @click="bsVoucherOpen = false">

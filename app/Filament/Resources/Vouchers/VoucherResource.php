@@ -56,4 +56,11 @@ class VoucherResource extends Resource
             'edit' => EditVoucher::route('/{record}/edit'),
         ];
     }
+
+    public static function getWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\Vouchers\Widgets\VoucherStatsWidget::class,
+        ];
+    }
 }
