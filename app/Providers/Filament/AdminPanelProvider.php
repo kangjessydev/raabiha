@@ -56,6 +56,16 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Profil')
                     ->url(fn (): string => \App\Filament\Pages\MyProfile::getUrl())
                     ->icon('heroicon-m-user-circle'),
+                \Filament\Navigation\MenuItem::make()
+                    ->label('Kunjungi Toko')
+                    ->url('/')
+                    ->icon('heroicon-m-arrow-top-right-on-square')
+                    ->openUrlInNewTab(),
+                \Filament\Navigation\MenuItem::make()
+                    ->label('Kunjungi Shop')
+                    ->url('/shop')
+                    ->icon('heroicon-m-shopping-bag')
+                    ->openUrlInNewTab(),
             ])
             ->colors([
                 'primary' => \Filament\Support\Colors\Color::Emerald,
@@ -66,6 +76,7 @@ class AdminPanelProvider extends PanelProvider
                     ? SiteSetting::where('key', 'site_name')->value('value') 
                     : null) ?: 'Raabiha Admin'
             )
+            ->homeUrl('/')
             ->brandLogo(fn () => $resolveMediaUrl('site_logo_light'))
             ->darkModeBrandLogo(fn () => $resolveMediaUrl('site_logo_dark'))
             ->brandLogoHeight('2.5rem')

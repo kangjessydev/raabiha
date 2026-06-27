@@ -293,7 +293,7 @@ class OrderObserver
                     data: [
                         'order' => $order,
                         'greeting' => "Halo, " . ($order->shipping_address['name'] ?? $order->user->name ?? 'Pelanggan') . "!",
-                        'messageBody' => "Kabar gembira! Pesanan Anda #{$order->order_number} telah dikirim menggunakan kurir <strong>" . strtoupper($order->courier ?? '') . "</strong> dengan nomor resi pengiriman (AWB): <strong>" . ($order->awb_number ?? '-') . "</strong>. Silakan lacak pengiriman Anda secara berkala."
+                        'messageBody' => "Kabar gembira! Pesanan Anda #{$order->order_number} telah dikirim menggunakan kurir <strong>" . strtoupper($order->courier ?? '') . "</strong> dengan nomor resi pengiriman (AWB): <strong>" . ($order->awb_number ?? '-') . "</strong>.<br><br>Anda dapat melacak status pengiriman secara real-time langsung melalui akun Anda.<br><a href=\"" . url('/order-detail?id=' . $order->id) . "\" style=\"display: inline-block; background-color: #064e3b; color: white; padding: 10px 20px; text-decoration: none; font-weight: bold; margin-top: 10px;\">Lacak Status Pengiriman Anda →</a>"
                     ]
                 ));
             } catch (\Exception $e) {

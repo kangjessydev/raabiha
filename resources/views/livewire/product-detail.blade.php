@@ -228,6 +228,21 @@
                             <!-- Add to Cart Widget -->
                             <div class="woocommerce-variation-add-to-cart variations_button w-full flex flex-col gap-3">
                                 
+                                <!-- Stock Status Row -->
+                                <div class="text-[10px] font-mono tracking-widest text-[#615e57] uppercase mb-1 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full {{ $product->is_out_of_stock ? 'bg-red-500' : 'bg-emerald-500' }}"></span>
+                                    <span>STATUS STOK: </span>
+                                    @if($product->has_variants)
+                                        @if($this->getMatchedVariant())
+                                            <span class="font-bold text-[#1c1c1a]">{{ $this->getMatchedVariant()->stock }} PCS TERSEDIA</span>
+                                        @else
+                                            <span class="font-bold text-[#1c1c1a]">{{ $product->total_stock }} PCS TERSEDIA (TOTAL SEMUA VARIAN)</span>
+                                        @endif
+                                    @else
+                                        <span class="font-bold text-[#1c1c1a]">{{ $product->stock }} PCS TERSEDIA</span>
+                                    @endif
+                                </div>
+
                                 <!-- Messages will be handled via JS/SweetAlert/Animation -->
 
                                 @if (session()->has('error'))
@@ -239,21 +254,27 @@
                                 <!-- Desktop Single Row: QTY + CTA + Wishlist -->
                                 <div class="hidden md:flex items-center gap-3 w-full h-14">
                                     <!-- QTY -->
-                                    <div class="flex items-center border border-[#e5e2de] w-28 shrink-0 h-full">
-                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" wire:click="decrementQuantity">
+                                    <div class="flex items-center border border-[#e5e2de] w-28 shrink-0 h-full {{ $product->is_out_of_stock ? 'opacity-40 pointer-events-none' : '' }}">
+                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" wire:click="decrementQuantity" @if($product->is_out_of_stock) disabled @endif>
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                                         </button>
-                                        <input type="number" id="qty" wire:model.live="quantity" min="1" class="w-full text-center bg-transparent border-none focus:outline-none text-[#1c1c1a] font-mono text-[13px] appearance-none m-0" style="-moz-appearance: textfield;">
-                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" wire:click="incrementQuantity">
+                                        <input type="number" id="qty" wire:model.live="quantity" min="1" class="w-full text-center bg-transparent border-none focus:outline-none text-[#1c1c1a] font-mono text-[13px] appearance-none m-0" style="-moz-appearance: textfield;" @if($product->is_out_of_stock) disabled @endif>
+                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" wire:click="incrementQuantity" @if($product->is_out_of_stock) disabled @endif>
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                         </button>
                                     </div>
 
-                                    <!-- Add to Cart -->
-                                    <button type="button" wire:click="addToCart" id="desktop-add-to-cart-btn" class="flex-1 h-full bg-[#064e3b] text-white hover:bg-[#053e2f] flex items-center justify-center gap-3 border-none transition-colors focus:outline-none">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                                        <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">TAMBAH KE KERANJANG</span>
-                                    </button>
+                                    <!-- Add to Cart / Out of Stock CTA -->
+                                    @if($product->is_out_of_stock)
+                                        <button type="button" disabled class="flex-1 h-full bg-[#ebebeb] text-[#a09e99] flex items-center justify-center gap-3 border-none cursor-not-allowed focus:outline-none">
+                                            <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">STOK HABIS</span>
+                                        </button>
+                                    @else
+                                        <button type="button" wire:click="addToCart" id="desktop-add-to-cart-btn" class="flex-1 h-full bg-[#064e3b] text-white hover:bg-[#053e2f] flex items-center justify-center gap-3 border-none transition-colors focus:outline-none">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                            <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">TAMBAH KE KERANJANG</span>
+                                        </button>
+                                    @endif
 
                                     <!-- Wishlist (Icon Only) -->
                                     <livewire:wishlist-toggle :product_id="$product->id" :isDetail="true" :key="'wishlist-detail-'.$product->id" />
@@ -603,6 +624,19 @@
                             <span>Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
                         @endif
                     </div>
+                    <div class="text-[10px] font-mono text-[#615e57] mt-1 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full {{ $product->is_out_of_stock ? 'bg-red-500' : 'bg-emerald-500' }}"></span>
+                        <span>Stok: </span>
+                        @if($product->has_variants)
+                            @if($this->getMatchedVariant())
+                                <span class="font-bold text-[#1c1c1a]">{{ $this->getMatchedVariant()->stock }} PCS</span>
+                            @else
+                                <span class="font-bold text-[#1c1c1a]">{{ $product->total_stock }} PCS (TOTAL)</span>
+                            @endif
+                        @else
+                            <span class="font-bold text-[#1c1c1a]">{{ $product->stock }} PCS</span>
+                        @endif
+                    </div>
                 </div>
             </div>
             <button type="button" @click="bsOpen = false" class="w-8 h-8 flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none self-start">
@@ -675,12 +709,12 @@
 
             <div class="mb-2" id="bs-qty-selector">
                 <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">QUANTITY</label>
-                <div class="flex items-center w-[120px] h-10 border border-[#e5e2de]">
-                    <button type="button" wire:click="decrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none">
+                <div class="flex items-center w-[120px] h-10 border border-[#e5e2de] {{ $product->is_out_of_stock ? 'opacity-40 pointer-events-none' : '' }}">
+                    <button type="button" wire:click="decrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none" @if($product->is_out_of_stock) disabled @endif>
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                     </button>
                     <div class="flex-1 h-full flex items-center justify-center font-mono text-[12px] text-[#1c1c1a] bg-transparent">{{ $quantity }}</div>
-                    <button type="button" wire:click="incrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none">
+                    <button type="button" wire:click="incrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none" @if($product->is_out_of_stock) disabled @endif>
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     </button>
                 </div>
@@ -689,12 +723,18 @@
 
         <!-- CTA Footer -->
         <div class="px-5 pb-6 pt-3 border-t border-[#e5e2de]">
-            <button x-show="bsMode === 'cart'" type="button" wire:click="addToCart" id="mobile-bottomsheet-cart-btn" class="w-full h-14 bg-[#064e3b] text-white flex items-center justify-center transition-colors focus:outline-none text-[10px] font-mono font-bold tracking-[0.2em] uppercase hover:bg-[#053e2f]">
-                + KERANJANG
-            </button>
-            <button x-show="bsMode === 'buy'" style="display: none;" type="button" wire:click="buyNow" class="w-full h-14 bg-[#064e3b] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#053e2f] focus:outline-none">
-                BELI SEKARANG
-            </button>
+            @if($product->is_out_of_stock)
+                <button type="button" disabled class="w-full h-14 bg-[#ebebeb] text-[#a09e99] flex items-center justify-center cursor-not-allowed focus:outline-none text-[10px] font-mono font-bold tracking-[0.2em] uppercase">
+                    STOK HABIS
+                </button>
+            @else
+                <button x-show="bsMode === 'cart'" type="button" wire:click="addToCart" id="mobile-bottomsheet-cart-btn" class="w-full h-14 bg-[#064e3b] text-white flex items-center justify-center transition-colors focus:outline-none text-[10px] font-mono font-bold tracking-[0.2em] uppercase hover:bg-[#053e2f]">
+                    + KERANJANG
+                </button>
+                <button x-show="bsMode === 'buy'" style="display: none;" type="button" wire:click="buyNow" class="w-full h-14 bg-[#064e3b] text-white text-[10px] font-mono font-bold tracking-[0.2em] uppercase flex items-center justify-center transition-colors hover:bg-[#053e2f] focus:outline-none">
+                    BELI SEKARANG
+                </button>
+            @endif
         </div>
     </div>
     <!-- ===== END MOBILE VARIANT BOTTOMSHEET ===== -->
@@ -707,18 +747,33 @@
             <span class="text-[8px] font-mono tracking-widest uppercase">Chat</span>
         </a>
         
-        <!-- Cart Icon -->
-        <button type="button" id="mobile-add-to-cart-btn" @click="bsOpen = true; bsMode = 'cart'" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
-            <div class="relative">
-                <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-            </div>
-            <span class="text-[8px] font-mono tracking-widest uppercase">Cart</span>
-        </button>
-        
-        <!-- Buy Now Button -->
-        <button type="button" id="mobile-buy-now-btn" @click="bsOpen = true; bsMode = 'buy'" class="flex-1 h-full bg-[#064e3b] text-white flex flex-col items-center justify-center hover:bg-[#053e2f] transition-colors focus:outline-none">
-            <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">BELI SEKARANG</span>
-        </button>
+        @if($product->is_out_of_stock)
+            <!-- Out of Stock Cart Icon -->
+            <button type="button" disabled class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#a09e99] bg-[#f9f8f6] cursor-not-allowed focus:outline-none">
+                <div class="relative">
+                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                </div>
+                <span class="text-[8px] font-mono tracking-widest uppercase">Cart</span>
+            </button>
+            
+            <!-- Out of Stock Buy Now Button -->
+            <button type="button" disabled class="flex-1 h-full bg-[#ebebeb] text-[#a09e99] flex flex-col items-center justify-center cursor-not-allowed focus:outline-none">
+                <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">STOK HABIS</span>
+            </button>
+        @else
+            <!-- Cart Icon -->
+            <button type="button" id="mobile-add-to-cart-btn" @click="bsOpen = true; bsMode = 'cart'" class="w-[60px] shrink-0 h-full flex flex-col items-center justify-center border-r border-[#e5e2de] text-[#1c1c1a] hover:bg-gray-50 transition-colors focus:outline-none">
+                <div class="relative">
+                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                </div>
+                <span class="text-[8px] font-mono tracking-widest uppercase">Cart</span>
+            </button>
+            
+            <!-- Buy Now Button -->
+            <button type="button" id="mobile-buy-now-btn" @click="bsOpen = true; bsMode = 'buy'" class="flex-1 h-full bg-[#064e3b] text-white flex flex-col items-center justify-center hover:bg-[#053e2f] transition-colors focus:outline-none">
+                <span class="text-[10px] font-mono font-bold tracking-[0.2em] uppercase">BELI SEKARANG</span>
+            </button>
+        @endif
     </div>
 
     <script data-navigate-once>

@@ -101,6 +101,8 @@ class Shop extends Component
             }
         }
 
+        $query->orderByRaw('CASE WHEN has_variants = 1 THEN (SELECT COALESCE(SUM(stock), 0) FROM product_variants WHERE product_variants.product_id = products.id) ELSE stock END > 0 DESC');
+
         switch ($this->sort) {
             case 'price-low':
                 $query->orderBy('price', 'asc');

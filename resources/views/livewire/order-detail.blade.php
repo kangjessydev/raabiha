@@ -95,9 +95,68 @@
                                 <div class="font-sans text-[13px] text-[#064e3b] font-medium font-mono bg-[#064e3b]/10 px-2 py-1 inline-block border border-[#064e3b]/20">
                                     {{ $order->awb_number }}
                                 </div>
+                                <div class="mt-3">
+                                    <button type="button" wire:click="trackPackage" class="font-mono text-[9px] font-bold tracking-widest uppercase text-white bg-[#064e3b] hover:bg-[#043326] px-3 py-1.5 transition-colors focus:outline-none flex items-center gap-1.5 inline-flex">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                        <span>Lacak Paket</span>
+                                    </button>
+                                </div>
                             @endif
                         </div>
                     </div>
+
+                    <!-- Tracking Panel -->
+                    @if($trackingLoading || $trackingInfo || $trackingError)
+                    <div class="bg-[#fcf9f5] border-b border-[#e5e2de] p-6 md:p-8">
+                        <h3 class="font-mono text-[11px] font-bold tracking-[0.15em] uppercase text-[#1c1c1a] mb-6 flex items-center justify-between">
+                            <span>Status Pelacakan Real-time</span>
+                            <button type="button" wire:click="$set('trackingInfo', null); $set('trackingError', null);" class="text-red-500 hover:text-red-700 text-xs font-sans">Tutup X</button>
+                        </h3>
+
+                        @if($trackingLoading)
+                            <div class="flex items-center gap-3 justify-center py-8">
+                                <svg class="animate-spin h-5 w-5 text-[#064e3b]" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="font-sans text-xs text-[#615e57] font-semibold font-mono tracking-widest uppercase">Menghubungkan ke API BinderByte...</span>
+                            </div>
+                        @elseif($trackingError)
+                            <div class="text-xs text-red-600 bg-red-50 border border-red-200 p-4 rounded font-sans">
+                                {{ $trackingError }}
+                            </div>
+                        @elseif($trackingInfo)
+                            <div class="flex flex-col gap-6 relative border-l border-[#e5e2de] pl-6 ml-3">
+                                @php
+                                    $history = $trackingInfo['history'] ?? [];
+                                @endphp
+                                @if(empty($history))
+                                    <div class="text-xs text-[#615e57] font-sans">Belum ada riwayat pengiriman terbaru untuk nomor resi ini.</div>
+                                @else
+                                    @foreach($history as $index => $step)
+                                        <div class="relative">
+                                            <!-- Bullet point -->
+                                            <span class="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full {{ $index === 0 ? 'bg-[#064e3b]' : 'bg-[#e5e2de]' }} border-2 border-white ring-4 ring-transparent"></span>
+                                            
+                                            <div class="font-mono text-[9px] uppercase tracking-widest text-[#615e57] mb-1">
+                                                {{ isset($step['date']) ? date('d M Y, H:i', strtotime($step['date'])) : '' }}
+                                            </div>
+                                            <div class="font-sans text-[13px] text-[#1c1c1a] font-semibold mb-0.5">
+                                                {{ $step['desc'] ?? '' }}
+                                            </div>
+                                            @if(!empty($step['location']))
+                                                <div class="font-sans text-[11px] text-[#615e57] italic">
+                                                    Lokasi: {{ $step['location'] }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                    @endif
+
 
                     <!-- Items List -->
                     <div class="p-6 md:p-8 border-b border-[#e5e2de]">

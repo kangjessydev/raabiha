@@ -30,6 +30,7 @@ class IntegrationSettings extends Page implements HasForms
     public bool $unlockedTripay = false;
     public bool $unlockedXendit = false;
     public bool $unlockedRajaOngkir = false;
+    public bool $unlockedBinderByte = false;
 
     public function mount(): void
     {
@@ -128,6 +129,17 @@ class IntegrationSettings extends Page implements HasForms
                         \Filament\Schemas\Components\Tabs\Tab::make('Ekspedisi')
                             ->visible(fn () => auth()->user()->hasRole('super_admin'))
                             ->components([
+                                Forms\Components\Radio::make('active_shipping_provider')
+                                    ->label('Provider Ongkir Aktif')
+                                    ->options([
+                                        'komerce' => 'Komerce (RajaOngkir)',
+                                        'binderbyte' => 'BinderByte Logistics',
+                                    ])
+                                    ->default('komerce')
+                                    ->inline()
+                                    ->live()
+                                    ->required()
+                                    ->columnSpanFull(),
                                 Forms\Components\TextInput::make('rajaongkir_api_key')
                                     ->label('API Key Ekspedisi (Komerce / RajaOngkir)')
                                     ->password()
@@ -148,8 +160,69 @@ class IntegrationSettings extends Page implements HasForms
                                                 $livewire->unlockedRajaOngkir = true;
                                             })
                                     )
+                                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('active_shipping_provider') !== 'binderbyte')
                                     ->columnSpanFull(),
+                                Forms\Components\TextInput::make('binderbyte_api_key')
+                                    ->label('API Key BinderByte')
+                                    ->password()
+                                    ->readOnly(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedBinderByte)
+                                    ->suffixAction(
+                                        \Filament\Actions\Action::make('unlock_binderbyte')
+                                            ->icon('heroicon-m-lock-closed')
+                                            ->color('danger')
+                                            ->visible(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedBinderByte)
+                                            ->requiresConfirmation()
+                                            ->form([
+                                                Forms\Components\TextInput::make('password')
+                                                    ->password()
+                                                    ->required()
+                                                    ->currentPassword()
+                                            ])
+                                            ->action(function (\Livewire\Component $livewire) {
+                                                $livewire->unlockedBinderByte = true;
+                                            })
+                                    )
+                                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('active_shipping_provider') === 'binderbyte')
+                                    ->columnSpanFull(),
+                                \Filament\Schemas\Components\Actions::make([
+                                    \Filament\Actions\Action::make('test_binderbyte_conn')
+                                        ->label('Test Koneksi BinderByte')
+                                        ->icon('heroicon-m-bolt')
+                                        ->color('warning')
+                                        ->action(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                            $apiKey = $get('binderbyte_api_key');
+                                            if (empty($apiKey)) {
+                                                Notification::make()
+                                                    ->title('Gagal')
+                                                    ->body('Harap masukkan API Key BinderByte terlebih dahulu.')
+                                                    ->danger()
+                                                    ->send();
+                                                return;
+                                            }
+                                            
+                                            $response = \Illuminate\Support\Facades\Http::get('https://api.binderbyte.com/wilayah/provinsi', [
+                                                'api_key' => $apiKey
+                                            ]);
+                                            
+                                            if ($response->successful() && $response->json('code') == '200') {
+                                                Notification::make()
+                                                    ->title('Koneksi Sukses')
+                                                    ->body('API Key BinderByte valid dan berhasil terhubung.')
+                                                    ->success()
+                                                    ->send();
+                                            } else {
+                                                $msg = $response->json('message') ?? 'Respons tidak dikenal dari server.';
+                                                Notification::make()
+                                                    ->title('Koneksi Gagal')
+                                                    ->body('Gagal menghubungkan ke BinderByte: ' . $msg)
+                                                    ->danger()
+                                                    ->send();
+                                            }
+                                        })
+                                ])
+                                ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('active_shipping_provider') === 'binderbyte'),
                             ]),
+
                             
                         \Filament\Schemas\Components\Tabs\Tab::make('Tracking & Custom Scripts')
                             ->components([

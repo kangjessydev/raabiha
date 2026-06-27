@@ -20,6 +20,7 @@ class Checkout extends Component
     public $first_name;
     public $last_name;
     public $address;
+    public $village = '';
     public $agree_terms = false;
     public $province;
     public $city;
@@ -28,6 +29,18 @@ class Checkout extends Component
     public $notes;
     
     // Region Dropdown State removed, handled by Komerce Autocomplete
+    
+    // Address Mode & Active Shipping Provider
+    public $addressMode = 'api'; // 'api' atau 'manual'
+    public $activeShippingProvider = 'komerce'; // 'komerce' atau 'binderbyte'
+
+    // BinderByte Cascading Dropdown States
+    public $provinces = [];
+    public $cities = [];
+    public $districts = [];
+    public $selectedProvinceId = '';
+    public $selectedCityId = '';
+    public $selectedDistrictId = '';
     
     // Checkout state
     public $shipping_cost = 20000;
@@ -62,6 +75,9 @@ class Checkout extends Component
             return redirect('/cart');
         }
 
+        // Load active shipping provider
+        $this->activeShippingProvider = \App\Models\SiteSetting::where('key', 'active_shipping_provider')->value('value') ?? 'komerce';
+
         if (auth()->check()) {
             $this->guest_mode = false;
             $user = auth()->user();
@@ -72,11 +88,43 @@ class Checkout extends Component
             $address = $user->addresses()->where('is_primary', true)->first() ?? $user->addresses()->first();
             if ($address) {
                 $this->phone = $address->phone ?? '';
-                $this->address = $address->full_address ?? '';
+                
+                // Clean the address text in case it had the village suffix saved previously
+                $cleanAddress = $address->full_address ?? '';
+                $cleanAddress = preg_replace('/\nKel\/Desa: .*/', '', $cleanAddress);
+                $this->address = $cleanAddress;
+                
+                $this->village = $address->village ?? '';
+                $this->postal_code = $address->postal_code ?? '';
+
+                if ($this->activeShippingProvider === 'komerce') {
+                    $this->selectedDestinationId = $address->destination_id ?? '';
+                    $this->selectedDestinationLabel = $address->destination_label ?? '';
+                } elseif ($this->activeShippingProvider === 'binderbyte') {
+                    $this->loadProvinces();
+                    $this->selectedProvinceId = $address->province ?? '';
+                    if ($this->selectedProvinceId) {
+                        $this->updatedSelectedProvinceId($this->selectedProvinceId);
+                        $this->selectedCityId = $address->city ?? '';
+                        if ($this->selectedCityId) {
+                            $this->updatedSelectedCityId($this->selectedCityId);
+                            $this->selectedDistrictId = $address->district ?? '';
+                            if ($this->selectedDistrictId) {
+                                $this->updatedSelectedDistrictId($this->selectedDistrictId);
+                            }
+                        }
+                    }
+                }
             }
         } else {
             $this->guest_mode = null; // Show the choice screen
         }
+
+        // Load provinces if using binderbyte and user not logged in or no address
+        if ($this->activeShippingProvider === 'binderbyte' && empty($this->provinces)) {
+            $this->loadProvinces();
+        }
+
         $firstMethod = \App\Models\PaymentMethod::where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('config->availability')
@@ -164,10 +212,146 @@ class Checkout extends Component
         $this->generateShippingRates();
     }
     
+    // BinderByte Cascading Dropdown Logic
+    public function loadProvinces()
+    {
+        $this->locationError = null;
+        try {
+            $this->provinces = \App\Services\BinderByteService::getProvinces();
+            if (empty($this->provinces)) {
+                $this->locationError = 'Gagal memuat data provinsi. Silakan gunakan mode manual jika berlanjut.';
+            }
+        } catch (\Exception $e) {
+            $this->locationError = 'Masalah memuat wilayah BinderByte: ' . $e->getMessage();
+        }
+    }
+
+    public function updatedSelectedProvinceId($id)
+    {
+        $this->locationError = null;
+        $this->selectedCityId = '';
+        $this->selectedDistrictId = '';
+        $this->cities = [];
+        $this->districts = [];
+        $this->selectedDestinationId = '';
+        $this->selectedDestinationLabel = '';
+        $this->shippingRates = [];
+        $this->shipping_cost = 0;
+
+        if ($id) {
+            try {
+                if ($this->addressMode === 'manual') {
+                    $this->cities = \App\Services\EmsifaService::getCities($id);
+                } else {
+                    $this->cities = \App\Services\BinderByteService::getCities($id);
+                }
+            } catch (\Exception $e) {
+                $this->locationError = 'Gagal memuat data kota: ' . $e->getMessage();
+            }
+        }
+    }
+
+    public function updatedSelectedCityId($id)
+    {
+        $this->locationError = null;
+        $this->selectedDistrictId = '';
+        $this->districts = [];
+        $this->selectedDestinationId = '';
+        $this->selectedDestinationLabel = '';
+        $this->shippingRates = [];
+        $this->shipping_cost = 0;
+
+        if ($id) {
+            try {
+                if ($this->addressMode === 'manual') {
+                    $this->districts = \App\Services\EmsifaService::getDistricts($id);
+                } else {
+                    $this->districts = \App\Services\BinderByteService::getDistricts($id);
+                }
+            } catch (\Exception $e) {
+                $this->locationError = 'Gagal memuat data kecamatan: ' . $e->getMessage();
+            }
+        }
+    }
+
+    public function updatedSelectedDistrictId($id)
+    {
+        $this->locationError = null;
+        $this->selectedDestinationId = '';
+        $this->selectedDestinationLabel = '';
+        $this->shippingRates = [];
+        $this->shipping_cost = 0;
+
+        if ($id) {
+            // Get names from lists
+            $provName = collect($this->provinces)->firstWhere('id', $this->selectedProvinceId)['name'] ?? '';
+            $cityName = collect($this->cities)->firstWhere('id', $this->selectedCityId)['name'] ?? '';
+            $distName = collect($this->districts)->firstWhere('id', $id)['name'] ?? '';
+
+            // Format label: "Kecamatan, Kota/Kabupaten, Provinsi"
+            $this->selectedDestinationId = $id; // ID kecamatan
+            $this->selectedDestinationLabel = trim(sprintf('%s, %s, %s', $distName, $cityName, $provName), ', ');
+
+            $this->province = $provName;
+            $this->city = $cityName;
+            $this->district = $distName;
+
+            $this->generateShippingRates();
+        }
+    }
+
+    public function loadEmsifaProvinces()
+    {
+        $this->locationError = null;
+        try {
+            $this->provinces = \App\Services\EmsifaService::getProvinces();
+        } catch (\Exception $e) {
+            $this->locationError = 'Gagal memuat provinsi (Emsifa): ' . $e->getMessage();
+        }
+    }
+
+    public function switchToManualMode()
+    {
+        $this->addressMode = 'manual';
+        
+        // Reset API state
+        $this->selectedDestinationId = '';
+        $this->selectedDestinationLabel = '';
+        $this->selectedProvinceId = '';
+        $this->selectedCityId = '';
+        $this->selectedDistrictId = '';
+        $this->province = '';
+        $this->city = '';
+        $this->district = '';
+        $this->shippingRates = [];
+        $this->shipping_cost = 0;
+        
+        $this->loadEmsifaProvinces();
+        $this->generateShippingRates();
+    }
+
+    public function switchToApiMode()
+    {
+        $this->addressMode = 'api';
+        
+        $this->selectedDestinationId = '';
+        $this->selectedDestinationLabel = '';
+        $this->province = '';
+        $this->city = '';
+        $this->district = '';
+        $this->shippingRates = [];
+        $this->shipping_cost = 0;
+        
+        if ($this->activeShippingProvider === 'binderbyte') {
+            $this->loadProvinces();
+        }
+    }
+    
     public function updatedAddressMode($value)
     {
         $this->generateShippingRates();
     }
+
     
     public $shippingRates = [];
 
@@ -181,21 +365,11 @@ class Checkout extends Component
     {
         $this->shippingRates = [];
         
-        if (!$this->selectedDestinationId) {
-            $this->shipping_cost = 0;
-            return;
-        }
-
-        $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
-        $originCityRaw = \App\Models\SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
-        if (!$apiKey || !$originCityRaw) return;
-        $originCity = explode('::', $originCityRaw)[0];
-        
         $activeCouriers = \App\Models\ShippingMethod::where('is_active', true)->get();
         if ($activeCouriers->isEmpty()) {
             return;
         }
-        
+
         // Calculate total weight
         $totalWeight = 0;
         $cart = $this->cart;
@@ -207,51 +381,255 @@ class Checkout extends Component
         }
         if ($totalWeight == 0) $totalWeight = 1000;
 
-        foreach ($activeCouriers as $courier) {
-            $courierCode = $courier->code;
-            $courierConfig = $courier->config ?? [];
-            $allowedServices = [];
+        // Path 1: Manual Address Mode (Fallback)
+        if ($this->addressMode === 'manual') {
+            if (!$this->selectedDestinationId) {
+                $this->shipping_cost = 0;
+                return;
+            }
+
+            // Ambil manual_shipping_rules dari database
+            $rulesJson = \App\Models\SiteSetting::where('key', 'manual_shipping_rules')->value('value');
+            $rules = $rulesJson ? json_decode($rulesJson, true) : [];
             
-            // Parse allowed services if configured
-            if (!empty($courierConfig['allowed_services'])) {
-                if (is_array($courierConfig['allowed_services'])) {
-                    $allowedServices = array_map('strtoupper', array_map('trim', $courierConfig['allowed_services']));
-                } else {
-                    $allowedServices = array_map('trim', explode(',', strtoupper($courierConfig['allowed_services'])));
+            if (empty($rules)) {
+                 $this->locationError = 'Belum ada tarif pengiriman yang tersedia untuk wilayah ini.';
+                 return;
+            }
+
+            $provNameStr = strtoupper(trim($this->province));
+
+            $islandMapping = [
+                'ACEH' => 'sumatera', 'SUMATERA UTARA' => 'sumatera', 'SUMATERA BARAT' => 'sumatera', 'RIAU' => 'sumatera', 'JAMBI' => 'sumatera', 'SUMATERA SELATAN' => 'sumatera', 'BENGKULU' => 'sumatera', 'LAMPUNG' => 'sumatera', 'KEPULAUAN BANGKA BELITUNG' => 'sumatera', 'KEPULAUAN RIAU' => 'sumatera',
+                'DKI JAKARTA' => 'jawa', 'JAWA BARAT' => 'jawa', 'JAWA TENGAH' => 'jawa', 'DI YOGYAKARTA' => 'jawa', 'JAWA TIMUR' => 'jawa', 'BANTEN' => 'jawa',
+                'BALI' => 'bali_nt', 'NUSA TENGGARA BARAT' => 'bali_nt', 'NUSA TENGGARA TIMUR' => 'bali_nt',
+                'KALIMANTAN BARAT' => 'kalimantan', 'KALIMANTAN TENGAH' => 'kalimantan', 'KALIMANTAN SELATAN' => 'kalimantan', 'KALIMANTAN TIMUR' => 'kalimantan', 'KALIMANTAN UTARA' => 'kalimantan',
+                'SULAWESI UTARA' => 'sulawesi', 'SULAWESI TENGAH' => 'sulawesi', 'SULAWESI SELATAN' => 'sulawesi', 'SULAWESI TENGGARA' => 'sulawesi', 'GORONTALO' => 'sulawesi', 'SULAWESI BARAT' => 'sulawesi',
+                'MALUKU' => 'maluku_papua', 'MALUKU UTARA' => 'maluku_papua', 'PAPUA' => 'maluku_papua', 'PAPUA BARAT' => 'maluku_papua', 'PAPUA SELATAN' => 'maluku_papua', 'PAPUA TENGAH' => 'maluku_papua', 'PAPUA PEGUNUNGAN' => 'maluku_papua', 'PAPUA BARAT DAYA' => 'maluku_papua'
+            ];
+            
+            $islandStr = $islandMapping[$provNameStr] ?? '';
+            $courierBestRules = [];
+            
+            foreach ($rules as $rule) {
+                $cCode = $rule['courier'];
+                $rScope = $rule['scope'];
+                $rPrice = (float) $rule['rate'];
+                $rName = $rule['name'];
+                
+                $isMatch = false;
+                $priority = 0;
+                
+                if ($rScope === 'province' && strtoupper(trim($rule['province_name'])) === $provNameStr) {
+                    $isMatch = true;
+                    $priority = 3;
+                } elseif ($rScope === 'island' && $rule['island_name'] === $islandStr) {
+                    $isMatch = true;
+                    $priority = 2;
+                } elseif ($rScope === 'national') {
+                    $isMatch = true;
+                    $priority = 1;
+                }
+                
+                if ($isMatch) {
+                    if (!isset($courierBestRules[$cCode]) || $courierBestRules[$cCode]['priority'] < $priority) {
+                        $courierBestRules[$cCode] = [
+                            'price' => $rPrice,
+                            'name' => $rName,
+                            'priority' => $priority
+                        ];
+                    }
                 }
             }
 
-            try {
-                $cacheKey = 'ship_rate_v1_' . md5($originCity . '_' . $this->selectedDestinationId . '_' . $totalWeight . '_' . $courierCode);
-                $results = null;
+            foreach ($courierBestRules as $cCode => $bestRule) {
+                $price = $bestRule['price'];
+                $serviceName = $bestRule['name'];
+                
+                $courierModel = $activeCouriers->firstWhere('code', $cCode) ?? $activeCouriers->firstWhere('name', $cCode);
+                
+                $cNameDisplay = $courierModel ? $courierModel->name : $cCode;
+                $cLogo = $courierModel ? $courierModel->logo : null;
 
-                if (cache()->has($cacheKey)) {
-                    $cachedCosts = cache()->get($cacheKey);
-                    if (is_array($cachedCosts)) {
-                        $results = $cachedCosts;
+                $discountedPrice = $price;
+                if ($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher']) {
+                    $discountValue = $this->appliedVoucher['discount_type'] === 'fixed'
+                        ? $this->appliedVoucher['discount_amount']
+                        : $price * ($this->appliedVoucher['discount_amount'] / 100);
+
+                    if ($this->appliedVoucher['max_discount'] > 0 && $discountValue > $this->appliedVoucher['max_discount']) {
+                        $discountValue = $this->appliedVoucher['max_discount'];
                     }
+
+                    $discountedPrice = max(0, $price - $discountValue);
                 }
 
-                if ($results === null) {
-                    $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
-                        ->asForm()
-                        ->timeout(10)
-                        ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
-                            'origin' => $originCity,
-                            'destination' => $this->selectedDestinationId,
-                            'weight' => $totalWeight,
-                            'courier' => $courierCode
-                        ]);
+                $this->shippingRates[] = [
+                    'id' => 'manual|' . $cCode . '|' . $price,
+                    'courier_name' => $cNameDisplay,
+                    'service_name' => $serviceName,
+                    'duration' => '3-5 hari',
+                    'price' => $price,
+                    'original_price' => $price,
+                    'discounted_price' => $discountedPrice,
+                    'logo' => $cLogo,
+                ];
+            }
+        }
+        // Path 2: API Mode - BinderByte
+        elseif ($this->activeShippingProvider === 'binderbyte') {
+            if (!$this->selectedDestinationId) {
+                $this->shipping_cost = 0;
+                return;
+            }
 
-                    if ($response->successful()) {
-                        $results = $response->json('data') ?? [];
-                        if (!empty($results)) {
-                            cache()->put($cacheKey, $results, now()->addHours(6));
+            $originDistrict = \App\Models\SiteSetting::where('key', 'binderbyte_origin_district')->value('value');
+            if (!$originDistrict) {
+                $this->locationError = 'Kota asal pengiriman BinderByte belum dikonfigurasi di Pengaturan Toko.';
+                return;
+            }
+
+            $courierCodes = $activeCouriers->pluck('code')->implode(',');
+            
+            try {
+                $results = \App\Services\BinderByteService::getShippingCost(
+                    $originDistrict,
+                    $this->selectedDestinationId,
+                    $totalWeight,
+                    $courierCodes
+                );
+
+                if (!empty($results) && isset($results['results'])) {
+                    foreach ($results['results'] as $courierResult) {
+                        $courierCode = $courierResult['code'] ?? '';
+                        $courierModel = $activeCouriers->firstWhere('code', $courierCode);
+                        if (!$courierModel) continue;
+
+                        $courierName = $courierModel->name;
+                        $courierConfig = $courierModel->config ?? [];
+                        $allowedServices = [];
+                        
+                        if (!empty($courierConfig['allowed_services'])) {
+                            if (is_array($courierConfig['allowed_services'])) {
+                                $allowedServices = array_map('strtoupper', array_map('trim', $courierConfig['allowed_services']));
+                            } else {
+                                $allowedServices = array_map('trim', explode(',', strtoupper($courierConfig['allowed_services'])));
+                            }
+                        }
+
+                        foreach ($courierResult['costs'] ?? [] as $cost) {
+                            $rawServiceName = strtoupper($cost['service'] ?? '');
+                            $serviceName = $rawServiceName;
+
+                            if (!empty($courierConfig['service_aliases']) && is_array($courierConfig['service_aliases'])) {
+                                foreach ($courierConfig['service_aliases'] as $rawCode => $alias) {
+                                    if (strtoupper($rawCode) === $rawServiceName) {
+                                        $serviceName = $alias;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!empty($allowedServices) && !in_array($rawServiceName, $allowedServices)) {
+                                continue;
+                            }
+
+                            // Dynamic shipping rule verification
+                            if (!$courierModel->shouldShowService($rawServiceName, $totalWeight, $originDistrict, $this->selectedDestinationLabel)) {
+                                continue;
+                            }
+
+                            // Convert BinderByte cost format (divided by 1000)
+                            $price = (int)($cost['price'] ?? 0) / 1000;
+                            $etd = $cost['estimated'] ?? '';
+
+                            $discountedPrice = $price;
+                            if ($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher']) {
+                                $discountValue = $this->appliedVoucher['discount_type'] === 'fixed'
+                                    ? $this->appliedVoucher['discount_amount']
+                                    : $price * ($this->appliedVoucher['discount_amount'] / 100);
+
+                                if ($this->appliedVoucher['max_discount'] > 0 && $discountValue > $this->appliedVoucher['max_discount']) {
+                                    $discountValue = $this->appliedVoucher['max_discount'];
+                                }
+
+                                $discountedPrice = max(0, $price - $discountValue);
+                            }
+
+                            $this->shippingRates[] = [
+                                'id' => $courierCode . '|' . $rawServiceName . '|' . $price,
+                                'courier_name' => $courierName,
+                                'service_name' => $serviceName,
+                                'duration' => $etd,
+                                'price' => $price,
+                                'original_price' => $price,
+                                'discounted_price' => $discountedPrice,
+                                'logo' => $courierModel->logo,
+                            ];
                         }
                     }
                 }
+            } catch (\Exception $e) {
+                Log::error('BinderByte calculation error: ' . $e->getMessage());
+                $this->locationError = 'Gagal memuat tarif ongkir BinderByte. Silakan coba lagi atau gunakan Mode Manual.';
+            }
+        }
+        // Path 3: API Mode - Komerce (RajaOngkir)
+        else {
+            if (!$this->selectedDestinationId) {
+                $this->shipping_cost = 0;
+                return;
+            }
 
-                if (!empty($results)) {
+            $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
+            $originCityRaw = \App\Models\SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
+            if (!$apiKey || !$originCityRaw) return;
+            $originCity = explode('::', $originCityRaw)[0];
+
+            foreach ($activeCouriers as $courier) {
+                $courierCode = $courier->code;
+                $courierConfig = $courier->config ?? [];
+                $allowedServices = [];
+                
+                if (!empty($courierConfig['allowed_services'])) {
+                    if (is_array($courierConfig['allowed_services'])) {
+                        $allowedServices = array_map('strtoupper', array_map('trim', $courierConfig['allowed_services']));
+                    } else {
+                        $allowedServices = array_map('trim', explode(',', strtoupper($courierConfig['allowed_services'])));
+                    }
+                }
+
+                try {
+                    $cacheKey = 'ship_rate_v1_' . md5($originCity . '_' . $this->selectedDestinationId . '_' . $totalWeight . '_' . $courierCode);
+                    $results = null;
+
+                    if (cache()->has($cacheKey)) {
+                        $cachedCosts = cache()->get($cacheKey);
+                        if (is_array($cachedCosts)) {
+                            $results = $cachedCosts;
+                        }
+                    }
+
+                    if ($results === null) {
+                        $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
+                            ->asForm()
+                            ->timeout(10)
+                            ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
+                                'origin' => $originCity,
+                                'destination' => $this->selectedDestinationId,
+                                'weight' => $totalWeight,
+                                'courier' => $courierCode
+                            ]);
+
+                        if ($response->successful()) {
+                            $results = $response->json('data') ?? [];
+                            if (!empty($results)) {
+                                cache()->put($cacheKey, $results, now()->addHours(6));
+                            }
+                        }
+                    }
+
+                    if (!empty($results)) {
                         foreach ($results as $cost) {
                             $courierName = $courier->name;
                             $rawServiceName = strtoupper($cost['service']);
@@ -266,12 +644,10 @@ class Checkout extends Component
                                 }
                             }
                             
-                            // Filter by allowed_services if defined
                             if (!empty($allowedServices) && !in_array($rawServiceName, $allowedServices)) {
                                 continue;
                             }
 
-                            // Filter using dynamic shipping rules (custom or global)
                             if (!$courier->shouldShowService($rawServiceName, $totalWeight, $originCityRaw, $this->selectedDestinationLabel)) {
                                 continue;
                             }
@@ -279,7 +655,6 @@ class Checkout extends Component
                             $price = $cost['cost'] ?? 0;
                             $etd = $cost['etd'] ?? '';
 
-                            // Hitung potongan voucher untuk layanan ini jika voucher ongkir aktif
                             $discountedPrice = $price;
                             if ($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher']) {
                                 $discountValue = $this->appliedVoucher['discount_type'] === 'fixed'
@@ -305,10 +680,12 @@ class Checkout extends Component
                             ];
                         }
                     }
-            } catch (\Exception $e) {
-                // Log or ignore courier error
+                } catch (\Exception $e) {
+                    // Log or ignore
+                }
             }
         }
+
 
         // Urutkan opsi pengiriman berdasarkan harga setelah diskon (dari termurah ke termahal)
         usort($this->shippingRates, function ($a, $b) {
@@ -544,17 +921,29 @@ class Checkout extends Component
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'address' => 'required|string',
+            'village' => 'required|string',
             'selectedDestinationId' => 'required',
             'agree_terms' => 'accepted',
         ];
+
+        if ($this->addressMode === 'manual') {
+            $rules['province'] = 'required|string';
+            $rules['city'] = 'required|string';
+            $rules['district'] = 'required|string';
+        }
 
         $messages = [
             'email.required' => 'Email wajib diisi untuk menerima rincian invoice dan notifikasi pesanan.',
             'selectedDestinationId.required' => 'Silakan pilih lokasi tujuan pengiriman (Kecamatan/Kota).',
             'agree_terms.accepted' => 'Anda harus menyetujui Syarat dan Ketentuan untuk melanjutkan.',
+            'village.required' => 'Kelurahan/Desa wajib diisi.',
+            'province.required' => 'Provinsi wajib diisi.',
+            'city.required' => 'Kota/Kabupaten wajib diisi.',
+            'district.required' => 'Kecamatan wajib diisi.',
         ];
 
         $this->validate($rules, $messages);
+
 
         if (auth()->check() && empty($this->email) && empty($this->phone)) {
             $this->addError('email', 'Isi salah satu: Email atau No. WhatsApp.');
@@ -643,17 +1032,34 @@ class Checkout extends Component
             // Generate order number
             $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
 
-            $districtValue = $this->selectedDestinationId && $this->selectedDestinationLabel 
-                ? $this->selectedDestinationId . '::' . $this->selectedDestinationLabel 
-                : null;
-            
             $city = '';
             $province = '';
-            if ($this->selectedDestinationLabel) {
-                $parts = explode(', ', $this->selectedDestinationLabel);
-                if (count($parts) >= 4) {
-                    $city = $parts[2] ?? '';
-                    $province = $parts[3] ?? '';
+            $districtValue = '';
+            
+            if ($this->addressMode === 'manual') {
+                $city = $this->city;
+                $province = $this->province;
+                $this->selectedDestinationLabel = sprintf('%s, %s, %s', $this->district, $this->city, $this->province);
+                $districtValue = 'manual::' . $this->selectedDestinationLabel;
+            } else {
+                $districtValue = $this->selectedDestinationId && $this->selectedDestinationLabel 
+                    ? $this->selectedDestinationId . '::' . $this->selectedDestinationLabel 
+                    : null;
+
+                if ($this->selectedDestinationLabel) {
+                    $parts = array_map('trim', explode(',', $this->selectedDestinationLabel));
+                    if (count($parts) === 3) {
+                        // BinderByte format: District, City, Province
+                        $city = $parts[1] ?? '';
+                        $province = $parts[2] ?? '';
+                    } elseif (count($parts) >= 4) {
+                        // Komerce format: Subdistrict, District/City, Province, Country
+                        $city = $parts[2] ?? '';
+                        $province = $parts[3] ?? '';
+                    } else {
+                        $city = $parts[1] ?? '';
+                        $province = $parts[2] ?? '';
+                    }
                 }
             }
 
@@ -663,12 +1069,14 @@ class Checkout extends Component
                 'last_name' => $this->last_name,
                 'phone' => $this->phone,
                 'email' => $this->email,
-                'address' => $this->address,
+                'address' => trim($this->address) . "\nKel/Desa: " . trim($this->village),
+                'village' => trim($this->village),
                 'destination_id' => $this->selectedDestinationId,
                 'destination_label' => $this->selectedDestinationLabel,
                 'district' => $districtValue,
                 'city' => $city,
                 'province' => $province,
+
                 'postal_code' => $this->postal_code,
                 'notes' => $this->notes,
             ];
@@ -783,14 +1191,17 @@ class Checkout extends Component
                         'user_id' => auth()->id(),
                         'recipient_name' => trim($this->first_name . ' ' . $this->last_name),
                         'phone' => $this->phone,
-                        'full_address' => $this->address,
+                        'full_address' => trim($this->address) . "\nKel/Desa: " . trim($this->village),
                     ],
                     [
                         'title' => 'Alamat Utama',
                         'province' => $province,
                         'city' => $city,
                         'district' => $districtValue,
+                        'village' => trim($this->village),
                         'postal_code' => $this->postal_code,
+                        'destination_id' => $this->selectedDestinationId,
+                        'destination_label' => $this->selectedDestinationLabel,
                         'is_primary' => true,
                     ]
                 );

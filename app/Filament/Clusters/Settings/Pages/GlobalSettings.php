@@ -117,7 +117,41 @@ class GlobalSettings extends Page implements HasForms
                                         }
                                         return 'Kecamatan Terpilih (ID: ' . $value . ')';
                                     })
+                                    ->visible(fn () => \App\Models\SiteSetting::where('key', 'active_shipping_provider')->value('value') !== 'binderbyte')
                                     ->nullable(),
+
+                                Forms\Components\Select::make('binderbyte_origin_province')
+                                    ->label('Provinsi Asal Toko (BinderByte)')
+                                    ->options(function () {
+                                        return collect(\App\Services\BinderByteService::getProvinces())->pluck('name', 'id')->toArray();
+                                    })
+                                    ->live()
+                                    ->afterStateUpdated(fn (\Filament\Schemas\Components\Utilities\Set $set) => $set('binderbyte_origin_city', null) ?? $set('binderbyte_origin_district', null))
+                                    ->visible(fn () => \App\Models\SiteSetting::where('key', 'active_shipping_provider')->value('value') === 'binderbyte')
+                                    ->nullable(),
+
+                                Forms\Components\Select::make('binderbyte_origin_city')
+                                    ->label('Kabupaten/Kota Asal Toko (BinderByte)')
+                                    ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                        $provId = $get('binderbyte_origin_province');
+                                        if (!$provId) return [];
+                                        return collect(\App\Services\BinderByteService::getCities($provId))->pluck('name', 'id')->toArray();
+                                    })
+                                    ->live()
+                                    ->afterStateUpdated(fn (\Filament\Schemas\Components\Utilities\Set $set) => $set('binderbyte_origin_district', null))
+                                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => \App\Models\SiteSetting::where('key', 'active_shipping_provider')->value('value') === 'binderbyte' && !empty($get('binderbyte_origin_province')))
+                                    ->nullable(),
+
+                                Forms\Components\Select::make('binderbyte_origin_district')
+                                    ->label('Kecamatan Asal Toko (BinderByte)')
+                                    ->options(function (\Filament\Schemas\Components\Utilities\Get $get) {
+                                        $cityId = $get('binderbyte_origin_city');
+                                        if (!$cityId) return [];
+                                        return collect(\App\Services\BinderByteService::getDistricts($cityId))->pluck('name', 'id')->toArray();
+                                    })
+                                    ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => \App\Models\SiteSetting::where('key', 'active_shipping_provider')->value('value') === 'binderbyte' && !empty($get('binderbyte_origin_city')))
+                                    ->nullable(),
+
                                 Forms\Components\Repeater::make('social_links')
                                     ->label('Daftar Sosial Media')
                                     ->components([

@@ -19,17 +19,34 @@
                 <!-- Drawer Filters Backdrop -->
                 <div id="filter-backdrop" @click="mobileFilterOpen = false" x-show="mobileFilterOpen" x-transition.opacity class="fixed inset-0 bg-black/50 z-[105] transition-opacity duration-300" style="display: none;"></div>
                 
+                <style>
+                    @media (min-width: 1024px) {
+                        #shop-filter-sidebar {
+                            top: 0 !important;
+                            bottom: 0 !important;
+                            left: auto !important;
+                            right: 0 !important;
+                            width: 400px !important;
+                            max-height: 100vh !important;
+                            border-radius: 0 !important;
+                        }
+                        #shop-filter-sidebar.desktop-closed {
+                            transform: translateX(100%) translateY(0) !important;
+                        }
+                        #shop-filter-sidebar.desktop-open {
+                            transform: translateX(0) translateY(0) !important;
+                        }
+                    }
+                </style>
                 <!-- Sidebar/Drawer Filters -->
                 <aside id="shop-filter-sidebar" data-lenis-prevent
-                    :class="mobileFilterOpen ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-y-0 lg:translate-x-full'"
+                    :class="{ 'translate-y-0 desktop-open': mobileFilterOpen, 'translate-y-full desktop-closed': !mobileFilterOpen }"
                     class="
-                    translate-y-full lg:translate-y-0 lg:translate-x-full
-                    fixed inset-x-0 bottom-0 lg:inset-y-0 lg:left-auto lg:right-0 z-[110] 
-                    bg-[#fcf9f5] rounded-t-2xl lg:rounded-none shadow-2xl
-                    transition-transform duration-300
-                    w-full lg:w-[400px] shrink-0 max-h-[85vh] lg:max-h-screen overflow-hidden
-                    flex flex-col
-                ">
+                        translate-y-full desktop-closed
+                        fixed z-[110] bg-[#fcf9f5] shadow-2xl transition-transform duration-300 overflow-hidden flex flex-col
+                        left-0 right-0 bottom-0 w-full max-h-[85vh] rounded-t-2xl
+                    "
+                >
                     <!-- Drawer Header -->
                     <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e5e2de]">
                         <h3 class="text-[#1c1c1a] text-sm font-mono font-bold tracking-[0.2em] uppercase">Filter Produk</h3>
@@ -178,10 +195,10 @@
                          class="w-full relative min-h-[120px] lg:min-h-[60px] mb-8"
                     >
                         <!-- Original Top Bar (Fades out when scrolled) -->
-                        <div :class="isScrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'" class="absolute inset-0 z-20 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-[#e5e2de] lg:border-none transition-opacity duration-300">
+                        <div :class="{ 'opacity-0 pointer-events-none': isScrolled, 'opacity-100': !isScrolled }" class="absolute inset-0 z-20 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-[#e5e2de] lg:border-none transition-opacity duration-300">
                             <!-- Toolbar -->
                             <div class="flex items-center gap-3 w-full lg:w-auto">
-                                <button @click="mobileFilterOpen = true" class="flex items-center justify-center gap-2 px-4 py-2 bg-transparent border border-[#1c1c1a] text-[#1c1c1a] hover:bg-[#1c1c1a] hover:text-[#fcf9f5] transition-colors shrink-0 font-mono text-[10px] tracking-widest uppercase font-bold">
+                                <button @click="mobileFilterOpen = true" class="flex items-center justify-center gap-2 px-4 py-2 bg-transparent border border-[#1c1c1a] text-[#1c1c1a] hover:bg-[#1c1c1a] hover:text-white transition-colors shrink-0 font-mono text-[10px] tracking-widest uppercase font-bold">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                                     Filter Produk
                                 </button>
@@ -213,10 +230,10 @@
                         </div>
 
                         <!-- Floating Bottom Bar (Slides up when scrolled) -->
-                        <div :class="isScrolled ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-24 opacity-0 pointer-events-none'"
-                             class="fixed bottom-4 lg:bottom-6 left-4 right-4 lg:left-1/2 lg:-translate-x-1/2 lg:right-auto lg:w-max z-[80] bg-[#fcf9f5]/95 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-[#e5e2de] p-3 rounded-xl flex flex-row items-center justify-between gap-3 lg:gap-4 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                        <div :class="{ 'translate-y-0 opacity-100 pointer-events-auto': isScrolled, 'translate-y-24 opacity-0 pointer-events-none': !isScrolled }"
+                             class="translate-y-24 opacity-0 pointer-events-none fixed bottom-4 lg:bottom-6 left-4 right-4 lg:left-0 lg:right-0 lg:mx-auto lg:w-max z-[80] bg-[#fcf9f5]/95 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-[#e5e2de] p-3 rounded-xl flex flex-row items-center justify-between gap-3 lg:gap-4 transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                         >
-                            <button @click="mobileFilterOpen = true" class="flex flex-1 lg:flex-none justify-center items-center gap-2 px-4 py-2.5 bg-[#1c1c1a] text-[#fcf9f5] rounded-lg transition-colors font-mono text-[10px] tracking-widest uppercase font-bold">
+                            <button @click="mobileFilterOpen = true" class="flex flex-1 lg:flex-none justify-center items-center gap-2 px-4 py-2.5 bg-[#1c1c1a] text-white rounded-lg transition-colors font-mono text-[10px] tracking-widest uppercase font-bold">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                                 Filter
                             </button>
@@ -265,6 +282,12 @@
                                         <div class="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-all duration-500 flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100">
                                             <span class="text-white text-[9px] font-mono tracking-[0.25em] uppercase border border-white/80 px-5 py-2.5 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">Lihat Detail</span>
                                         </div>
+                                        {{-- Out of Stock Overlay --}}
+                                        @if($product->is_out_of_stock)
+                                            <div class="absolute inset-0 bg-[#ebebeb]/70 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none">
+                                                <span class="text-[#a09e99] text-[9px] font-mono tracking-[0.2em] uppercase border border-[#c2bfb8] bg-white/95 px-3 py-1.5 shadow-sm font-bold">STOK HABIS</span>
+                                            </div>
+                                        @endif
                                     </a>
                                     {{-- Discount Badge --}}
                                     @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))

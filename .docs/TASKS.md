@@ -136,3 +136,176 @@ File ini digunakan oleh AI dan Developer untuk melacak progres pengerjaan agar t
 - [x] **Daftar Search Console:** Mendaftarkan sitemap e-commerce ke Google Search Console untuk memastikan indeksasi seluruh halaman produk dan artikel.
 - [x] **Daftar Google Bisnisku (Google Business):** Membuat profil Google Business Profile resmi untuk meningkatkan SEO lokal.
 - [x] **Cek Performance & Core Web Vitals:** Melakukan audit performa frontend via Google PageSpeed Insights dan optimasi gambar/asset jika diperlukan.
+
+---
+
+## 🚚 Sprint 4: Multi-Provider Shipping (BinderByte)
+
+> **Tujuan:** Mengganti RajaOngkir/Komerce dengan **BinderByte** sebagai provider ongkir utama, dengan sistem provider switcher di Admin Panel (mirip payment gateway). Dikerjakan di branch **development**.
+>
+> **API Key BinderByte:** `d01a7601848466b300e5dd9e54775e4f6736329d69efe7deb91d98c674c80e7e`
+>
+> **Paket BinderByte:**
+> - API Wilayah → Gratis, unlimited
+> - API Cek Ongkir → 500 req gratis/30 hari, lalu Rp 5/req (multi-kurir 1 request)
+> - API Cek Resi → 500 req gratis/30 hari, lalu Rp 15/req
+>
+> **Kurir BinderByte:** jne, jnt, sicepat, anteraja, pos, tiki, wahana, lion, ninja, sap, ide, spx
+>
+> **Keputusan arsitektur:**
+> - BinderByte menggantikan RajaOngkir + Komerce untuk wilayah, ongkir, dan resi.
+> - Setting provider switcher (`komerce` / `binderbyte`) tetap dibuat sebagai fallback.
+> - Form checkout berubah: autocomplete search → cascading dropdown (Provinsi → Kab/Kota → Kecamatan).
+> - **Mode Input Manual** wajib ada sebagai fallback jika API error/limit habis.
+> - Tampilan opsi kurir juga diperbarui untuk menerima response format B### Poin 1: Riset & Verifikasi API BinderByte
+
+- [x] **1.1 Aktifkan paket gratis di dashboard BinderByte** _(user melakukan ini)_:
+    - Login ke dashboard BinderByte → aktifkan paket free **API Cek Ongkir**.
+    - Aktifkan juga paket free **API Cek Resi**.
+- [x] **1.2 Test endpoint Wilayah via Tinker/curl:**
+    - `GET https://api.binderbyte.com/wilayah/provinsi?api_key=...` → catat format response.
+    - `GET .../wilayah/kabupaten?api_key=...&id_provinsi=36` → catat format data Kab/Kota.
+    - `GET .../wilayah/kecamatan?api_key=...&id_kabupaten=3674` → catat format data Kecamatan.
+- [x] **1.3 Test endpoint Cek Ongkir via Tinker/curl:**
+    - `POST https://api.binderbyte.com/v1/cost` dengan params: `origin`, `destination`, `weight`, `courier` (bisa multi: `jne,jnt,sicepat`).
+    - Catat format response: nama service, harga, estimasi (etd).
+    - Bandingkan dengan struktur response RajaOngkir yang sudah ada di kode.
+- [x] **1.4 Test endpoint Cek Resi via Tinker/curl:**
+    - Test minimal untuk JNE dan J&T dengan nomor resi yang valid.
+    - Catat format response: status, tanggal, lokasi, keterangan kiriman terakhir.
+
+---
+
+### Poin 2: Admin — Pengaturan Pengiriman (Shipping Settings)
+
+> Mirip pola Pengaturan Pembayaran yang sudah ada — bisa pull data kurir aktif, atur kota asal, dan pilih provider.
+
+- [x] **2.1 Tambah setting baru di tabel `site_settings`:**
+    - `active_shipping_provider` → value: `komerce` (default) atau `binderbyte`.
+    - `binderbyte_api_key` → API Key BinderByte.
+- [x] **2.2 Update halaman Global Settings Filament — Seksi "Pengaturan Pengiriman":**
+    - Tambah `Select` untuk memilih provider aktif: **Komerce (RajaOngkir)** atau **BinderByte**.
+    - Field `binderbyte_api_key` hanya tampil jika provider = `binderbyte` (reactive).
+    - Field `rajaongkir_api_key` hanya tampil jika provider = `komerce` (reactive).
+    - Kota asal pengiriman (yang sudah ada) tetap di sini, tidak berubah.
+- [x] **2.3 Tambah card BinderByte di halaman Integrasi Admin:**
+    - Mirip card Tripay/Xendit di halaman Integrasi.
+    - Tampilkan logo BinderByte, status koneksi (aktif/tidak), link ke dokumentasi.
+    - Tombol "Test Koneksi" yang memanggil endpoint wilayah/provinsi untuk verifikasi API Key valid.
+
+---
+
+### Poin 3: Service Class BinderByte
+
+- [x] **3.1 Buat `app/Services/BinderByteService.php`:**
+    - `getProvinces()` → `GET /wilayah/provinsi` → cache **30 hari** (data jarang berubah).
+    - `getCities($provinsiId)` → `GET /wilayah/kabupaten` → cache **30 hari**.
+    - `getDistricts($kabupatenId)` → `GET /wilayah/kecamatan` → cache **30 hari**.
+    - `getShippingCost($origin, $destination, $weight, $couriers)` → `POST /v1/cost` → cache **6 jam** per kombinasi unik.
+    - `trackPackage($courier, $awb)` → endpoint cek resi → **tanpa cache** (data real-time).
+    - Semua method membaca API Key dari `SiteSetting::getValue('binderbyte_api_key')`.
+    - Tangani error API dengan exception yang deskriptif.
+
+---
+
+### Poin 4: Update Form Checkout — Pemilihan Wilayah
+
+> ⚠️ Perubahan terbesar. Form pemilihan wilayah berubah dari autocomplete search (Komerce) menjadi **cascading dropdown** (Provinsi → Kab/Kota → Kecamatan) ketika provider = BinderByte.
+>
+> **Mode Input Manual** juga wajib ditambahkan sebagai fallback universal (berlaku untuk kedua provider).
+
+- [x] **4.1 Update `app/Livewire/Checkout.php` — tambah properties & methods:**
+    - Properties baru: `$provinces = []`, `$cities = []`, `$districts = []`.
+    - Properties baru: `$selectedProvinceId`, `$selectedCityId`, `$selectedDistrictId`.
+    - Property: `$addressMode = 'api'` (nilai: `'api'` atau `'manual'`).
+    - Property: `$activeShippingProvider` (dibaca dari SiteSetting saat mount).
+    - Method `mount()`: jika provider = `binderbyte` → panggil `loadProvinces()`.
+    - Method `loadProvinces()` → isi `$provinces` via `BinderByteService::getProvinces()`.
+    - Method `updatedSelectedProvinceId($id)` → load cities, reset `$selectedCityId`, `$selectedDistrictId`, `$cities`, `$districts`.
+    - Method `updatedSelectedCityId($id)` → load districts, reset `$selectedDistrictId`, `$districts`.
+    - Method `updatedSelectedDistrictId($id)` → simpan label wilayah lengkap ke `$selectedDestinationLabel` & `$selectedDestinationId`, lalu panggil `generateShippingRates()`.
+    - Method `switchToManualMode()` → set `$addressMode = 'manual'`, reset semua dropdown.
+    - Method `switchToApiMode()` → set `$addressMode = 'api'`, reset semua field manual.
+
+- [x] **4.2 Update `resources/views/livewire/checkout.blade.php` — tampilan wilayah:**
+
+    **Blok A — Mode API, Provider BinderByte (cascading dropdown):**
+    ```
+    @if($activeShippingProvider === 'binderbyte' && $addressMode === 'api')
+      [Dropdown Provinsi] → [Dropdown Kab/Kota] → [Dropdown Kecamatan]
+      [link kecil: "Tidak menemukan lokasi? Isi manual →"]
+    @endif
+    ```
+
+    **Blok B — Mode API, Provider Komerce (autocomplete search — existing):**
+    ```
+    @elseif($activeShippingProvider === 'komerce' && $addressMode === 'api')
+      [Input autocomplete yang sudah ada]
+      [link kecil: "Tidak menemukan lokasi? Isi manual →"]
+    @endif
+    ```
+
+    **Blok C — Mode Manual (fallback universal):**
+    ```
+    @if($addressMode === 'manual')
+      [Input text: Provinsi]
+      [Input text: Kab/Kota]
+      [Input text: Kecamatan]
+      [Select kurir + isi ongkir manual (nominal)]
+      [link kecil: "← Kembali ke pilih otomatis"]
+    @endif
+    ```
+
+    - Styling semua blok harus konsisten dengan desain checkout yang sudah ada.
+    - Tampilkan pesan error (dari `$locationError`) di bawah form wilayah jika ada.
+
+---
+
+### Poin 5: Update Kalkulasi Ongkir — BinderByte Cost API
+
+- [x] **5.1 Update `generateShippingRates()` di `Checkout.php`:**
+    - Cek `$activeShippingProvider`:
+        - Jika `komerce` → gunakan logika Komerce yang sudah ada (tidak diubah).
+        - Jika `binderbyte` → panggil `BinderByteService::getShippingCost()` dengan **semua kurir aktif sekaligus** dalam 1 request (hemat kuota).
+    - Map response BinderByte ke format `$shippingRates[]` yang sudah ada di UI.
+    - Terapkan caching 6 jam per kombinasi unik (origin + destination + weight + couriers).
+- [x] **5.2 Update logika Mode Manual:**
+    - Jika `$addressMode = 'manual'`: tampilkan input ongkir manual (pembeli/admin mengisi nominal ongkir sendiri), atau tampilkan pilihan kurir dengan tarif flat-rate yang sudah dikonfigurasi admin.
+
+---
+
+### Poin 6: Fitur Cek Resi / Tracking Paket
+
+- [x] **6.1 Buat Livewire component `TrackOrder`:** (Diintegrasikan secara inline dan modular di halaman detail order demi efisiensi dan UX yang mulus).
+- [x] **6.2 Integrasi di Dasbor Customer (halaman detail pesanan):**
+    - Tambah tombol **"Lacak Paket"** di halaman `/dashboard/orders/{id}`.
+    - Tombol hanya tampil jika `awb_number` sudah diisi oleh admin.
+    - Klik tombol → expand inline panel tracking (tanpa redirect ke halaman baru).
+- [x] **6.3 Update email "Pesanan Dikirim":**
+    - Sertakan nomor resi (`awb_number`) secara eksplisit di badan email.
+    - Tambahkan link teks "Lacak status pengiriman Anda →" yang mengarah ke halaman order detail di dashboard customer.
+
+---
+
+### Poin 7: Testing & Validasi di Branch Development
+
+- [x] **7.1 Test Admin Settings:**
+    - Ganti provider ke `binderbyte` → verifikasi field API Key BinderByte muncul, field RajaOngkir tersembunyi.
+    - Test tombol "Test Koneksi" di halaman Integrasi → harus sukses dengan API Key yang valid.
+- [x] **7.2 Test Form Checkout — Mode Dropdown (BinderByte):**
+    - Pastikan Provinsi → Kab/Kota → Kecamatan ter-load berurutan dengan benar.
+    - Pastikan data wilayah terpilih tersimpan benar ke `shipping_address` di database.
+    - Pastikan kurir & ongkir muncul setelah Kecamatan dipilih.
+- [x] **7.3 Test Form Checkout — Mode Manual (Fallback):**
+    - Klik link "Isi manual" → form input teks muncul.
+    - Isi alamat manual → pastikan checkout tetap bisa diproses sampai selesai.
+- [x] **7.4 Test Kalkulasi Ongkir BinderByte:**
+    - Verifikasi semua kurir aktif muncul dengan harga dan estimasi yang benar.
+    - Test dengan variasi berat berbeda.
+- [x] **7.5 Test Cek Resi:**
+    - Uji dengan nomor resi JNE dan J&T yang valid dari pesanan nyata.
+    - Pastikan timeline status tampil dengan benar.
+- [x] **7.6 Test Switcher Balik ke Komerce:**
+    - Ganti provider ke `komerce` → verifikasi form checkout kembali ke autocomplete search.
+    - Pastikan kalkulasi ongkir Komerce masih berjalan normal.
+- [x] **7.7 Merge ke `main` setelah semua test lulus.**

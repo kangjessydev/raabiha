@@ -124,4 +124,20 @@ class Product extends Model
 
         return max($actualSold, $this->sold_count);
     }
+
+    public function getIsOutOfStockAttribute(): bool
+    {
+        if ($this->has_variants) {
+            return $this->variants->sum('stock') <= 0;
+        }
+        return $this->stock <= 0;
+    }
+
+    public function getTotalStockAttribute(): int
+    {
+        if ($this->has_variants) {
+            return $this->variants->sum('stock');
+        }
+        return $this->stock;
+    }
 }
