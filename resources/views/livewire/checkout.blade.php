@@ -352,7 +352,7 @@
                     </div>
 
                     <!-- Right Column: Order Summary -->
-                    <div class="bg-transparent lg:bg-[#f0ede9] p-0 lg:p-10 sticky top-[120px]">
+                    <div class="bg-transparent lg:bg-[#f0ede9] p-0 lg:p-10 sticky top-8">
                         <h2 class="font-mono text-[10px] font-bold tracking-[0.2em] text-[#1c1c1a] uppercase mb-8 hidden lg:block">Ringkasan Pesanan</h2>
                         
                         @if (session()->has('error'))
