@@ -29,7 +29,7 @@ class OrdersTable
                     })
                     ->description(function ($record) {
                         $isGuest = !$record->user_id;
-                        $label   = $isGuest ? 'Guest' : 'Member';
+                        $label = $isGuest ? 'Guest' : 'Member';
                         $classes = $isGuest
                             ? 'bg-warning-100 text-warning-700 ring-warning-400/30'
                             : 'bg-success-100 text-success-700 ring-success-400/30';
@@ -41,7 +41,7 @@ class OrdersTable
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'pending' => 'warning',
                         'paid' => 'info',
                         'packed' => 'primary',
@@ -68,12 +68,66 @@ class OrdersTable
                     ->placeholder('Semua Pelanggan')
                     ->trueLabel('Hanya Member')
                     ->falseLabel('Hanya Guest')
+                    ->native(false)
                     ->queries(
-                        true: fn ($query) => $query->whereNotNull('user_id'),
-                        false: fn ($query) => $query->whereNull('user_id'),
-                        blank: fn ($query) => $query,
-                    )
+                        true: fn($query) => $query->whereNotNull('user_id'),
+                        false: fn($query) => $query->whereNull('user_id'),
+                        blank: fn($query) => $query,
+                    ),
+                \Filament\Tables\Filters\SelectFilter::make('status')
+                    ->native(false)
+                    ->label('Status Pesanan')
+                    ->options([
+                        'pending' => 'Pending (Menunggu Pembayaran)',
+                        'paid' => 'Dibayar',
+                        'packed' => 'Dikemas',
+                        'sent' => 'Dikirim',
+                        'completed' => 'Selesai',
+                        'cancelled' => 'Dibatalkan',
+                    ]),
+                \Filament\Tables\Filters\SelectFilter::make('payment_status')
+                    ->native(false)
+                    ->label('Status Pembayaran')
+                    ->options([
+                        'pending' => 'Pending',
+                        'paid' => 'Lunas (PAID)',
+                        'failed' => 'Gagal',
+                        'refunded' => 'Dikembalikan (Refunded)',
+                    ]),
+                \Filament\Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        \Filament\Forms\Components\DatePicker::make('created_from')->label('Dari Tanggal'),
+                        \Filament\Forms\Components\DatePicker::make('created_until')->label('Sampai Tanggal'),
+                    ])
+                    ->columns(2)
+                    ->columnSpan('full')
+                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = \Filament\Tables\Filters\Indicator::make('Pesanan mulai ' . \Carbon\Carbon::parse($data['created_from'])->translatedFormat('d M Y'))
+                                ->removeField('created_from');
+                        }
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = \Filament\Tables\Filters\Indicator::make('Pesanan sampai ' . \Carbon\Carbon::parse($data['created_until'])->translatedFormat('d M Y'))
+                                ->removeField('created_until');
+                        }
+                        return $indicators;
+                    }),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::Dropdown)
+            ->filtersFormWidth(\Filament\Support\Enums\Width::FourExtraLarge)
+            ->filtersFormColumns(3)
             ->recordActions([
                 ViewAction::make()
                     ->slideOver()
@@ -88,16 +142,17 @@ class OrdersTable
                     ->icon('heroicon-o-trash')
                     ->iconButton()
                     ->tooltip('Hapus')
-                    ->visible(fn () => ! auth()->user()?->hasRole('kasir')),
+                    ->visible(fn() => !auth()->user()?->hasRole('kasir')),
                 \Filament\Actions\Action::make('review_request')
                     ->label('Tinjau Pengajuan')
                     ->icon('heroicon-o-shield-check')
                     ->color('info')
                     ->iconButton()
                     ->tooltip('Tinjau Pengajuan Kasir')
-                    ->url(fn ($record) => \App\Filament\Resources\OrderRequestResource::getUrl('index') . '?tableSearch=' . urlencode($record->order_number))
-                    ->visible(fn ($record) => 
-                        auth()->user()?->hasRole(['super_admin', 'admin', 'owner']) && 
+                    ->url(fn($record) => \App\Filament\Resources\OrderRequestResource::getUrl('index') . '?tableSearch=' . urlencode($record->order_number))
+                    ->visible(
+                        fn($record) =>
+                        auth()->user()?->hasRole(['super_admin', 'admin', 'owner']) &&
                         $record->orderRequests()->where('status', 'pending')->exists()
                     ),
                 \Filament\Actions\Action::make('request_change')
@@ -106,9 +161,10 @@ class OrdersTable
                     ->color('warning')
                     ->iconButton()
                     ->tooltip('Ajukan Perubahan')
-                    ->url(fn ($record) => \App\Filament\Resources\Orders\OrderResource::getUrl('edit', ['record' => $record]) . '?request_change=1')
-                    ->visible(fn ($record) => 
-                        auth()->user()?->hasRole('kasir') && 
+                    ->url(fn($record) => \App\Filament\Resources\Orders\OrderResource::getUrl('edit', ['record' => $record]) . '?request_change=1')
+                    ->visible(
+                        fn($record) =>
+                        auth()->user()?->hasRole('kasir') &&
                         !in_array($record->status, ['completed', 'cancelled']) &&
                         !$record->orderRequests()->where('status', 'pending')->where('type', 'change')->exists()
                     ),
@@ -136,8 +192,9 @@ class OrdersTable
                             ->success()
                             ->send();
                     })
-                    ->visible(fn ($record) => 
-                        auth()->user()?->hasRole('kasir') && 
+                    ->visible(
+                        fn($record) =>
+                        auth()->user()?->hasRole('kasir') &&
                         $record->status !== 'cancelled' &&
                         !$record->orderRequests()->where('status', 'pending')->where('type', 'cancel')->exists()
                     ),

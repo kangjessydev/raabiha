@@ -87,8 +87,57 @@ class ProductsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                \Filament\Tables\Filters\TernaryFilter::make('is_active'),
+                \Filament\Tables\Filters\SelectFilter::make('category_id')
+                    ->relationship('category', 'name')
+                    ->label('Kategori')
+                    ->searchable()
+                    ->preload(),
+                \Filament\Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Status Aktif')
+                    ->placeholder('Semua Status')
+                    ->trueLabel('Aktif')
+                    ->falseLabel('Tidak Aktif')
+                    ->native(false),
+                \Filament\Tables\Filters\TernaryFilter::make('has_free_shipping')
+                    ->label('Gratis Ongkir')
+                    ->placeholder('Semua')
+                    ->trueLabel('Ya, Gratis Ongkir')
+                    ->falseLabel('Tidak')
+                    ->native(false),
+                \Filament\Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        \Filament\Forms\Components\DatePicker::make('created_from')->label('Dari Tanggal'),
+                        \Filament\Forms\Components\DatePicker::make('created_until')->label('Sampai Tanggal'),
+                    ])
+                    ->columns(2)
+                    ->columnSpan('full')
+                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['created_from'] ?? null) {
+                            $indicators[] = \Filament\Tables\Filters\Indicator::make('Ditambahkan mulai ' . \Carbon\Carbon::parse($data['created_from'])->translatedFormat('d M Y'))
+                                ->removeField('created_from');
+                        }
+                        if ($data['created_until'] ?? null) {
+                            $indicators[] = \Filament\Tables\Filters\Indicator::make('Ditambahkan sampai ' . \Carbon\Carbon::parse($data['created_until'])->translatedFormat('d M Y'))
+                                ->removeField('created_until');
+                        }
+                        return $indicators;
+                    }),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::Dropdown)
+            ->filtersFormWidth(\Filament\Support\Enums\Width::FourExtraLarge)
+            ->filtersFormColumns(3)
             ->recordActions([
                 \Filament\Actions\Action::make('view_frontend')
                     ->label('Lihat di Toko')

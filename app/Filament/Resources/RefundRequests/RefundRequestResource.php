@@ -165,7 +165,7 @@ class RefundRequestResource extends Resource
                         $amount = number_format($record->refund_amount, 0, ',', '.');
 
                         $status = $record->status;
-                        
+
                         // Default templates
                         $defApproved = 'Halo {name}, pengajuan refund untuk pesanan #{order} senilai Rp{amount} telah DISETUJUI. Tim Finance kami akan segera memproses transfer ke rekening Anda.';
                         $defRejected = 'Halo {name}, mohon maaf pengajuan refund untuk pesanan #{order} senilai Rp{amount} DITOLAK. Catatan: {notes}';
@@ -175,9 +175,9 @@ class RefundRequestResource extends Resource
                         $tplApproved = \App\Models\SiteSetting::where('key', 'refund_template_approved')->value('value') ?: $defApproved;
                         $tplRejected = \App\Models\SiteSetting::where('key', 'refund_template_rejected')->value('value') ?: $defRejected;
                         $tplCompleted = \App\Models\SiteSetting::where('key', 'refund_template_completed')->value('value') ?: $defCompleted;
-                        
+
                         $msg = "Halo {$customerName}, kami sedang meninjau pengajuan refund untuk pesanan #{$orderNo}.";
-                        
+
                         if ($status === 'approved') {
                             $msg = str_replace(['{name}', '{order}', '{amount}'], [$customerName, $orderNo, $amount], $tplApproved);
                         } elseif ($status === 'rejected') {
@@ -192,7 +192,7 @@ class RefundRequestResource extends Resource
                     })
                     ->openUrlInNewTab(),
                 \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
+                // \Filament\Actions\DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

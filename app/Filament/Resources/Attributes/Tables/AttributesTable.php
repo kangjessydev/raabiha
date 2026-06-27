@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Attributes\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -24,7 +25,7 @@ class AttributesTable
                 TextColumn::make('type')
                     ->label('Tipe')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'color' => 'success',
                         'text' => 'gray',
                         default => 'gray',
@@ -46,6 +47,7 @@ class AttributesTable
             ])
             ->recordActions([
                 EditAction::make(),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

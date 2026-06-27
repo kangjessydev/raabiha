@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\Vouchers\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 
 class VouchersTable
@@ -27,20 +29,20 @@ class VouchersTable
                 TextColumn::make('discount_type')
                     ->label('Tipe')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'fixed' => 'success',
                         'percent' => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state, $record): string => $record->is_shipping_voucher ? 'Diskon Ongkir' : match ($state) {
+                    ->formatStateUsing(fn(string $state, $record): string => $record->is_shipping_voucher ? 'Diskon Ongkir' : match ($state) {
                         'fixed' => 'Nominal',
                         'percent' => 'Persen',
                         default => $state,
                     }),
                 TextColumn::make('discount_amount')
                     ->label('Nilai Diskon')
-                    ->formatStateUsing(fn ($record) => $record->discount_type === 'percent' 
-                        ? rtrim(rtrim(number_format($record->discount_amount, 2), '0'), '.') . '%' 
+                    ->formatStateUsing(fn($record) => $record->discount_type === 'percent'
+                        ? rtrim(rtrim(number_format($record->discount_amount, 2), '0'), '.') . '%'
                         : 'Rp ' . number_format($record->discount_amount, 0, ',', '.')),
                 TextColumn::make('min_purchase')
                     ->label('Min. Belanja')
@@ -52,7 +54,7 @@ class VouchersTable
                     ->formatStateUsing(function ($record) {
                         $totalLimit = $record->max_uses ?: '∞';
                         $userLimit = $record->max_uses_per_user ? $record->max_uses_per_user . 'x / user' : 'Tidak dibatasi';
-                        
+
                         return '
                             <div class="flex flex-col gap-1 py-1">
                                 <div class="text-sm font-bold text-gray-900 dark:text-white">
@@ -67,9 +69,9 @@ class VouchersTable
                             </div>
                         ';
                     }),
-                IconColumn::make('is_active')
+                ToggleColumn::make('is_active')
                     ->label('Aktif')
-                    ->boolean()
+                    ->disabled(fn() => !auth()->user()->can('Update:Voucher'))
                     ->sortable(),
                 TextColumn::make('expires_at')
                     ->label('Kedaluwarsa')
@@ -89,6 +91,7 @@ class VouchersTable
             ])
             ->recordActions([
                 EditAction::make(),
+                DeleteAction::make()
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
