@@ -23,6 +23,35 @@ class VariantsRelationManager extends RelationManager
                     ->label('Nama Varian')
                     ->required()
                     ->maxLength(255),
+                \Filament\Forms\Components\Select::make('attributeOptions')
+                    ->relationship('attributeOptions', 'value', fn ($query) => $query->with('attribute'))
+                    ->getOptionLabelFromRecordUsing(fn (\App\Models\AttributeOption $record) => "{$record->attribute->name}: {$record->value}")
+                    ->multiple()
+                    ->preload()
+                    ->label('Kaitan Opsi Atribut (Warna/Ukuran)')
+                    ->helperText('Pilih opsi atribut yang sesuai agar varian muncul di frontend.')
+                    ->createOptionForm([
+                        \Filament\Forms\Components\Select::make('attribute_id')
+                            ->label('Induk Atribut')
+                            ->options(fn () => \App\Models\Attribute::pluck('name', 'id'))
+                            ->required(),
+                        \Filament\Forms\Components\TextInput::make('value')
+                            ->label('Nilai (Misal: Petite, Navy, dll)')
+                            ->required(),
+                        \Filament\Forms\Components\TextInput::make('meta')
+                            ->label('Meta/Kode Hex (Opsional)')
+                            ->placeholder('#000000')
+                            ->helperText('Isi dengan kode hex jika atribut berupa warna.'),
+                    ])
+                    ->createOptionUsing(function (array $data) {
+                        $option = \App\Models\AttributeOption::create([
+                            'attribute_id' => $data['attribute_id'],
+                            'value' => $data['value'],
+                            'slug' => \Illuminate\Support\Str::slug($data['value']),
+                            'meta' => $data['meta'] ?? null,
+                        ]);
+                        return $option->id;
+                    }),
                 TextInput::make('sku')
                     ->label('SKU')
                     ->maxLength(255),
