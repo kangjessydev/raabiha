@@ -13,7 +13,7 @@
                 <div class="lg:col-span-7 relative">
                     
                     <!-- Gallery View (Unified Desktop & Mobile) -->
-                    <div class="w-full" x-data="{ activeIndex: 0 }">
+                    <div class="w-full" x-data="{ activeIndex: 0 }" @change-gallery-image.window="activeIndex = $event.detail.index">
                         <div class="w-[calc(100%+3rem)] -mx-6 md:mx-0 md:w-full aspect-square md:aspect-[4/5] lg:h-[65vh] lg:aspect-auto bg-[#ebebeb] overflow-hidden relative">
                             
                             <!-- Main Slider Container -->

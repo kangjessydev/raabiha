@@ -16,6 +16,7 @@ class ProductDetail extends Component
     public $selectedOptions = [];
     public $quantity = 1;
     public $galleryUrls = [];
+    public $galleryMediaIds = [];
     public $bsOpen = false;
     public $bsMode = 'cart';
     
@@ -91,6 +92,34 @@ class ProductDetail extends Component
         } else {
             $this->selectedOptions[$attrSlug] = $optionValue;
         }
+
+        $variantWithImage = $this->getFirstVariantWithImage();
+        if ($variantWithImage && $variantWithImage->media_id) {
+            $index = array_search($variantWithImage->media_id, $this->galleryMediaIds);
+            if ($index !== false) {
+                $this->dispatch('change-gallery-image', index: $index);
+            }
+        }
+    }
+
+    public function getFirstVariantWithImage()
+    {
+        if (!$this->product->has_variants) return null;
+        
+        $activeSelections = array_filter($this->selectedOptions, fn($val) => $val !== '');
+        if (empty($activeSelections)) return null;
+
+        return $this->product->variants->first(function($variant) use ($activeSelections) {
+            if (!$variant->media_id) return false;
+
+            foreach ($activeSelections as $slug => $val) {
+                $hasOption = $variant->attributeOptions->contains(function($opt) use ($slug, $val) {
+                    return $opt->attribute->slug === $slug && $opt->value === $val;
+                });
+                if (!$hasOption) return false;
+            }
+            return true;
+        });
     }
 
     public function getMatchedVariant()
@@ -230,6 +259,7 @@ class ProductDetail extends Component
                     $media = $mediaItems->firstWhere('id', $id);
                     if ($media && \Illuminate\Support\Facades\Storage::disk('public')->exists($media->path)) {
                         $this->galleryUrls[] = $media->url;
+                        $this->galleryMediaIds[] = $id;
                     }
                 }
             } else {

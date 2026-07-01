@@ -52,6 +52,12 @@ class VariantsRelationManager extends RelationManager
                         ]);
                         return $option->id;
                     }),
+                \Awcodes\Curator\Components\Forms\CuratorPicker::make('media_id')
+                    ->label('Gambar Varian')
+                    ->relationship('media', 'id')
+                    ->buttonLabel('Pilih/Upload Gambar Varian')
+                    ->helperText('Jika warna ini sudah ada gambarnya di varian ukuran lain, pilih gambar yang sama agar tidak duplikat.')
+                    ->color('primary'),
                 TextInput::make('sku')
                     ->label('SKU')
                     ->maxLength(255),

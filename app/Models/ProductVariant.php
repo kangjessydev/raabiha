@@ -12,6 +12,7 @@ class ProductVariant extends Model
 
     protected $fillable = [
         'product_id',
+        'media_id',
         'name',
         'sku',
         'is_price_override',
@@ -48,6 +49,11 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function media(): BelongsTo
+    {
+        return $this->belongsTo(\Awcodes\Curator\Models\Media::class, 'media_id');
     }
 
     public function variantOptions(): \Illuminate\Database\Eloquent\Relations\HasMany
