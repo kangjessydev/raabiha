@@ -11,11 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('product_variants', function (Blueprint $table) {
-            if (!Schema::hasColumn('product_variants', 'media_id')) {
-                $table->foreignId('media_id')->nullable()->constrained('media')->nullOnDelete();
+        if (!Schema::hasColumn('product_variants', 'media_id')) {
+            Schema::table('product_variants', function (Blueprint $table) {
+                $table->foreignId('media_id')->nullable()->constrained('curator')->nullOnDelete();
+            });
+        } else {
+            // Column exists, add FK if missing
+            try {
+                Schema::table('product_variants', function (Blueprint $table) {
+                    $table->foreign('media_id')->references('id')->on('curator')->nullOnDelete();
+                });
+            } catch (\Exception $e) {
+                // Ignore if it already exists or another error occurs
             }
-        });
+        }
     }
 
     /**
