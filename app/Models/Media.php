@@ -51,7 +51,8 @@ class Media extends CuratorMedia
                         $media->ext = 'webp';
                         $media->type = 'image/webp';
                         $media->size = $disk->size($newPath);
-                        $media->name = preg_replace('/\.[^.]+$/', '', $media->name) . '.webp';
+                        // Curator's name field is the display name, it shouldn't have an extension.
+                        $media->name = preg_replace('/\.[^.]+$/', '', $media->name);
                     }
                 }
             } catch (\Exception $e) {
