@@ -52,13 +52,25 @@ class VariantsRelationManager extends RelationManager
                         ]);
                         return $option->id;
                     }),
-                \Awcodes\Curator\Components\Forms\CuratorPicker::make('media_id')
+                \Filament\Forms\Components\Select::make('media_id')
                     ->label('Gambar Varian')
-                    ->relationship('media', 'id')
-                    ->buttonLabel('Pilih/Upload Gambar Varian')
-                    ->helperText('Jika warna ini sudah ada gambarnya di varian ukuran lain, pilih gambar yang sama agar tidak duplikat.')
-                    ->color('primary'),
-                TextInput::make('sku')
+                    ->options(function (\Filament\Resources\RelationManagers\RelationManager $livewire) {
+                        $product = $livewire->getOwnerRecord();
+                        if (empty($product->images) || !is_array($product->images)) return [];
+                        
+                        $mediaItems = \Awcodes\Curator\Models\Media::whereIn('id', $product->images)->get();
+                        $options = [];
+                        foreach ($mediaItems as $media) {
+                            $url = \Illuminate\Support\Facades\Storage::disk($media->disk)->url($media->path);
+                            $options[$media->id] = "<div class='flex items-center gap-3'><img src='{$url}' style='width: 32px; height: 32px; border-radius: 4px; object-fit: cover;' /> <span>{$media->name}</span></div>";
+                        }
+                        return $options;
+                    })
+                    ->allowHtml()
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Pilihan gambar di atas otomatis diambil dari Galeri Produk (Induk). Pastikan Anda sudah mengupload gambar warna varian ini di Galeri Utama Produk.'),
+                \Filament\Forms\Components\TextInput::make('sku')
                     ->label('SKU')
                     ->maxLength(255),
                 TextInput::make('stock')
