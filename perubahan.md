@@ -1,19 +1,21 @@
-# Ringkasan Perbaikan (3 Juli 2026)
+# Laporan Update Sistem Raabiha E-commerce (3 Juli 2026)
 
-Berikut adalah rekapitulasi seluruh perbaikan sistem yang telah dieksekusi:
+Halo! Berikut adalah pembaruan dan peningkatan sistem yang baru saja kami terapkan pada platform Raabiha E-commerce berdasarkan masukan dan kebutuhan Anda:
 
-### 1. Manajemen Atribut & Varian
-- **Atribut Wajib:** Menjadikan form pilihan opsi atribut wajib diisi (`required`) saat admin menambahkan varian baru secara manual agar sistem filter tidak rusak.
-- **Pencegahan Duplikat:** Menambahkan validasi `distinct()` dan `unique()` pada form pembuatan opsi atribut untuk menghindari bug admin salah klik/ketik yang memicu pembuatan atribut ganda dengan slug sama (misalnya ukuran "S" 6 kali).
+### 1. Peningkatan Pintar pada Pencarian Katalog
+- **Pencarian Lebih Luas:** Kolom pencarian di halaman Shop kini semakin pintar. Pelanggan Anda tidak hanya bisa mencari berdasarkan nama produk utama, tapi juga bisa mencari berdasarkan **Warna**, **Ukuran**, atau **Kategori** produk secara langsung (misal mencari "Merah" atau "XL").
+- **Toleransi Salah Ketik Spasi:** Kami telah membuat mesin pencarian lebih fleksibel. Jika pelanggan mengetik "BlueJeans", "Blue Jeans", atau bahkan "Blue    Jeans", sistem akan tetap menemukan produk yang tepat dengan akurat.
 
-### 2. Fitur Pencarian Katalog (Shop)
-- **Cakupan Pencarian:** Kolom pencarian di halaman Shop tidak lagi hanya mencari nama produk utama, tapi kini bisa meraba ke dalam *Nama Varian*, *Opsi Atribut* (misal: "merah", "XL"), dan *Kategori*.
-- **Toleransi Spasi:** Query SQL telah dimodifikasi menggunakan `REPLACE(LOWER(kolom), ' ', '')` sehingga kebal terhadap kesalahan ketik spasi (contoh pencarian "BlueJeans", "Blue Jeans", atau "Blue   Jeans" akan membuahkan hasil yang sama).
+### 2. Pengelolaan SKU Produk & Varian yang Lebih Otomatis & Aman
+- **SKU Anti Duplikat:** Kami telah menerapkan pengamanan ganda di sistem untuk memastikan tidak ada satupun SKU yang bentrok atau sama, baik antar produk utama maupun variannya. Ini akan sangat membantu sinkronisasi data dan laporan Anda kedepannya.
+- **Kemudahan Input Admin:** Saat tim admin Anda membuat Varian Produk, awalan SKU (prefix) akan **otomatis mengikuti SKU Produk Utama** dan dikunci di layar agar tidak salah hapus. Admin cukup mengetik tambahannya saja (contoh: jika Produk Induk memiliki SKU "R", admin cukup mengetik "-01", maka otomatis tersimpan sebagai "R-01"). Sistem juga dirancang untuk mengoreksi otomatis jika admin secara tidak sengaja mengetik ulang prefix tersebut.
 
-### 3. Penegakan SKU Unik & Otomatisasi SKU Induk
-- **Database Unique Constraint:** Membuat dan menjalankan migrasi baru yang memaksa tabel `products` (Produk Utama) dan `product_variants` (Varian) untuk tidak menerima SKU duplikat di tingkat core database.
-- **Deduplikasi Otomatis:** Melakukan pembersihan data sementara via Tinker untuk menyisipkan penanda pada SKU lama yang terlanjur kembar agar database bisa dimigrasikan dengan sukses.
-- **SKU Otomatis di Panel:** Saat membuat varian, kolom SKU telah dikonfigurasi agar mewarisi *prefix* (awalan) secara otomatis dari SKU Produk Utamanya. Admin hanya perlu mengetik ujungnya saja. Sistem juga dirancang cerdas untuk mencegah penumpukan prefix ganda jika admin secara tidak sengaja mengetik manual prefix tersebut.
+### 3. Kemudahan & Kerapian Manajemen Atribut Produk
+- **Pencegahan Varian Tanpa Keterangan:** Untuk menghindari varian produk yang membingungkan, sistem kini mewajibkan admin untuk selalu memilih kaitan atribut (seperti Ukuran/Warna) saat membuat varian.
+- **Pencegahan Nama Ganda:** Kami memastikan tidak akan ada lagi opsi atribut yang terbuat secara ganda (misalnya ukuran "S" terbuat berulang kali). Data varian dijamin akan selalu bersih dan rapi.
 
-### 4. Navigasi Beranda
-- **Link Kategori Akurat:** Memperbaiki *hyperlink* pada deretan kategori di halaman beranda (`home.blade.php`). Tautan yang tadinya `/shop?category=slug` diubah menjadi sintaks query array Livewire `/shop?selectedCategories[0]=id` agar filter di sidebar halaman Shop langsung merespon dan tercentang dengan benar.
+### 4. Perbaikan Navigasi di Beranda
+- **Link Kategori Akurat:** Tombol deretan kategori produk di Beranda telah disempurnakan. Kini, saat pelanggan mengklik salah satu kategori di halaman depan, mereka akan langsung diarahkan ke halaman Katalog (Shop) dengan filter kategori yang otomatis aktif sesuai pilihan mereka.
+
+---
+Semua pembaruan di atas sudah berhasil diterapkan dan siap digunakan untuk memberikan pengalaman berbelanja yang jauh lebih baik bagi pelanggan Anda!
