@@ -40,11 +40,20 @@ class AttributeForm
                                 TextInput::make('value')
                                     ->label('Nilai (Value)')
                                     ->required()
+                                    ->distinct()
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(fn (string $operation, $state, \Filament\Schemas\Components\Utilities\Set $set) => $operation === 'create' ? $set('slug', \Illuminate\Support\Str::slug($state)) : null),
                                 TextInput::make('slug')
                                     ->label('Slug')
-                                    ->required(),
+                                    ->required()
+                                    ->distinct()
+                                    ->unique(
+                                        table: 'attribute_options',
+                                        ignoreRecord: true,
+                                        modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) {
+                                            return $rule->where('attribute_id', $get('../../id'));
+                                        }
+                                    ),
                                 \Filament\Forms\Components\ColorPicker::make('meta')
                                     ->label('Warna (Khusus Tipe Color)')
                                     ->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('../../type') === 'color'),

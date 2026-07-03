@@ -152,7 +152,7 @@
              x-on:mouseleave="startAutoScroll()"
              class="hidden md:flex overflow-x-auto snap-x snap-mandatory gap-6 pb-6 scrollbar-hide">
             @forelse($activeCategories as $cat)
-                <a href="{{ url('/shop?category=' . $cat->slug) }}" class="relative aspect-[3/4] bg-[#1c1c1a] overflow-hidden group flex-none w-[280px] lg:w-[calc(25%-1.125rem)] snap-start">
+                <a href="{{ url('/shop?selectedCategories[0]=' . $cat->id) }}" class="relative aspect-[3/4] bg-[#1c1c1a] overflow-hidden group flex-none w-[280px] lg:w-[calc(25%-1.125rem)] snap-start">
                     <!-- Image -->
                     @php
                         $catImageUrl = $resolveCatImage($cat->image, 'https://placehold.co/800x1000/e5e2de/615e57?text=' . urlencode($cat->name));
@@ -176,7 +176,7 @@
         <!-- Mobile Circular Grid -->
         <div class="md:hidden flex overflow-x-auto gap-6 px-2 pb-4 scrollbar-hide">
             @foreach($activeCategories as $cat)
-                <a href="{{ url('/shop?category=' . $cat->slug) }}" class="flex flex-col items-center group flex-none w-[72px]">
+                <a href="{{ url('/shop?selectedCategories[0]=' . $cat->id) }}" class="flex flex-col items-center group flex-none w-[72px]">
                     <div class="w-16 h-16 rounded-full overflow-hidden mb-3 border border-[#e5e2de] shadow-sm">
                         @php
                             $catImageUrl = $resolveCatImage($cat->image, 'https://placehold.co/100x100/e5e2de/615e57?text=' . urlencode($cat->name));

@@ -69,7 +69,19 @@ class Shop extends Component
             ->where('is_hidden', false);
 
         if ($this->search) {
-            $query->where('name', 'like', '%' . $this->search . '%');
+            $searchTerm = '%' . str_replace(' ', '', strtolower($this->search)) . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereRaw("REPLACE(LOWER(products.name), ' ', '') LIKE ?", [$searchTerm])
+                  ->orWhereHas('category', function ($q2) use ($searchTerm) {
+                      $q2->whereRaw("REPLACE(LOWER(categories.name), ' ', '') LIKE ?", [$searchTerm]);
+                  })
+                  ->orWhereHas('variants', function ($q3) use ($searchTerm) {
+                      $q3->whereRaw("REPLACE(LOWER(product_variants.name), ' ', '') LIKE ?", [$searchTerm])
+                         ->orWhereHas('attributeOptions', function ($q4) use ($searchTerm) {
+                             $q4->whereRaw("REPLACE(LOWER(attribute_options.value), ' ', '') LIKE ?", [$searchTerm]);
+                         });
+                  });
+            });
         }
 
         if (!empty($this->selectedCategories)) {

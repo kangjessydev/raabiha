@@ -28,6 +28,7 @@ class VariantsRelationManager extends RelationManager
                     ->getOptionLabelFromRecordUsing(fn (\App\Models\AttributeOption $record) => "{$record->attribute->name}: {$record->value}")
                     ->multiple()
                     ->preload()
+                    ->required()
                     ->label('Kaitan Opsi Atribut (Warna/Ukuran)')
                     ->helperText('Pilih opsi atribut yang sesuai agar varian muncul di frontend.')
                     ->createOptionForm([
@@ -37,7 +38,13 @@ class VariantsRelationManager extends RelationManager
                             ->required(),
                         \Filament\Forms\Components\TextInput::make('value')
                             ->label('Nilai (Misal: Petite, Navy, dll)')
-                            ->required(),
+                            ->required()
+                            ->unique(
+                                table: 'attribute_options',
+                                modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) {
+                                    return $rule->where('attribute_id', $get('attribute_id'));
+                                }
+                            ),
                         \Filament\Forms\Components\TextInput::make('meta')
                             ->label('Meta/Kode Hex (Opsional)')
                             ->placeholder('#000000')
@@ -71,7 +78,50 @@ class VariantsRelationManager extends RelationManager
                     ->preload()
                     ->helperText('Pilihan gambar di atas otomatis diambil dari Galeri Produk (Induk). Pastikan Anda sudah mengupload gambar warna varian ini di Galeri Utama Produk.'),
                 \Filament\Forms\Components\TextInput::make('sku')
-                    ->label('SKU')
+                    ->label('SKU Lanjutan (Varian)')
+                    ->prefix(fn ($livewire) => $livewire->getOwnerRecord()->sku ? $livewire->getOwnerRecord()->sku . '-' : '')
+                    ->formatStateUsing(function ($state, $livewire) {
+                        $parentSku = $livewire->getOwnerRecord()->sku;
+                        if (!$parentSku || blank($state)) return $state;
+                        
+                        $prefix = $parentSku . '-';
+                        if (str_starts_with($state, $prefix)) {
+                            return substr($state, strlen($prefix));
+                        }
+                        return $state;
+                    })
+                    ->dehydrateStateUsing(function ($state, $livewire) {
+                        if (blank($state)) return null;
+                        $parentSku = $livewire->getOwnerRecord()->sku;
+                        if (!$parentSku) return $state;
+                        
+                        if (str_starts_with($state, $parentSku . '-')) {
+                            $state = substr($state, strlen($parentSku . '-'));
+                        } elseif (str_starts_with($state, $parentSku)) {
+                            $state = substr($state, strlen($parentSku));
+                        }
+                        
+                        if (str_starts_with($state, '-')) {
+                            $state = substr($state, 1);
+                        }
+                        
+                        return $parentSku . '-' . $state;
+                    })
+                    ->rule(function ($livewire, $record) {
+                        return function (string $attribute, $value, \Closure $fail) use ($livewire, $record) {
+                            if (blank($value)) return;
+                            $parentSku = $livewire->getOwnerRecord()->sku;
+                            $fullSku = $parentSku ? ($parentSku . '-' . $value) : $value;
+                            
+                            $exists = \App\Models\ProductVariant::where('sku', $fullSku)
+                                ->when($record, fn($q) => $q->where('id', '!=', $record->id))
+                                ->exists();
+                                
+                            if ($exists) {
+                                $fail('SKU Varian ini sudah digunakan.');
+                            }
+                        };
+                    })
                     ->maxLength(255),
                 TextInput::make('stock')
                     ->label('Stok')
