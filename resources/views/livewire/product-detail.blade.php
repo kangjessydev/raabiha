@@ -253,8 +253,8 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                                 </button>
                                 <!-- Mobile Wishlist Button -->
-                                <div class="flex items-center justify-center w-8 h-8 scale-90">
-                                    <livewire:wishlist-toggle :product_id="$product->id" :isDetail="true" :key="'wishlist-detail-mobile-'.$product->id" />
+                                <div class="flex items-center justify-center w-8 h-8">
+                                    <livewire:wishlist-toggle :product_id="$product->id" :isDetail="true" :isSimple="true" :key="'wishlist-detail-mobile-'.$product->id" />
                                 </div>
                             </div>
                         </div>
@@ -720,12 +720,11 @@
 
             <h3 class="text-[#1c1c1a] text-lg font-serif font-bold mb-6 text-center">Share This Product</h3>
             
-            <!-- Link Copy Box -->
             <div class="mb-6">
                 <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Product Link</label>
                 <div class="flex items-center border border-[#e5e2de] h-12 w-full">
-                    <input type="text" value="https://raabiha.com/product/outerwear-asymmetrical" readonly class="flex-1 bg-[#f9f8f6] h-full px-4 text-[#615e57] font-mono text-[11px] focus:outline-none">
-                    <button class="h-full px-4 border-l border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
+                    <input type="text" value="{{ request()->url() }}" id="share-link-input" readonly class="flex-1 bg-[#f9f8f6] h-full px-4 text-[#615e57] font-mono text-[11px] focus:outline-none">
+                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('share-link-input').value); alert('Link disalin!')" class="h-full px-4 border-l border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
                         COPY
                     </button>
                 </div>
@@ -735,18 +734,25 @@
 
             <!-- Social Share Buttons -->
             <div class="flex flex-col gap-3">
-                <button class="w-full h-12 border border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center gap-3 focus:outline-none">
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(request()->url()) }}" target="_blank" class="w-full h-12 border border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center gap-3 focus:outline-none">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.85C10.44 7.34 11.93 5.96 14.22 5.96C15.31 5.96 16.45 6.15 16.45 6.15V8.62H15.19C13.95 8.62 13.56 9.39 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96A10 10 0 0 0 22 12.06C22 6.53 17.5 2.04 12 2.04Z"/></svg>
                     <span class="text-[10px] font-mono font-bold tracking-widest uppercase">Share to Facebook</span>
-                </button>
-                <button class="w-full h-12 border border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center gap-3 focus:outline-none">
+                </a>
+                
+                <a href="https://t.me/share/url?url={{ urlencode(request()->url()) }}&text={{ urlencode($product->name) }}" target="_blank" class="w-full h-12 border border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center gap-3 focus:outline-none">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M11.94 2A10 10 0 1 0 21.94 12A10 10 0 0 0 11.94 2ZM16.39 9.32L14.75 16.39C14.62 16.92 14.32 17.06 13.88 16.82L11.48 15.05L10.32 16.17C10.19 16.3 10.08 16.41 9.8 16.41L9.98 13.95L14.45 9.91C14.65 9.73 14.41 9.63 14.15 9.8L8.62 13.27L6.23 12.52C5.71 12.36 5.7 12 6.34 11.75L15.68 8.15C16.12 7.99 16.49 8.24 16.39 9.32Z"/></svg>
                     <span class="text-[10px] font-mono font-bold tracking-widest uppercase">Share to Telegram</span>
-                </button>
-                <button class="w-full h-12 border border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center gap-3 focus:outline-none">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                    <span class="text-[10px] font-mono font-bold tracking-widest uppercase">Copy Text Only</span>
-                </button>
+                </a>
+
+                <a href="https://api.whatsapp.com/send?text={{ urlencode($product->name . ' - ' . request()->url()) }}" target="_blank" class="w-full h-12 border border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center gap-3 focus:outline-none">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.01 2.014c-5.503 0-9.972 4.467-9.975 9.97 0 1.76.46 3.48 1.332 4.996L2 22l5.163-1.353a9.92 9.92 0 004.846 1.258h.004c5.503 0 9.973-4.467 9.975-9.97.001-2.666-1.037-5.172-2.92-7.057A9.913 9.913 0 0012.01 2.014zm5.72 14.113c-.24.673-1.393 1.267-1.956 1.354-.537.082-1.226.155-3.528-.801-2.783-1.157-4.567-4.015-4.707-4.203-.14-.187-1.124-1.498-1.124-2.855 0-1.357.708-2.025.962-2.296.253-.271.554-.34.738-.34.184 0 .368 0 .526.009.166.009.39.062.593.553.21.51 1.028 2.508 1.118 2.695.09.187.151.405.022.662-.129.256-.196.417-.389.645-.194.227-.406.496-.583.659-.196.181-.4.379-.181.756.218.377.969 1.603 2.083 2.597 1.442 1.285 2.628 1.681 2.992 1.868.363.187.575.155.792-.093.218-.248.937-1.092 1.191-1.467.254-.374.507-.311.85-.186.344.124 2.181 1.028 2.555 1.215.374.187.624.28.714.436.09.155.09.905-.15 1.579z"/></svg>
+                    <span class="text-[10px] font-mono font-bold tracking-widest uppercase">Share to WhatsApp</span>
+                </a>
+                
+                <a href="https://twitter.com/intent/tweet?url={{ urlencode(request()->url()) }}&text={{ urlencode($product->name) }}" target="_blank" class="w-full h-12 border border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center gap-3 focus:outline-none">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    <span class="text-[10px] font-mono font-bold tracking-widest uppercase">Share to X (Twitter)</span>
+                </a>
             </div>
         </div>
     </template>

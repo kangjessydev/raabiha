@@ -13,11 +13,13 @@ class WishlistToggle extends Component
     public $product_id;
     public $isInWishlist = false;
     public $isDetail = false;
+    public $isSimple = false;
 
-    public function mount($product_id, $isDetail = false)
+    public function mount($product_id, $isDetail = false, $isSimple = false)
     {
         $this->product_id = $product_id;
         $this->isDetail = $isDetail;
+        $this->isSimple = $isSimple;
         $this->checkWishlistStatus();
     }
 
