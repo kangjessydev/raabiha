@@ -72,14 +72,14 @@
                         <!-- Lightbox Modal -->
                         <template x-teleport="body">
                             <div x-show="lightboxOpen" 
-                                 class="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center"
+                                 class="fixed inset-0 flex flex-col items-center justify-center"
                                  x-transition:enter="transition ease-out duration-300"
                                  x-transition:enter-start="opacity-0"
                                  x-transition:enter-end="opacity-100"
                                  x-transition:leave="transition ease-in duration-200"
                                  x-transition:leave-start="opacity-100"
                                  x-transition:leave-end="opacity-0"
-                                 style="display: none;">
+                                 style="display: none; z-index: 99999; background-color: rgba(0, 0, 0, 0.95);">
                                  
                                 <!-- Close Button -->
                                 <button type="button" @click="lightboxOpen = false" class="absolute top-4 right-4 md:top-6 md:right-6 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none bg-black/50 rounded-full">
@@ -133,7 +133,7 @@
                                 </div>
                                 
                                 <!-- Thumbnails & Index -->
-                                <div class="w-full bg-black/80 pb-safe z-[10000]">
+                                <div class="w-full pb-safe" style="background-color: rgba(0, 0, 0, 0.8); z-index: 100000;">
                                     <div class="flex flex-col items-center py-4">
                                         <div class="text-white font-mono text-xs tracking-widest mb-3">
                                             <span x-text="activeIndex + 1"></span> / {{ $imgCount }}
