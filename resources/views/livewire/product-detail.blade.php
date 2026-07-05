@@ -724,8 +724,8 @@
                 <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">Product Link</label>
                 <div class="flex items-center border border-[#e5e2de] h-12 w-full">
                     <input type="text" value="{{ request()->url() }}" id="share-link-input" readonly class="flex-1 bg-[#f9f8f6] h-full px-4 text-[#615e57] font-mono text-[11px] focus:outline-none">
-                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('share-link-input').value); alert('Link disalin!')" class="h-full px-4 border-l border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none">
-                        COPY
+                    <button type="button" x-data="{ copied: false }" @click="navigator.clipboard.writeText(document.getElementById('share-link-input').value); copied = true; setTimeout(() => copied = false, 2000)" class="h-full px-4 border-l border-[#e5e2de] text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors flex items-center justify-center text-[10px] font-mono font-bold tracking-widest uppercase focus:outline-none w-20">
+                        <span x-text="copied ? 'COPIED!' : 'COPY'"></span>
                     </button>
                 </div>
             </div>
