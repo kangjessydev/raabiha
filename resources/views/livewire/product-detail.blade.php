@@ -70,72 +70,91 @@
                         </div>
 
                         <!-- Lightbox Modal -->
-                        <div x-show="lightboxOpen" 
-                             class="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
-                             x-transition:enter="transition ease-out duration-300"
-                             x-transition:enter-start="opacity-0"
-                             x-transition:enter-end="opacity-100"
-                             x-transition:leave="transition ease-in duration-200"
-                             x-transition:leave-start="opacity-100"
-                             x-transition:leave-end="opacity-0"
-                             style="display: none;">
-                             
-                            <!-- Close Button -->
-                            <button type="button" @click="lightboxOpen = false" class="absolute top-4 right-4 md:top-6 md:right-6 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
+                        <template x-teleport="body">
+                            <div x-show="lightboxOpen" 
+                                 class="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center"
+                                 x-transition:enter="transition ease-out duration-300"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
+                                 x-transition:leave="transition ease-in duration-200"
+                                 x-transition:leave-start="opacity-100"
+                                 x-transition:leave-end="opacity-0"
+                                 style="display: none;">
+                                 
+                                <!-- Close Button -->
+                                <button type="button" @click="lightboxOpen = false" class="absolute top-4 right-4 md:top-6 md:right-6 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none bg-black/50 rounded-full">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
 
-                            @php
-                                $imgCount = !empty($galleryUrls) ? count($galleryUrls) : 1;
-                            @endphp
+                                @php
+                                    $imgCount = !empty($galleryUrls) ? count($galleryUrls) : 1;
+                                @endphp
 
-                            <!-- Navigation Prev -->
-                            @if($imgCount > 1)
-                            <button type="button" @click.stop="activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1" class="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none">
-                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                            </button>
+                                <!-- Navigation Prev -->
+                                @if($imgCount > 1)
+                                <button type="button" @click.stop="activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1" class="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none bg-black/50 rounded-full">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                </button>
 
-                            <!-- Navigation Next -->
-                            <button type="button" @click.stop="activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1" class="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none">
-                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                            </button>
-                            @endif
+                                <!-- Navigation Next -->
+                                <button type="button" @click.stop="activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1" class="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none bg-black/50 rounded-full">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </button>
+                                @endif
 
-                            <!-- Image Slider Container (Lightbox) -->
-                            <div class="w-full h-full relative overflow-hidden flex items-center justify-center cursor-auto"
-                                 @click.self="lightboxOpen = false"
-                                 @if($imgCount > 1)
-                                 x-on:touchstart="touchStartX = $event.touches[0].clientX"
-                                 x-on:touchend="
-                                    touchEndX = $event.changedTouches[0].clientX;
-                                    if (touchStartX - touchEndX > 50) { 
-                                        activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1;
-                                    } else if (touchEndX - touchStartX > 50) {
-                                        activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1;
-                                    }
-                                 "
-                                 @endif
-                                 >
-                                <div class="flex w-full transition-transform duration-300 ease-out h-full items-center" :style="'transform: translateX(-' + (activeIndex * 100) + '%)'" @click.self="lightboxOpen = false">
-                                    @if(!empty($galleryUrls))
-                                        @foreach($galleryUrls as $idx => $img)
+                                <!-- Main Image Slider Container -->
+                                <div class="w-full flex-1 relative overflow-hidden flex items-center justify-center cursor-auto mt-12 md:mt-0"
+                                     @click.self="lightboxOpen = false"
+                                     @if($imgCount > 1)
+                                     x-on:touchstart="touchStartX = $event.touches[0].clientX"
+                                     x-on:touchend="
+                                        touchEndX = $event.changedTouches[0].clientX;
+                                        if (touchStartX - touchEndX > 50) { 
+                                            activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1;
+                                        } else if (touchEndX - touchStartX > 50) {
+                                            activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1;
+                                        }
+                                     "
+                                     @endif
+                                     >
+                                    <div class="flex w-full transition-transform duration-300 ease-out h-full items-center" :style="'transform: translateX(-' + (activeIndex * 100) + '%)'" @click.self="lightboxOpen = false">
+                                        @if(!empty($galleryUrls))
+                                            @foreach($galleryUrls as $idx => $img)
+                                                <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false">
+                                                    <img src="{{ $img }}" alt="{{ $product->name }}" class="max-w-full max-h-full object-contain select-none shadow-2xl">
+                                                </div>
+                                            @endforeach
+                                        @else
                                             <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false">
-                                                <img src="{{ $img }}" alt="{{ $product->name }}" class="max-w-full max-h-full object-contain select-none shadow-2xl">
+                                                <img src="{{ asset('assets/images/placeholder.webp') }}" alt="{{ $product->name }}" class="max-w-full max-h-full object-contain select-none shadow-2xl">
                                             </div>
-                                        @endforeach
-                                    @else
-                                        <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false">
-                                            <img src="{{ asset('assets/images/placeholder.webp') }}" alt="{{ $product->name }}" class="max-w-full max-h-full object-contain select-none shadow-2xl">
+                                        @endif
+                                    </div>
+                                </div>
+                                
+                                <!-- Thumbnails & Index -->
+                                <div class="w-full bg-black/80 pb-safe z-[10000]">
+                                    <div class="flex flex-col items-center py-4">
+                                        <div class="text-white font-mono text-xs tracking-widest mb-3">
+                                            <span x-text="activeIndex + 1"></span> / {{ $imgCount }}
                                         </div>
-                                    @endif
+                                        
+                                        @if($imgCount > 1)
+                                        <!-- Thumbnails row -->
+                                        <div class="flex max-w-full overflow-x-auto gap-2 px-4 pb-2 scrollbar-none" style="scrollbar-width: none; -ms-overflow-style: none;">
+                                            @foreach($galleryUrls as $idx => $img)
+                                                <button type="button" @click.stop="activeIndex = {{ $idx }}" 
+                                                    class="shrink-0 w-16 h-20 md:w-20 md:h-24 overflow-hidden rounded transition-all focus:outline-none"
+                                                    :class="activeIndex === {{ $idx }} ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-100'">
+                                                    <img src="{{ $img }}" alt="Thumbnail" class="w-full h-full object-cover">
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <!-- Index Indicator -->
-                            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white font-mono text-sm tracking-widest bg-black/50 px-4 py-2 rounded-full z-[10000]">
-                                <span x-text="activeIndex + 1"></span> / {{ $imgCount }}
-                            </div>
-                        </div>
+                        </template>
                     </div>
     </div>
                 <!-- Right Column (Product Info) -->
