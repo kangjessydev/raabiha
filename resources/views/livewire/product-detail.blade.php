@@ -13,7 +13,53 @@
                 <div class="lg:col-span-7 relative">
                     
                     <!-- Gallery View (Unified Desktop & Mobile) -->
-                    <div class="w-full" x-data="{ activeIndex: 0, lightboxOpen: false, touchStartX: 0, touchEndX: 0, isZoomed: false }" @change-gallery-image.window="activeIndex = $event.detail.index" @keydown.escape.window="lightboxOpen = false; isZoomed = false;">
+                    <div class="w-full" x-data="{ 
+                        activeIndex: 0, lightboxOpen: false, touchStartX: 0, touchEndX: 0, isZoomed: false,
+                        panX: 0, panY: 0, isDragging: false, startX: 0, startY: 0, hasMoved: false,
+                        startDrag(e) {
+                            if (!this.isZoomed) return;
+                            this.isDragging = true;
+                            this.hasMoved = false;
+                            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                            this.startX = clientX - this.panX;
+                            this.startY = clientY - this.panY;
+                        },
+                        doDrag(e) {
+                            if (!this.isDragging || !this.isZoomed) return;
+                            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                            let newPanX = clientX - this.startX;
+                            let newPanY = clientY - this.startY;
+                            if (Math.abs(newPanX - this.panX) > 3 || Math.abs(newPanY - this.panY) > 3) {
+                                this.hasMoved = true;
+                            }
+                            this.panX = newPanX;
+                            this.panY = newPanY;
+                        },
+                        endDrag() {
+                            this.isDragging = false;
+                        },
+                        toggleZoom(e) {
+                            if (this.isZoomed && this.hasMoved) return;
+                            this.isZoomed = !this.isZoomed;
+                            if(this.isZoomed) {
+                                this.panX = 0; this.panY = 0;
+                                let rect = e.target.getBoundingClientRect();
+                                let clientX = e.type.includes('touch') && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+                                let clientY = e.type.includes('touch') && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+                                let x = (clientX - rect.left) / rect.width * 100;
+                                let y = (clientY - rect.top) / rect.height * 100;
+                                e.target.style.transformOrigin = x + '% ' + y + '%';
+                            } else {
+                                setTimeout(() => { 
+                                    e.target.style.transformOrigin = 'center center'; 
+                                    this.panX = 0; 
+                                    this.panY = 0; 
+                                }, 300);
+                            }
+                        }
+                    }" @change-gallery-image.window="activeIndex = $event.detail.index" @keydown.escape.window="lightboxOpen = false; isZoomed = false;">
                         <div class="w-[calc(100%+3rem)] -mx-6 md:mx-0 md:w-full aspect-square md:aspect-[4/5] lg:h-[65vh] lg:aspect-auto bg-[#ebebeb] overflow-hidden relative">
                             
                             <!-- Main Slider Container -->
@@ -106,13 +152,15 @@
                                 <div class="w-full flex-1 relative overflow-hidden flex items-center justify-center cursor-auto mt-12 md:mt-0"
                                      @click.self="lightboxOpen = false"
                                      @if($imgCount > 1)
-                                     x-on:touchstart="touchStartX = $event.touches[0].clientX"
+                                     x-on:touchstart="if(!isZoomed) touchStartX = $event.touches[0].clientX"
                                      x-on:touchend="
-                                        touchEndX = $event.changedTouches[0].clientX;
-                                        if (touchStartX - touchEndX > 50) { 
-                                            isZoomed = false; activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1;
-                                        } else if (touchEndX - touchStartX > 50) {
-                                            isZoomed = false; activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1;
+                                        if(!isZoomed) {
+                                            touchEndX = $event.changedTouches[0].clientX;
+                                            if (touchStartX - touchEndX > 50) { 
+                                                isZoomed = false; activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1;
+                                            } else if (touchEndX - touchStartX > 50) {
+                                                isZoomed = false; activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1;
+                                            }
                                         }
                                      "
                                      @endif
@@ -122,37 +170,31 @@
                                             @foreach($galleryUrls as $idx => $img)
                                                 <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false; isZoomed = false;">
                                                     <img src="{{ $img }}" alt="{{ $product->name }}" 
-                                                         class="max-w-full max-h-full object-contain select-none shadow-2xl transition-transform duration-300"
-                                                         :style="isZoomed ? 'transform: scale(2.5); cursor: zoom-out;' : 'transform: scale(1); cursor: zoom-in;'"
-                                                         @click.stop="
-                                                            isZoomed = !isZoomed;
-                                                            if(isZoomed) {
-                                                                let rect = $event.target.getBoundingClientRect();
-                                                                let x = ($event.clientX - rect.left) / rect.width * 100;
-                                                                let y = ($event.clientY - rect.top) / rect.height * 100;
-                                                                $event.target.style.transformOrigin = `${x}% ${y}%`;
-                                                            } else {
-                                                                setTimeout(() => { $event.target.style.transformOrigin = 'center center'; }, 300);
-                                                            }
-                                                         ">
+                                                         class="max-w-full max-h-full object-contain select-none shadow-2xl transition-transform duration-200"
+                                                         :style="isZoomed ? `transform: scale(2.5) translate(${panX/2.5}px, ${panY/2.5}px); cursor: ${isDragging ? 'grabbing' : 'grab'};` : 'transform: scale(1) translate(0px, 0px); cursor: zoom-in;'"
+                                                         @mousedown="startDrag"
+                                                         @touchstart="startDrag"
+                                                         @mousemove.window="doDrag"
+                                                         @touchmove.window="doDrag"
+                                                         @mouseup.window="endDrag"
+                                                         @touchend.window="endDrag"
+                                                         @click.stop="toggleZoom"
+                                                         draggable="false">
                                                 </div>
                                             @endforeach
                                         @else
                                             <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false; isZoomed = false;">
                                                 <img src="{{ asset('assets/images/placeholder.webp') }}" alt="{{ $product->name }}" 
-                                                     class="max-w-full max-h-full object-contain select-none shadow-2xl transition-transform duration-300"
-                                                     :style="isZoomed ? 'transform: scale(2.5); cursor: zoom-out;' : 'transform: scale(1); cursor: zoom-in;'"
-                                                     @click.stop="
-                                                        isZoomed = !isZoomed;
-                                                        if(isZoomed) {
-                                                            let rect = $event.target.getBoundingClientRect();
-                                                            let x = ($event.clientX - rect.left) / rect.width * 100;
-                                                            let y = ($event.clientY - rect.top) / rect.height * 100;
-                                                            $event.target.style.transformOrigin = `${x}% ${y}%`;
-                                                        } else {
-                                                            setTimeout(() => { $event.target.style.transformOrigin = 'center center'; }, 300);
-                                                        }
-                                                     ">
+                                                     class="max-w-full max-h-full object-contain select-none shadow-2xl transition-transform duration-200"
+                                                     :style="isZoomed ? `transform: scale(2.5) translate(${panX/2.5}px, ${panY/2.5}px); cursor: ${isDragging ? 'grabbing' : 'grab'};` : 'transform: scale(1) translate(0px, 0px); cursor: zoom-in;'"
+                                                     @mousedown="startDrag"
+                                                     @touchstart="startDrag"
+                                                     @mousemove.window="doDrag"
+                                                     @touchmove.window="doDrag"
+                                                     @mouseup.window="endDrag"
+                                                     @touchend.window="endDrag"
+                                                     @click.stop="toggleZoom"
+                                                     draggable="false">
                                             </div>
                                         @endif
                                     </div>
