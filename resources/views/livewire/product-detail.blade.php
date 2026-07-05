@@ -13,7 +13,7 @@
                 <div class="lg:col-span-7 relative">
                     
                     <!-- Gallery View (Unified Desktop & Mobile) -->
-                    <div class="w-full" x-data="{ activeIndex: 0, lightboxOpen: false, touchStartX: 0, touchEndX: 0 }" @change-gallery-image.window="activeIndex = $event.detail.index" @keydown.escape.window="lightboxOpen = false">
+                    <div class="w-full" x-data="{ activeIndex: 0, lightboxOpen: false, touchStartX: 0, touchEndX: 0, isZoomed: false }" @change-gallery-image.window="activeIndex = $event.detail.index" @keydown.escape.window="lightboxOpen = false; isZoomed = false;">
                         <div class="w-[calc(100%+3rem)] -mx-6 md:mx-0 md:w-full aspect-square md:aspect-[4/5] lg:h-[65vh] lg:aspect-auto bg-[#ebebeb] overflow-hidden relative">
                             
                             <!-- Main Slider Container -->
@@ -92,12 +92,12 @@
 
                                 <!-- Navigation Prev -->
                                 @if($imgCount > 1)
-                                <button type="button" @click.stop="activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1" class="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none bg-black/50 rounded-full">
+                                <button type="button" @click.stop="isZoomed = false; activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1" class="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none bg-black/50 rounded-full">
                                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                 </button>
 
                                 <!-- Navigation Next -->
-                                <button type="button" @click.stop="activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1" class="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none bg-black/50 rounded-full">
+                                <button type="button" @click.stop="isZoomed = false; activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1" class="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 z-[10000] p-2 focus:outline-none bg-black/50 rounded-full">
                                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                 </button>
                                 @endif
@@ -110,23 +110,49 @@
                                      x-on:touchend="
                                         touchEndX = $event.changedTouches[0].clientX;
                                         if (touchStartX - touchEndX > 50) { 
-                                            activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1;
+                                            isZoomed = false; activeIndex = activeIndex === {{ $imgCount - 1 }} ? 0 : activeIndex + 1;
                                         } else if (touchEndX - touchStartX > 50) {
-                                            activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1;
+                                            isZoomed = false; activeIndex = activeIndex === 0 ? {{ $imgCount - 1 }} : activeIndex - 1;
                                         }
                                      "
                                      @endif
                                      >
-                                    <div class="flex w-full transition-transform duration-300 ease-out h-full items-center" :style="'transform: translateX(-' + (activeIndex * 100) + '%)'" @click.self="lightboxOpen = false">
+                                    <div class="flex w-full transition-transform duration-300 ease-out h-full items-center" :style="'transform: translateX(-' + (activeIndex * 100) + '%)'" @click.self="lightboxOpen = false; isZoomed = false;">
                                         @if(!empty($galleryUrls))
                                             @foreach($galleryUrls as $idx => $img)
-                                                <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false">
-                                                    <img src="{{ $img }}" alt="{{ $product->name }}" class="max-w-full max-h-full object-contain select-none shadow-2xl">
+                                                <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false; isZoomed = false;">
+                                                    <img src="{{ $img }}" alt="{{ $product->name }}" 
+                                                         class="max-w-full max-h-full object-contain select-none shadow-2xl transition-transform duration-300"
+                                                         :style="isZoomed ? 'transform: scale(2.5); cursor: zoom-out;' : 'transform: scale(1); cursor: zoom-in;'"
+                                                         @click.stop="
+                                                            isZoomed = !isZoomed;
+                                                            if(isZoomed) {
+                                                                let rect = $event.target.getBoundingClientRect();
+                                                                let x = ($event.clientX - rect.left) / rect.width * 100;
+                                                                let y = ($event.clientY - rect.top) / rect.height * 100;
+                                                                $event.target.style.transformOrigin = `${x}% ${y}%`;
+                                                            } else {
+                                                                setTimeout(() => { $event.target.style.transformOrigin = 'center center'; }, 300);
+                                                            }
+                                                         ">
                                                 </div>
                                             @endforeach
                                         @else
-                                            <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false">
-                                                <img src="{{ asset('assets/images/placeholder.webp') }}" alt="{{ $product->name }}" class="max-w-full max-h-full object-contain select-none shadow-2xl">
+                                            <div class="w-full h-full shrink-0 flex items-center justify-center p-4 md:p-12" @click.self="lightboxOpen = false; isZoomed = false;">
+                                                <img src="{{ asset('assets/images/placeholder.webp') }}" alt="{{ $product->name }}" 
+                                                     class="max-w-full max-h-full object-contain select-none shadow-2xl transition-transform duration-300"
+                                                     :style="isZoomed ? 'transform: scale(2.5); cursor: zoom-out;' : 'transform: scale(1); cursor: zoom-in;'"
+                                                     @click.stop="
+                                                        isZoomed = !isZoomed;
+                                                        if(isZoomed) {
+                                                            let rect = $event.target.getBoundingClientRect();
+                                                            let x = ($event.clientX - rect.left) / rect.width * 100;
+                                                            let y = ($event.clientY - rect.top) / rect.height * 100;
+                                                            $event.target.style.transformOrigin = `${x}% ${y}%`;
+                                                        } else {
+                                                            setTimeout(() => { $event.target.style.transformOrigin = 'center center'; }, 300);
+                                                        }
+                                                     ">
                                             </div>
                                         @endif
                                     </div>
@@ -143,7 +169,7 @@
                                         <!-- Thumbnails row -->
                                         <div class="flex max-w-full overflow-x-auto gap-2 px-4 pb-2 scrollbar-none" style="scrollbar-width: none; -ms-overflow-style: none;">
                                             @foreach($galleryUrls as $idx => $img)
-                                                <button type="button" @click.stop="activeIndex = {{ $idx }}" 
+                                                <button type="button" @click.stop="isZoomed = false; activeIndex = {{ $idx }}" 
                                                     class="shrink-0 w-16 h-20 md:w-20 md:h-24 overflow-hidden rounded transition-all focus:outline-none"
                                                     :class="activeIndex === {{ $idx }} ? 'ring-2 ring-white opacity-100' : 'opacity-50 hover:opacity-100'">
                                                     <img src="{{ $img }}" alt="Thumbnail" class="w-full h-full object-cover">
