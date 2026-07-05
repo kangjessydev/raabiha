@@ -1,4 +1,4 @@
-<div x-data="{ bsOpen: $wire.entangle('bsOpen'), bsMode: $wire.entangle('bsMode') }">
+<div x-data="{ bsOpen: $wire.entangle('bsOpen'), bsMode: $wire.entangle('bsMode'), shareOpen: false }">
     @slot('header')
         <x-global.mobile-subnav title="Detail Produk" transparent="true" :cart="true" />
     @endslot
@@ -240,7 +240,7 @@
                             </nav>
                             
                             <!-- Share Button -->
-                            <button type="button" id="desktop-share-btn" class="text-[#1c1c1a] hover:text-[#615e57] transition-colors focus:outline-none flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100" onclick="document.getElementById('share-modal').classList.remove('hidden')">
+                            <button type="button" id="desktop-share-btn" class="text-[#1c1c1a] hover:text-[#615e57] transition-colors focus:outline-none flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100" @click="shareOpen = true">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                             </button>
                         </div>
@@ -249,13 +249,13 @@
                             <div class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest" id="collection-badge">FALL/WINTER 2024</div>
                             <div class="flex items-center gap-1">
                                 <!-- Mobile Share Button -->
-                                <button type="button" onclick="document.getElementById('share-modal').classList.remove('hidden')" class="flex items-center justify-center w-8 h-8 text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+                                <button type="button" @click="shareOpen = true" class="flex items-center justify-center w-8 h-8 text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
                                 </button>
                                 <!-- Mobile Wishlist Button -->
-                                <button type="button" class="flex items-center justify-center w-8 h-8 text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                                </button>
+                                <div class="flex items-center justify-center w-8 h-8 scale-90">
+                                    <livewire:wishlist-toggle :product_id="$product->id" :isDetail="true" :key="'wishlist-detail-mobile-'.$product->id" />
+                                </div>
                             </div>
                         </div>
                         <h1 id="product-name" class="text-[#1c1c1a] text-2xl lg:text-5xl font-serif font-bold tracking-tight mb-2 mt-0 lg:mt-0 capitalize">
@@ -710,12 +710,13 @@
     </div>
 
     <!-- Share Modal Popup -->
-    <div id="share-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity">
-        <div class="bg-white w-11/12 max-w-md p-8 relative border border-[#e5e2de] shadow-2xl">
-            <!-- Close button -->
-            <button type="button" class="absolute top-4 right-4 text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none" onclick="document.getElementById('share-modal').classList.add('hidden')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
+    <template x-teleport="body">
+        <div id="share-modal" x-show="shareOpen" x-transition.opacity style="display: none;" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div class="bg-white w-11/12 max-w-md p-8 relative border border-[#e5e2de] shadow-2xl" @click.away="shareOpen = false">
+                <!-- Close button -->
+                <button type="button" class="absolute top-4 right-4 text-[#615e57] hover:text-[#1c1c1a] transition-colors focus:outline-none" @click="shareOpen = false">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
 
             <h3 class="text-[#1c1c1a] text-lg font-serif font-bold mb-6 text-center">Share This Product</h3>
             
@@ -748,7 +749,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </template>
 
     <!-- ===== MOBILE VARIANT BOTTOMSHEET ===== -->
     <!-- ===== MOBILE VARIANT BOTTOMSHEET ===== -->
