@@ -317,8 +317,8 @@
                         <!-- Product Form (Add to Cart / Variation selectors) -->
                         <div class="w-full mb-8 pt-6 border-t border-[#e5e2de]">
                             <!-- Size & Color selectors (Desktop only on mobile, shown in bottomsheet) -->
-                            <!-- Dynamic Selectors (Desktop only on mobile, shown in bottomsheet) -->
-                            <div class="hidden md:block">
+                            <!-- Dynamic Selectors (Limited on Mobile) -->
+                            <div class="w-full">
                                 @foreach($this->availableAttributes as $attrSlug => $data)
                                     <div class="mb-6">
                                         <div class="flex justify-between items-center mb-2">
@@ -327,7 +327,7 @@
                                         
                                         @if($data['type'] === 'color')
                                             <div class="flex flex-wrap gap-3">
-                                                @foreach($data['options'] as $opt)
+                                                @foreach($data['options'] as $index => $opt)
                                                     @php 
                                                         $val = $opt['value'];
                                                         $hex = $opt['meta'] ?? '#333333';
@@ -338,7 +338,7 @@
                                                     <button 
                                                         type="button"
                                                         @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                                        class="flex flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'cursor-not-allowed' : 'cursor-pointer' }}">
+                                                        class="flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'cursor-not-allowed' : 'cursor-pointer' }} {{ $index >= 5 ? 'hidden md:flex' : 'flex' }}">
                                                         <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 relative {{ $isSelected ? 'border-[#1c1c1a]' : ($isAvailable ? 'border-gray-300 hover:border-gray-500' : 'border-transparent') }}">
                                                             <div class="w-full h-full rounded-full border border-black/10 {{ !$isAvailable ? 'opacity-20' : '' }}" style="background-color: {{ $hex }}">
                                                             </div>
@@ -351,10 +351,18 @@
                                                         <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : ($isAvailable ? 'text-[#615e57] group-hover:text-[#1c1c1a]' : 'text-[#c2bfb8] line-through font-light') }}">{{ $val }}</span>
                                                     </button>
                                                 @endforeach
+                                                @if(count($data['options']) > 5)
+                                                    <button type="button" @click="bsOpen = true; bsMode = 'cart'" class="md:hidden flex flex-col items-center justify-center gap-1.5 cursor-pointer mt-0.5 focus:outline-none">
+                                                        <div class="w-8 h-8 rounded-full border border-[#e5e2de] flex items-center justify-center bg-[#f9f8f6] text-[9px] font-mono font-bold text-[#615e57]">
+                                                            +{{ count($data['options']) - 5 }}
+                                                        </div>
+                                                        <span class="text-[9px] font-mono uppercase tracking-wide text-[#615e57]">Lainnya</span>
+                                                    </button>
+                                                @endif
                                             </div>
                                         @else
                                             <div class="flex flex-wrap gap-2">
-                                                @foreach($data['options'] as $opt)
+                                                @foreach($data['options'] as $index => $opt)
                                                     @php 
                                                         $val = $opt['value'];
                                                         $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
@@ -364,8 +372,9 @@
                                                     <button 
                                                         type="button" 
                                                         @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                                        class="flex-1 py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 relative overflow-hidden
-                                                        {{ $isSelected ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] ' . ($isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed') }}">
+                                                        class="py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 relative overflow-hidden focus:outline-none
+                                                        {{ $isSelected ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] ' . ($isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed') }}
+                                                        {{ $index >= 5 ? 'hidden md:block' : 'block' }} flex-1">
                                                         {{ $val }}
                                                         @if(!$isAvailable)
                                                             <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
@@ -374,6 +383,11 @@
                                                         @endif
                                                     </button>
                                                 @endforeach
+                                                @if(count($data['options']) > 5)
+                                                    <button type="button" @click="bsOpen = true; bsMode = 'cart'" class="md:hidden py-3 px-4 text-[10px] font-mono border border-[#e5e2de] bg-[#f9f8f6] text-[#615e57] uppercase tracking-wider block focus:outline-none">
+                                                        +{{ count($data['options']) - 5 }} LAINNYA
+                                                    </button>
+                                                @endif
                                             </div>
                                         @endif
                                     </div>
