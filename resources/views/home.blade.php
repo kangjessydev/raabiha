@@ -57,10 +57,10 @@
     <section class="hidden md:grid grid-cols-2 w-full h-[calc(100vh-80px)] bg-[#fcf9f5]">
         <!-- Desktop Text Column -->
         <div class="flex flex-col justify-center px-8 py-10 lg:py-12 lg:pl-24 lg:pr-16 text-left bg-[#fcf9f5]">
-            <div class="inline-block bg-[#fce7e7] text-[#a14040] px-3 py-1 text-[10px] font-semibold tracking-[0.15em] mb-4 uppercase w-fit">{{ $homeHeroTag }}</div>
+            <div class="inline-block bg-white text-[#a14040] px-3 py-1 text-[10px] font-semibold tracking-[0.15em] mb-4 uppercase w-fit">{{ $homeHeroTag }}</div>
             <h1 class="text-4xl lg:text-[3.5rem] leading-[1.1] tracking-[-0.02em] uppercase font-serif mb-4">{!! nl2br(e($homeHeroTitle)) !!}</h1>
             <p class="text-[14px] lg:text-[15px] leading-relaxed text-[#525252] max-w-[400px] mb-8">{{ $homeHeroSubtitle }}</p>
-            <a href="{{ $homeHeroButtonLink }}" class="inline-block bg-[#064e3b] hover:bg-[#022c22] text-white text-[11px] font-semibold tracking-[0.15em] uppercase py-3 px-8 transition-colors w-fit">
+            <a href="{{ $homeHeroButtonLink }}" class="inline-block bg-[#064e3b] hover:bg-[#022c22] text-[#E1DCC9] text-[11px] font-semibold tracking-[0.15em] uppercase py-3 px-8 transition-colors w-fit">
                 {{ $homeHeroButtonText }}
             </a>
         </div>
@@ -84,7 +84,7 @@
         <div class="relative z-10 w-full px-8 py-6 flex flex-col items-center text-center mt-12">
             <div class="text-[9px] font-mono tracking-[0.2em] text-white mb-4 uppercase">{{ $homeHeroTag }}</div>
             <h1 class="text-3xl md:text-4xl leading-[1.15] font-serif italic text-white mb-6">{!! nl2br(e($homeHeroTitle)) !!}</h1>
-            <a href="{{ $homeHeroButtonLink }}" class="inline-block bg-[#064e3b] text-white text-[10px] font-mono tracking-[0.1em] uppercase py-3 px-8 w-full max-w-[280px]">
+            <a href="{{ $homeHeroButtonLink }}" class="inline-block bg-[#064e3b] text-[#E1DCC9] text-[10px] font-mono tracking-[0.1em] uppercase py-3 px-8 w-full max-w-[280px]">
                 {{ $homeHeroButtonText }}
             </a>
         </div>
