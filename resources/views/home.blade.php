@@ -28,6 +28,11 @@
         $homeHeroImage = \App\Models\SiteSetting::where('key', 'home_hero_image')->value('value');
         $homeHeroButtonText = \App\Models\SiteSetting::where('key', 'home_hero_button_text')->value('value') ?: 'Explore The Drop';
         $homeHeroButtonLink = \App\Models\SiteSetting::where('key', 'home_hero_button_link')->value('value') ?: '#';
+        $homeHeroTagBg = \App\Models\SiteSetting::where('key', 'home_hero_tag_bg')->value('value') ?: '#3E4A3D';
+        $homeHeroTagText = \App\Models\SiteSetting::where('key', 'home_hero_tag_text')->value('value') ?: '#E1DCC9';
+        $homeHeroButtonBg = \App\Models\SiteSetting::where('key', 'home_hero_button_bg')->value('value') ?: '#3E4A3D';
+        $homeHeroButtonTextCol = \App\Models\SiteSetting::where('key', 'home_hero_button_text_color')->value('value') ?: '#E1DCC9';
+        $homeHeroButtonHover = \App\Models\SiteSetting::where('key', 'home_hero_button_hover')->value('value') ?: '#2c362b';
 
         $rawMarquee = \App\Models\SiteSetting::where('key', 'home_marquee_items')->value('value');
         $marqueeItems = $rawMarquee ? json_decode($rawMarquee, true) : [];
@@ -57,10 +62,10 @@
     <section class="hidden md:grid grid-cols-2 w-full h-[calc(100vh-80px)] bg-[#fcf9f5]">
         <!-- Desktop Text Column -->
         <div class="flex flex-col justify-center px-8 py-10 lg:py-12 lg:pl-24 lg:pr-16 text-left bg-[#fcf9f5]">
-            <div class="inline-block bg-[#3E4A3D] text-[#E1DCC9] px-3 py-1 text-[10px] font-semibold tracking-[0.15em] mb-4 uppercase w-fit">{{ $homeHeroTag }}</div>
+            <div class="inline-block hero-tag-dynamic px-3 py-1 text-[10px] font-semibold tracking-[0.15em] mb-4 uppercase w-fit">{{ $homeHeroTag }}</div>
             <h1 class="text-4xl lg:text-[3.5rem] leading-[1.1] tracking-[-0.02em] uppercase font-serif mb-4">{!! nl2br(e($homeHeroTitle)) !!}</h1>
             <p class="text-[14px] lg:text-[15px] leading-relaxed text-[#525252] max-w-[400px] mb-8">{{ $homeHeroSubtitle }}</p>
-            <a href="{{ $homeHeroButtonLink }}" class="inline-block bg-[#3E4A3D] hover:bg-[#2c362b] text-[#E1DCC9] text-[11px] font-semibold tracking-[0.15em] uppercase py-3 px-8 transition-colors w-fit">
+            <a href="{{ $homeHeroButtonLink }}" class="inline-block hero-btn-dynamic text-[11px] font-semibold tracking-[0.15em] uppercase py-3 px-8 transition-colors w-fit">
                 {{ $homeHeroButtonText }}
             </a>
         </div>
@@ -82,15 +87,26 @@
 
         <!-- Mobile Text Overlay -->
         <div class="relative z-10 w-full px-8 py-6 flex flex-col items-center text-center mt-12">
-            <div class="inline-block bg-[#3E4A3D] text-[#E1DCC9] px-3 py-1 text-[9px] font-mono tracking-[0.2em] mb-4 uppercase">{{ $homeHeroTag }}</div>
+            <div class="inline-block hero-tag-dynamic px-3 py-1 text-[9px] font-mono tracking-[0.2em] mb-4 uppercase">{{ $homeHeroTag }}</div>
             <h1 class="text-3xl md:text-4xl leading-[1.15] font-serif italic text-white mb-6">{!! nl2br(e($homeHeroTitle)) !!}</h1>
-            <a href="{{ $homeHeroButtonLink }}" class="inline-block bg-[#3E4A3D] text-[#E1DCC9] text-[10px] font-mono tracking-[0.1em] uppercase py-3 px-8 w-full max-w-[280px]">
+            <a href="{{ $homeHeroButtonLink }}" class="inline-block hero-btn-dynamic text-[10px] font-mono tracking-[0.1em] uppercase py-3 px-8 w-full max-w-[280px]">
                 {{ $homeHeroButtonText }}
             </a>
         </div>
     </section>
 
     <style>
+        .hero-tag-dynamic {
+            background-color: {{ $homeHeroTagBg }};
+            color: {{ $homeHeroTagText }};
+        }
+        .hero-btn-dynamic {
+            background-color: {{ $homeHeroButtonBg }};
+            color: {{ $homeHeroButtonTextCol }};
+        }
+        .hero-btn-dynamic:hover {
+            background-color: {{ $homeHeroButtonHover }};
+        }
         @@keyframes marqueeScroll {
             0% { transform: translateX(0); }
             100% { transform: translateX(-100%); }

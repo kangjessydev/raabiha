@@ -88,7 +88,25 @@ class MainPageSettings extends Page implements HasForms
                                     ->schema([
                                         TextInput::make('home_hero_tag')
                                             ->label('Tagline Hero (Kecil)')
-                                            ->default('DROP 02 // 2026'),
+                                            ->default('DROP 02 // 2026')
+                                            ->suffixAction(
+                                                \Filament\Forms\Components\Actions\Action::make('settings')
+                                                    ->icon('heroicon-m-ellipsis-vertical')
+                                                    ->form([
+                                                        \Filament\Forms\Components\ColorPicker::make('bg_color')->label('Warna Background')->default('#3E4A3D'),
+                                                        \Filament\Forms\Components\ColorPicker::make('text_color')->label('Warna Teks')->default('#E1DCC9'),
+                                                    ])
+                                                    ->fillForm(fn (\Filament\Forms\Get $get): array => [
+                                                        'bg_color' => $get('home_hero_tag_bg') ?: '#3E4A3D',
+                                                        'text_color' => $get('home_hero_tag_text') ?: '#E1DCC9',
+                                                    ])
+                                                    ->action(function (array $data, \Filament\Forms\Set $set) {
+                                                        $set('home_hero_tag_bg', $data['bg_color']);
+                                                        $set('home_hero_tag_text', $data['text_color']);
+                                                    })
+                                            ),
+                                        \Filament\Forms\Components\Hidden::make('home_hero_tag_bg'),
+                                        \Filament\Forms\Components\Hidden::make('home_hero_tag_text'),
                                         TextInput::make('home_hero_title')
                                             ->label('Judul Utama Hero')
                                             ->default('Architectural Modesty'),
@@ -100,7 +118,29 @@ class MainPageSettings extends Page implements HasForms
                                             ->label('Gambar Hero Utama (Latar Kanan)'),
                                         TextInput::make('home_hero_button_text')
                                             ->label('Teks Tombol Hero')
-                                            ->default('Explore The Drop'),
+                                            ->default('Explore The Drop')
+                                            ->suffixAction(
+                                                \Filament\Forms\Components\Actions\Action::make('settings')
+                                                    ->icon('heroicon-m-ellipsis-vertical')
+                                                    ->form([
+                                                        \Filament\Forms\Components\ColorPicker::make('bg_color')->label('Warna Background')->default('#3E4A3D'),
+                                                        \Filament\Forms\Components\ColorPicker::make('text_color')->label('Warna Teks')->default('#E1DCC9'),
+                                                        \Filament\Forms\Components\ColorPicker::make('hover_color')->label('Warna Background (Hover)')->default('#2c362b'),
+                                                    ])
+                                                    ->fillForm(fn (\Filament\Forms\Get $get): array => [
+                                                        'bg_color' => $get('home_hero_button_bg') ?: '#3E4A3D',
+                                                        'text_color' => $get('home_hero_button_text_color') ?: '#E1DCC9',
+                                                        'hover_color' => $get('home_hero_button_hover') ?: '#2c362b',
+                                                    ])
+                                                    ->action(function (array $data, \Filament\Forms\Set $set) {
+                                                        $set('home_hero_button_bg', $data['bg_color']);
+                                                        $set('home_hero_button_text_color', $data['text_color']);
+                                                        $set('home_hero_button_hover', $data['hover_color']);
+                                                    })
+                                            ),
+                                        \Filament\Forms\Components\Hidden::make('home_hero_button_bg'),
+                                        \Filament\Forms\Components\Hidden::make('home_hero_button_text_color'),
+                                        \Filament\Forms\Components\Hidden::make('home_hero_button_hover'),
                                         TextInput::make('home_hero_button_link')
                                             ->label('Link Tombol Hero')
                                             ->default('#'),
