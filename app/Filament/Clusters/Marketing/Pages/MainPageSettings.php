@@ -90,7 +90,7 @@ class MainPageSettings extends Page implements HasForms
                                             ->label('Tagline Hero (Kecil)')
                                             ->default('DROP 02 // 2026')
                                             ->suffixAction(
-                                                \Filament\Forms\Components\Actions\Action::make('settings')
+                                                \Filament\Actions\Action::make('settings')
                                                     ->icon('heroicon-m-ellipsis-vertical')
                                                     ->form([
                                                         \Filament\Forms\Components\ColorPicker::make('bg_color')->label('Warna Background')->default('#3E4A3D'),
@@ -120,7 +120,7 @@ class MainPageSettings extends Page implements HasForms
                                             ->label('Teks Tombol Hero')
                                             ->default('Explore The Drop')
                                             ->suffixAction(
-                                                \Filament\Forms\Components\Actions\Action::make('settings')
+                                                \Filament\Actions\Action::make('settings')
                                                     ->icon('heroicon-m-ellipsis-vertical')
                                                     ->form([
                                                         \Filament\Forms\Components\ColorPicker::make('bg_color')->label('Warna Background')->default('#3E4A3D'),
