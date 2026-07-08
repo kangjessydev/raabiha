@@ -96,11 +96,11 @@ class MainPageSettings extends Page implements HasForms
                                                         \Filament\Forms\Components\ColorPicker::make('bg_color')->label('Warna Background')->default('#3E4A3D'),
                                                         \Filament\Forms\Components\ColorPicker::make('text_color')->label('Warna Teks')->default('#E1DCC9'),
                                                     ])
-                                                    ->fillForm(fn (\Filament\Forms\Get $get): array => [
+                                                    ->fillForm(fn ($get): array => [
                                                         'bg_color' => $get('home_hero_tag_bg') ?: '#3E4A3D',
                                                         'text_color' => $get('home_hero_tag_text') ?: '#E1DCC9',
                                                     ])
-                                                    ->action(function (array $data, \Filament\Forms\Set $set) {
+                                                    ->action(function (array $data, $set) {
                                                         $set('home_hero_tag_bg', $data['bg_color']);
                                                         $set('home_hero_tag_text', $data['text_color']);
                                                     })
@@ -127,12 +127,12 @@ class MainPageSettings extends Page implements HasForms
                                                         \Filament\Forms\Components\ColorPicker::make('text_color')->label('Warna Teks')->default('#E1DCC9'),
                                                         \Filament\Forms\Components\ColorPicker::make('hover_color')->label('Warna Background (Hover)')->default('#2c362b'),
                                                     ])
-                                                    ->fillForm(fn (\Filament\Forms\Get $get): array => [
+                                                    ->fillForm(fn ($get): array => [
                                                         'bg_color' => $get('home_hero_button_bg') ?: '#3E4A3D',
                                                         'text_color' => $get('home_hero_button_text_color') ?: '#E1DCC9',
                                                         'hover_color' => $get('home_hero_button_hover') ?: '#2c362b',
                                                     ])
-                                                    ->action(function (array $data, \Filament\Forms\Set $set) {
+                                                    ->action(function (array $data, $set) {
                                                         $set('home_hero_button_bg', $data['bg_color']);
                                                         $set('home_hero_button_text_color', $data['text_color']);
                                                         $set('home_hero_button_hover', $data['hover_color']);
