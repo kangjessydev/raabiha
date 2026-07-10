@@ -29,6 +29,16 @@ class ProductReviewResource extends Resource
     protected static ?string $modelLabel = 'Ulasan Produk';
     protected static ?string $pluralModelLabel = 'Ulasan Produk';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('is_approved', false)->count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::where('is_approved', false)->count() > 0 ? 'warning' : 'gray';
+    }
+
     protected static ?string $recordTitleAttribute = 'customer_name';
 
     public static function form(Schema $schema): Schema

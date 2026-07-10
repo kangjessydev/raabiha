@@ -270,6 +270,9 @@ class MainPageSettings extends Page implements HasForms
                                 \Filament\Schemas\Components\Section::make('Kutipan (Quote)')
                                     ->collapsible()
                                     ->schema([
+                                        TextInput::make('about_quote_title')
+                                            ->label('Label/Judul Kutipan')
+                                            ->default('DARI HATI UNTUKMU'),
                                         TextInput::make('about_quote_text')
                                             ->label('Teks Kutipan Utama')
                                             ->default('Kesopanan bukan tentang menyembunyikan, tapi tentang mengungkapkan karakter melalui ketenangan.'),

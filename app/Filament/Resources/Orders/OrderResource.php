@@ -28,8 +28,17 @@ class OrderResource extends Resource
     protected static ?string $pluralModelLabel = 'Pesanan';
 
 
-    
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shopping-cart';
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::whereNotIn('status', ['completed', 'cancelled'])->count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::whereNotIn('status', ['completed', 'cancelled'])->count() > 0 ? 'warning' : 'gray';
+    }
 
     public static function form(Schema $schema): Schema
     {

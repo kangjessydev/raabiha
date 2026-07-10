@@ -62,6 +62,7 @@
                 ];
             }
 
+            $aboutQuoteTitle = \App\Models\SiteSetting::where('key', 'about_quote_title')->value('value') ?: 'DARI HATI UNTUKMU';
             $aboutQuoteText = \App\Models\SiteSetting::where('key', 'about_quote_text')->value('value') ?: 'Kesopanan bukan tentang menyembunyikan, tapi tentang mengungkapkan karakter melalui ketenangan.';
         @endphp
 
@@ -198,7 +199,7 @@
         <section class="max-w-4xl mx-auto px-6 lg:px-12 py-24 md:py-32 text-center">
             <div
                 class="inline-block bg-[#1c1c1a] text-white text-[9px] uppercase tracking-widest px-4 py-2 mb-8 shadow-sm">
-                DARI HATI UNTUKMU
+                {{ $aboutQuoteTitle }}
             </div>
             <h2
                 class="text-2xl md:text-3xl lg:text-4xl font-serif text-[#1c1c1a] leading-snug max-w-3xl mx-auto italic">

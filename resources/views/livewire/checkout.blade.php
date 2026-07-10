@@ -346,35 +346,67 @@
                         <section class="border-b border-[#e5e2de] pb-10">
                             <h2 class="font-mono text-[10px] font-bold tracking-[0.2em] text-[#1c1c1a] uppercase mb-6">3. Metode Pengiriman</h2>
                             <div class="flex flex-col gap-4">
-                                @forelse($shippingRates as $rate)
-                                <label class="flex justify-between items-center border p-4 cursor-pointer transition-colors {{ $shipping_method === $rate['id'] ? 'border-[#064e3b] bg-[#f0ede9]' : 'border-[#e5e2de] hover:border-[#1c1c1a]' }}">
-                                    <div class="flex items-center gap-4">
-                                        <input type="radio" wire:model.live="shipping_method" value="{{ $rate['id'] }}" class="w-4 h-4 text-[#064e3b] focus:ring-[#064e3b] border-gray-300">
-                                        @if(!empty($rate['logo']))
-                                            <img src="{{ Storage::url($rate['logo']) }}" alt="{{ $rate['courier_name'] }}" class="h-6 object-contain hidden md:block">
-                                        @endif
-                                        <div>
-                                            <span class="block font-serif text-base text-[#1c1c1a]">{{ $rate['courier_name'] }} {{ $rate['service_name'] }}</span>
-                                            <span class="block font-sans text-xs text-[#615e57] mt-1">
-                                                {{ !empty($rate['duration']) ? 'Estimasi ' . $rate['duration'] . (is_numeric($rate['duration']) || preg_match('/^\d+-\d+$/', $rate['duration']) ? ' hari' : '') : 'Estimasi tidak tersedia' }}
+                                @php
+                                    // Order categories logically: reguler, hemat, express, kargo
+                                    $allCats = collect($shippingRates)->pluck('category')->unique()->toArray();
+                                    $orderOfCats = ['reguler', 'hemat', 'express', 'kargo'];
+                                    $availableCategories = array_values(array_filter($orderOfCats, fn($c) => in_array($c, $allCats)));
+                                @endphp
+
+                                @forelse($availableCategories as $cat)
+                                    @php
+                                        $catRates = collect($shippingRates)->filter(fn($r) => $r['category'] === $cat);
+                                        $isExpanded = $expandedCategories[$cat] ?? true;
+                                    @endphp
+
+                                    <div class="border border-[#e5e2de] rounded-lg overflow-hidden mb-2">
+                                        <!-- Accordion Header -->
+                                        <button type="button" wire:click="toggleCategory('{{ $cat }}')" class="w-full flex justify-between items-center bg-[#f0ede9] p-3 text-left focus:outline-none hover:bg-[#e7e4e0] transition-colors">
+                                            <span class="font-mono text-[10px] font-bold tracking-[0.2em] text-[#1c1c1a] uppercase">
+                                                {{ $cat === 'express' ? 'Express / Kilat' : $cat }}
                                             </span>
+                                            <!-- Chevron Icon -->
+                                            <svg class="w-4 h-4 text-[#1c1c1a] transition-transform duration-300 {{ $isExpanded ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+
+                                        <!-- Accordion Content -->
+                                        @if($isExpanded)
+                                        <div class="p-4 flex flex-col gap-4 bg-white border-t border-[#e5e2de]">
+                                            @foreach($catRates as $rate)
+                                            <label class="flex justify-between items-center border p-4 cursor-pointer transition-colors {{ $shipping_method === $rate['id'] ? 'border-[#064e3b] bg-[#f0ede9]' : 'border-[#e5e2de] hover:border-[#1c1c1a]' }}">
+                                                <div class="flex items-center gap-4">
+                                                    <input type="radio" wire:model.live="shipping_method" value="{{ $rate['id'] }}" class="w-4 h-4 text-[#064e3b] focus:ring-[#064e3b] border-gray-300">
+                                                    @if(!empty($rate['logo']))
+                                                        <img src="{{ Storage::url($rate['logo']) }}" alt="{{ $rate['courier_name'] }}" class="h-6 object-contain hidden md:block">
+                                                    @endif
+                                                    <div>
+                                                        <span class="block font-serif text-base text-[#1c1c1a]">{{ $rate['courier_name'] }} {{ $rate['service_name'] }}</span>
+                                                        <span class="block font-sans text-xs text-[#615e57] mt-1">
+                                                            {{ !empty($rate['duration']) ? 'Estimasi ' . $rate['duration'] . (is_numeric($rate['duration']) || preg_match('/^\d+-\d+$/', $rate['duration']) ? ' hari' : '') : 'Estimasi tidak tersedia' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    @if(isset($rate['discounted_price']) && $rate['discounted_price'] < $rate['original_price'])
+                                                        <span class="font-sans text-xs line-through text-gray-400 mr-1.5">Rp {{ number_format($rate['original_price'], 0, ',', '.') }}</span>
+                                                        <span class="font-sans text-sm font-semibold text-[#064e3b]">
+                                                            {{ $rate['discounted_price'] > 0 ? 'Rp ' . number_format($rate['discounted_price'], 0, ',', '.') : 'Gratis' }}
+                                                        </span>
+                                                    @else
+                                                        <span class="font-sans text-sm font-semibold text-[#1c1c1a]">Rp {{ number_format($rate['price'], 0, ',', '.') }}</span>
+                                                    @endif
+                                                </div>
+                                            </label>
+                                            @endforeach
                                         </div>
-                                    </div>
-                                    <div>
-                                        @if(isset($rate['discounted_price']) && $rate['discounted_price'] < $rate['original_price'])
-                                            <span class="font-sans text-xs line-through text-gray-400 mr-1.5">Rp {{ number_format($rate['original_price'], 0, ',', '.') }}</span>
-                                            <span class="font-sans text-sm font-semibold text-[#064e3b]">
-                                                {{ $rate['discounted_price'] > 0 ? 'Rp ' . number_format($rate['discounted_price'], 0, ',', '.') : 'Gratis' }}
-                                            </span>
-                                        @else
-                                            <span class="font-sans text-sm font-semibold text-[#1c1c1a]">Rp {{ number_format($rate['price'], 0, ',', '.') }}</span>
                                         @endif
                                     </div>
-                                </label>
                                 @empty
-                                <div class="text-sm text-[#615e57] p-4 bg-[#f0ede9] rounded text-center">
-                                    Silakan lengkapi alamat pengiriman (Provinsi, Kota, Kecamatan) terlebih dahulu untuk melihat tarif ongkos kirim.
-                                </div>
+                                    <div class="text-sm text-[#615e57] p-4 bg-[#f0ede9] rounded text-center">
+                                        Silakan lengkapi alamat pengiriman (Provinsi, Kota, Kecamatan) terlebih dahulu untuk melihat tarif ongkos kirim.
+                                    </div>
                                 @endforelse
                             </div>
                         </section>

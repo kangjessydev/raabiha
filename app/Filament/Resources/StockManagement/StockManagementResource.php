@@ -27,6 +27,32 @@ class StockManagementResource extends Resource
     protected static ?string $pluralModelLabel = 'Manajemen Stok';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cube';
 
+    public static function getNavigationBadge(): ?string
+    {
+        $defaultMin = (int) (\App\Models\SiteSetting::where('key', 'default_minimum_stock')->value('value') ?? 5);
+
+        // Count products without variants that are low stock
+        $noVariantsLowStock = static::getModel()::where('has_variants', false)
+            ->whereRaw('stock <= COALESCE(minimum_stock, ?)', [$defaultMin])
+            ->count();
+
+        // Count products with variants that have at least one variant that is low stock
+        $hasVariantsLowStock = static::getModel()::where('has_variants', true)
+            ->whereHas('variants', function ($query) use ($defaultMin) {
+                $query->whereRaw('stock <= COALESCE(minimum_stock, ?)', [$defaultMin]);
+            })
+            ->count();
+
+        $totalLowStock = $noVariantsLowStock + $hasVariantsLowStock;
+
+        return $totalLowStock ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getNavigationBadge() !== null ? 'danger' : 'gray';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([]);

@@ -23,6 +23,16 @@ class InquiryResource extends Resource
     protected static ?string $pluralModelLabel = 'Pesan Masuk';
     protected static ?int $navigationSort = 1;
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'new')->count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::where('status', 'new')->count() > 0 ? 'warning' : 'gray';
+    }
+
     public static function canCreate(): bool
     {
         return false;

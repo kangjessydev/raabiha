@@ -38,6 +38,16 @@ class RefundRequestResource extends Resource
     protected static ?string $pluralModelLabel = 'Pengajuan Refund';
     protected static ?int $navigationSort = 2;
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::whereNotIn('status', ['completed', 'rejected'])->count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::whereNotIn('status', ['completed', 'rejected'])->count() > 0 ? 'warning' : 'gray';
+    }
+
     protected static ?string $recordTitleAttribute = 'id';
 
     public static function form(Schema $schema): Schema
@@ -105,6 +115,7 @@ class RefundRequestResource extends Resource
     {
         return $table
             ->recordTitleAttribute('id')
+            ->description(fn ($livewire) => ($livewire instanceof \App\Filament\Resources\RefundRequests\Pages\ManageRefundRequests && $livewire->activeTab === 'approved') ? new \Illuminate\Support\HtmlString('<span style="color: #d97706; font-weight: 600; font-size: 0.875rem;">⚠️ Tab ini harus kosong, semua refund disetujui dan sudah transfer, harus diubah jadi selesai.</span>') : null)
             ->columns([
                 TextColumn::make('created_at')
                     ->label('Tanggal')

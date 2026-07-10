@@ -28,7 +28,7 @@ class ShippingMethod extends Model
      */
     public function shouldShowService(string $serviceCode, int $totalWeight, ?string $originLabel, ?string $destinationLabel): bool
     {
-        $serviceCode = strtoupper(trim($serviceCode));
+        $serviceCode = strtoupper(trim(html_entity_decode($serviceCode)));
         $config = $this->config ?? [];
         $customRules = $config['custom_rules'] ?? [];
 
@@ -107,8 +107,15 @@ class ShippingMethod extends Model
 
         // 2. Evaluasi Aturan Global (Fallback jika tidak ada aturan kustom yang cocok)
         // Aturan Global A: Sembunyikan Kargo jika berat belanjaan di bawah 10 kg (10.000 gram)
-        $cargoServices = ['JTR', 'JTR<130', 'JTR>130', 'JTR>200', 'GOKIL', 'CARGO', 'TRC', 'BIGPACK'];
-        if ($totalWeight < 10000 && in_array($serviceCode, $cargoServices)) {
+        $cargoServices = ['JTR', 'GOKIL', 'CARGO', 'KARGO', 'TRC', 'BIGPACK', 'TRUCK'];
+        $isCargo = false;
+        foreach ($cargoServices as $cargoService) {
+            if (str_contains($serviceCode, $cargoService)) {
+                $isCargo = true;
+                break;
+            }
+        }
+        if ($totalWeight < 10000 && $isCargo) {
             return false;
         }
 

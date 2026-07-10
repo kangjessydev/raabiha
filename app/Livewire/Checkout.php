@@ -348,6 +348,19 @@ class Checkout extends Component
 
     
     public $shippingRates = [];
+    public $totalWeight = 0;
+    public $activeShippingCategory = 'reguler';
+    public $expandedCategories = [
+        'reguler' => true,
+        'hemat' => true,
+        'express' => true,
+        'kargo' => true,
+    ];
+
+    public function toggleCategory($category)
+    {
+        $this->expandedCategories[$category] = !($this->expandedCategories[$category] ?? true);
+    }
 
     public function calculateDynamicShipping()
     {
@@ -374,6 +387,9 @@ class Checkout extends Component
             }
         }
         if ($totalWeight == 0) $totalWeight = 1000;
+        // Round up to the nearest kg (min 1000g) to align with official courier rules
+        $totalWeight = max(1000, (int) ceil($totalWeight / 1000) * 1000);
+        $this->totalWeight = $totalWeight;
 
         // Path 1: Manual Address Mode (Fallback)
         if ($this->addressMode === 'manual') {
@@ -533,9 +549,10 @@ class Checkout extends Component
                                 continue;
                             }
 
-                            // Convert BinderByte cost format (divided by 1000)
-                            $price = (int)($cost['price'] ?? 0) / 1000;
-                            $etd = $cost['estimated'] ?? '';
+                             // Convert BinderByte cost format (divided by 1000 if raw price >= 1000000)
+                             $rawPrice = (int)($cost['price'] ?? 0);
+                             $price = $rawPrice >= 1000000 ? $rawPrice / 1000 : $rawPrice;
+                             $etd = $cost['estimated'] ?? '';
 
                             $discountedPrice = $price;
                             if ($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher']) {
@@ -685,6 +702,57 @@ class Checkout extends Component
         usort($this->shippingRates, function ($a, $b) {
             return $a['discounted_price'] <=> $b['discounted_price'];
         });
+
+        // Categorize each shipping rate
+        $cargoKeywords = ['JTR', 'GOKIL', 'CARGO', 'KARGO', 'TRC', 'BIGPACK', 'TRUCK'];
+        $ecoKeywords = ['HALU', 'ECO', 'EKONOMIS', 'OKE', 'LITE', 'ECOREG'];
+        $expressKeywords = ['YES', 'BEST', 'SPS', 'CTCSPS', 'CTCYES', 'NEXTDAY', 'EXPRESS', 'UDRONS', 'ONS'];
+
+        foreach ($this->shippingRates as $index => $rate) {
+            $serviceUpper = strtoupper($rate['service_name']);
+            $rawServiceUpper = '';
+            
+            $parts = explode('|', $rate['id']);
+            if (count($parts) >= 2) {
+                $rawServiceUpper = strtoupper($parts[1]);
+            }
+
+            $isCargo = false;
+            foreach ($cargoKeywords as $kw) {
+                if (str_contains($serviceUpper, $kw) || str_contains($rawServiceUpper, $kw)) {
+                    $isCargo = true;
+                    break;
+                }
+            }
+
+            $isEco = false;
+            foreach ($ecoKeywords as $kw) {
+                if (str_contains($serviceUpper, $kw) || str_contains($rawServiceUpper, $kw)) {
+                    $isEco = true;
+                    break;
+                }
+            }
+
+            $isExpress = false;
+            foreach ($expressKeywords as $kw) {
+                if (str_contains($serviceUpper, $kw) || str_contains($rawServiceUpper, $kw)) {
+                    $isExpress = true;
+                    break;
+                }
+            }
+
+            if ($isCargo) {
+                $category = 'kargo';
+            } elseif ($isExpress) {
+                $category = 'express';
+            } elseif ($isEco) {
+                $category = 'hemat';
+            } else {
+                $category = 'reguler';
+            }
+
+            $this->shippingRates[$index]['category'] = $category;
+        }
         
         // Set default shipping method to the first available if not set or invalid
         if (empty($this->shipping_method) || !collect($this->shippingRates)->contains('id', $this->shipping_method)) {
@@ -694,6 +762,22 @@ class Checkout extends Component
             } else {
                 $this->shipping_cost = 0;
                 $this->shipping_method = '';
+            }
+        }
+
+        // Always synchronize shipping_cost and activeShippingCategory with the selected rate to prevent 0 cost issues
+        $selectedRate = collect($this->shippingRates)->firstWhere('id', $this->shipping_method);
+        if ($selectedRate) {
+            $this->shipping_cost = $selectedRate['price'];
+            $this->activeShippingCategory = $selectedRate['category'];
+        } else {
+            $this->shipping_cost = 0;
+            // Fallback to first available category
+            $availableCats = collect($this->shippingRates)->pluck('category')->unique()->toArray();
+            if (count($availableCats) > 0) {
+                $this->activeShippingCategory = $availableCats[0];
+            } else {
+                $this->activeShippingCategory = 'reguler';
             }
         }
     }

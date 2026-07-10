@@ -21,6 +21,16 @@ class OrderRequestResource extends Resource
     protected static ?string $pluralModelLabel = 'Permintaan Kasir';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
 
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'pending')->count() ?: null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return static::getModel()::where('status', 'pending')->count() > 0 ? 'warning' : 'gray';
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         $user = auth()->user();

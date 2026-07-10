@@ -4,10 +4,59 @@ namespace App\Filament\Resources\StockManagement\Pages;
 
 use App\Filament\Resources\StockManagement\StockManagementResource;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
 
 class ListStockManagement extends ListRecords
 {
     protected static string $resource = StockManagementResource::class;
+
+    public function getTabs(): array
+    {
+        $defaultMin = (int) (\App\Models\SiteSetting::where('key', 'default_minimum_stock')->value('value') ?? 5);
+
+        return [
+            'all' => Tab::make('Semua')
+                ->badge($this->getModel()::count()),
+            'out_of_stock' => Tab::make('Stok Habis')
+                ->modifyQueryUsing(fn ($query) => $query->where(function ($q) {
+                    $q->where(function ($sq) {
+                        $sq->where('has_variants', false)->where('stock', '<=', 0);
+                    })->orWhere(function ($sq) {
+                        $sq->where('has_variants', true)->whereHas('variants', fn($vq) => $vq->where('stock', '<=', 0));
+                    });
+                }))
+                ->badge($this->getModel()::where(function ($q) {
+                    $q->where(function ($sq) {
+                        $sq->where('has_variants', false)->where('stock', '<=', 0);
+                    })->orWhere(function ($sq) {
+                        $sq->where('has_variants', true)->whereHas('variants', fn($vq) => $vq->where('stock', '<=', 0));
+                    });
+                })->count())
+                ->badgeColor('danger'),
+            'low_stock' => Tab::make('Stok Menipis')
+                ->modifyQueryUsing(fn ($query) => $query->where(function ($q) use ($defaultMin) {
+                    $q->where(function ($sq) use ($defaultMin) {
+                        $sq->where('has_variants', false)
+                            ->where('stock', '>', 0)
+                            ->whereRaw('stock <= COALESCE(minimum_stock, ?)', [$defaultMin]);
+                    })->orWhere(function ($sq) use ($defaultMin) {
+                        $sq->where('has_variants', true)
+                            ->whereHas('variants', fn($vq) => $vq->where('stock', '>', 0)->whereRaw('stock <= COALESCE(minimum_stock, ?)', [$defaultMin]));
+                    });
+                }))
+                ->badge($this->getModel()::where(function ($q) use ($defaultMin) {
+                    $q->where(function ($sq) use ($defaultMin) {
+                        $sq->where('has_variants', false)
+                            ->where('stock', '>', 0)
+                            ->whereRaw('stock <= COALESCE(minimum_stock, ?)', [$defaultMin]);
+                    })->orWhere(function ($sq) use ($defaultMin) {
+                        $sq->where('has_variants', true)
+                            ->whereHas('variants', fn($vq) => $vq->where('stock', '>', 0)->whereRaw('stock <= COALESCE(minimum_stock, ?)', [$defaultMin]));
+                    });
+                })->count())
+                ->badgeColor('warning'),
+        ];
+    }
 
     protected function getHeaderActions(): array
     {

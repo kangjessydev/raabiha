@@ -35,6 +35,7 @@ class IntegrationSettings extends Page implements HasForms
     public function mount(): void
     {
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
+        $settings['xendit_callback_url'] = url('/webhook/xendit');
         $this->form->fill($settings);
     }
 
@@ -122,6 +123,35 @@ class IntegrationSettings extends Page implements HasForms
                                                     $livewire->unlockedXendit = true;
                                                 })
                                         )
+                                        ->columnSpanFull(),
+                                    Forms\Components\TextInput::make('xendit_webhook_token')
+                                        ->label('Xendit Webhook Verification Token')
+                                        ->password()
+                                        ->readOnly(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedXendit)
+                                        ->suffixAction(
+                                            \Filament\Actions\Action::make('unlock_xendit_webhook')
+                                                ->icon('heroicon-m-lock-closed')
+                                                ->color('danger')
+                                                ->visible(fn (\Livewire\Component $livewire, ?string $state) => !empty($state) && !$livewire->unlockedXendit)
+                                                ->requiresConfirmation()
+                                                ->form([
+                                                    Forms\Components\TextInput::make('password')
+                                                        ->password()
+                                                        ->required()
+                                                        ->currentPassword()
+                                                ])
+                                                ->action(function (\Livewire\Component $livewire) {
+                                                    $livewire->unlockedXendit = true;
+                                                })
+                                        )
+                                        ->helperText('Token verifikasi webhook dari Dashboard Xendit untuk memverifikasi callback pembayaran.')
+                                        ->columnSpanFull(),
+                                    Forms\Components\TextInput::make('xendit_callback_url')
+                                        ->label('Xendit Callback URL (Invoice Paid / Invoice Expired)')
+                                        ->readOnly()
+                                        ->copyable()
+                                        ->dehydrated(false)
+                                        ->helperText('Salin URL ini dan tempel di Dashboard Xendit -> Settings -> Developers -> Callbacks untuk Invoice Paid & Invoice Expired.')
                                         ->columnSpanFull(),
                                 ])->visible(fn (\Filament\Schemas\Components\Utilities\Get $get) => $get('active_payment_gateway') === 'xendit'),
                             ]),
