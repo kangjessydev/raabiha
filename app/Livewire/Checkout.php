@@ -1078,6 +1078,20 @@ class Checkout extends Component
 
     public function selectVoucher($code)
     {
+        $index = -1;
+        foreach ($this->appliedVouchers as $idx => $v) {
+            if ($v['code'] === $code) {
+                $index = $idx;
+                break;
+            }
+        }
+
+        if ($index !== -1) {
+            $this->removeVoucher($index);
+            session()->flash('voucher_success', 'Voucher berhasil dilepas.');
+            return;
+        }
+
         $this->voucherCode = $code;
         $this->applyVoucher();
     }
