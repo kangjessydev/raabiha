@@ -23,82 +23,71 @@ class VariantsRelationManager extends RelationManager
                     ->label('Nama Varian')
                     ->required()
                     ->maxLength(255),
-                \Filament\Forms\Components\Select::make('attributeOptions')
-                    ->relationship('attributeOptions', 'value')
-                    ->multiple()
-                    ->searchable()
-                    ->required()
-                    ->label('Kaitan Opsi Atribut (Warna/Ukuran)')
-                    ->helperText('Pilih opsi atribut yang sesuai agar varian muncul di frontend.')
-                    ->getSearchResultsUsing(function (string $search) {
-                        $query = \App\Models\AttributeOption::query()
-                            ->join('attributes', 'attribute_options.attribute_id', '=', 'attributes.id')
-                            ->select('attribute_options.*', 'attributes.name as attribute_name');
-
-                        if (!empty($search)) {
-                            $keywords = array_filter(explode(' ', $search));
-                            foreach ($keywords as $keyword) {
-                                $query->where(function ($q) use ($keyword) {
-                                    $q->where('attribute_options.value', 'like', "%{$keyword}%")
-                                      ->orWhere('attributes.name', 'like', "%{$keyword}%");
-                                });
-                            }
-
-                            // Sort: exact value match first, then prefix match, then others
-                            $query->orderByRaw("CASE 
-                                WHEN attribute_options.value = ? THEN 1
-                                WHEN attribute_options.value LIKE ? THEN 2
-                                ELSE 3
-                            END ASC", [$search, "{$search}%"]);
-                        }
-
-                        $query->orderBy('attributes.name', 'asc')
-                              ->orderBy('attribute_options.value', 'asc');
-
-                        $results = $query->limit(150)->get();
-
-                        $formatted = [];
-                        foreach ($results as $opt) {
-                            $formatted[$opt->id] = "{$opt->attribute_name}: {$opt->value}";
-                        }
-
-                        return $formatted;
-                    })
-                    ->getOptionLabelsUsing(function (array $values) {
-                        return \App\Models\AttributeOption::query()
-                            ->with('attribute')
-                            ->whereIn('id', $values)
-                            ->get()
-                            ->mapWithKeys(fn ($opt) => [$opt->id => "{$opt->attribute->name}: {$opt->value}"])
-                            ->toArray();
-                    })
-                    ->createOptionForm([
+                \Filament\Forms\Components\Repeater::make('variantAttributes')
+                    ->label('Kaitan Atribut (Warna & Ukuran)')
+                    ->helperText('Pilih induk atribut terlebih dahulu (misal: Ukuran), kemudian pilih opsi nilainya (misal: L).')
+                    ->schema([
                         \Filament\Forms\Components\Select::make('attribute_id')
-                            ->label('Induk Atribut')
+                            ->label('Atribut')
                             ->options(fn () => \App\Models\Attribute::pluck('name', 'id'))
-                            ->required(),
-                        \Filament\Forms\Components\TextInput::make('value')
-                            ->label('Nilai (Misal: Petite, Navy, dll)')
                             ->required()
-                            ->unique(
-                                table: 'attribute_options',
-                                modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) {
-                                    return $rule->where('attribute_id', $get('attribute_id'));
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('attribute_option_id', null)),
+                        \Filament\Forms\Components\Select::make('attribute_option_id')
+                            ->label('Opsi Atribut')
+                            ->options(function (callable $get) {
+                                $attributeId = $get('attribute_id');
+                                if (!$attributeId) {
+                                    return [];
                                 }
-                            ),
-                        \Filament\Forms\Components\TextInput::make('meta')
-                            ->label('Meta/Kode Hex (Opsional)')
-                            ->placeholder('#000000')
-                            ->helperText('Isi dengan kode hex jika atribut berupa warna.'),
+                                return \App\Models\AttributeOption::where('attribute_id', $attributeId)->pluck('value', 'id');
+                            })
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->createOptionForm([
+                                \Filament\Forms\Components\TextInput::make('value')
+                                    ->label('Nilai (Misal: Petite, Navy, dll)')
+                                    ->required(),
+                                \Filament\Forms\Components\TextInput::make('meta')
+                                    ->label('Meta/Kode Hex (Opsional)')
+                                    ->placeholder('#000000')
+                                    ->helperText('Isi dengan kode hex jika atribut berupa warna.'),
+                            ])
+                            ->createOptionUsing(function (array $data, callable $get) {
+                                $attributeId = $get('attribute_id');
+                                if (!$attributeId) {
+                                    throw new \Exception('Silakan pilih induk atribut terlebih dahulu.');
+                                }
+                                $option = \App\Models\AttributeOption::create([
+                                    'attribute_id' => $attributeId,
+                                    'value' => $data['value'],
+                                    'slug' => \Illuminate\Support\Str::slug($data['value']),
+                                    'meta' => $data['meta'] ?? null,
+                                ]);
+                                return $option->id;
+                            })
                     ])
-                    ->createOptionUsing(function (array $data) {
-                        $option = \App\Models\AttributeOption::create([
-                            'attribute_id' => $data['attribute_id'],
-                            'value' => $data['value'],
-                            'slug' => \Illuminate\Support\Str::slug($data['value']),
-                            'meta' => $data['meta'] ?? null,
-                        ]);
-                        return $option->id;
+                    ->columns(2)
+                    ->grid([
+                        'default' => 1,
+                        'md' => 2,
+                    ])
+                    ->defaultItems(1)
+                    ->afterStateHydrated(function ($component, $state, $record) {
+                        if ($record) {
+                            $data = $record->attributeOptions->map(function ($opt) {
+                                return [
+                                    'attribute_id' => $opt->attribute_id,
+                                    'attribute_option_id' => $opt->id,
+                                ];
+                            })->toArray();
+                            $component->state($data);
+                        }
+                    })
+                    ->saveRelationshipsUsing(function ($record, $state) {
+                        $optionIds = collect($state)->pluck('attribute_option_id')->filter()->toArray();
+                        $record->attributeOptions()->sync($optionIds);
                     }),
                 \Filament\Forms\Components\Select::make('media_id')
                     ->label('Gambar Varian')
