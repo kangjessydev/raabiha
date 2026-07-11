@@ -35,22 +35,34 @@ class VariantsRelationManager extends RelationManager
                             ->join('attributes', 'attribute_options.attribute_id', '=', 'attributes.id')
                             ->select('attribute_options.*', 'attributes.name as attribute_name');
 
-                        $keywords = array_filter(explode(' ', $search));
-                        foreach ($keywords as $keyword) {
-                            $query->where(function ($q) use ($keyword) {
-                                $q->where('attribute_options.value', 'like', "%{$keyword}%")
-                                  ->orWhere('attributes.name', 'like', "%{$keyword}%");
-                            });
+                        if (!empty($search)) {
+                            $keywords = array_filter(explode(' ', $search));
+                            foreach ($keywords as $keyword) {
+                                $query->where(function ($q) use ($keyword) {
+                                    $q->where('attribute_options.value', 'like', "%{$keyword}%")
+                                      ->orWhere('attributes.name', 'like', "%{$keyword}%");
+                                });
+                            }
+
+                            // Sort: exact value match first, then prefix match, then others
+                            $query->orderByRaw("CASE 
+                                WHEN attribute_options.value = ? THEN 1
+                                WHEN attribute_options.value LIKE ? THEN 2
+                                ELSE 3
+                            END ASC", [$search, "{$search}%"]);
                         }
+
+                        $query->orderBy('attributes.name', 'asc')
+                              ->orderBy('attribute_options.value', 'asc');
 
                         $results = $query->limit(150)->get();
 
-                        $grouped = [];
+                        $formatted = [];
                         foreach ($results as $opt) {
-                            $grouped[$opt->attribute_name][$opt->id] = $opt->value;
+                            $formatted[$opt->id] = "{$opt->attribute_name}: {$opt->value}";
                         }
 
-                        return $grouped;
+                        return $formatted;
                     })
                     ->getOptionLabelsUsing(function (array $values) {
                         return \App\Models\AttributeOption::query()
