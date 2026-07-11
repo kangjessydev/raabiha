@@ -24,13 +24,42 @@ class VariantsRelationManager extends RelationManager
                     ->required()
                     ->maxLength(255),
                 \Filament\Forms\Components\Select::make('attributeOptions')
-                    ->relationship('attributeOptions', 'value', fn ($query) => $query->with('attribute'))
-                    ->getOptionLabelFromRecordUsing(fn (\App\Models\AttributeOption $record) => "{$record->attribute->name}: {$record->value}")
+                    ->relationship('attributeOptions', 'value')
                     ->multiple()
-                    ->preload()
+                    ->searchable()
                     ->required()
                     ->label('Kaitan Opsi Atribut (Warna/Ukuran)')
                     ->helperText('Pilih opsi atribut yang sesuai agar varian muncul di frontend.')
+                    ->getSearchResultsUsing(function (string $search) {
+                        $query = \App\Models\AttributeOption::query()
+                            ->join('attributes', 'attribute_options.attribute_id', '=', 'attributes.id')
+                            ->select('attribute_options.*', 'attributes.name as attribute_name');
+
+                        $keywords = array_filter(explode(' ', $search));
+                        foreach ($keywords as $keyword) {
+                            $query->where(function ($q) use ($keyword) {
+                                $q->where('attribute_options.value', 'like', "%{$keyword}%")
+                                  ->orWhere('attributes.name', 'like', "%{$keyword}%");
+                            });
+                        }
+
+                        $results = $query->limit(150)->get();
+
+                        $grouped = [];
+                        foreach ($results as $opt) {
+                            $grouped[$opt->attribute_name][$opt->id] = $opt->value;
+                        }
+
+                        return $grouped;
+                    })
+                    ->getOptionLabelsUsing(function (array $values) {
+                        return \App\Models\AttributeOption::query()
+                            ->with('attribute')
+                            ->whereIn('id', $values)
+                            ->get()
+                            ->mapWithKeys(fn ($opt) => [$opt->id => "{$opt->attribute->name}: {$opt->value}"])
+                            ->toArray();
+                    })
                     ->createOptionForm([
                         \Filament\Forms\Components\Select::make('attribute_id')
                             ->label('Induk Atribut')
