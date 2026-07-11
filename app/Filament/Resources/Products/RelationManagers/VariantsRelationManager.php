@@ -41,6 +41,7 @@ class VariantsRelationManager extends RelationManager
                     ->schema([
                         \Filament\Forms\Components\Repeater::make('variantAttributes')
                             ->label('')
+                            ->dehydrated(false)
                             ->helperText('Pilih induk atribut terlebih dahulu (misal: Ukuran), kemudian pilih opsi nilainya (misal: L).')
                             ->schema([
                                 \Filament\Forms\Components\Select::make('attribute_id')
