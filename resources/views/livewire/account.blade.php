@@ -242,7 +242,21 @@
                                 </div>
                             </div>
 
-                            @if(session('refund_success'))
+                             @if(session('order_message'))
+                                 <div class="bg-[#064e3b]/10 border border-[#064e3b]/20 text-[#064e3b] px-4 py-3 mb-4 flex items-center gap-3">
+                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                     <p class="font-sans text-[13px]">{{ session('order_message') }}</p>
+                                 </div>
+                             @endif
+
+                             @if(session('order_error'))
+                                 <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 mb-4 flex items-center gap-3">
+                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                     <p class="font-sans text-[13px]">{{ session('order_error') }}</p>
+                                 </div>
+                             @endif
+
+                             @if(session('refund_success'))
                                 <div class="bg-[#064e3b]/10 border border-[#064e3b]/20 text-[#064e3b] px-4 py-3 mb-4 flex items-center gap-3">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                     <p class="font-sans text-[13px]">{{ session('refund_success') }}</p>
@@ -373,7 +387,7 @@
                                         <!-- Order Footer Actions -->
                                         <div class="border-t border-[#e5e2de] p-4 flex flex-col sm:flex-row justify-end gap-3 {{ $isInactive ? 'bg-white' : 'bg-[#fcf9f5]' }}">
                                             @if($order->status == 'pending')
-                                                <button class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#f0ede9] transition-colors w-full sm:w-auto text-center">Batal Pesanan</button>
+                                                <button wire:click="cancelOrder({{ $order->id }})" wire:confirm="Apakah Anda yakin ingin membatalkan pesanan ini?" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#f0ede9] transition-colors w-full sm:w-auto text-center">Batal Pesanan</button>
                                                 @if($order->payment_url)
                                                     <a href="{{ $order->payment_url }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-6 py-2.5 hover:bg-[#043326] transition-colors w-full sm:w-auto text-center inline-block">Bayar Sekarang</a>
                                                 @else

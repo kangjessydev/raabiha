@@ -404,6 +404,65 @@ class Account extends Component
         return redirect()->to('/login');
     }
 
+    public function cancelOrder($orderId)
+    {
+        $order = Order::where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->findOrFail($orderId);
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+                // Restore stock
+                foreach ($order->items as $item) {
+                    if ($item->product_variant_id) {
+                        $variant = \App\Models\ProductVariant::find($item->product_variant_id);
+                        if ($variant) {
+                            $before = $variant->stock;
+                            $variant->increment('stock', $item->quantity);
+                            \App\Models\StockLog::create([
+                                'product_id' => $item->product_id,
+                                'product_variant_id' => $item->product_variant_id,
+                                'type' => 'in',
+                                'quantity_before' => $before,
+                                'quantity_change' => $item->quantity,
+                                'quantity_after' => $before + $item->quantity,
+                                'reason' => 'Cancellation',
+                                'notes' => 'Pembayaran dibatalkan manual oleh pelanggan untuk pesanan #' . $order->order_number,
+                                'user_id' => Auth::id(),
+                            ]);
+                        }
+                    } else {
+                        $product = \App\Models\Product::find($item->product_id);
+                        if ($product) {
+                            $before = $product->stock;
+                            $product->increment('stock', $item->quantity);
+                            \App\Models\StockLog::create([
+                                'product_id' => $item->product_id,
+                                'type' => 'in',
+                                'quantity_before' => $before,
+                                'quantity_change' => $item->quantity,
+                                'quantity_after' => $before + $item->quantity,
+                                'reason' => 'Cancellation',
+                                'notes' => 'Pembayaran dibatalkan manual oleh pelanggan untuk pesanan #' . $order->order_number,
+                                'user_id' => Auth::id(),
+                            ]);
+                        }
+                    }
+                }
+
+                // Update order status to cancelled
+                $order->update([
+                    'status' => 'cancelled',
+                    'payment_status' => 'failed',
+                ]);
+            });
+
+            session()->flash('order_message', 'Pesanan #' . $order->order_number . ' telah berhasil dibatalkan.');
+        } catch (\Exception $e) {
+            session()->flash('order_error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
+        }
+    }
+
     public function getOrdersProperty()
     {
         $query = Order::with(['items.product', 'items.variant.attributeOptions.attribute', 'refundRequest'])
