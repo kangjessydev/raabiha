@@ -1506,20 +1506,18 @@ class Checkout extends Component
                         
                         // Format order items for Xendit
                         $orderItems = [];
-                        $cartItems = \App\Models\CartItem::whereIn('id', session('checkout_item_ids', []))->get();
-                        foreach ($cartItems as $item) {
-                            $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
+                        foreach ($order->items as $item) {
                             $orderItems[] = [
-                                'name' => mb_substr($item->product->name, 0, 255),
-                                'price' => (int) $price,
+                                'name' => mb_substr($item->name, 0, 255),
+                                'price' => (int) $item->price,
                                 'quantity' => $item->quantity,
                             ];
                         }
                         
-                        if ($this->shipping_cost > 0) {
+                        if ($order->shipping_cost > 0) {
                             $orderItems[] = [
                                 'name' => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
-                                'price' => (int) $this->shipping_cost,
+                                'price' => (int) $order->shipping_cost,
                                 'quantity' => 1,
                             ];
                         }
@@ -1528,6 +1526,15 @@ class Checkout extends Component
                             $orderItems[] = [
                                 'name' => 'Biaya Layanan',
                                 'price' => (int) $this->paymentFee,
+                                'quantity' => 1,
+                            ];
+                        }
+
+                        $discountTotal = (int) $order->discount_total;
+                        if ($discountTotal > 0) {
+                            $orderItems[] = [
+                                'name' => 'Potongan Diskon / Voucher',
+                                'price' => -$discountTotal,
                                 'quantity' => 1,
                             ];
                         }
