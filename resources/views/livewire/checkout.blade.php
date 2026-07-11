@@ -557,10 +557,10 @@
                             <div class="flex justify-between items-center py-4 border-b border-[#e5e2de] lg:border-none lg:py-0">
                                 <span class="font-mono text-[10px] uppercase tracking-[0.1em] text-[#615e57] lg:text-[#1c1c1a] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Pengiriman</span>
                                 <span>
-                                    @if($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher'] && $this->discountAmount > 0)
+                                    @if($this->shippingDiscountAmount > 0)
                                         <span class="line-through text-gray-400 mr-1.5">Rp{{ number_format($this->shipping_cost, 0, ',', '.') }}</span>
                                         <span class="text-[#064e3b] font-semibold">
-                                            {{ ($this->shipping_cost - $this->discountAmount) > 0 ? 'Rp'.number_format($this->shipping_cost - $this->discountAmount, 0, ',', '.') : 'Gratis' }}
+                                            {{ ($this->shipping_cost - $this->shippingDiscountAmount) > 0 ? 'Rp'.number_format($this->shipping_cost - $this->shippingDiscountAmount, 0, ',', '.') : 'Gratis' }}
                                         </span>
                                     @else
                                         {{ $this->shipping_cost > 0 ? 'Rp'.number_format($this->shipping_cost, 0, ',', '.') : 'Rp0' }}
@@ -569,8 +569,14 @@
                             </div>
                             @if($this->discountAmount > 0)
                             <div class="flex justify-between py-4 border-b border-[#e5e2de] lg:border-none lg:py-0 text-[#064e3b]">
-                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Voucher ({{ $appliedVoucher['code'] ?? '' }})</span>
+                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Voucher Diskon Belanja</span>
                                 <span>-Rp{{ number_format($this->discountAmount, 0, ',', '.') }}</span>
+                            </div>
+                            @endif
+                            @if($this->shippingDiscountAmount > 0)
+                            <div class="flex justify-between py-4 border-b border-[#e5e2de] lg:border-none lg:py-0 text-[#064e3b]">
+                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] lg:font-sans lg:text-[14px] lg:normal-case lg:tracking-normal">Potongan Ongkir</span>
+                                <span>-Rp{{ number_format($this->shippingDiscountAmount, 0, ',', '.') }}</span>
                             </div>
                             @endif
                             @if($this->payment_method)
@@ -592,23 +598,31 @@
                         <div class="h-px bg-[rgba(23,24,24,0.1)] my-6 hidden lg:block"></div>
                         
                         <!-- Promo Code -->
-                        <div class="mb-6 lg:mb-10 py-4 lg:py-0">
-                            @if($appliedVoucher)
-                            <div class="w-full border py-3 px-4 flex justify-between items-center text-left bg-[#f0ede9] border-[#064e3b]">
-                                <div class="flex flex-col">
-                                    <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold text-[#064e3b]">{{ $appliedVoucher['code'] }}</span>
-                                    <span class="font-sans text-[11px] text-[#064e3b] mt-0.5">Voucher diterapkan</span>
+                        <div class="mb-6 lg:mb-10 py-4 lg:py-0 space-y-3">
+                            @if(!empty($appliedVouchers))
+                            <div class="space-y-2">
+                                @foreach($appliedVouchers as $index => $voucher)
+                                <div class="w-full border py-3 px-4 flex justify-between items-center text-left bg-[#f0ede9] border-[#064e3b]">
+                                    <div class="flex flex-col">
+                                        <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold text-[#064e3b]">{{ $voucher['code'] }}</span>
+                                        <span class="font-sans text-[11px] text-[#064e3b] mt-0.5">
+                                            {{ $voucher['is_shipping_voucher'] ? 'Voucher Gratis Ongkir' : 'Voucher Diskon Belanja' }}
+                                        </span>
+                                    </div>
+                                    <button type="button" wire:click="removeVoucher({{ $index }})" class="text-[#ba1a1a] hover:text-black focus:outline-none p-1">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
                                 </div>
-                                <button type="button" wire:click="removeVoucher" class="text-[#ba1a1a] hover:text-black focus:outline-none p-1">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
+                                @endforeach
                             </div>
-                            @else
+                            @endif
+
                             <button type="button" @click="bsVoucherOpen = true" class="w-full border py-3 px-4 flex justify-between items-center text-left transition-colors bg-transparent border-[#1c1c1a] hover:bg-[#f6f3ef] text-[#1c1c1a]">
-                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold flex items-center gap-2">PILIH VOUCHER</span>
+                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold flex items-center gap-2">
+                                    {{ !empty($appliedVouchers) ? 'TAMBAH / UBAH VOUCHER' : 'PILIH VOUCHER' }}
+                                </span>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                             </button>
-                            @endif
                         </div>
                         
                         <div class="h-px bg-[rgba(23,24,24,0.1)] my-6 hidden lg:block"></div>
@@ -728,7 +742,7 @@
                             <div 
                                 @if($voucher->is_eligible) wire:click="selectVoucher('{{ $voucher->code }}')" @endif 
                                 class="border p-4 flex flex-col gap-2 transition-colors 
-                                {{ !$voucher->is_eligible ? 'border-[#e5e2de] bg-[#fcfcfc] opacity-75 cursor-not-allowed' : ($appliedVoucher && $appliedVoucher['code'] === $voucher->code ? 'border-[#064e3b] bg-[#f0ede9] cursor-pointer' : 'border-[#e5e2de] hover:border-[#064e3b] bg-white cursor-pointer') }}">
+                                {{ !$voucher->is_eligible ? 'border-[#e5e2de] bg-[#fcfcfc] opacity-75 cursor-not-allowed' : (in_array($voucher->code, array_column($appliedVouchers, 'code')) ? 'border-[#064e3b] bg-[#f0ede9] cursor-pointer' : 'border-[#e5e2de] hover:border-[#064e3b] bg-white cursor-pointer') }}">
                                 
                                 <div class="flex justify-between items-start">
                                     <div class="{{ !$voucher->is_eligible ? 'opacity-80' : '' }}">
@@ -737,7 +751,7 @@
                                             Diskon {{ $voucher->discount_type === 'percent' ? rtrim(rtrim(number_format($voucher->discount_amount, 2, ',', '.'), '0'), ',') . '%' : 'Rp' . number_format($voucher->discount_amount, 0, ',', '.') }}
                                         </div>
                                     </div>
-                                    @if($appliedVoucher && $appliedVoucher['code'] === $voucher->code)
+                                    @if(in_array($voucher->code, array_column($appliedVouchers, 'code')))
                                         <span class="bg-[#064e3b] text-white text-[9px] font-mono uppercase tracking-widest px-2 py-1">TERPAKAI</span>
                                     @elseif(!$voucher->is_eligible)
                                         <span class="bg-[#e5e2de] text-[#615e57] text-[9px] font-mono uppercase tracking-widest px-2 py-1">TIDAK MEMENUHI SYARAT</span>

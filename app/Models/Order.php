@@ -27,6 +27,7 @@ class Order extends Model
         'status',
         'source',
         'voucher_id',
+        'applied_voucher_ids',
         'subtotal',
         'shipping_cost',
         'discount_total',
@@ -43,6 +44,7 @@ class Order extends Model
 
     protected $casts = [
         'shipping_address' => 'array',
+        'applied_voucher_ids' => 'array',
         'subtotal' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
         'discount_total' => 'decimal:2',

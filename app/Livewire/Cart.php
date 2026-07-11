@@ -106,6 +106,7 @@ class Cart extends Component
 
         $this->appliedVoucher = $voucher->toArray();
         session(['applied_voucher' => $this->appliedVoucher]);
+        session(['applied_vouchers' => [$this->appliedVoucher]]);
         $this->voucherCode = '';
         
         $this->dispatch('close-voucher-sheet');
@@ -121,6 +122,7 @@ class Cart extends Component
     {
         $this->appliedVoucher = null;
         session()->forget('applied_voucher');
+        session()->forget('applied_vouchers');
     }
 
     public function updatedSelectAll($value)

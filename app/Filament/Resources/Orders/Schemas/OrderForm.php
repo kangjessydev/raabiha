@@ -407,6 +407,20 @@ class OrderForm
                                         }
                                         self::updateTotals($get, $set, false);
                                     }),
+                                \Filament\Forms\Components\Placeholder::make('applied_vouchers_list')
+                                    ->label('Voucher yang Digunakan (Gabungan)')
+                                    ->visible(fn ($record) => $record && !empty($record->applied_voucher_ids))
+                                    ->content(function ($record) {
+                                        if (!$record || empty($record->applied_voucher_ids)) return '-';
+                                        $vouchers = \App\Models\Voucher::whereIn('id', $record->applied_voucher_ids)->get();
+                                        return $vouchers->map(function ($v) {
+                                            $discountStr = $v->discount_type === 'percent'
+                                                ? rtrim(rtrim(number_format($v->discount_amount, 2), '0'), '.') . '%'
+                                                : 'Rp ' . number_format($v->discount_amount, 0, ',', '.');
+                                            $type = $v->is_shipping_voucher ? 'Potongan Ongkir' : 'Diskon Belanja';
+                                            return "[{$v->code}] - {$type} ({$discountStr})";
+                                        })->implode("\n");
+                                    }),
                             ])->columns(1),
                     ])->columnSpan(['lg' => 1]),
 

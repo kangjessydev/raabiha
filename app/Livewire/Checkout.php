@@ -57,8 +57,10 @@ class Checkout extends Component
     
     // Coupon state
     public $voucherCode = '';
+    public $appliedVouchers = [];
     public $appliedVoucher = null;
     public $discountAmount = 0;
+    public $shippingDiscountAmount = 0;
     
     // Guest checkout state: null = undecided, true = continue as guest, false = logged in
     public $guest_mode = null;
@@ -130,7 +132,22 @@ class Checkout extends Component
             $this->payment_method = $firstMethod->code;
         }
         
-        $this->appliedVoucher = session('applied_voucher', null);
+        $this->appliedVouchers = session('applied_vouchers', []);
+        $legacy = session('applied_voucher', null);
+        if ($legacy) {
+            $exists = false;
+            foreach ($this->appliedVouchers as $v) {
+                if ($v['id'] === $legacy['id']) {
+                    $exists = true;
+                }
+            }
+            if (!$exists) {
+                $this->appliedVouchers[] = $legacy;
+            }
+            session(['applied_vouchers' => $this->appliedVouchers]);
+            session()->forget('applied_voucher');
+        }
+        $this->appliedVoucher = !empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
         
         // Fetch rates if selectedDestinationId already exists (unlikely on fresh load)
         $this->generateShippingRates();
@@ -481,13 +498,20 @@ class Checkout extends Component
                 $cLogo = $courierModel ? $courierModel->logo : null;
 
                 $discountedPrice = $price;
-                if ($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher']) {
-                    $discountValue = $this->appliedVoucher['discount_type'] === 'fixed'
-                        ? $this->appliedVoucher['discount_amount']
-                        : $price * ($this->appliedVoucher['discount_amount'] / 100);
+                $shippingVoucher = null;
+                foreach ($this->appliedVouchers as $v) {
+                    if (!empty($v['is_shipping_voucher'])) {
+                        $shippingVoucher = $v;
+                        break;
+                    }
+                }
+                if ($shippingVoucher) {
+                    $discountValue = $shippingVoucher['discount_type'] === 'fixed'
+                        ? $shippingVoucher['discount_amount']
+                        : $price * ($shippingVoucher['discount_amount'] / 100);
 
-                    if ($this->appliedVoucher['max_discount'] > 0 && $discountValue > $this->appliedVoucher['max_discount']) {
-                        $discountValue = $this->appliedVoucher['max_discount'];
+                    if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
+                        $discountValue = $shippingVoucher['max_discount'];
                     }
 
                     $discountedPrice = max(0, $price - $discountValue);
@@ -574,13 +598,20 @@ class Checkout extends Component
                              $etd = $cost['estimated'] ?? '';
 
                             $discountedPrice = $price;
-                            if ($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher']) {
-                                $discountValue = $this->appliedVoucher['discount_type'] === 'fixed'
-                                    ? $this->appliedVoucher['discount_amount']
-                                    : $price * ($this->appliedVoucher['discount_amount'] / 100);
+                            $shippingVoucher = null;
+                            foreach ($this->appliedVouchers as $v) {
+                                if (!empty($v['is_shipping_voucher'])) {
+                                    $shippingVoucher = $v;
+                                    break;
+                                }
+                            }
+                            if ($shippingVoucher) {
+                                $discountValue = $shippingVoucher['discount_type'] === 'fixed'
+                                    ? $shippingVoucher['discount_amount']
+                                    : $price * ($shippingVoucher['discount_amount'] / 100);
 
-                                if ($this->appliedVoucher['max_discount'] > 0 && $discountValue > $this->appliedVoucher['max_discount']) {
-                                    $discountValue = $this->appliedVoucher['max_discount'];
+                                if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
+                                    $discountValue = $shippingVoucher['max_discount'];
                                 }
 
                                 $discountedPrice = max(0, $price - $discountValue);
@@ -686,13 +717,20 @@ class Checkout extends Component
                             $etd = $cost['etd'] ?? '';
 
                             $discountedPrice = $price;
-                            if ($this->appliedVoucher && $this->appliedVoucher['is_shipping_voucher']) {
-                                $discountValue = $this->appliedVoucher['discount_type'] === 'fixed'
-                                    ? $this->appliedVoucher['discount_amount']
-                                    : $price * ($this->appliedVoucher['discount_amount'] / 100);
+                            $shippingVoucher = null;
+                            foreach ($this->appliedVouchers as $v) {
+                                if (!empty($v['is_shipping_voucher'])) {
+                                    $shippingVoucher = $v;
+                                    break;
+                                }
+                            }
+                            if ($shippingVoucher) {
+                                $discountValue = $shippingVoucher['discount_type'] === 'fixed'
+                                    ? $shippingVoucher['discount_amount']
+                                    : $price * ($shippingVoucher['discount_amount'] / 100);
 
-                                if ($this->appliedVoucher['max_discount'] > 0 && $discountValue > $this->appliedVoucher['max_discount']) {
-                                    $discountValue = $this->appliedVoucher['max_discount'];
+                                if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
+                                    $discountValue = $shippingVoucher['max_discount'];
                                 }
 
                                 $discountedPrice = max(0, $price - $discountValue);
@@ -868,7 +906,7 @@ class Checkout extends Component
         $flat    = (int) ($feeCustomer['flat'] ?? 0);
         $percent = (float) ($feeCustomer['percent'] ?? 0);
         
-        $base = max(0, $this->subtotal - $this->reseller_discount - $this->discountAmount) + $this->shipping_cost;
+        $base = max(0, $this->subtotal - $this->reseller_discount - $this->discountAmount) + max(0, $this->shipping_cost - $this->shippingDiscountAmount);
         $percentFee = $percent > 0 ? (int) ceil($base * ($percent / 100)) : 0;
         
         return $flat + $percentFee;
@@ -878,50 +916,62 @@ class Checkout extends Component
     {
         $this->calculateDiscount();
         $baseForTotal = max(0, $this->subtotal - $this->reseller_discount);
-        return max(0, $baseForTotal - $this->discountAmount) + $this->shipping_cost + $this->paymentFee;
+        return max(0, $baseForTotal - $this->discountAmount) + max(0, $this->shipping_cost - $this->shippingDiscountAmount) + $this->paymentFee;
     }
     
     public function calculateDiscount()
     {
         $this->discountAmount = 0;
+        $this->shippingDiscountAmount = 0;
         $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
 
-        if ($this->appliedVoucher) {
-            if ($this->appliedVoucher['min_purchase'] > 0 && $baseTotalForVoucher < $this->appliedVoucher['min_purchase']) {
-                $this->removeVoucher();
-                session()->flash('voucher_error', 'Total belanja tidak memenuhi syarat minimum voucher.');
-            } else {
-                if ($this->appliedVoucher['is_shipping_voucher']) {
-                    // Logika jika voucher ongkir: max diskon sebesar biaya pengiriman
-                    $discountValue = $this->appliedVoucher['discount_type'] === 'fixed' 
-                        ? $this->appliedVoucher['discount_amount'] 
-                        : $this->shipping_cost * ($this->appliedVoucher['discount_amount'] / 100);
+        if (!empty($this->appliedVouchers)) {
+            foreach ($this->appliedVouchers as $index => $v) {
+                if ($v['min_purchase'] > 0 && $baseTotalForVoucher < $v['min_purchase']) {
+                    $this->removeVoucher($index);
+                    session()->flash('voucher_error', 'Voucher ' . $v['code'] . ' otomatis dilepas karena total belanja tidak memenuhi syarat minimum.');
+                    continue;
+                }
+
+                if ($v['is_shipping_voucher']) {
+                    $discountValue = $v['discount_type'] === 'fixed' 
+                        ? $v['discount_amount'] 
+                        : $this->shipping_cost * ($v['discount_amount'] / 100);
                     
-                    if ($this->appliedVoucher['max_discount'] > 0 && $discountValue > $this->appliedVoucher['max_discount']) {
-                        $discountValue = $this->appliedVoucher['max_discount'];
+                    if ($v['max_discount'] > 0 && $discountValue > $v['max_discount']) {
+                        $discountValue = $v['max_discount'];
                     }
                     
-                    // Maksimal potongan adalah seharga ongkir itu sendiri
-                    $this->discountAmount = min($discountValue, $this->shipping_cost);
+                    $this->shippingDiscountAmount = min($discountValue, $this->shipping_cost);
                 } else {
-                    if ($this->appliedVoucher['discount_type'] === 'fixed') {
-                        $this->discountAmount = $this->appliedVoucher['discount_amount'];
+                    if ($v['discount_type'] === 'fixed') {
+                        $this->discountAmount += $v['discount_amount'];
                     } else {
-                        $this->discountAmount = $baseTotalForVoucher * ($this->appliedVoucher['discount_amount'] / 100);
-                        if ($this->appliedVoucher['max_discount'] > 0 && $this->discountAmount > $this->appliedVoucher['max_discount']) {
-                            $this->discountAmount = $this->appliedVoucher['max_discount'];
+                        $val = $baseTotalForVoucher * ($v['discount_amount'] / 100);
+                        if ($v['max_discount'] > 0 && $val > $v['max_discount']) {
+                            $val = $v['max_discount'];
                         }
+                        $this->discountAmount += $val;
                     }
                 }
             }
         }
     }
     
-    public function removeVoucher()
+    public function removeVoucher($index = null)
     {
-        $this->appliedVoucher = null;
-        $this->discountAmount = 0;
+        if ($index !== null && isset($this->appliedVouchers[$index])) {
+            unset($this->appliedVouchers[$index]);
+            $this->appliedVouchers = array_values($this->appliedVouchers);
+        } else {
+            $this->appliedVouchers = [];
+        }
+        
+        session(['applied_vouchers' => $this->appliedVouchers]);
         session()->forget('applied_voucher');
+        $this->appliedVoucher = !empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
+        $this->discountAmount = 0;
+        $this->shippingDiscountAmount = 0;
         $this->generateShippingRates();
     }
     
@@ -996,8 +1046,30 @@ class Checkout extends Component
             }
         }
 
-        $this->appliedVoucher = $voucher->toArray();
-        session(['applied_voucher' => $this->appliedVoucher]);
+        $newVoucherData = $voucher->toArray();
+        $newIsStackable = (bool) ($newVoucherData['is_stackable'] ?? false);
+        $newIsShipping = (bool) ($newVoucherData['is_shipping_voucher'] ?? false);
+
+        if (!$newIsStackable) {
+            $this->appliedVouchers = [$newVoucherData];
+            session()->flash('voucher_success', 'Voucher berhasil dipasang (voucher lain dilepas karena tidak mendukung penggabungan).');
+        } else {
+            $filteredVouchers = [];
+            foreach ($this->appliedVouchers as $v) {
+                if (!empty($v['is_stackable'])) {
+                    $vIsShipping = (bool) ($v['is_shipping_voucher'] ?? false);
+                    if ($vIsShipping !== $newIsShipping) {
+                        $filteredVouchers[] = $v;
+                    }
+                }
+            }
+            $filteredVouchers[] = $newVoucherData;
+            $this->appliedVouchers = $filteredVouchers;
+            session()->flash('voucher_success', 'Voucher berhasil ditambahkan.');
+        }
+
+        session(['applied_vouchers' => $this->appliedVouchers]);
+        $this->appliedVoucher = !empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
         $this->voucherCode = '';
         
         $this->generateShippingRates();
@@ -1188,18 +1260,22 @@ class Checkout extends Component
                 'shipping_cost' => $this->shipping_cost,
                 'payment_method' => $this->payment_method,
                 'subtotal' => $this->subtotal,
-                'discount_total' => $this->discountAmount + $this->reseller_discount,
+                'discount_total' => $this->discountAmount + $this->shippingDiscountAmount + $this->reseller_discount,
                 'grand_total' => $this->total,
                 'notes' => $this->notes,
                 'voucher_id' => $this->appliedVoucher ? $this->appliedVoucher['id'] : null,
+                'applied_voucher_ids' => !empty($this->appliedVouchers) ? array_column($this->appliedVouchers, 'id') : null,
             ]);
             
-            // Mark voucher as used if applied
-            if ($this->appliedVoucher) {
-                $voucherModel = \App\Models\Voucher::where('code', $this->appliedVoucher['code'])->first();
-                if ($voucherModel) {
-                    $voucherModel->increment('used_count');
+            // Mark all applied vouchers as used
+            if (!empty($this->appliedVouchers)) {
+                foreach ($this->appliedVouchers as $v) {
+                    $voucherModel = \App\Models\Voucher::where('code', $v['code'])->first();
+                    if ($voucherModel) {
+                        $voucherModel->increment('used_count');
+                    }
                 }
+                session()->forget('applied_vouchers');
                 session()->forget('applied_voucher');
             }
 
