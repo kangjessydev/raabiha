@@ -141,8 +141,12 @@ class ListShippingMethods extends ListRecords
                 ->icon('heroicon-o-scale')
                 ->color('info')
                 ->fillForm(function () {
+                    $savedMethod = \App\Models\SiteSetting::where('key', 'weight_rounding_method')->value('value') ?? 'ceiling';
+                    if ($savedMethod === 'half_kg') {
+                        $savedMethod = 'half_kg_ceil';
+                    }
                     return [
-                        'weight_rounding_method' => \App\Models\SiteSetting::where('key', 'weight_rounding_method')->value('value') ?? 'ceiling',
+                        'weight_rounding_method' => $savedMethod,
                         'weight_tolerance_grams' => \App\Models\SiteSetting::where('key', 'weight_tolerance_grams')->value('value') ?? 300,
                         'cargo_min_weight_grams' => \App\Models\SiteSetting::where('key', 'cargo_min_weight_grams')->value('value') ?? 10000,
                         'test_weight' => 1200,
@@ -164,7 +168,9 @@ class ListShippingMethods extends ListRecords
                             ->label('Metode Pembulatan Berat')
                             ->options([
                                 'ceiling' => 'Pembulatan Murni Ke Atas (Ceiling)',
-                                'half_kg' => 'Pembulatan Ke Atas Tiap 500 Gram (Kelipatan 0.5 Kg)',
+                                'half_kg_ceil' => 'Pembulatan Ke Atas Tiap 500 Gram (Kelipatan 0.5 Kg)',
+                                'half_kg_floor' => 'Pembulatan Ke Bawah Tiap 500 Gram (Kelipatan 0.5 Kg)',
+                                'half_kg_nearest' => 'Pembulatan Ke Terdekat Tiap 500 Gram (Kelipatan 0.5 Kg)',
                                 'tolerance' => 'Menggunakan Batas Toleransi Ekspedisi',
                             ])
                             ->live()
@@ -211,8 +217,10 @@ class ListShippingMethods extends ListRecords
                                     // 2. Ceiling rounding calculation
                                     $ceilingWeight = max(1000, (int) ceil($testWeight / 1000) * 1000);
                                     
-                                    // 3. Half Kg calculation
-                                    $halfKgWeight = max(1000, (int) ceil($testWeight / 500) * 500);
+                                    // 3. Half Kg calculations
+                                    $halfKgCeilWeight = max(1000, (int) ceil($testWeight / 500) * 500);
+                                    $halfKgFloorWeight = max(1000, (int) floor($testWeight / 500) * 500);
+                                    $halfKgNearestWeight = max(1000, (int) round($testWeight / 500) * 500);
                                     
                                     // 4. Tolerance calculation
                                     $kg = floor($testWeight / 1000);
@@ -231,10 +239,18 @@ class ListShippingMethods extends ListRecords
                                         $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Pembulatan Murni Ke Atas</div>";
                                         $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($ceilingWeight) . " gram (" . ($ceilingWeight / 1000) . " kg)</strong></div>";
                                         $html .= "<div class='text-gray-500 text-xs mt-1'>Mencegah selisih ongkir akibat berat dus/bubble wrap.</div>";
-                                    } elseif ($method === 'half_kg') {
+                                    } elseif ($method === 'half_kg_ceil') {
                                         $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Pembulatan Ke Atas Tiap 500 Gram (Kelipatan 0.5 Kg)</div>";
-                                        $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($halfKgWeight) . " gram (" . ($halfKgWeight / 1000) . " kg)</strong></div>";
-                                        $html .= "<div class='text-gray-500 text-xs mt-1'>Membulatkan berat ke kelipatan 0.5 kg terdekat (min 1 kg).</div>";
+                                        $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($halfKgCeilWeight) . " gram (" . ($halfKgCeilWeight / 1000) . " kg)</strong></div>";
+                                        $html .= "<div class='text-gray-500 text-xs mt-1'>Membulatkan berat ke kelipatan 0.5 kg terdekat ke atas.</div>";
+                                    } elseif ($method === 'half_kg_floor') {
+                                        $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Pembulatan Ke Bawah Tiap 500 Gram (Kelipatan 0.5 Kg)</div>";
+                                        $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($halfKgFloorWeight) . " gram (" . ($halfKgFloorWeight / 1000) . " kg)</strong></div>";
+                                        $html .= "<div class='text-gray-500 text-xs mt-1'>Membulatkan berat ke kelipatan 0.5 kg terdekat ke bawah.</div>";
+                                    } elseif ($method === 'half_kg_nearest') {
+                                        $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Pembulatan Ke Terdekat Tiap 500 Gram (Kelipatan 0.5 Kg)</div>";
+                                        $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($halfKgNearestWeight) . " gram (" . ($halfKgNearestWeight / 1000) . " kg)</strong></div>";
+                                        $html .= "<div class='text-gray-500 text-xs mt-1'>Membulatkan berat ke kelipatan 0.5 kg terdekat (bisa ke atas atau bawah).</div>";
                                     } else {
                                         $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Batas Toleransi ({$tolerance} gram)</div>";
                                         $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($toleranceWeight) . " gram (" . ($toleranceWeight / 1000) . " kg)</strong></div>";
@@ -242,8 +258,10 @@ class ListShippingMethods extends ListRecords
                                     }
                                     
                                     $html .= "</div><div class='border-t pt-2 mt-2 space-y-1 text-xs text-gray-500'>";
-                                    $html .= "<div>• Bandingkan - Pembulatan Murni: " . ($ceilingWeight / 1000) . " kg</div>";
-                                    $html .= "<div>• Bandingkan - Kelipatan 0.5 kg (500g): " . ($halfKgWeight / 1000) . " kg</div>";
+                                    $html .= "<div>• Bandingkan - Pembulatan 1 kg: " . ($ceilingWeight / 1000) . " kg</div>";
+                                    $html .= "<div>• Bandingkan - Kelipatan 0.5 kg (Ke Atas): " . ($halfKgCeilWeight / 1000) . " kg</div>";
+                                    $html .= "<div>• Bandingkan - Kelipatan 0.5 kg (Ke Bawah): " . ($halfKgFloorWeight / 1000) . " kg</div>";
+                                    $html .= "<div>• Bandingkan - Kelipatan 0.5 kg (Ke Terdekat): " . ($halfKgNearestWeight / 1000) . " kg</div>";
                                     $html .= "<div>• Bandingkan - Toleransi ({$tolerance}g): " . ($toleranceWeight / 1000) . " kg</div>";
                                     $html .= "</div></div>";
                                     
