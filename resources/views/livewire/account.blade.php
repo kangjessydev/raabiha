@@ -1061,8 +1061,8 @@
                     </div>
 
                     <div class="pt-6 mt-6 flex flex-col sm:flex-row justify-end gap-3 border-t border-[#e5e2de]">
-                        <button type="button" wire:click="closeCancelOrderModal" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#e5e2de] px-6 py-3 hover:bg-[#fcf9f5] transition-colors text-center w-full sm:w-auto">Kembali</button>
-                        <button type="button" wire:click="cancelOrder" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#ba1a1a] px-6 py-3 hover:bg-[#961414] transition-colors text-center w-full sm:w-auto">Ya, Batalkan</button>
+                        <button type="button" wire:click="closeCancelOrderModal" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#e5e2de] px-6 py-3 hover:bg-[#fcf9f5] transition-colors w-full sm:w-auto text-center order-2 sm:order-1">Kembali</button>
+                        <button type="button" wire:click="cancelOrder" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-red-600 px-6 py-3 hover:bg-red-700 transition-colors w-full sm:w-auto text-center order-1 sm:order-2">Ya, Batalkan</button>
                     </div>
                 </div>
             </div>
