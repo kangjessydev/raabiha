@@ -45,7 +45,7 @@ class ProductForm
                             ->label('Deskripsi Produk')
                             ->extraInputAttributes(['style' => 'min-height: 300px;'])
                             ->columnSpanFull(),
-                        \Filament\Forms\Components\Placeholder::make('gallery_css')
+                         \Filament\Forms\Components\Placeholder::make('gallery_css')
                             ->hiddenLabel()
                             ->content(new \Illuminate\Support\HtmlString('
                                 <style>
@@ -64,6 +64,34 @@ class ProductForm
                                         position: relative !important;
                                         transform: none !important;
                                         margin: 0 !important;
+                                    }
+                                    
+                                    /* Hack to make Filament Curator Picker grid horizontally scrollable */
+                                    .curator-media-picker > ul {
+                                        display: flex !important;
+                                        flex-wrap: nowrap !important;
+                                        overflow-x: auto !important;
+                                        gap: 16px;
+                                        padding-bottom: 12px;
+                                        grid-template-columns: none !important;
+                                    }
+                                    .curator-media-picker > ul > li {
+                                        width: 240px !important;
+                                        flex: 0 0 auto !important;
+                                    }
+                                    .curator-media-picker > ul::-webkit-scrollbar {
+                                        height: 6px;
+                                    }
+                                    .curator-media-picker > ul::-webkit-scrollbar-track {
+                                        background: #f1f1f1;
+                                        border-radius: 3px;
+                                    }
+                                    .curator-media-picker > ul::-webkit-scrollbar-thumb {
+                                        background: #c1c1c1;
+                                        border-radius: 3px;
+                                    }
+                                    .curator-media-picker > ul::-webkit-scrollbar-thumb:hover {
+                                        background: #a8a8a8;
                                     }
                                 </style>
                             ')),
