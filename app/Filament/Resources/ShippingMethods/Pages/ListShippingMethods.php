@@ -159,7 +159,7 @@ class ListShippingMethods extends ListRecords
                         ->send();
                 })
                 ->form([
-                    \Filament\Forms\Components\Grid::make(2)->schema([
+                    \Filament\Schemas\Components\Grid::make(2)->schema([
                         \Filament\Forms\Components\Select::make('weight_rounding_method')
                             ->label('Metode Pembulatan Berat')
                             ->options([
@@ -185,7 +185,7 @@ class ListShippingMethods extends ListRecords
                             ->columnSpanFull(),
                     ]),
                     
-                    \Filament\Forms\Components\Section::make('Kalkulator Simulasi Berat')
+                    \Filament\Schemas\Components\Section::make('Kalkulator Simulasi Berat')
                         ->schema([
                             \Filament\Forms\Components\TextInput::make('test_weight')
                                 ->label('Simulasikan Berat Paket Anda')
