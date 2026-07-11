@@ -59,16 +59,33 @@ class TestShipping extends Command
         
         $this->line("Kurir aktif di database: " . $activeCouriers->pluck('name')->implode(', '));
 
+        $roundingMethod = \App\Models\SiteSetting::where('key', 'weight_rounding_method')->value('value') ?? 'ceiling';
+        $toleranceGrams = (int) (\App\Models\SiteSetting::where('key', 'weight_tolerance_grams')->value('value') ?? 300);
+
         foreach ($destinations as $dest) {
             $this->line("\n------------------------------------------------------------");
             $this->info("TUJUAN: {$dest['name']} ({$dest['label']})");
             $this->line("------------------------------------------------------------");
 
             foreach ($weights as $weight => $weightDesc) {
-                $this->warn("Uji Berat: {$weightDesc}");
+                // Apply dynamic rounding policy to weight
+                $testWeight = $weight;
+                if ($roundingMethod === 'ceiling') {
+                    $roundedWeight = max(1000, (int) ceil($testWeight / 1000) * 1000);
+                } else {
+                    $kg = floor($testWeight / 1000);
+                    $remainder = $testWeight % 1000;
+                    if ($remainder > $toleranceGrams) {
+                        $roundedWeight = ($kg + 1) * 1000;
+                    } else {
+                        $roundedWeight = max(1, $kg) * 1000;
+                    }
+                }
+
+                $this->warn("Uji Berat Asli: {$testWeight}g (Dibulatkan: {$roundedWeight}g) - {$weightDesc}");
 
                 try {
-                    $results = BinderByteService::getShippingCost('32.04.14', $dest['id'], $weight, $couriers);
+                    $results = BinderByteService::getShippingCost('32.04.14', $dest['id'], $roundedWeight, $couriers);
                     
                     if (empty($results) || !isset($results['results'])) {
                         $this->error("  API BinderByte tidak mengembalikan hasil (mungkin limit atau timeout).");
@@ -112,7 +129,7 @@ class TestShipping extends Command
                             }
 
                             // Dynamic shipping rule verification
-                            $shouldShow = $courierModel->shouldShowService($rawServiceName, $weight, '32.04.14', $dest['label']);
+                            $shouldShow = $courierModel->shouldShowService($rawServiceName, $roundedWeight, '32.04.14', $dest['label']);
 
                             // Calculate price
                             $rawPrice = (int)($cost['price'] ?? 0);

@@ -115,7 +115,8 @@ class ShippingMethod extends Model
                 break;
             }
         }
-        if ($totalWeight < 10000 && $isCargo) {
+        $cargoMinGrams = (int) (\App\Models\SiteSetting::where('key', 'cargo_min_weight_grams')->value('value') ?? 10000);
+        if ($totalWeight < $cargoMinGrams && $isCargo) {
             return false;
         }
 

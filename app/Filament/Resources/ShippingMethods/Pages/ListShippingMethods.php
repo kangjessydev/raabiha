@@ -136,6 +136,116 @@ class ListShippingMethods extends ListRecords
                 ->modalDescription('Konfigurasi ini akan ditambahkan sebagai pilihan kurir saat Checkout (menggunakan deteksi provinsi Emsifa).')
                 ->modalSubmitActionLabel('Simpan Pengaturan')
                 ->slideOver(),
+            \Filament\Actions\Action::make('aturKebijakanBerat')
+                ->label('Atur Kebijakan Berat & Kargo')
+                ->icon('heroicon-o-scale')
+                ->color('info')
+                ->fillForm(function () {
+                    return [
+                        'weight_rounding_method' => \App\Models\SiteSetting::where('key', 'weight_rounding_method')->value('value') ?? 'ceiling',
+                        'weight_tolerance_grams' => \App\Models\SiteSetting::where('key', 'weight_tolerance_grams')->value('value') ?? 300,
+                        'cargo_min_weight_grams' => \App\Models\SiteSetting::where('key', 'cargo_min_weight_grams')->value('value') ?? 10000,
+                        'test_weight' => 1200,
+                    ];
+                })
+                ->action(function (array $data) {
+                    \App\Models\SiteSetting::updateOrCreate(['key' => 'weight_rounding_method'], ['value' => $data['weight_rounding_method']]);
+                    \App\Models\SiteSetting::updateOrCreate(['key' => 'weight_tolerance_grams'], ['value' => (string) $data['weight_tolerance_grams']]);
+                    \App\Models\SiteSetting::updateOrCreate(['key' => 'cargo_min_weight_grams'], ['value' => (string) $data['cargo_min_weight_grams']]);
+                    
+                    \Filament\Notifications\Notification::make()
+                        ->title('Kebijakan Berat & Kargo berhasil disimpan')
+                        ->success()
+                        ->send();
+                })
+                ->form([
+                    \Filament\Forms\Components\Grid::make(2)->schema([
+                        \Filament\Forms\Components\Select::make('weight_rounding_method')
+                            ->label('Metode Pembulatan Berat')
+                            ->options([
+                                'ceiling' => 'Pembulatan Murni Ke Atas (Ceiling)',
+                                'tolerance' => 'Menggunakan Batas Toleransi Ekspedisi',
+                            ])
+                            ->live()
+                            ->native(false)
+                            ->required(),
+                        \Filament\Forms\Components\TextInput::make('weight_tolerance_grams')
+                            ->label('Batas Toleransi (Gram)')
+                            ->numeric()
+                            ->suffix('gram')
+                            ->helperText('Contoh: jika diisi 300, berat 1.300g dibulatkan ke bawah (1 kg), sedangkan 1.301g dibulatkan ke atas (2 kg).')
+                            ->visible(fn ($get) => $get('weight_rounding_method') === 'tolerance')
+                            ->required(fn ($get) => $get('weight_rounding_method') === 'tolerance'),
+                        \Filament\Forms\Components\TextInput::make('cargo_min_weight_grams')
+                            ->label('Batas Minimum Kurir Kargo')
+                            ->numeric()
+                            ->suffix('gram')
+                            ->helperText('Opsi kurir bertipe kargo (seperti JTR/Gokil) hanya muncul jika berat belanjaan minimal sebesar angka ini. Default: 10000g (10 kg).')
+                            ->required()
+                            ->columnSpanFull(),
+                    ]),
+                    
+                    \Filament\Forms\Components\Section::make('Kalkulator Simulasi Berat')
+                        ->schema([
+                            \Filament\Forms\Components\TextInput::make('test_weight')
+                                ->label('Simulasikan Berat Paket Anda')
+                                ->numeric()
+                                ->suffix('gram')
+                                ->placeholder('Ketik berat paket dalam gram (misal 1200)')
+                                ->live(),
+                            \Filament\Forms\Components\Placeholder::make('simulation_output')
+                                ->label('Hasil Perhitungan Sistem')
+                                ->content(function ($get) {
+                                    $testWeight = (int) ($get('test_weight') ?? 0);
+                                    $method = $get('weight_rounding_method') ?? 'ceiling';
+                                    $tolerance = (int) ($get('weight_tolerance_grams') ?? 300);
+                                    
+                                    if ($testWeight <= 0) {
+                                        return 'Masukkan berat simulasi di atas untuk melihat perhitungan.';
+                                    }
+                                    
+                                    // 1. Minimum weight rule
+                                    $baseWeight = max(1000, $testWeight);
+                                    
+                                    // 2. Ceiling rounding calculation
+                                    $ceilingWeight = max(1000, (int) ceil($testWeight / 1000) * 1000);
+                                    
+                                    // 3. Tolerance calculation
+                                    $kg = floor($testWeight / 1000);
+                                    $remainder = $testWeight % 1000;
+                                    if ($remainder > $tolerance) {
+                                        $toleranceWeight = ($kg + 1) * 1000;
+                                    } else {
+                                        $toleranceWeight = max(1, $kg) * 1000;
+                                    }
+                                    
+                                    $html = "<div class='space-y-2 text-sm'>";
+                                    $html .= "<div><strong>Berat Asli Paket</strong>: " . number_format($testWeight) . " gram (" . ($testWeight / 1000) . " kg)</div>";
+                                    $html .= "<div class='border-t pt-2 mt-2'>";
+                                    
+                                    if ($method === 'ceiling') {
+                                        $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Pembulatan Murni Ke Atas</div>";
+                                        $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($ceilingWeight) . " gram (" . ($ceilingWeight / 1000) . " kg)</strong></div>";
+                                        $html .= "<div class='text-gray-500 text-xs mt-1'>Mencegah selisih ongkir akibat berat dus/bubble wrap.</div>";
+                                    } else {
+                                        $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Batas Toleransi ({$tolerance} gram)</div>";
+                                        $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($toleranceWeight) . " gram (" . ($toleranceWeight / 1000) . " kg)</strong></div>";
+                                        $html .= "<div class='text-gray-500 text-xs mt-1'>Lebih adil bagi pembeli jika beratnya hanya lebih sedikit dari 1 kg.</div>";
+                                    }
+                                    
+                                    $html .= "</div><div class='border-t pt-2 mt-2 space-y-1 text-xs text-gray-500'>";
+                                    $html .= "<div>• Bandingkan - Pembulatan Murni: " . ($ceilingWeight / 1000) . " kg</div>";
+                                    $html .= "<div>• Bandingkan - Toleransi ({$tolerance}g): " . ($toleranceWeight / 1000) . " kg</div>";
+                                    $html .= "</div></div>";
+                                    
+                                    return new \Illuminate\Support\HtmlString($html);
+                                })
+                        ])
+                ])
+                ->modalHeading('Atur Kebijakan Berat & Kargo')
+                ->modalDescription('Konfigurasi pembulatan berat paket dan batas minimal berat kurir kargo.')
+                ->modalSubmitActionLabel('Simpan Kebijakan')
+                ->slideOver(),
             CreateAction::make(),
         ];
     }

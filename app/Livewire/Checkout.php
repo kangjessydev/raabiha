@@ -387,8 +387,21 @@ class Checkout extends Component
             }
         }
         if ($totalWeight == 0) $totalWeight = 1000;
-        // Round up to the nearest kg (min 1000g) to align with official courier rules
-        $totalWeight = max(1000, (int) ceil($totalWeight / 1000) * 1000);
+        // Round weight according to saved SiteSettings policies
+        $roundingMethod = \App\Models\SiteSetting::where('key', 'weight_rounding_method')->value('value') ?? 'ceiling';
+        $toleranceGrams = (int) (\App\Models\SiteSetting::where('key', 'weight_tolerance_grams')->value('value') ?? 300);
+        
+        if ($roundingMethod === 'ceiling') {
+            $totalWeight = max(1000, (int) ceil($totalWeight / 1000) * 1000);
+        } else {
+            $kg = floor($totalWeight / 1000);
+            $remainder = $totalWeight % 1000;
+            if ($remainder > $toleranceGrams) {
+                $totalWeight = ($kg + 1) * 1000;
+            } else {
+                $totalWeight = max(1, $kg) * 1000;
+            }
+        }
         $this->totalWeight = $totalWeight;
 
         // Path 1: Manual Address Mode (Fallback)
