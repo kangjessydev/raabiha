@@ -387,7 +387,7 @@
                                         <!-- Order Footer Actions -->
                                         <div class="border-t border-[#e5e2de] p-4 flex flex-col sm:flex-row justify-end gap-3 {{ $isInactive ? 'bg-white' : 'bg-[#fcf9f5]' }}">
                                             @if($order->status == 'pending')
-                                                <button wire:click="cancelOrder({{ $order->id }})" wire:confirm="Apakah Anda yakin ingin membatalkan pesanan ini?" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#f0ede9] transition-colors w-full sm:w-auto text-center">Batal Pesanan</button>
+                                                <button wire:click="confirmCancelOrder({{ $order->id }})" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-2.5 hover:bg-[#f0ede9] transition-colors w-full sm:w-auto text-center">Batal Pesanan</button>
                                                 @if($order->payment_url)
                                                     <a href="{{ $order->payment_url }}" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#064e3b] px-6 py-2.5 hover:bg-[#043326] transition-colors w-full sm:w-auto text-center inline-block">Bayar Sekarang</a>
                                                 @else
@@ -1031,6 +1031,38 @@
 
                     <div class="pt-6 mt-6 flex justify-end gap-3 border-t border-[#e5e2de]">
                         <button type="button" wire:click="closeRefundStatus" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#1c1c1a] border border-[#1c1c1a] px-6 py-3 hover:bg-[#f0ede9] transition-colors w-full">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Cancel Order Confirmation Modal -->
+    @if($showCancelOrderModal)
+        <div x-data x-init="document.body.style.overflow = 'hidden'; document.documentElement.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; document.documentElement.style.overflow = '' }" class="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/50">
+            <div class="bg-white max-w-md w-full shadow-2xl relative border border-[#e5e2de]">
+                <div class="p-6 md:p-8">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-serif text-[20px] font-semibold text-[#1c1c1a]">Batalkan Pesanan</h3>
+                            <p class="font-sans text-[12px] text-[#615e57] mt-1">
+                                Pesanan #{{ \App\Models\Order::find($cancelOrderId)->order_number ?? '' }}
+                            </p>
+                        </div>
+                        <button wire:click="closeCancelOrderModal" class="text-[#a3a3a3] hover:text-[#1c1c1a] transition-colors focus:outline-none">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <p class="font-sans text-[13px] text-[#1c1c1a] leading-relaxed">
+                            Apakah Anda yakin ingin membatalkan pesanan ini? Tindakan ini tidak dapat dibatalkan, dan stok barang akan langsung dikembalikan ke toko.
+                        </p>
+                    </div>
+
+                    <div class="pt-6 mt-6 flex flex-col sm:flex-row justify-end gap-3 border-t border-[#e5e2de]">
+                        <button type="button" wire:click="closeCancelOrderModal" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#e5e2de] px-6 py-3 hover:bg-[#fcf9f5] transition-colors text-center w-full sm:w-auto">Kembali</button>
+                        <button type="button" wire:click="cancelOrder" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-[#ba1a1a] px-6 py-3 hover:bg-[#961414] transition-colors text-center w-full sm:w-auto">Ya, Batalkan</button>
                     </div>
                 </div>
             </div>

@@ -199,6 +199,22 @@ class Account extends Component
         session()->flash('address_success', 'Alamat berhasil dihapus.');
     }
 
+    // Cancel Order Confirmation Modal
+    public $showCancelOrderModal = false;
+    public $cancelOrderId = null;
+
+    public function confirmCancelOrder($orderId)
+    {
+        $this->cancelOrderId = $orderId;
+        $this->showCancelOrderModal = true;
+    }
+
+    public function closeCancelOrderModal()
+    {
+        $this->cancelOrderId = null;
+        $this->showCancelOrderModal = false;
+    }
+
     // Refund Methods
     public $showRefundForm = false;
     public $refundOrderId = null;
@@ -404,11 +420,15 @@ class Account extends Component
         return redirect()->to('/login');
     }
 
-    public function cancelOrder($orderId)
+    public function cancelOrder()
     {
+        if (!$this->cancelOrderId) {
+            return;
+        }
+
         $order = Order::where('user_id', Auth::id())
             ->where('status', 'pending')
-            ->findOrFail($orderId);
+            ->findOrFail($this->cancelOrderId);
 
         try {
             \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
@@ -460,6 +480,8 @@ class Account extends Component
             session()->flash('order_message', 'Pesanan #' . $order->order_number . ' telah berhasil dibatalkan.');
         } catch (\Exception $e) {
             session()->flash('order_error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
+        } finally {
+            $this->closeCancelOrderModal();
         }
     }
 
