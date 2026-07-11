@@ -1,6 +1,9 @@
 @php
     $metaTitle = $page->meta_title ?: $page->title;
     $metaDescription = $page->meta_description ?: '';
+    
+    $refundTerms = \App\Models\SiteSetting::where('key', 'refund_terms')->value('value') ?? '';
+    $parsedContent = str_replace(['{refund}', '[refund]'], $refundTerms, $page->content);
 @endphp
 
 <x-layouts.app :title="$metaTitle" :description="$metaDescription">
@@ -18,7 +21,7 @@
     <!-- Page Content -->
     <section class="max-w-3xl mx-auto px-6">
         <div class="bg-white border border-[#e5e2de] p-8 md:p-12 shadow-sm text-[#1c1c1a] space-y-6 leading-relaxed prose prose-stone max-w-none">
-            {!! $page->content !!}
+            {!! $parsedContent !!}
         </div>
     </section>
 

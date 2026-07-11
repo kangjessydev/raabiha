@@ -36,9 +36,14 @@
                                         @break
                                     
                                     @case('text')
+                                        @php
+                                            $textRaw = $wData['content'] ?? '';
+                                            $refundTerms = \App\Models\SiteSetting::where('key', 'refund_terms')->value('value') ?? '';
+                                            $parsedText = str_replace(['{refund}', '[refund]'], $refundTerms, $textRaw);
+                                        @endphp
                                         <div class="flex w-full {{ str_replace('text-', 'justify-', str_replace('text-center', 'justify-center', str_replace('text-right', 'justify-end', str_replace('text-left', 'justify-start', str_replace('text-justify', 'justify-center', $wData['text_align'] ?? 'text-center'))))) }}">
                                             <div class="prose max-w-none {{ $wData['font_size'] ?? 'text-base' }} {{ $wData['text_align'] ?? 'text-left' }}" style="color: {{ $wData['text_color'] ?? '#615e57' }};">
-                                                {!! $wData['content'] ?? '' !!}
+                                                {!! $parsedText !!}
                                             </div>
                                         </div>
                                         @break
