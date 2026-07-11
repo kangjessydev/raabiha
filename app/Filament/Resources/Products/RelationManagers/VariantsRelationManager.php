@@ -18,173 +18,140 @@ class VariantsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema
-            ->schema(function () {
-                $attributes = \App\Models\Attribute::all();
-                
-                $attributeFields = [];
-                foreach ($attributes as $attribute) {
-                    $attributeFields[] = \Filament\Forms\Components\Select::make('attribute_' . $attribute->id)
-                        ->label($attribute->name)
-                        ->options(\App\Models\AttributeOption::where('attribute_id', $attribute->id)->pluck('value', 'id'))
-                        ->searchable()
-                        ->preload()
-                        ->nullable()
-                        ->dehydrated(false)
-                        ->afterStateHydrated(function ($component, $record) use ($attribute) {
-                            if ($record instanceof \App\Models\ProductVariant && $record->exists) {
-                                $selectedOptionId = $record->attributeOptions()
-                                    ->where('attribute_id', $attribute->id)
-                                    ->value('attribute_options.id');
-                                $component->state($selectedOptionId);
-                            }
-                        })
-                        ->createOptionForm([
-                            \Filament\Forms\Components\TextInput::make('value')
-                                ->label('Nilai Baru')
-                                ->required(),
-                            \Filament\Forms\Components\TextInput::make('meta')
-                                ->label('Meta/Kode Hex (Opsional)')
-                                ->placeholder('#000000'),
-                        ])
-                        ->createOptionUsing(function (array $data) use ($attribute) {
-                            $option = \App\Models\AttributeOption::create([
-                                'attribute_id' => $attribute->id,
-                                'value' => $data['value'],
-                                'slug' => \Illuminate\Support\Str::slug($data['value']),
-                                'meta' => $data['meta'] ?? null,
-                            ]);
-                            return $option->id;
-                        });
-                }
-
-                return [
-                    TextInput::make('name')
-                        ->label('Nama Varian')
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpan('full'),
-                    \Filament\Forms\Components\Section::make('Kaitan Atribut (Warna & Ukuran)')
-                        ->description(function ($record) {
-                            if (! $record instanceof \App\Models\ProductVariant || ! $record->exists) {
-                                return 'Belum ada atribut terpilih.';
-                            }
-                            $record->loadMissing('attributeOptions.attribute');
-                            if ($record->attributeOptions->isEmpty()) {
-                                return 'Belum ada atribut terpilih.';
-                            }
-                            return 'Terpilih: ' . $record->attributeOptions->map(fn($opt) => "{$opt->attribute->name}: {$opt->value}")->join(' | ');
-                        })
-                        ->collapsible()
-                        ->collapsed()
-                        ->columnSpan('full')
-                        ->schema($attributeFields)
-                        ->saveRelationshipsUsing(function ($record, $state) use ($attributes) {
-                            if ($record instanceof \App\Models\ProductVariant) {
-                                $optionIds = [];
-                                foreach ($attributes as $attribute) {
-                                    $fieldKey = 'attribute_' . $attribute->id;
-                                    if (!empty($state[$fieldKey])) {
-                                        $optionIds[] = $state[$fieldKey];
-                                    }
+            ->schema([
+                TextInput::make('name')
+                    ->label('Nama Varian')
+                    ->required()
+                    ->maxLength(255),
+                \Filament\Forms\Components\Select::make('attributeOptions')
+                    ->relationship('attributeOptions', 'value', fn ($query) => $query->with('attribute'))
+                    ->getOptionLabelFromRecordUsing(fn (\App\Models\AttributeOption $record) => "{$record->attribute->name}: {$record->value}")
+                    ->multiple()
+                    ->preload()
+                    ->required()
+                    ->label('Kaitan Opsi Atribut (Warna/Ukuran)')
+                    ->helperText('Pilih opsi atribut yang sesuai agar varian muncul di frontend.')
+                    ->createOptionForm([
+                        \Filament\Forms\Components\Select::make('attribute_id')
+                            ->label('Induk Atribut')
+                            ->options(fn () => \App\Models\Attribute::pluck('name', 'id'))
+                            ->required(),
+                        \Filament\Forms\Components\TextInput::make('value')
+                            ->label('Nilai (Misal: Petite, Navy, dll)')
+                            ->required()
+                            ->unique(
+                                table: 'attribute_options',
+                                modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) {
+                                    return $rule->where('attribute_id', $get('attribute_id'));
                                 }
-                                $record->attributeOptions()->sync($optionIds);
-                            }
-                        }),
-                    \Filament\Forms\Components\Select::make('media_id')
-                        ->label('Gambar Varian')
-                        ->columnSpan('full')
-                        ->options(function (\Filament\Resources\RelationManagers\RelationManager $livewire) {
-                            $product = $livewire->getOwnerRecord();
-                            if (empty($product->images) || !is_array($product->images)) return [];
-                            
-                            $mediaItems = \Awcodes\Curator\Models\Media::whereIn('id', $product->images)->get();
-                            $options = [];
-                            foreach ($mediaItems as $media) {
-                                $url = \Illuminate\Support\Facades\Storage::disk($media->disk)->url($media->path);
-                                $options[$media->id] = "<div class='flex items-center gap-3'><img src='{$url}' style='width: 32px; height: 32px; border-radius: 4px; object-fit: cover;' /> <span>{$media->name}</span></div>";
-                            }
-                            return $options;
-                        })
-                        ->allowHtml()
-                        ->searchable()
-                        ->preload()
-                        ->helperText('Pilihan gambar di atas otomatis diambil dari Galeri Produk (Induk). Pastikan Anda sudah mengupload gambar warna varian ini di Galeri Utama Produk.'),
-                    \Filament\Forms\Components\TextInput::make('sku')
-                        ->label('SKU Lanjutan (Varian)')
-                        ->prefix(fn ($livewire) => $livewire->getOwnerRecord()->sku ? $livewire->getOwnerRecord()->sku . '-' : '')
-                        ->formatStateUsing(function ($state, $livewire) {
+                            ),
+                        \Filament\Forms\Components\TextInput::make('meta')
+                            ->label('Meta/Kode Hex (Opsional)')
+                            ->placeholder('#000000')
+                            ->helperText('Isi dengan kode hex jika atribut berupa warna.'),
+                    ])
+                    ->createOptionUsing(function (array $data) {
+                        $option = \App\Models\AttributeOption::create([
+                            'attribute_id' => $data['attribute_id'],
+                            'value' => $data['value'],
+                            'slug' => \Illuminate\Support\Str::slug($data['value']),
+                            'meta' => $data['meta'] ?? null,
+                        ]);
+                        return $option->id;
+                    }),
+                \Filament\Forms\Components\Select::make('media_id')
+                    ->label('Gambar Varian')
+                    ->options(function (\Filament\Resources\RelationManagers\RelationManager $livewire) {
+                        $product = $livewire->getOwnerRecord();
+                        if (empty($product->images) || !is_array($product->images)) return [];
+                        
+                        $mediaItems = \Awcodes\Curator\Models\Media::whereIn('id', $product->images)->get();
+                        $options = [];
+                        foreach ($mediaItems as $media) {
+                            $url = \Illuminate\Support\Facades\Storage::disk($media->disk)->url($media->path);
+                            $options[$media->id] = "<div class='flex items-center gap-3'><img src='{$url}' style='width: 32px; height: 32px; border-radius: 4px; object-fit: cover;' /> <span>{$media->name}</span></div>";
+                        }
+                        return $options;
+                    })
+                    ->allowHtml()
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Pilihan gambar di atas otomatis diambil dari Galeri Produk (Induk). Pastikan Anda sudah mengupload gambar warna varian ini di Galeri Utama Produk.'),
+                \Filament\Forms\Components\TextInput::make('sku')
+                    ->label('SKU Lanjutan (Varian)')
+                    ->prefix(fn ($livewire) => $livewire->getOwnerRecord()->sku ? $livewire->getOwnerRecord()->sku . '-' : '')
+                    ->formatStateUsing(function ($state, $livewire) {
+                        $parentSku = $livewire->getOwnerRecord()->sku;
+                        if (!$parentSku || blank($state)) return $state;
+                        
+                        $prefix = $parentSku . '-';
+                        if (str_starts_with($state, $prefix)) {
+                            return substr($state, strlen($prefix));
+                        }
+                        return $state;
+                    })
+                    ->dehydrateStateUsing(function ($state, $livewire) {
+                        if (blank($state)) return null;
+                        $parentSku = $livewire->getOwnerRecord()->sku;
+                        if (!$parentSku) return $state;
+                        
+                        if (str_starts_with($state, $parentSku . '-')) {
+                            $state = substr($state, strlen($parentSku . '-'));
+                        } elseif (str_starts_with($state, $parentSku)) {
+                            $state = substr($state, strlen($parentSku));
+                        }
+                        
+                        if (str_starts_with($state, '-')) {
+                            $state = substr($state, 1);
+                        }
+                        
+                        return $parentSku . '-' . $state;
+                    })
+                    ->rule(function ($livewire, $record) {
+                        return function (string $attribute, $value, \Closure $fail) use ($livewire, $record) {
+                            if (blank($value)) return;
                             $parentSku = $livewire->getOwnerRecord()->sku;
-                            if (!$parentSku || blank($state)) return $state;
+                            $fullSku = $parentSku ? ($parentSku . '-' . $value) : $value;
                             
-                            $prefix = $parentSku . '-';
-                            if (str_starts_with($state, $prefix)) {
-                                return substr($state, strlen($prefix));
-                            }
-                            return $state;
-                        })
-                        ->dehydrateStateUsing(function ($state, $livewire) {
-                            if (blank($state)) return null;
-                            $parentSku = $livewire->getOwnerRecord()->sku;
-                            if (!$parentSku) return $state;
-                            
-                            if (str_starts_with($state, $parentSku . '-')) {
-                                $state = substr($state, strlen($parentSku . '-'));
-                            } elseif (str_starts_with($state, $parentSku)) {
-                                $state = substr($state, strlen($parentSku));
-                            }
-                            
-                            if (str_starts_with($state, '-')) {
-                                $state = substr($state, 1);
-                            }
-                            
-                            return $parentSku . '-' . $state;
-                        })
-                        ->rule(function ($livewire, $record) {
-                            return function (string $attribute, $value, \Closure $fail) use ($livewire, $record) {
-                                if (blank($value)) return;
-                                $parentSku = $livewire->getOwnerRecord()->sku;
-                                $fullSku = $parentSku ? ($parentSku . '-' . $value) : $value;
+                            $exists = \App\Models\ProductVariant::where('sku', $fullSku)
+                                ->when($record, fn($q) => $q->where('id', '!=', $record->id))
+                                ->exists();
                                 
-                                $exists = \App\Models\ProductVariant::where('sku', $fullSku)
-                                    ->when($record, fn($q) => $q->where('id', '!=', $record->id))
-                                    ->exists();
-                                    
-                                if ($exists) {
-                                    $fail('SKU Varian ini sudah digunakan.');
-                                }
-                            };
-                        })
-                        ->maxLength(255),
-                    TextInput::make('stock')
-                        ->label('Stok')
-                        ->numeric()
-                        ->required(),
-                    TextInput::make('minimum_stock')
-                        ->label('Stok Minimum Peringatan')
-                        ->numeric()
-                        ->placeholder('Batas stok minimum varian (Default: 5)'),
-                    TextInput::make('price')
-                        ->label('Harga Jual (Normal)')
-                        ->numeric()
-                        ->prefix('Rp')
-                        ->placeholder('Mengikuti produk induk jika kosong'),
-                    TextInput::make('discount_price')
-                        ->label('Harga Promo (Diskon)')
-                        ->numeric()
-                        ->prefix('Rp')
-                        ->helperText('Hanya berlaku untuk varian ini. Jika dikosongkan, varian ini tidak menggunakan harga promo.'),
-                    TextInput::make('purchase_price')
-                        ->label('Harga Modal (HPP)')
-                        ->numeric()
-                        ->prefix('Rp')
-                        ->placeholder('Mengikuti produk induk jika kosong'),
-                    TextInput::make('reseller_price')
-                        ->label('Harga Reseller Khusus')
-                        ->numeric()
-                        ->prefix('Rp')
-                        ->placeholder('Mengikuti produk induk jika kosong'),
-                ];
-            });
+                            if ($exists) {
+                                $fail('SKU Varian ini sudah digunakan.');
+                            }
+                        };
+                    })
+                    ->maxLength(255),
+                TextInput::make('stock')
+                    ->label('Stok')
+                    ->numeric()
+                    ->required(),
+                TextInput::make('minimum_stock')
+                    ->label('Stok Minimum Peringatan')
+                    ->numeric()
+                    ->placeholder('Batas stok minimum varian (Default: 5)'),
+                TextInput::make('price')
+                    ->label('Harga Jual (Normal)')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->placeholder('Mengikuti produk induk jika kosong'),
+                TextInput::make('discount_price')
+                    ->label('Harga Promo (Diskon)')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->helperText('Hanya berlaku untuk varian ini. Jika dikosongkan, varian ini tidak menggunakan harga promo.'),
+                TextInput::make('purchase_price')
+                    ->label('Harga Modal (HPP)')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->placeholder('Mengikuti produk induk jika kosong'),
+                TextInput::make('reseller_price')
+                    ->label('Harga Reseller Khusus')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->placeholder('Mengikuti produk induk jika kosong'),
+            ]);
     }
 
     public function table(Table $table): Table
