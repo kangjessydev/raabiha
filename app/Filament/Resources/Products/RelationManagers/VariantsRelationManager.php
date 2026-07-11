@@ -22,9 +22,11 @@ class VariantsRelationManager extends RelationManager
                 TextInput::make('name')
                     ->label('Nama Varian')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->columnSpan('full'),
                 \Filament\Forms\Components\Repeater::make('variantAttributes')
                     ->label('Kaitan Atribut (Warna & Ukuran)')
+                    ->columnSpan('full')
                     ->helperText('Pilih induk atribut terlebih dahulu (misal: Ukuran), kemudian pilih opsi nilainya (misal: L).')
                     ->schema([
                         \Filament\Forms\Components\Select::make('attribute_id')
@@ -86,6 +88,7 @@ class VariantsRelationManager extends RelationManager
                     }),
                 \Filament\Forms\Components\Select::make('media_id')
                     ->label('Gambar Varian')
+                    ->columnSpan('full')
                     ->options(function (\Filament\Resources\RelationManagers\RelationManager $livewire) {
                         $product = $livewire->getOwnerRecord();
                         if (empty($product->images) || !is_array($product->images)) return [];
