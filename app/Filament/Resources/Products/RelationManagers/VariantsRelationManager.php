@@ -24,13 +24,54 @@ class VariantsRelationManager extends RelationManager
                     ->required()
                     ->maxLength(255),
                 \Filament\Forms\Components\Select::make('attributeOptions')
-                    ->relationship('attributeOptions', 'value', fn ($query) => $query->with('attribute'))
-                    ->getOptionLabelFromRecordUsing(fn (\App\Models\AttributeOption $record) => "{$record->attribute->name}: {$record->value}")
+                    ->relationship('attributeOptions', 'value')
                     ->multiple()
-                    ->preload()
+                    ->searchable()
                     ->required()
                     ->label('Kaitan Opsi Atribut (Warna/Ukuran)')
                     ->helperText('Pilih opsi atribut yang sesuai agar varian muncul di frontend.')
+                    ->getSearchResultsUsing(function (string $search) {
+                        $query = \App\Models\AttributeOption::query()
+                            ->join('attributes', 'attribute_options.attribute_id', '=', 'attributes.id')
+                            ->select('attribute_options.*', 'attributes.name as attribute_name');
+
+                        if (!empty($search)) {
+                            $keywords = array_filter(explode(' ', $search));
+                            foreach ($keywords as $keyword) {
+                                $query->where(function ($q) use ($keyword) {
+                                    $q->where('attribute_options.value', 'like', "%{$keyword}%")
+                                      ->orWhere('attributes.name', 'like', "%{$keyword}%");
+                                });
+                            }
+
+                            // Sort: exact value match first, then prefix match, then others
+                            $query->orderByRaw("CASE 
+                                WHEN attribute_options.value = ? THEN 1
+                                WHEN attribute_options.value LIKE ? THEN 2
+                                ELSE 3
+                            END ASC", [$search, "{$search}%"]);
+                        }
+
+                        $query->orderBy('attributes.name', 'asc')
+                              ->orderBy('attribute_options.value', 'asc');
+
+                        $results = $query->limit(150)->get();
+
+                        $formatted = [];
+                        foreach ($results as $opt) {
+                            $formatted[$opt->id] = "{$opt->attribute_name}: {$opt->value}";
+                        }
+
+                        return $formatted;
+                    })
+                    ->getOptionLabelsUsing(function (array $values) {
+                        return \App\Models\AttributeOption::query()
+                            ->with('attribute')
+                            ->whereIn('id', $values)
+                            ->get()
+                            ->mapWithKeys(fn ($opt) => [$opt->id => "{$opt->attribute->name}: {$opt->value}"])
+                            ->toArray();
+                    })
                     ->createOptionForm([
                         \Filament\Forms\Components\Select::make('attribute_id')
                             ->label('Induk Atribut')
