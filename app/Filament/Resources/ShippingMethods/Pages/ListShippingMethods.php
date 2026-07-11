@@ -164,6 +164,7 @@ class ListShippingMethods extends ListRecords
                             ->label('Metode Pembulatan Berat')
                             ->options([
                                 'ceiling' => 'Pembulatan Murni Ke Atas (Ceiling)',
+                                'half_kg' => 'Pembulatan Ke Atas Tiap 500 Gram (Kelipatan 0.5 Kg)',
                                 'tolerance' => 'Menggunakan Batas Toleransi Ekspedisi',
                             ])
                             ->live()
@@ -210,7 +211,10 @@ class ListShippingMethods extends ListRecords
                                     // 2. Ceiling rounding calculation
                                     $ceilingWeight = max(1000, (int) ceil($testWeight / 1000) * 1000);
                                     
-                                    // 3. Tolerance calculation
+                                    // 3. Half Kg calculation
+                                    $halfKgWeight = max(1000, (int) ceil($testWeight / 500) * 500);
+                                    
+                                    // 4. Tolerance calculation
                                     $kg = floor($testWeight / 1000);
                                     $remainder = $testWeight % 1000;
                                     if ($remainder > $tolerance) {
@@ -227,6 +231,10 @@ class ListShippingMethods extends ListRecords
                                         $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Pembulatan Murni Ke Atas</div>";
                                         $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($ceilingWeight) . " gram (" . ($ceilingWeight / 1000) . " kg)</strong></div>";
                                         $html .= "<div class='text-gray-500 text-xs mt-1'>Mencegah selisih ongkir akibat berat dus/bubble wrap.</div>";
+                                    } elseif ($method === 'half_kg') {
+                                        $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Pembulatan Ke Atas Tiap 500 Gram (Kelipatan 0.5 Kg)</div>";
+                                        $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($halfKgWeight) . " gram (" . ($halfKgWeight / 1000) . " kg)</strong></div>";
+                                        $html .= "<div class='text-gray-500 text-xs mt-1'>Membulatkan berat ke kelipatan 0.5 kg terdekat (min 1 kg).</div>";
                                     } else {
                                         $html .= "<div class='text-green-600 font-bold'>✓ Metode Terpilih: Batas Toleransi ({$tolerance} gram)</div>";
                                         $html .= "<div>Berat Akhir yang Digunakan: <strong>" . number_format($toleranceWeight) . " gram (" . ($toleranceWeight / 1000) . " kg)</strong></div>";
@@ -235,6 +243,7 @@ class ListShippingMethods extends ListRecords
                                     
                                     $html .= "</div><div class='border-t pt-2 mt-2 space-y-1 text-xs text-gray-500'>";
                                     $html .= "<div>• Bandingkan - Pembulatan Murni: " . ($ceilingWeight / 1000) . " kg</div>";
+                                    $html .= "<div>• Bandingkan - Kelipatan 0.5 kg (500g): " . ($halfKgWeight / 1000) . " kg</div>";
                                     $html .= "<div>• Bandingkan - Toleransi ({$tolerance}g): " . ($toleranceWeight / 1000) . " kg</div>";
                                     $html .= "</div></div>";
                                     

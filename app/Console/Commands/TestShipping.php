@@ -72,6 +72,8 @@ class TestShipping extends Command
                 $testWeight = $weight;
                 if ($roundingMethod === 'ceiling') {
                     $roundedWeight = max(1000, (int) ceil($testWeight / 1000) * 1000);
+                } elseif ($roundingMethod === 'half_kg') {
+                    $roundedWeight = max(1000, (int) ceil($testWeight / 500) * 500);
                 } else {
                     $kg = floor($testWeight / 1000);
                     $remainder = $testWeight % 1000;

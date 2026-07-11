@@ -393,6 +393,8 @@ class Checkout extends Component
         
         if ($roundingMethod === 'ceiling') {
             $totalWeight = max(1000, (int) ceil($totalWeight / 1000) * 1000);
+        } elseif ($roundingMethod === 'half_kg') {
+            $totalWeight = max(1000, (int) ceil($totalWeight / 500) * 500);
         } else {
             $kg = floor($totalWeight / 1000);
             $remainder = $totalWeight % 1000;
