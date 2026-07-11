@@ -1061,8 +1061,17 @@
                     </div>
 
                     <div class="pt-6 mt-6 flex flex-col sm:flex-row justify-end gap-3 border-t border-[#e5e2de]">
-                        <button type="button" wire:click="closeCancelOrderModal" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#e5e2de] px-6 py-3 hover:bg-[#fcf9f5] transition-colors w-full sm:w-auto text-center order-2 sm:order-1">Kembali</button>
-                        <button type="button" wire:click="cancelOrder" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-red-600 px-6 py-3 hover:bg-red-700 transition-colors w-full sm:w-auto text-center order-1 sm:order-2">Ya, Batalkan</button>
+                        <button type="button" wire:click="closeCancelOrderModal" wire:loading.attr="disabled" wire:target="cancelOrder" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-[#615e57] border border-[#e5e2de] px-6 py-3 hover:bg-[#fcf9f5] transition-colors w-full sm:w-auto text-center order-2 sm:order-1 disabled:opacity-50 disabled:cursor-not-allowed">Kembali</button>
+                        <button type="button" wire:click="cancelOrder" wire:loading.attr="disabled" wire:target="cancelOrder" class="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-white bg-red-600 px-6 py-3 hover:bg-red-700 transition-colors w-full sm:w-auto text-center order-1 sm:order-2 flex justify-center items-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed min-w-[120px]">
+                            <span wire:loading.remove wire:target="cancelOrder">Ya, Batalkan</span>
+                            <span wire:loading wire:target="cancelOrder" class="flex items-center gap-2">
+                                <svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Memproses...
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>
