@@ -68,11 +68,6 @@ class VariantsRelationManager extends RelationManager
                                 return $option->id;
                             })
                     ])
-                    ->columns(2)
-                    ->grid([
-                        'default' => 1,
-                        'md' => 2,
-                    ])
                     ->defaultItems(1)
                     ->afterStateHydrated(function ($component, $state, $record) {
                         if ($record) {
