@@ -17,50 +17,81 @@ class VariantsRelationManager extends RelationManager
 
     public function form(Schema $schema): Schema
     {
+        $attributes = \App\Models\Attribute::all();
+        
+        $attributeFields = [];
+        foreach ($attributes as $attribute) {
+            $attributeFields[] = \Filament\Forms\Components\Select::make('attribute_' . $attribute->id)
+                ->label($attribute->name)
+                ->options(\App\Models\AttributeOption::where('attribute_id', $attribute->id)->pluck('value', 'id'))
+                ->searchable()
+                ->preload()
+                ->nullable()
+                ->dehydrated(false)
+                ->afterStateHydrated(function ($component, $record) use ($attribute) {
+                    if ($record instanceof \App\Models\ProductVariant && $record->exists) {
+                        $selectedOptionId = $record->attributeOptions()
+                            ->where('attribute_id', $attribute->id)
+                            ->value('attribute_options.id');
+                        $component->state($selectedOptionId);
+                    }
+                })
+                ->createOptionForm([
+                    \Filament\Forms\Components\TextInput::make('value')
+                        ->label('Nilai Baru')
+                        ->required(),
+                    \Filament\Forms\Components\TextInput::make('meta')
+                        ->label('Meta/Kode Hex (Opsional)')
+                        ->placeholder('#000000'),
+                ])
+                ->createOptionUsing(function (array $data) use ($attribute) {
+                    $option = \App\Models\AttributeOption::create([
+                        'attribute_id' => $attribute->id,
+                        'value' => $data['value'],
+                        'slug' => \Illuminate\Support\Str::slug($data['value']),
+                        'meta' => $data['meta'] ?? null,
+                    ]);
+                    return $option->id;
+                });
+        }
+
         return $schema
             ->schema([
                 TextInput::make('name')
                     ->label('Nama Varian')
                     ->required()
-                    ->maxLength(255),
-                \Filament\Forms\Components\Select::make('attributeOptions')
-                    ->relationship('attributeOptions', 'value', fn ($query) => $query->with('attribute'))
-                    ->getOptionLabelFromRecordUsing(fn (\App\Models\AttributeOption $record) => "{$record->attribute->name}: {$record->value}")
-                    ->multiple()
-                    ->preload()
-                    ->required()
-                    ->label('Kaitan Opsi Atribut (Warna/Ukuran)')
-                    ->helperText('Pilih opsi atribut yang sesuai agar varian muncul di frontend.')
-                    ->createOptionForm([
-                        \Filament\Forms\Components\Select::make('attribute_id')
-                            ->label('Induk Atribut')
-                            ->options(fn () => \App\Models\Attribute::pluck('name', 'id'))
-                            ->required(),
-                        \Filament\Forms\Components\TextInput::make('value')
-                            ->label('Nilai (Misal: Petite, Navy, dll)')
-                            ->required()
-                            ->unique(
-                                table: 'attribute_options',
-                                modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) {
-                                    return $rule->where('attribute_id', $get('attribute_id'));
+                    ->maxLength(255)
+                    ->columnSpan('full'),
+                \Filament\Forms\Components\Section::make('Kaitan Atribut (Warna & Ukuran)')
+                    ->description(function ($record) {
+                        if (! $record instanceof \App\Models\ProductVariant || ! $record->exists) {
+                            return 'Belum ada atribut terpilih.';
+                        }
+                        $record->loadMissing('attributeOptions.attribute');
+                        if ($record->attributeOptions->isEmpty()) {
+                            return 'Belum ada atribut terpilih.';
+                        }
+                        return 'Terpilih: ' . $record->attributeOptions->map(fn($opt) => "{$opt->attribute->name}: {$opt->value}")->join(' | ');
+                    })
+                    ->collapsible()
+                    ->collapsed()
+                    ->columnSpan('full')
+                    ->schema($attributeFields)
+                    ->saveRelationshipsUsing(function ($record, $state) use ($attributes) {
+                        if ($record instanceof \App\Models\ProductVariant) {
+                            $optionIds = [];
+                            foreach ($attributes as $attribute) {
+                                $fieldKey = 'attribute_' . $attribute->id;
+                                if (!empty($state[$fieldKey])) {
+                                    $optionIds[] = $state[$fieldKey];
                                 }
-                            ),
-                        \Filament\Forms\Components\TextInput::make('meta')
-                            ->label('Meta/Kode Hex (Opsional)')
-                            ->placeholder('#000000')
-                            ->helperText('Isi dengan kode hex jika atribut berupa warna.'),
-                    ])
-                    ->createOptionUsing(function (array $data) {
-                        $option = \App\Models\AttributeOption::create([
-                            'attribute_id' => $data['attribute_id'],
-                            'value' => $data['value'],
-                            'slug' => \Illuminate\Support\Str::slug($data['value']),
-                            'meta' => $data['meta'] ?? null,
-                        ]);
-                        return $option->id;
+                            }
+                            $record->attributeOptions()->sync($optionIds);
+                        }
                     }),
                 \Filament\Forms\Components\Select::make('media_id')
                     ->label('Gambar Varian')
+                    ->columnSpan('full')
                     ->options(function (\Filament\Resources\RelationManagers\RelationManager $livewire) {
                         $product = $livewire->getOwnerRecord();
                         if (empty($product->images) || !is_array($product->images)) return [];
