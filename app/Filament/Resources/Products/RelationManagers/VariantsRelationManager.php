@@ -26,7 +26,7 @@ class VariantsRelationManager extends RelationManager
                     ->columnSpan('full'),
                 \Filament\Forms\Components\Section::make('Kaitan Atribut (Warna & Ukuran)')
                     ->description(function ($record) {
-                        if (!$record) {
+                        if (! $record instanceof \App\Models\ProductVariant || ! $record->exists) {
                             return 'Belum ada atribut terpilih.';
                         }
                         $record->loadMissing('attributeOptions.attribute');
@@ -86,7 +86,7 @@ class VariantsRelationManager extends RelationManager
                             ])
                             ->defaultItems(1)
                             ->afterStateHydrated(function ($component, $state, $record) {
-                                if ($record) {
+                                if ($record instanceof \App\Models\ProductVariant && $record->exists) {
                                     $data = $record->attributeOptions->map(function ($opt) {
                                         return [
                                             'attribute_id' => $opt->attribute_id,
@@ -97,8 +97,10 @@ class VariantsRelationManager extends RelationManager
                                 }
                             })
                             ->saveRelationshipsUsing(function ($record, $state) {
-                                $optionIds = collect($state)->pluck('attribute_option_id')->filter()->toArray();
-                                $record->attributeOptions()->sync($optionIds);
+                                if ($record instanceof \App\Models\ProductVariant) {
+                                    $optionIds = collect($state)->pluck('attribute_option_id')->filter()->toArray();
+                                    $record->attributeOptions()->sync($optionIds);
+                                }
                             }),
                     ]),
                 \Filament\Forms\Components\Select::make('media_id')
