@@ -600,12 +600,12 @@
                         <!-- Promo Code -->
                         <div class="mb-6 lg:mb-10 py-4 lg:py-0">
                             @if(!empty($appliedVouchers))
-                            <button type="button" @click="bsVoucherOpen = true" class="w-full border py-3.5 px-4 flex justify-between items-center text-left transition-colors bg-[#f0ede9] border-[#064e3b] hover:bg-[#e8e4de] text-[#064e3b]">
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-[#064e3b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
-                                    <span class="font-sans text-[12px] font-bold uppercase tracking-wider text-[#064e3b]">{{ count($appliedVouchers) }} Voucher Diterapkan</span>
-                                </div>
-                                <span class="font-sans text-[11px] font-bold underline flex items-center gap-1">
+                            <button type="button" @click="bsVoucherOpen = true" class="w-full border py-3.5 px-4 flex justify-between items-center text-left transition-colors bg-[#f0ede9] border-[#1c1c1a] hover:bg-[#e2ded9] text-[#1c1c1a]">
+                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+                                    {{ count($appliedVouchers) }} VOUCHER TERPASANG
+                                </span>
+                                <span class="font-mono text-[10px] uppercase tracking-[0.1em] font-bold flex items-center gap-1">
                                     LIHAT / GANTI
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                                 </span>
