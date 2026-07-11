@@ -10,6 +10,14 @@ class ListPaymentMethods extends ListRecords
 {
     protected static string $resource = PaymentMethodResource::class;
 
+    public function getSubheading(): ?string
+    {
+        $activeGateway = \App\Models\SiteSetting::where('key', 'active_payment_gateway')->value('value') ?: 'tripay';
+        $gatewayName = ucfirst($activeGateway);
+
+        return "PENTING: Harap pastikan metode pembayaran yang Anda AKTIFKAN di bawah ini statusnya sudah \"Active / Approved\" di Dashboard {$gatewayName} Anda. Beberapa channel (seperti BCA Virtual Account, retail Alfamart/Indomaret, dll.) memerlukan pendaftaran manual dan verifikasi dokumen terlebih dahulu oleh pihak {$gatewayName} sebelum dapat digunakan untuk menerima transaksi nyata.";
+    }
+
     protected function getHeaderActions(): array
     {
         $activeGateway = \App\Models\SiteSetting::where('key', 'active_payment_gateway')->value('value') ?: 'tripay';
