@@ -489,7 +489,7 @@ class Checkout extends Component
             }
 
             foreach ($courierBestRules as $cCode => $bestRule) {
-                $price = $bestRule['price'];
+                $price = (int) (ceil($bestRule['price'] / 100) * 100);
                 $serviceName = $bestRule['name'];
                 
                 $courierModel = $activeCouriers->firstWhere('code', $cCode) ?? $activeCouriers->firstWhere('name', $cCode);
@@ -595,6 +595,7 @@ class Checkout extends Component
                              // Convert BinderByte cost format (divided by 1000 if raw price >= 1000000)
                              $rawPrice = (int)($cost['price'] ?? 0);
                              $price = $rawPrice >= 1000000 ? $rawPrice / 1000 : $rawPrice;
+                             $price = (int) (ceil($price / 100) * 100);
                              $etd = $cost['estimated'] ?? '';
 
                             $discountedPrice = $price;
@@ -713,7 +714,7 @@ class Checkout extends Component
                                 continue;
                             }
                             
-                            $price = $cost['cost'] ?? 0;
+                            $price = (int) (ceil(($cost['cost'] ?? 0) / 100) * 100);
                             $etd = $cost['etd'] ?? '';
 
                             $discountedPrice = $price;
