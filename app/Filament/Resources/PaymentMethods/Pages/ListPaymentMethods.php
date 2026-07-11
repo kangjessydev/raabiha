@@ -126,7 +126,7 @@ class ListPaymentMethods extends ListRecords
                             'name' => $ch['name'],
                             'description' => 'Grup: ' . $ch['group'],
                             'logo' => null, // Kita kosongkan dulu agar tidak error CORS, user bisa ubah sendiri
-                            'is_active' => true,
+                            'is_active' => false,
                             'config' => [
                                 'availability' => 'both',
                                 'group' => $ch['group'],
@@ -138,7 +138,7 @@ class ListPaymentMethods extends ListRecords
                     
                     \Filament\Notifications\Notification::make()
                         ->title('Berhasil menyiapkan jalur Xendit')
-                        ->body('Channel Pembayaran Xendit telah ditambahkan dan diaktifkan.')
+                        ->body('Channel Pembayaran Xendit telah ditambahkan. Silakan aktifkan channel yang sesuai dengan Dashboard Xendit Anda.')
                         ->success()
                         ->send();
                 });
