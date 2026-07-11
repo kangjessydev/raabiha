@@ -22,91 +22,45 @@ class VariantsRelationManager extends RelationManager
                 TextInput::make('name')
                     ->label('Nama Varian')
                     ->required()
-                    ->maxLength(255)
-                    ->columnSpan('full'),
-                \Filament\Forms\Components\Section::make('Kaitan Atribut (Warna & Ukuran)')
-                    ->description(function ($record) {
-                        if (! $record instanceof \App\Models\ProductVariant || ! $record->exists) {
-                            return 'Belum ada atribut terpilih.';
-                        }
-                        $record->loadMissing('attributeOptions.attribute');
-                        if ($record->attributeOptions->isEmpty()) {
-                            return 'Belum ada atribut terpilih.';
-                        }
-                        return 'Terpilih: ' . $record->attributeOptions->map(fn($opt) => "{$opt->attribute->name}: {$opt->value}")->join(' | ');
-                    })
-                    ->collapsible()
-                    ->collapsed()
-                    ->columnSpan('full')
-                    ->schema([
-                        \Filament\Forms\Components\Repeater::make('variantAttributes')
-                            ->label('')
-                            ->dehydrated(false)
-                            ->helperText('Pilih induk atribut terlebih dahulu (misal: Ukuran), kemudian pilih opsi nilainya (misal: L).')
-                            ->schema([
-                                \Filament\Forms\Components\Select::make('attribute_id')
-                                    ->label('Atribut')
-                                    ->options(fn () => \App\Models\Attribute::pluck('name', 'id'))
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(fn (callable $set) => $set('attribute_option_id', null)),
-                                \Filament\Forms\Components\Select::make('attribute_option_id')
-                                    ->label('Opsi Atribut')
-                                    ->options(function (callable $get) {
-                                        $attributeId = $get('attribute_id');
-                                        if (!$attributeId) {
-                                            return [];
-                                        }
-                                        return \App\Models\AttributeOption::where('attribute_id', $attributeId)->pluck('value', 'id');
-                                    })
-                                    ->required()
-                                    ->searchable()
-                                    ->preload()
-                                    ->createOptionForm([
-                                        \Filament\Forms\Components\TextInput::make('value')
-                                            ->label('Nilai (Misal: Petite, Navy, dll)')
-                                            ->required(),
-                                        \Filament\Forms\Components\TextInput::make('meta')
-                                            ->label('Meta/Kode Hex (Opsional)')
-                                            ->placeholder('#000000')
-                                            ->helperText('Isi dengan kode hex jika atribut berupa warna.'),
-                                    ])
-                                    ->createOptionUsing(function (array $data, callable $get) {
-                                        $attributeId = $get('attribute_id');
-                                        if (!$attributeId) {
-                                            throw new \Exception('Silakan pilih induk atribut terlebih dahulu.');
-                                        }
-                                        $option = \App\Models\AttributeOption::create([
-                                            'attribute_id' => $attributeId,
-                                            'value' => $data['value'],
-                                            'slug' => \Illuminate\Support\Str::slug($data['value']),
-                                            'meta' => $data['meta'] ?? null,
-                                        ]);
-                                        return $option->id;
-                                    })
-                            ])
-                            ->defaultItems(1)
-                            ->afterStateHydrated(function ($component, $state, $record) {
-                                if ($record instanceof \App\Models\ProductVariant && $record->exists) {
-                                    $data = $record->attributeOptions->map(function ($opt) {
-                                        return [
-                                            'attribute_id' => $opt->attribute_id,
-                                            'attribute_option_id' => $opt->id,
-                                        ];
-                                    })->toArray();
-                                    $component->state($data);
+                    ->maxLength(255),
+                \Filament\Forms\Components\Select::make('attributeOptions')
+                    ->relationship('attributeOptions', 'value', fn ($query) => $query->with('attribute'))
+                    ->getOptionLabelFromRecordUsing(fn (\App\Models\AttributeOption $record) => "{$record->attribute->name}: {$record->value}")
+                    ->multiple()
+                    ->preload()
+                    ->required()
+                    ->label('Kaitan Opsi Atribut (Warna/Ukuran)')
+                    ->helperText('Pilih opsi atribut yang sesuai agar varian muncul di frontend.')
+                    ->createOptionForm([
+                        \Filament\Forms\Components\Select::make('attribute_id')
+                            ->label('Induk Atribut')
+                            ->options(fn () => \App\Models\Attribute::pluck('name', 'id'))
+                            ->required(),
+                        \Filament\Forms\Components\TextInput::make('value')
+                            ->label('Nilai (Misal: Petite, Navy, dll)')
+                            ->required()
+                            ->unique(
+                                table: 'attribute_options',
+                                modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule, \Filament\Schemas\Components\Utilities\Get $get) {
+                                    return $rule->where('attribute_id', $get('attribute_id'));
                                 }
-                            })
-                            ->saveRelationshipsUsing(function ($record, $state) {
-                                if ($record instanceof \App\Models\ProductVariant) {
-                                    $optionIds = collect($state)->pluck('attribute_option_id')->filter()->toArray();
-                                    $record->attributeOptions()->sync($optionIds);
-                                }
-                            }),
-                    ]),
+                            ),
+                        \Filament\Forms\Components\TextInput::make('meta')
+                            ->label('Meta/Kode Hex (Opsional)')
+                            ->placeholder('#000000')
+                            ->helperText('Isi dengan kode hex jika atribut berupa warna.'),
+                    ])
+                    ->createOptionUsing(function (array $data) {
+                        $option = \App\Models\AttributeOption::create([
+                            'attribute_id' => $data['attribute_id'],
+                            'value' => $data['value'],
+                            'slug' => \Illuminate\Support\Str::slug($data['value']),
+                            'meta' => $data['meta'] ?? null,
+                        ]);
+                        return $option->id;
+                    }),
                 \Filament\Forms\Components\Select::make('media_id')
                     ->label('Gambar Varian')
-                    ->columnSpan('full')
                     ->options(function (\Filament\Resources\RelationManagers\RelationManager $livewire) {
                         $product = $livewire->getOwnerRecord();
                         if (empty($product->images) || !is_array($product->images)) return [];
