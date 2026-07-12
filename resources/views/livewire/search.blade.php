@@ -34,7 +34,9 @@
                             @foreach ($products as $index => $product)
                                 <a href="{{ url('/product/' . $product->slug) }}" class="group block">
                                     <div class="aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
-                                        @if ($product->promo_rules)
+                                        @if($product->price_range && $product->price_range['has_discount'] && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                            <div class="absolute top-3 right-3 bg-[#1a1a1a] text-white text-[9px] px-2 py-1 uppercase tracking-widest z-10">Sale</div>
+                                        @elseif ($product->promo_rules)
                                             <div class="absolute top-3 right-3 bg-[#1a1a1a] text-white text-[9px] px-2 py-1 uppercase tracking-widest z-10">Sale</div>
                                         @endif
                                         @if($product->images && count($product->images) > 0)
@@ -51,7 +53,32 @@
                                         @endif
                                     </div>
                                     <h3 class="text-[11px] font-semibold tracking-[0.1em] uppercase mb-1">{{ $product->name }}</h3>
-                                    <div class="text-[13px] text-[#525252]">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</div>
+                                    <div class="text-[13px] text-[#525252] flex items-baseline gap-2 flex-wrap">
+                                        @if($product->price_range)
+                                            @if($product->price_range['has_discount'])
+                                                <span class="font-bold text-[#064e3b]">
+                                                    Rp{{ number_format($product->price_range['min_price'], 0, ',', '.') }}
+                                                    @if($product->price_range['has_range']) - Rp{{ number_format($product->price_range['max_price'], 0, ',', '.') }} @endif
+                                                </span>
+                                                <span class="text-[11px] text-[#b0aca6] line-through">
+                                                    Rp{{ number_format($product->price_range['min_original'], 0, ',', '.') }}
+                                                    @if($product->price_range['has_original_range']) - Rp{{ number_format($product->price_range['max_original'], 0, ',', '.') }} @endif
+                                                </span>
+                                            @else
+                                                <span>
+                                                    Rp{{ number_format($product->price_range['min_price'], 0, ',', '.') }}
+                                                    @if($product->price_range['has_range']) - Rp{{ number_format($product->price_range['max_price'], 0, ',', '.') }} @endif
+                                                </span>
+                                            @endif
+                                        @else
+                                            @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                                <span class="font-bold text-[#064e3b]">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</span>
+                                                <span class="text-[11px] text-[#b0aca6] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
+                                            @else
+                                                <span>Rp{{ number_format($product->effective_price, 0, ',', '.') }}</span>
+                                            @endif
+                                        @endif
+                                    </div>
                                 </a>
                             @endforeach
                         </div>

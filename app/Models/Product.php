@@ -88,6 +88,36 @@ class Product extends Model
         return $price;
     }
 
+    public function getPriceRangeAttribute()
+    {
+        if (!$this->has_variants) {
+            return null;
+        }
+
+        $activeVariants = $this->variants->where('is_active', true);
+        if ($activeVariants->isEmpty()) {
+            return null;
+        }
+
+        $minPrice = $activeVariants->min('effective_price');
+        $maxPrice = $activeVariants->max('effective_price');
+        $minOriginal = $activeVariants->min('price');
+        $maxOriginal = $activeVariants->max('price');
+
+        $isReseller = auth()->check() && auth()->user()->hasRole('reseller');
+        $hasDiscount = !$isReseller && ($minPrice < $minOriginal || $maxPrice < $maxOriginal);
+
+        return [
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+            'min_original' => $minOriginal,
+            'max_original' => $maxOriginal,
+            'has_range' => $minPrice != $maxPrice,
+            'has_original_range' => $minOriginal != $maxOriginal,
+            'has_discount' => $hasDiscount,
+        ];
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(ProductReview::class);

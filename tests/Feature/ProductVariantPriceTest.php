@@ -55,17 +55,17 @@ class ProductVariantPriceTest extends TestCase
             'discount_price' => null,
         ]);
 
-        // Assert fallback to parent prices (except discount_price)
+        // Assert fallback to parent prices (including discount_price)
         $this->assertEquals(100000, $variant->price);
         $this->assertEquals(70000, $variant->purchase_price);
         $this->assertEquals(85000, $variant->reseller_price);
-        $this->assertNull($variant->discount_price); // Does NOT inherit discount_price!
+        $this->assertEquals(90000, $variant->discount_price); // Now inherits discount_price!
 
-        // Selling price should be variant's price (which fell back to 100,000), NOT the parent's promo price
-        $this->assertEquals(100000, $variant->selling_price);
+        // Selling price should be variant's promo price (which fell back to 90,000)
+        $this->assertEquals(90000, $variant->selling_price);
 
-        // Under guest/normal user, effective price should be the selling price (100,000)
-        $this->assertEquals(100000, $variant->effective_price);
+        // Under guest/normal user, effective price should be the selling price (90,000)
+        $this->assertEquals(90000, $variant->effective_price);
 
         // is_price_override should be false since prices are empty
         $this->assertFalse($variant->is_price_override);

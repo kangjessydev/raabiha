@@ -159,6 +159,42 @@ class ProductDetail extends Component
     }
 
     #[Computed]
+    public function priceRange()
+    {
+        if (!$this->product->has_variants) {
+            return null;
+        }
+
+        $variant = $this->getMatchedVariant();
+        if ($variant) {
+            return null;
+        }
+
+        $activeVariants = $this->product->variants->where('is_active', true);
+        if ($activeVariants->isEmpty()) {
+            return null;
+        }
+
+        $minPrice = $activeVariants->min('effective_price') * $this->quantity;
+        $maxPrice = $activeVariants->max('effective_price') * $this->quantity;
+        $minOriginal = $activeVariants->min('price') * $this->quantity;
+        $maxOriginal = $activeVariants->max('price') * $this->quantity;
+
+        $isReseller = auth()->check() && auth()->user()->hasRole('reseller');
+        $hasDiscount = !$isReseller && ($minPrice < $minOriginal || $maxPrice < $maxOriginal);
+
+        return [
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+            'min_original' => $minOriginal,
+            'max_original' => $maxOriginal,
+            'has_range' => $minPrice != $maxPrice,
+            'has_original_range' => $minOriginal != $maxOriginal,
+            'has_discount' => $hasDiscount,
+        ];
+    }
+
+    #[Computed]
     public function canReview()
     {
         if (!auth()->check()) return false;

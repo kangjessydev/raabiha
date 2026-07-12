@@ -93,7 +93,10 @@ class ProductVariant extends Model
 
     public function getDiscountPriceAttribute($value)
     {
-        return ($value !== null && $value > 0) ? $value : null;
+        if ($value !== null && $value > 0) {
+            return $value;
+        }
+        return $this->product ? $this->product->discount_price : null;
     }
 
     public function getSellingPriceAttribute()

@@ -306,11 +306,29 @@
                         
                         <!-- Price -->
                         <div id="main-product-price" class="text-[#615e57] text-lg md:text-3xl font-serif mb-10 flex items-center gap-3 flex-wrap">
-                            @if($this->currentPrice < $this->currentOriginalPrice)
-                                <span class="font-bold text-[#064e3b]">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
-                                <span class="text-sm md:text-lg text-[#9b9b9b] line-through font-normal">Rp{{ number_format($this->currentOriginalPrice, 0, ",", ".") }}</span>
+                            @if($this->priceRange)
+                                @if($this->priceRange['has_discount'])
+                                    <span class="font-bold text-[#064e3b]">
+                                        Rp{{ number_format($this->priceRange['min_price'], 0, ",", ".") }}
+                                        @if($this->priceRange['has_range']) - Rp{{ number_format($this->priceRange['max_price'], 0, ",", ".") }} @endif
+                                    </span>
+                                    <span class="text-sm md:text-lg text-[#9b9b9b] line-through font-normal">
+                                        Rp{{ number_format($this->priceRange['min_original'], 0, ",", ".") }}
+                                        @if($this->priceRange['has_original_range']) - Rp{{ number_format($this->priceRange['max_original'], 0, ",", ".") }} @endif
+                                    </span>
+                                @else
+                                    <span>
+                                        Rp{{ number_format($this->priceRange['min_price'], 0, ",", ".") }}
+                                        @if($this->priceRange['has_range']) - Rp{{ number_format($this->priceRange['max_price'], 0, ",", ".") }} @endif
+                                    </span>
+                                @endif
                             @else
-                                <span>Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                                @if($this->currentPrice < $this->currentOriginalPrice)
+                                    <span class="font-bold text-[#064e3b]">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                                    <span class="text-sm md:text-lg text-[#9b9b9b] line-through font-normal">Rp{{ number_format($this->currentOriginalPrice, 0, ",", ".") }}</span>
+                                @else
+                                    <span>Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                                @endif
                             @endif
                         </div>
 
@@ -793,11 +811,29 @@
                 <div>
                     <div id="bs-product-name" class="text-[#1c1c1a] text-sm font-serif font-bold uppercase leading-tight">{{ $product->name }}</div>
                     <div id="bs-product-price" class="text-[#615e57] text-xs font-mono mt-0.5 flex items-center gap-2">
-                        @if($this->currentPrice < $this->currentOriginalPrice)
-                            <span class="font-bold text-[#064e3b]">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
-                            <span class="line-through text-[#9b9b9b]">Rp{{ number_format($this->currentOriginalPrice, 0, ",", ".") }}</span>
+                        @if($this->priceRange)
+                            @if($this->priceRange['has_discount'])
+                                <span class="font-bold text-[#064e3b]">
+                                    Rp{{ number_format($this->priceRange['min_price'], 0, ",", ".") }}
+                                    @if($this->priceRange['has_range']) - Rp{{ number_format($this->priceRange['max_price'], 0, ",", ".") }} @endif
+                                </span>
+                                <span class="line-through text-[#9b9b9b]">
+                                    Rp{{ number_format($this->priceRange['min_original'], 0, ",", ".") }}
+                                    @if($this->priceRange['has_original_range']) - Rp{{ number_format($this->priceRange['max_original'], 0, ",", ".") }} @endif
+                                </span>
+                            @else
+                                <span>
+                                    Rp{{ number_format($this->priceRange['min_price'], 0, ",", ".") }}
+                                    @if($this->priceRange['has_range']) - Rp{{ number_format($this->priceRange['max_price'], 0, ",", ".") }} @endif
+                                </span>
+                            @endif
                         @else
-                            <span>Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                            @if($this->currentPrice < $this->currentOriginalPrice)
+                                <span class="font-bold text-[#064e3b]">Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                                <span class="line-through text-[#9b9b9b]">Rp{{ number_format($this->currentOriginalPrice, 0, ",", ".") }}</span>
+                            @else
+                                <span>Rp{{ number_format($this->currentPrice, 0, ",", ".") }}</span>
+                            @endif
                         @endif
                     </div>
                     <div class="text-[10px] font-mono text-[#615e57] mt-1 flex items-center gap-1.5">

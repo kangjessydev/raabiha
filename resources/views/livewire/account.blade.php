@@ -658,13 +658,33 @@
                                                         <a href="{{ url('/product/' . $product->slug) }}" class="hover:underline">{{ $product->name }}</a>
                                                     </h3>
                                                     <div class="mt-auto">
-                                                        @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
-                                                            <div class="flex items-center gap-1.5 flex-wrap">
-                                                                <div class="text-[12px] font-bold text-[#1c1c1a] tracking-wide">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</div>
-                                                                <span class="text-[9px] text-[#9b9b9b] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
-                                                            </div>
+                                                        @if($product->price_range)
+                                                            @if($product->price_range['has_discount'])
+                                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                                    <div class="text-[12px] font-bold text-[#1c1c1a] tracking-wide">
+                                                                        Rp{{ number_format($product->price_range['min_price'], 0, ',', '.') }}
+                                                                        @if($product->price_range['has_range']) - Rp{{ number_format($product->price_range['max_price'], 0, ',', '.') }} @endif
+                                                                    </div>
+                                                                    <span class="text-[9px] text-[#9b9b9b] line-through">
+                                                                        Rp{{ number_format($product->price_range['min_original'], 0, ',', '.') }}
+                                                                        @if($product->price_range['has_original_range']) - Rp{{ number_format($product->price_range['max_original'], 0, ',', '.') }} @endif
+                                                                    </span>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-[12px] font-bold text-[#1c1c1a] tracking-wide mb-1">
+                                                                    Rp{{ number_format($product->price_range['min_price'], 0, ',', '.') }}
+                                                                    @if($product->price_range['has_range']) - Rp{{ number_format($product->price_range['max_price'], 0, ',', '.') }} @endif
+                                                                </div>
+                                                            @endif
                                                         @else
-                                                            <div class="text-[12px] font-bold text-[#1c1c1a] tracking-wide mb-1">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</div>
+                                                            @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                                    <div class="text-[12px] font-bold text-[#1c1c1a] tracking-wide">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</div>
+                                                                    <span class="text-[9px] text-[#9b9b9b] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-[12px] font-bold text-[#1c1c1a] tracking-wide mb-1">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</div>
+                                                            @endif
                                                         @endif
                                                     </div>
                                                 </div>

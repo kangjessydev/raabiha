@@ -290,8 +290,12 @@
                                         @endif
                                     </a>
                                     {{-- Discount Badge --}}
-                                    @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
-                                        <div class="absolute top-3 left-3 bg-[#1c1c1a] text-white text-[9px] font-mono tracking-[0.15em] px-2.5 py-1 z-10">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
+                                    @if(!(auth()->check() && auth()->user()->hasRole('reseller')))
+                                        @if($product->price_range && $product->price_range['has_discount'])
+                                            <div class="absolute top-3 left-3 bg-[#1c1c1a] text-white text-[9px] font-mono tracking-[0.15em] px-2.5 py-1 z-10">SALE</div>
+                                        @elseif($product->discount_price !== null && $product->discount_price > 0)
+                                            <div class="absolute top-3 left-3 bg-[#1c1c1a] text-white text-[9px] font-mono tracking-[0.15em] px-2.5 py-1 z-10">-{{ round((($product->price - $product->discount_price) / $product->price) * 100) }}%</div>
+                                        @endif
                                     @endif
                                     {{-- Wishlist --}}
                                     <div class="absolute top-3 right-3 z-10">
@@ -307,13 +311,33 @@
 
                                     {{-- Price --}}
                                     <div class="mb-2.5">
-                                        @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
-                                            <div class="flex items-baseline gap-2">
-                                                <span class="text-[15px] font-bold text-[#1c1c1a]">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</span>
-                                                <span class="text-[11px] text-[#b0aca6] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
-                                            </div>
+                                        @if($product->price_range)
+                                            @if($product->price_range['has_discount'])
+                                                <div class="flex items-baseline gap-2 flex-wrap">
+                                                    <span class="text-[15px] font-bold text-[#1c1c1a]">
+                                                        Rp{{ number_format($product->price_range['min_price'], 0, ',', '.') }}
+                                                        @if($product->price_range['has_range']) - Rp{{ number_format($product->price_range['max_price'], 0, ',', '.') }} @endif
+                                                    </span>
+                                                    <span class="text-[11px] text-[#b0aca6] line-through">
+                                                        Rp{{ number_format($product->price_range['min_original'], 0, ',', '.') }}
+                                                        @if($product->price_range['has_original_range']) - Rp{{ number_format($product->price_range['max_original'], 0, ',', '.') }} @endif
+                                                    </span>
+                                                </div>
+                                            @else
+                                                <span class="text-[15px] font-bold text-[#1c1c1a]">
+                                                    Rp{{ number_format($product->price_range['min_price'], 0, ',', '.') }}
+                                                    @if($product->price_range['has_range']) - Rp{{ number_format($product->price_range['max_price'], 0, ',', '.') }} @endif
+                                                </span>
+                                            @endif
                                         @else
-                                            <span class="text-[15px] font-bold text-[#1c1c1a]">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</span>
+                                            @if($product->discount_price !== null && $product->discount_price > 0 && !(auth()->check() && auth()->user()->hasRole('reseller')))
+                                                <div class="flex items-baseline gap-2 flex-wrap">
+                                                    <span class="text-[15px] font-bold text-[#1c1c1a]">Rp{{ number_format($product->discount_price, 0, ',', '.') }}</span>
+                                                    <span class="text-[11px] text-[#b0aca6] line-through">Rp{{ number_format($product->price, 0, ',', '.') }}</span>
+                                                </div>
+                                            @else
+                                                <span class="text-[15px] font-bold text-[#1c1c1a]">Rp{{ number_format($product->effective_price, 0, ',', '.') }}</span>
+                                            @endif
                                         @endif
                                     </div>
 
