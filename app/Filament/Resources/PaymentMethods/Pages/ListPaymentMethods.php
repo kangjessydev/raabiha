@@ -125,6 +125,8 @@ class ListPaymentMethods extends ListRecords
                         ['code' => 'QRIS', 'name' => 'QRIS', 'group' => 'QR Code', 'logo' => 'https://xendit.co/wp-content/uploads/2021/05/QRIS.png'],
                         ['code' => 'ALFAMART', 'name' => 'Alfamart', 'group' => 'Retail', 'logo' => 'https://xendit.co/wp-content/uploads/2021/05/Alfamart.png'],
                         ['code' => 'INDOMARET', 'name' => 'Indomaret', 'group' => 'Retail', 'logo' => 'https://xendit.co/wp-content/uploads/2021/05/Indomaret.png'],
+                        ['code' => 'AKULAKU', 'name' => 'Akulaku PayLater', 'group' => 'PayLater', 'logo' => 'https://xendit.co/wp-content/uploads/2021/05/Akulaku.png'],
+                        ['code' => 'KREDIVO', 'name' => 'Kredivo', 'group' => 'PayLater', 'logo' => 'https://xendit.co/wp-content/uploads/2021/05/Kredivo.png'],
                     ];
 
                     foreach ($xenditChannels as $ch) {
