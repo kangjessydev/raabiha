@@ -109,7 +109,9 @@ class BinderByteService
             str_replace(',', '_', $couriers)
         );
 
-        return Cache::remember($cacheKey, 6 * 60 * 60, function () use ($apiKey, $origin, $destination, $weight, $couriers) {
+        $weightInKg = $weight / 1000;
+
+        return Cache::remember($cacheKey, 6 * 60 * 60, function () use ($apiKey, $origin, $destination, $weightInKg, $couriers) {
             // Ensure proper format for origin & destination (must have 'dist_' prefix)
             $formattedOrigin = str_starts_with($origin, 'dist_') ? $origin : 'dist_' . $origin;
             $formattedDestination = str_starts_with($destination, 'dist_') ? $destination : 'dist_' . $destination;
@@ -118,7 +120,7 @@ class BinderByteService
                 'api_key' => $apiKey,
                 'origin' => $formattedOrigin,
                 'destination' => $formattedDestination,
-                'weight' => $weight,
+                'weight' => $weightInKg,
                 'courier' => $couriers,
             ]);
 
