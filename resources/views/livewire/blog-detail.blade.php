@@ -76,6 +76,17 @@
                 <article class="flex-1 max-w-3xl prose prose-neutral prose-p:text-[#615e57] prose-p:leading-relaxed prose-headings:font-serif prose-headings:text-[#1c1c1a] prose-headings:font-normal prose-a:text-[#064e3b] prose-a:no-underline hover:prose-a:underline">
                     
                     {!! $post->content !!}
+
+                    {{-- Tags --}}
+                    @if($post->tags->count() > 0)
+                        <div class="flex flex-wrap gap-2 mt-10 not-prose">
+                            @foreach($post->tags as $tag)
+                                <a href="{{ url('/blog?tag=' . $tag->slug) }}" class="bg-[#fcf9f5] text-[#615e57] hover:bg-[#064e3b] hover:text-white border border-[#d1cec9] px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest transition-all">
+                                    #{{ $tag->name }}
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
                     
                     {{-- Article Footer (Share & Comments UI) --}}
                     <div class="mt-16 md:mt-24 pt-8 md:pt-12 border-t border-[#e5e2de] not-prose">

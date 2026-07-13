@@ -17,9 +17,13 @@ class Blog extends Component
     #[Url]
     public $category = 'all';
 
+    #[Url]
+    public $tag = 'all';
+
     public function setCategory($slug)
     {
         $this->category = $slug;
+        $this->tag = 'all'; // Reset tag when changing category
         $this->resetPage();
     }
 
@@ -34,6 +38,12 @@ class Blog extends Component
         if ($this->category !== 'all') {
             $query->whereHas('category', function ($q) {
                 $q->where('slug', $this->category);
+            });
+        }
+
+        if ($this->tag !== 'all') {
+            $query->whereHas('tags', function ($q) {
+                $q->where('slug', $this->tag);
             });
         }
 
