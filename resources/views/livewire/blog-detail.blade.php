@@ -23,7 +23,7 @@
                     @else
                         Uncategorized
                     @endif
-                    &mdash; {{ $post->published_at ? $post->published_at->format('M d, Y') : 'Draft' }}
+                    &mdash; {{ ($post->published_at ?? $post->created_at)->format('M d, Y') }}
                 </p>
                 <h1 class="text-2xl md:text-5xl lg:text-7xl font-serif text-white mb-3 leading-tight">
                     {{ $post->title }}
@@ -47,7 +47,7 @@
                         </div>
                         <div>
                             <p class="text-[#1c1c1a] text-[9px] font-mono tracking-[0.2em] uppercase mb-1">Published</p>
-                            <p class="text-[#615e57] text-sm">{{ $post->published_at ? $post->published_at->format('M d, Y') : 'Unknown' }}</p>
+                            <p class="text-[#615e57] text-sm">{{ ($post->published_at ?? $post->created_at)->format('M d, Y') }}</p>
                         </div>
                         <div class="hidden md:block">
                             <p class="text-[#1c1c1a] text-[9px] font-mono tracking-[0.2em] uppercase mb-2 md:mb-3">Share</p>

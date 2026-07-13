@@ -245,7 +245,7 @@ class PostForm
                                             }),
                                         DateTimePicker::make('published_at')
                                             ->label('Tanggal Publikasi')
-                                            ->default(null),
+                                            ->default(fn() => now()),
                                         Select::make('post_category_id')
                                             ->label('Kategori')
                                             ->relationship('category', 'name')

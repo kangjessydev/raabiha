@@ -12,6 +12,17 @@ class Post extends Model
 {
     use HasFactory;
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($post) {
+            if ($post->is_published && !$post->published_at) {
+                $post->published_at = now();
+            }
+        });
+    }
+
     protected $fillable = [
         'post_category_id',
         'user_id',
