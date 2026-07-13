@@ -240,21 +240,6 @@
             </div>
         </section>
 
-        {{-- ===== EMERALD NEWSLETTER BANNER (Desktop only — hidden on mobile per UI guidelines) ===== --}}
-        <section class="hidden md:block max-w-[1440px] mx-auto px-6 lg:px-12 pb-24">
-            <div class="bg-[#064e3b] px-8 py-16 md:p-24 flex flex-col md:flex-row justify-between items-center gap-12">
-                <div class="max-w-md">
-                    <h2 class="text-4xl font-serif text-white mb-4">Join the Dialogue</h2>
-                    <p class="text-white/80 text-sm leading-relaxed">
-                        Terima pembaruan eksklusif mengenai esai desain terbaru dan proses di balik layar Raabiha.
-                    </p>
-                </div>
-                <form class="w-full max-w-md flex flex-col gap-4">
-                    <input type="email" placeholder="YOUR EMAIL" class="w-full bg-transparent border-b border-white/30 pb-3 text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-white transition-colors">
-                    <button type="button" class="w-full bg-white text-[#064e3b] px-8 py-4 text-[11px] font-mono tracking-widest uppercase hover:bg-[#f0ede9] transition-colors mt-2">Subscribe</button>
-                </form>
-            </div>
-        </section>
 
         {{-- ===== RELATED ARTICLES ===== --}}
         @if($relatedPosts->count() > 0)
