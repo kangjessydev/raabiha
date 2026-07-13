@@ -9,10 +9,29 @@
     
     $schema = [
         '@context' => 'https://schema.org',
-        '@type' => 'Organization',
-        'name' => $siteName,
-        'url' => url('/'),
-        'logo' => $logoUrl,
+        '@graph' => [
+            [
+                '@type' => 'Organization',
+                '@id' => url('/') . '#organization',
+                'name' => $siteName,
+                'url' => url('/'),
+                'logo' => $logoUrl,
+            ],
+            [
+                '@type' => 'WebSite',
+                '@id' => url('/') . '#website',
+                'url' => url('/'),
+                'name' => $siteName,
+                'publisher' => [
+                    '@id' => url('/') . '#organization'
+                ],
+                'potentialAction' => [
+                    '@type' => 'SearchAction',
+                    'target' => url('/shop?search={search_term_string}'),
+                    'query-input' => 'required name=search_term_string'
+                ]
+            ]
+        ]
     ];
 @endphp
 <x-layouts.app title="Beranda" :schema="$schema">
