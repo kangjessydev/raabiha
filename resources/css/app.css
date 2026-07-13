@@ -88,3 +88,80 @@
     --tw-translate-y: -50%;
     translate: var(--tw-translate-x) var(--tw-translate-y);
 }
+
+/* ==========================================================================
+   UNLAYERED OVERRIDES FOR TAILWIND TYPOGRAPHY (.prose)
+   Bypasses WordPress-adapted stylesheet resets in main-CPG7ZTQy.css
+   ========================================================================== */
+.prose p {
+    margin-top: 1.25em !important;
+    margin-bottom: 1.25em !important;
+    font-size: 1rem !important;
+    line-height: 1.75 !important;
+    text-align: left !important;
+    color: #615e57 !important;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    color: #1c1c1a !important;
+    font-weight: normal !important;
+}
+
+.prose h1 {
+    font-size: 2.25em !important;
+    margin-top: 0 !important;
+    margin-bottom: 0.888889em !important;
+    line-height: 1.1111111 !important;
+}
+
+.prose h2 {
+    font-size: 1.5em !important;
+    margin-top: 2em !important;
+    margin-bottom: 1em !important;
+    line-height: 1.3333333 !important;
+}
+
+.prose h3 {
+    font-size: 1.25em !important;
+    margin-top: 1.6em !important;
+    margin-bottom: 0.6em !important;
+    line-height: 1.6 !important;
+}
+
+.prose ul {
+    list-style-type: disc !important;
+    margin-top: 1.25em !important;
+    margin-bottom: 1.25em !important;
+    padding-left: 1.625em !important;
+}
+
+.prose ol {
+    list-style-type: decimal !important;
+    margin-top: 1.25em !important;
+    margin-bottom: 1.25em !important;
+    padding-left: 1.625em !important;
+}
+
+.prose li {
+    margin-top: 0.5em !important;
+    margin-bottom: 0.5em !important;
+    display: list-item !important;
+}
+
+.prose strong {
+    font-weight: bold !important;
+}
+
+.prose em {
+    font-style: italic !important;
+}
+
+.prose blockquote {
+    font-style: italic !important;
+    border-left-width: 0.25rem !important;
+    border-left-color: #064e3b !important;
+    padding-left: 1rem !important;
+    margin-top: 1.6em !important;
+    margin-bottom: 1.6em !important;
+}
