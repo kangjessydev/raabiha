@@ -36,6 +36,19 @@
 
         {{-- ===== CONTENT LAYOUT ===== --}}
         <section class="max-w-6xl mx-auto px-6 lg:px-12 py-10 md:py-24">
+            {{-- Breadcrumb --}}
+            <nav class="text-[#615e57] text-[9px] font-mono uppercase tracking-widest mb-10 md:mb-16">
+                <a href="{{ url('/') }}" class="hover:text-[#1c1c1a] transition-colors">BERANDA</a>
+                <span class="mx-2">/</span>
+                <a href="{{ url('/blog') }}" class="hover:text-[#1c1c1a] transition-colors">BLOG</a>
+                @if($post->category)
+                    <span class="mx-2">/</span>
+                    <a href="{{ url('/blog?category=' . $post->category->slug) }}" class="hover:text-[#1c1c1a] transition-colors">{{ $post->category->name }}</a>
+                @endif
+                <span class="mx-2">/</span>
+                <span class="text-[#1c1c1a]">{{ $post->title }}</span>
+            </nav>
+
             <div class="flex flex-col md:flex-row gap-10 md:gap-24">
                 
                 {{-- Left Meta Column --}}
