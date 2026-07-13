@@ -1,4 +1,21 @@
-<x-layouts.app title="Beranda">
+@php
+    $siteName = \App\Models\SiteSetting::where('key', 'site_name')->value('value') ?? 'Raabiha Olshop';
+    $logoId = \App\Models\SiteSetting::where('key', 'site_logo_dark')->value('value') ?: \App\Models\SiteSetting::where('key', 'site_logo_light')->value('value');
+    $logoMedia = $logoId ? \Awcodes\Curator\Models\Media::find($logoId) : null;
+    $logoUrl = $logoMedia ? Storage::url($logoMedia->path) : asset('favicon.ico');
+    if ($logoUrl && !str_starts_with($logoUrl, 'http')) {
+        $logoUrl = url($logoUrl);
+    }
+    
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        'name' => $siteName,
+        'url' => url('/'),
+        'logo' => $logoUrl,
+    ];
+@endphp
+<x-layouts.app title="Beranda" :schema="$schema">
 <main class="w-full min-h-screen">
     @php
         // Helper untuk render image Curator or Fallback
@@ -88,7 +105,7 @@
         <!-- Mobile Text Overlay -->
         <div class="relative z-10 w-full px-8 py-6 flex flex-col items-center text-center mt-12">
             <div class="inline-block hero-tag-dynamic px-3 py-1 text-[9px] font-mono tracking-[0.2em] mb-4 uppercase">{{ $homeHeroTag }}</div>
-            <h1 class="text-3xl md:text-4xl leading-[1.15] font-serif italic text-white mb-6">{!! nl2br(e($homeHeroTitle)) !!}</h1>
+            <p class="text-3xl md:text-4xl leading-[1.15] font-serif italic text-white mb-6">{!! nl2br(e($homeHeroTitle)) !!}</p>
             <a href="{{ $homeHeroButtonLink }}" class="inline-block hero-btn-dynamic text-[10px] font-mono tracking-[0.1em] uppercase py-3 px-8 w-full max-w-[280px]">
                 {{ $homeHeroButtonText }}
             </a>

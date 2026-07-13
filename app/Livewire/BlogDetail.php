@@ -98,6 +98,35 @@ class BlogDetail extends Component
             }
         }
 
+        $fullImageUrl = $image;
+        if ($fullImageUrl && !str_starts_with($fullImageUrl, 'http')) {
+            $fullImageUrl = url($fullImageUrl);
+        }
+
+        $siteName = \App\Models\SiteSetting::where('key', 'site_name')->value('value') ?? 'Raabiha Olshop';
+
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BlogPosting',
+            'headline' => $this->post->title,
+            'image' => $fullImageUrl,
+            'datePublished' => ($this->post->published_at ?? $this->post->created_at)->toIso8601String(),
+            'dateModified' => ($this->post->updated_at ?? $this->post->created_at)->toIso8601String(),
+            'author' => [
+                '@type' => 'Person',
+                'name' => $this->post->author ? $this->post->author->name : 'Raabiha Admin',
+            ],
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => $siteName,
+                'logo' => [
+                    '@type' => 'ImageObject',
+                    'url' => asset('favicon.ico'),
+                ]
+            ],
+            'description' => $description
+        ];
+
         return view('livewire.blog-detail', [
             'relatedPosts' => $relatedPosts,
             'comments' => $comments,
@@ -105,6 +134,7 @@ class BlogDetail extends Component
             'title' => $title,
             'description' => $description,
             'image' => $image,
+            'schema' => $schema
         ]);
     }
 }

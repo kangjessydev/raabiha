@@ -474,11 +474,47 @@ class ProductDetail extends Component
         $description = $this->product->meta_description ?? \Illuminate\Support\Str::limit(strip_tags($this->product->description), 160);
         $image = !empty($this->galleryUrls) ? $this->galleryUrls[0] : null;
 
+        // Build Product JSON-LD schema
+        $price = $this->product->effective_price;
+        $inStock = $this->product->stock > 0;
+        if ($this->product->has_variants) {
+            $inStock = $this->product->variants->sum('stock') > 0;
+        }
+        $availability = $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+        
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $this->product->name,
+            'image' => $image,
+            'description' => $description,
+            'sku' => $this->product->sku ?? ('PROD-' . $this->product->id),
+            'offers' => [
+                '@type' => 'Offer',
+                'url' => url()->current(),
+                'priceCurrency' => 'IDR',
+                'price' => $price,
+                'availability' => $availability,
+                'priceValidUntil' => now()->addYear()->toDateString(),
+            ]
+        ];
+
+        $reviewCount = $this->reviews->count();
+        $avgRating = $this->averageRating;
+        if ($reviewCount > 0 && $avgRating > 0) {
+            $schema['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => $avgRating,
+                'reviewCount' => $reviewCount,
+            ];
+        }
+
         return view('livewire.product-detail')
             ->layout('components.layouts.app', [
                 'title' => $title,
                 'description' => $description,
-                'image' => $image
+                'image' => $image,
+                'schema' => $schema
             ]);
     }
 

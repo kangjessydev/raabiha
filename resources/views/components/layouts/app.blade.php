@@ -1,4 +1,4 @@
-@props(['title' => null, 'description' => null, 'image' => null, 'header' => null, 'blank' => false, 'robots' => null])
+@props(['title' => null, 'description' => null, 'image' => null, 'header' => null, 'blank' => false, 'robots' => null, 'schema' => null])
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -168,6 +168,11 @@
             pointer-events: none;
         }
     </style>
+    @if(isset($schema))
+    <script type="application/ld+json">
+        {!! json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+    </script>
+    @endif
 </head>
 <body class="home blog wp-theme-raabiha-theme theme-raabiha-theme woocommerce-no-js">
         
