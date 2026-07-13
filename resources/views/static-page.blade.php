@@ -4,6 +4,16 @@
     
     $refundTerms = \App\Models\SiteSetting::where('key', 'refund_terms')->value('value') ?? '';
     $parsedContent = str_replace(['{refund}', '[refund]'], $refundTerms, $page->content);
+    
+    // Parse Lacak Pesanan widget shortcode
+    $parsedContent = str_replace(
+        ['[lacak_pesanan]', '{lacak_pesanan}'],
+        '<livewire:public-order-track />',
+        $parsedContent
+    );
+    
+    // Compile using Blade::render to enable Livewire components in database-driven pages
+    $finalContent = \Illuminate\Support\Facades\Blade::render($parsedContent);
 @endphp
 
 <x-layouts.app :title="$metaTitle" :description="$metaDescription">
@@ -21,7 +31,7 @@
     <!-- Page Content -->
     <section class="max-w-3xl mx-auto px-6">
         <div class="bg-white border border-[#e5e2de] p-8 md:p-12 shadow-sm text-[#1c1c1a] space-y-6 leading-relaxed prose prose-stone max-w-none">
-            {!! $parsedContent !!}
+            {!! $finalContent !!}
         </div>
     </section>
 
