@@ -151,7 +151,11 @@ class PosManager extends Component
                     ->having('computed_stock', '>', 0)
                     ->orderBy('sold_count', 'desc')
                     ->limit(3)
-                    ->get();
+                    ->get()
+                    ->map(function($p) {
+                        $p->is_best_seller = true;
+                        return $p;
+                    });
                 
                 $top3Ids = $top3->pluck('id')->toArray();
                 

@@ -59,7 +59,7 @@
                 <div class="flex items-center gap-3">
                     <button @click="showHoldModal = true" class="relative px-4 py-2 bg-white rounded-xl shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium transition-all">
                         <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span class="hidden md:inline">Hold Cart</span>
+                        <span class="hidden md:inline">Simpan Antrean</span>
                         <span x-show="heldCarts.length > 0" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm" x-text="heldCarts.length"></span>
                     </button>
 
@@ -161,10 +161,16 @@
 
                             <div class="aspect-square bg-gray-100 relative overflow-hidden">
                                 <img src="{{ $image }}" alt="{{ $product->name }}" class="object-cover w-full h-full {{ !$isOutOfStock ? 'group-hover:scale-105' : '' }} transition-transform duration-500">
-                                @if($hasVariants)
-                                    <span class="absolute top-2 right-2 bg-gray-900/80 backdrop-blur text-white text-[10px] px-2 py-1 rounded-md font-medium">{{ $product->variants->count() }} Varian</span>
+                                @if(isset($product->is_best_seller) && $product->is_best_seller)
+                                    <span class="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[10px] px-2 py-1 rounded-md font-bold shadow-sm flex items-center gap-1 z-10">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                        Terlaris
+                                    </span>
                                 @endif
-                                <span class="absolute bottom-2 left-2 {{ $isOutOfStock ? 'bg-red-500' : 'bg-brand-500' }} text-white text-[10px] px-2 py-1 rounded-md font-medium shadow-sm">Stok: {{ $computedStock }}</span>
+                                @if($hasVariants)
+                                    <span class="absolute top-2 right-2 bg-gray-900/80 backdrop-blur text-white text-[10px] px-2 py-1 rounded-md font-medium z-10">{{ $product->variants->count() }} Varian</span>
+                                @endif
+                                <span class="absolute bottom-2 left-2 {{ $isOutOfStock ? 'bg-red-500' : 'bg-brand-500' }} text-white text-[10px] px-2 py-1 rounded-md font-medium shadow-sm z-10">Stok: {{ $computedStock }}</span>
                             </div>
                             <div class="p-3">
                                 <h3 class="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight {{ !$isOutOfStock ? 'group-hover:text-brand-600' : '' }} transition-colors">{{ $product->name }}</h3>
@@ -257,7 +263,7 @@
                         :disabled="cart.length === 0"
                         class="px-4 py-4 rounded-xl font-bold text-gray-700 shadow-sm transition-all active:scale-95 flex items-center justify-center border border-gray-200"
                         :class="cart.length > 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-100 text-gray-400 cursor-not-allowed border-transparent'"
-                        title="Simpan Pesanan Sementara (Hold)">
+                        title="Masukkan ke Antrean">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </button>
                     
@@ -422,7 +428,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                         <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Daftar Pesanan Tertunda
+                        Daftar Antrean Pesanan
                     </h3>
                     <button @click="showHoldModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -432,7 +438,7 @@
                 <div class="overflow-y-auto flex-1 space-y-3">
                     <template x-if="heldCarts.length === 0">
                         <div class="text-center py-10 text-gray-400">
-                            <p>Tidak ada pesanan yang ditunda.</p>
+                            <p>Tidak ada antrean pesanan.</p>
                         </div>
                     </template>
                     
@@ -440,7 +446,7 @@
                         <div class="bg-white border border-gray-100 shadow-sm p-4 rounded-xl flex items-center justify-between gap-4">
                             <div>
                                 <div class="font-bold text-gray-800" x-text="hold.name"></div>
-                                <div class="text-sm text-gray-500" x-text="hold.cart.length + ' item | Disimpan jam ' + hold.time"></div>
+                                <div class="text-sm text-gray-500" x-text="hold.cart.length + ' item | Antre sejak ' + hold.time"></div>
                                 <div class="font-semibold text-brand-600 mt-1" x-text="'Rp ' + formatMoney(hold.total)"></div>
                             </div>
                             <div class="flex gap-2">
@@ -449,6 +455,22 @@
                             </div>
                         </div>
                     </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Konfirmasi -->
+        <div x-show="showConfirmModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showConfirmModal = false" class="glass w-full max-w-sm rounded-2xl p-6 relative shadow-2xl text-center">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2" x-text="confirmTitle"></h3>
+                <p class="text-gray-500 text-sm mb-6" x-text="confirmMessage"></p>
+                
+                <div class="flex gap-3">
+                    <button @click="showConfirmModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                    <button @click="executeConfirm()" class="flex-1 px-4 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/30">Ya, Lanjutkan</button>
                 </div>
             </div>
         </div>
@@ -492,6 +514,24 @@
                 heldCarts: [],
                 showHoldModal: false,
 
+                // Confirmation Modal State
+                showConfirmModal: false,
+                confirmTitle: '',
+                confirmMessage: '',
+                confirmAction: null,
+                
+                askConfirm(title, message, callback) {
+                    this.confirmTitle = title;
+                    this.confirmMessage = message;
+                    this.confirmAction = callback;
+                    this.showConfirmModal = true;
+                },
+                
+                executeConfirm() {
+                    if (this.confirmAction) this.confirmAction();
+                    this.showConfirmModal = false;
+                },
+
                 init() {
                     // Load dari localStorage
                     const storedHold = localStorage.getItem('pos_held_carts');
@@ -508,7 +548,7 @@
                     window.addEventListener('checkout-success', (e) => {
                         this.isProcessing = false;
                         this.showCheckoutModal = false;
-                        this.clearCart();
+                        this.clearCart(true);
                         this.showToast('Pembayaran Berhasil! Kembalian: Rp ' + this.formatMoney(e.detail[0].cash_change), 'success');
                     });
                     window.addEventListener('print-receipt', (e) => {
@@ -549,35 +589,47 @@
                     });
                     
                     this.saveHeldCarts();
-                    this.clearCart();
-                    this.showToast('Keranjang berhasil disimpan', 'success');
+                    this.clearCart(true);
+                    this.showToast('Pesanan berhasil dimasukkan ke antrean', 'success');
                 },
 
                 resumeCart(id) {
                     const index = this.heldCarts.findIndex(h => h.id === id);
                     if (index !== -1) {
+                        const doResume = () => {
+                            const hold = this.heldCarts[index];
+                            this.cart = hold.cart;
+                            this.discount = hold.discount;
+                            this.customerName = hold.customerName || '';
+                            this.customerPhone = hold.customerPhone || '';
+                            
+                            this.heldCarts.splice(index, 1);
+                            this.saveHeldCarts();
+                            this.showHoldModal = false;
+                            this.showToast('Antrean berhasil dilanjutkan', 'success');
+                        };
+
                         if (this.cart.length > 0) {
-                            if (!confirm('Keranjang saat ini akan tertimpa. Lanjutkan?')) return;
+                            this.askConfirm(
+                                'Tumpuk Keranjang?', 
+                                'Keranjang Anda saat ini tidak kosong. Jika dilanjutkan, belanjaan saat ini akan terganti oleh antrean yang dipanggil. Lanjutkan?', 
+                                doResume
+                            );
+                        } else {
+                            doResume();
                         }
-                        
-                        const hold = this.heldCarts[index];
-                        this.cart = hold.cart;
-                        this.discount = hold.discount;
-                        this.customerName = hold.customerName || '';
-                        this.customerPhone = hold.customerPhone || '';
-                        
-                        this.heldCarts.splice(index, 1);
-                        this.saveHeldCarts();
-                        this.showHoldModal = false;
-                        this.showToast('Keranjang dipulihkan', 'success');
                     }
                 },
 
                 deleteHeldCart(id) {
-                    if (confirm('Hapus keranjang yang ditunda ini secara permanen?')) {
-                        this.heldCarts = this.heldCarts.filter(h => h.id !== id);
-                        this.saveHeldCarts();
-                    }
+                    this.askConfirm(
+                        'Hapus Antrean?', 
+                        'Apakah Anda yakin ingin menghapus antrean ini? Data tidak bisa dikembalikan.', 
+                        () => {
+                            this.heldCarts = this.heldCarts.filter(h => h.id !== id);
+                            this.saveHeldCarts();
+                        }
+                    );
                 },
 
                 addProduct(id, name, price, hasVariants, variants = null) {
@@ -690,12 +742,23 @@
                     this.cart.splice(index, 1);
                 },
 
-                clearCart() {
-                    if(confirm('Kosongkan keranjang?')) {
+                clearCart(force = false) {
+                    if (force) {
                         this.cart = [];
                         this.discount = 0;
                         this.cashPaid = 0;
+                        return;
                     }
+
+                    this.askConfirm(
+                        'Kosongkan Keranjang?',
+                        'Semua barang di keranjang akan dihapus. Lanjutkan?',
+                        () => {
+                            this.cart = [];
+                            this.discount = 0;
+                            this.cashPaid = 0;
+                        }
+                    );
                 },
 
                 get subtotal() {
