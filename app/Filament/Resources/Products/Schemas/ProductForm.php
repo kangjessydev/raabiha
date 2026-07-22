@@ -157,7 +157,7 @@ class ProductForm
                                 'online_only' => 'Web Toko Online Saja',
                                 'pos_only' => 'POS Kasir Saja',
                             ])
-                            ->default('both')
+                            ->default('online_only')
                             ->required(),
                         TextInput::make('pos_price')
                             ->label('Harga Khusus POS (Opsional)')
