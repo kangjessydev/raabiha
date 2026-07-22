@@ -85,14 +85,45 @@
                         @php
                             // Cek jika produk punya varian
                             $hasVariants = $product->variants->count() > 0;
+                            $computedStock = $product->computed_stock ?? ($hasVariants ? $product->variants->sum('stock') : $product->stock);
+                            $isOutOfStock = $computedStock <= 0;
+                            
                             // Harga display
-                            if ($product->pos_discount_price || $product->pos_price) {
-                                $price = $product->pos_discount_price ?: $product->pos_price;
+                            $hasPromo = false;
+                            $promoPrice = null;
+                            $originalPrice = null;
+                            $priceDisplay = '';
+                            
+                            if ($product->pos_discount_price) {
+                                $hasPromo = true;
+                                $promoPrice = $product->pos_discount_price;
+                                $originalPrice = $product->pos_price ?: $product->price;
+                                $priceDisplay = 'Rp ' . number_format($promoPrice, 0, ',', '.');
+                            } elseif ($product->pos_price) {
+                                $originalPrice = $product->pos_price;
+                                $priceDisplay = 'Rp ' . number_format($originalPrice, 0, ',', '.');
                             } elseif ($hasVariants) {
-                                $price = $product->variants->min('price');
+                                $minPrice = $product->variants->min('price');
+                                $maxPrice = $product->variants->max('price');
+                                if ($minPrice != $maxPrice) {
+                                    $priceDisplay = 'Rp ' . number_format($minPrice, 0, ',', '.') . ' - Rp ' . number_format($maxPrice, 0, ',', '.');
+                                } else {
+                                    $priceDisplay = 'Rp ' . number_format($minPrice, 0, ',', '.');
+                                }
+                                $originalPrice = $minPrice;
                             } else {
-                                $price = $product->price;
+                                if ($product->discount_price) {
+                                    $hasPromo = true;
+                                    $promoPrice = $product->discount_price;
+                                    $originalPrice = $product->price;
+                                    $priceDisplay = 'Rp ' . number_format($promoPrice, 0, ',', '.');
+                                } else {
+                                    $originalPrice = $product->price;
+                                    $priceDisplay = 'Rp ' . number_format($originalPrice, 0, ',', '.');
+                                }
                             }
+                            $priceForJs = $hasPromo ? $promoPrice : $originalPrice;
+                            
                             $imageUrl = asset('assets/images/placeholder.webp');
                             if (!empty($product->images)) {
                                 if (is_numeric($product->images[0])) {
@@ -109,19 +140,33 @@
                             $image = $imageUrl;
                         @endphp
                         
-                        <div class="glass bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden cursor-pointer group border border-gray-100"
+                        <div class="glass bg-white {{ $isOutOfStock ? 'opacity-50 cursor-not-allowed grayscale-[30%]' : 'hover:shadow-2xl hover:-translate-y-1 cursor-pointer group' }} transition-all duration-300 rounded-2xl overflow-hidden border border-gray-100 relative"
+                             @if(!$isOutOfStock)
                              x-data="{ variantsData: {{ $hasVariants ? \Illuminate\Support\Js::from($product->variants->map(fn($v) => ['id' => $v->id, 'name' => $v->name, 'price' => $product->pos_discount_price ?: ($product->pos_price ?: ($v->price ?: $product->price)), 'stock' => $v->stock])) : 'null' }} }"
-                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $price }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData)">
+                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData)"
+                             @endif
+                             >
+                             
+                             @if($isOutOfStock)
+                                <div class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                                    <span class="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transform -rotate-12">HABIS</span>
+                                </div>
+                             @endif
+
                             <div class="aspect-square bg-gray-100 relative overflow-hidden">
-                                <img src="{{ $image }}" alt="{{ $product->name }}" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500">
+                                <img src="{{ $image }}" alt="{{ $product->name }}" class="object-cover w-full h-full {{ !$isOutOfStock ? 'group-hover:scale-105' : '' }} transition-transform duration-500">
                                 @if($hasVariants)
                                     <span class="absolute top-2 right-2 bg-gray-900/80 backdrop-blur text-white text-[10px] px-2 py-1 rounded-md font-medium">{{ $product->variants->count() }} Varian</span>
                                 @endif
+                                <span class="absolute bottom-2 left-2 {{ $isOutOfStock ? 'bg-red-500' : 'bg-brand-500' }} text-white text-[10px] px-2 py-1 rounded-md font-medium shadow-sm">Stok: {{ $computedStock }}</span>
                             </div>
                             <div class="p-3">
-                                <h3 class="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight group-hover:text-brand-600 transition-colors">{{ $product->name }}</h3>
-                                <div class="mt-2 text-brand-600 font-bold">
-                                    Rp {{ number_format($price, 0, ',', '.') }}
+                                <h3 class="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight {{ !$isOutOfStock ? 'group-hover:text-brand-600' : '' }} transition-colors">{{ $product->name }}</h3>
+                                <div class="mt-2 flex flex-col">
+                                    @if($hasPromo)
+                                        <span class="text-[10px] text-gray-400 line-through">Rp {{ number_format($originalPrice, 0, ',', '.') }}</span>
+                                    @endif
+                                    <span class="text-brand-600 font-bold leading-tight">{{ $priceDisplay }}</span>
                                 </div>
                             </div>
                         </div>

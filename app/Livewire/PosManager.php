@@ -138,9 +138,34 @@ class PosManager extends Component
                     $q->where('name', 'like', '%' . $this->search . '%')
                       ->orWhere('sku', 'like', '%' . $this->search . '%');
                 });
+                
+                // Fetch search results
+                $products = $query->limit(48)->get()->map(function($p) {
+                    $p->computed_stock = $p->has_variants ? $p->variants->sum('stock') : $p->stock;
+                    return $p;
+                });
+            } else {
+                // Ambil 3 produk terlaris yang masih ada stok
+                $top3 = (clone $query)
+                    ->selectRaw('*, (CASE WHEN has_variants = 1 THEN (SELECT COALESCE(SUM(stock), 0) FROM product_variants WHERE product_variants.product_id = products.id) ELSE stock END) as computed_stock')
+                    ->having('computed_stock', '>', 0)
+                    ->orderBy('sold_count', 'desc')
+                    ->limit(3)
+                    ->get();
+                
+                $top3Ids = $top3->pluck('id')->toArray();
+                
+                // Ambil sisanya, urutkan berdasarkan stok terbanyak (stok > 0 dulu, baru = 0)
+                $remaining = (clone $query)
+                    ->whereNotIn('id', $top3Ids)
+                    ->selectRaw('*, (CASE WHEN has_variants = 1 THEN (SELECT COALESCE(SUM(stock), 0) FROM product_variants WHERE product_variants.product_id = products.id) ELSE stock END) as computed_stock')
+                    ->orderByRaw('computed_stock > 0 DESC')
+                    ->orderBy('computed_stock', 'desc')
+                    ->limit(45) // Total 48 produk
+                    ->get();
+                    
+                $products = $top3->concat($remaining);
             }
-
-            $products = $query->limit(24)->get();
         }
 
         return view('livewire.pos-manager', [
