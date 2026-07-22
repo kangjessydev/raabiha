@@ -57,6 +57,12 @@
                 </div>
                 
                 <div class="flex items-center gap-3">
+                    <button @click="showHoldModal = true" class="relative px-4 py-2 bg-white rounded-xl shadow-sm border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium transition-all">
+                        <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="hidden md:inline">Hold Cart</span>
+                        <span x-show="heldCarts.length > 0" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm" x-text="heldCarts.length"></span>
+                    </button>
+
                     <div class="flex items-center bg-white rounded-xl p-1 shadow-sm border border-gray-200">
                         <select x-model="printerType" class="text-xs border-none bg-transparent focus:ring-0 py-1 pl-2 pr-6">
                             <option value="bluetooth">Bluetooth</option>
@@ -245,14 +251,25 @@
                     <span class="text-2xl font-black text-brand-600" x-text="'Rp ' + formatMoney(grandTotal)"></span>
                 </div>
                 
-                <button 
-                    @click="openCheckoutModal()"
-                    :disabled="cart.length === 0"
-                    class="w-full py-4 rounded-xl font-bold text-lg shadow-xl transition-all active:scale-95 flex justify-center items-center gap-2"
-                    :class="cart.length > 0 ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                    PROSES PEMBAYARAN
-                </button>
+                <div class="flex gap-2">
+                    <button 
+                        @click="holdCart()"
+                        :disabled="cart.length === 0"
+                        class="px-4 py-4 rounded-xl font-bold text-gray-700 shadow-sm transition-all active:scale-95 flex items-center justify-center border border-gray-200"
+                        :class="cart.length > 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-100 text-gray-400 cursor-not-allowed border-transparent'"
+                        title="Simpan Pesanan Sementara (Hold)">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
+                    
+                    <button 
+                        @click="openCheckoutModal()"
+                        :disabled="cart.length === 0"
+                        class="flex-1 py-4 rounded-xl font-bold text-lg shadow-xl transition-all active:scale-95 flex justify-center items-center gap-2"
+                        :class="cart.length > 0 ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        PROSES PEMBAYARAN
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -399,6 +416,43 @@
             </div>
         </div>
 
+        <!-- MODAL: Hold Carts -->
+        <div x-show="showHoldModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showHoldModal = false" class="glass w-full max-w-2xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Daftar Pesanan Tertunda
+                    </h3>
+                    <button @click="showHoldModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="overflow-y-auto flex-1 space-y-3">
+                    <template x-if="heldCarts.length === 0">
+                        <div class="text-center py-10 text-gray-400">
+                            <p>Tidak ada pesanan yang ditunda.</p>
+                        </div>
+                    </template>
+                    
+                    <template x-for="hold in heldCarts" :key="hold.id">
+                        <div class="bg-white border border-gray-100 shadow-sm p-4 rounded-xl flex items-center justify-between gap-4">
+                            <div>
+                                <div class="font-bold text-gray-800" x-text="hold.name"></div>
+                                <div class="text-sm text-gray-500" x-text="hold.cart.length + ' item | Disimpan jam ' + hold.time"></div>
+                                <div class="font-semibold text-brand-600 mt-1" x-text="'Rp ' + formatMoney(hold.total)"></div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="deleteHeldCart(hold.id)" class="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
+                                <button @click="resumeCart(hold.id)" class="px-4 py-2 bg-brand-600 text-white font-bold rounded-lg hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/30">Lanjutkan</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
     @endif
 
     <!-- Alpine.js Script -->
@@ -435,8 +489,18 @@
                 printerType: 'bluetooth',
                 printerCharacteristic: null,
                 printerPort: null,
+                heldCarts: [],
+                showHoldModal: false,
 
                 init() {
+                    // Load dari localStorage
+                    const storedHold = localStorage.getItem('pos_held_carts');
+                    if (storedHold) {
+                        try {
+                            this.heldCarts = JSON.parse(storedHold);
+                        } catch(e) {}
+                    }
+
                     // Menerima event dari Livewire
                     window.addEventListener('session-opened', () => { this.showToast('Sesi kasir berhasil dibuka', 'success'); });
                     window.addEventListener('session-closed', () => { this.showCloseSession = false; this.showToast('Sesi kasir berhasil ditutup', 'success'); });
@@ -453,6 +517,67 @@
                     window.addEventListener('print-z-report', (e) => {
                         this.printBase64(e.detail[0].base64);
                     });
+                },
+
+                saveHeldCarts() {
+                    localStorage.setItem('pos_held_carts', JSON.stringify(this.heldCarts));
+                },
+
+                holdCart() {
+                    if (this.cart.length === 0) return;
+                    
+                    const holdId = Date.now();
+                    const now = new Date();
+                    const holdTime = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    
+                    let holdName = this.customerName;
+                    if (!holdName) {
+                        const firstItem = this.cart[0].name;
+                        const otherItems = this.cart.length > 1 ? ` + ${this.cart.length - 1} item` : '';
+                        holdName = `${firstItem}${otherItems}`;
+                    }
+
+                    this.heldCarts.push({
+                        id: holdId,
+                        time: holdTime,
+                        name: holdName,
+                        cart: JSON.parse(JSON.stringify(this.cart)),
+                        discount: this.discount,
+                        customerName: this.customerName,
+                        customerPhone: this.customerPhone,
+                        total: this.subtotal
+                    });
+                    
+                    this.saveHeldCarts();
+                    this.clearCart();
+                    this.showToast('Keranjang berhasil disimpan', 'success');
+                },
+
+                resumeCart(id) {
+                    const index = this.heldCarts.findIndex(h => h.id === id);
+                    if (index !== -1) {
+                        if (this.cart.length > 0) {
+                            if (!confirm('Keranjang saat ini akan tertimpa. Lanjutkan?')) return;
+                        }
+                        
+                        const hold = this.heldCarts[index];
+                        this.cart = hold.cart;
+                        this.discount = hold.discount;
+                        this.customerName = hold.customerName || '';
+                        this.customerPhone = hold.customerPhone || '';
+                        
+                        this.heldCarts.splice(index, 1);
+                        this.saveHeldCarts();
+                        this.showHoldModal = false;
+                        this.showToast('Keranjang dipulihkan', 'success');
+                    }
+                },
+
+                deleteHeldCart(id) {
+                    if (confirm('Hapus keranjang yang ditunda ini secara permanen?')) {
+                        this.heldCarts = this.heldCarts.filter(h => h.id !== id);
+                        this.saveHeldCarts();
+                    }
                 },
 
                 addProduct(id, name, price, hasVariants, variants = null) {
