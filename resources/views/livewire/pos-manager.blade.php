@@ -477,6 +477,20 @@
                 </div>
             </div>
         </div>
+        <!-- MODAL: Input Custom -->
+        <div x-show="showInputModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showInputModal = false" class="glass w-full max-w-sm rounded-2xl p-6 relative shadow-2xl">
+                <h3 class="text-xl font-bold text-gray-800 mb-2" x-text="inputTitle"></h3>
+                <p class="text-gray-500 text-sm mb-4" x-text="inputMessage"></p>
+                
+                <input type="text" id="alpineInputModalField" x-model="inputValue" @keydown.enter="executeInput()" :placeholder="inputPlaceholder" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-sm py-3 px-4 mb-6">
+                
+                <div class="flex gap-3">
+                    <button @click="showInputModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                    <button @click="executeInput()" class="flex-1 px-4 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/30">Simpan</button>
+                </div>
+            </div>
+        </div>
 
     @endif
 
@@ -535,6 +549,33 @@
                     this.showConfirmModal = false;
                 },
 
+                // Input Modal State
+                showInputModal: false,
+                inputTitle: '',
+                inputMessage: '',
+                inputValue: '',
+                inputPlaceholder: '',
+                inputAction: null,
+                
+                askInput(title, message, placeholder, defaultValue, callback) {
+                    this.inputTitle = title;
+                    this.inputMessage = message;
+                    this.inputPlaceholder = placeholder;
+                    this.inputValue = defaultValue || '';
+                    this.inputAction = callback;
+                    this.showInputModal = true;
+                    // Focus input after modal renders
+                    setTimeout(() => {
+                        const el = document.getElementById('alpineInputModalField');
+                        if(el) el.focus();
+                    }, 50);
+                },
+                
+                executeInput() {
+                    if (this.inputAction) this.inputAction(this.inputValue);
+                    this.showInputModal = false;
+                },
+
                 init() {
                     // Load dari localStorage
                     const storedHold = localStorage.getItem('pos_held_carts');
@@ -569,31 +610,39 @@
                 holdCart() {
                     if (this.cart.length === 0) return;
                     
-                    const holdId = Date.now();
-                    const now = new Date();
-                    const holdTime = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                    
-                    let holdName = this.customerName;
-                    if (!holdName) {
+                    let defaultName = this.customerName;
+                    if (!defaultName) {
                         const firstItem = this.cart[0].name;
                         const otherItems = this.cart.length > 1 ? ` + ${this.cart.length - 1} item` : '';
-                        holdName = `${firstItem}${otherItems}`;
+                        defaultName = `${firstItem}${otherItems}`;
                     }
 
-                    this.heldCarts.push({
-                        id: holdId,
-                        time: holdTime,
-                        name: holdName,
-                        cart: JSON.parse(JSON.stringify(this.cart)),
-                        discount: this.discount,
-                        customerName: this.customerName,
-                        customerPhone: this.customerPhone,
-                        total: this.subtotal
-                    });
-                    
-                    this.saveHeldCarts();
-                    this.clearCart(true);
-                    this.showToast('Pesanan berhasil dimasukkan ke antrean', 'success');
+                    this.askInput(
+                        'Simpan ke Antrean',
+                        'Berikan catatan, nomor meja, atau nama pelanggan untuk antrean ini:',
+                        'Contoh: Meja 4 / Budi',
+                        defaultName,
+                        (val) => {
+                            const holdId = Date.now();
+                            const now = new Date();
+                            const holdTime = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+                            this.heldCarts.push({
+                                id: holdId,
+                                time: holdTime,
+                                name: val || defaultName,
+                                cart: JSON.parse(JSON.stringify(this.cart)),
+                                discount: this.discount,
+                                customerName: this.customerName,
+                                customerPhone: this.customerPhone,
+                                total: this.subtotal
+                            });
+                            
+                            this.saveHeldCarts();
+                            this.clearCart(true);
+                            this.showToast('Pesanan berhasil dimasukkan ke antrean', 'success');
+                        }
+                    );
                 },
 
                 resumeCart(id) {
