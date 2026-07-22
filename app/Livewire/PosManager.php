@@ -145,9 +145,10 @@ class PosManager extends Component
                     return $p;
                 });
             } else {
-                // Ambil 3 produk terlaris yang masih ada stok
+                // Ambil 3 produk terlaris yang masih ada stok (Minimal terjual 5 agar layak disebut laku)
                 $top3 = (clone $query)
                     ->selectRaw('*, (CASE WHEN has_variants = 1 THEN (SELECT COALESCE(SUM(stock), 0) FROM product_variants WHERE product_variants.product_id = products.id) ELSE stock END) as computed_stock')
+                    ->where('sold_count', '>=', 5)
                     ->having('computed_stock', '>', 0)
                     ->orderBy('sold_count', 'desc')
                     ->limit(3)
