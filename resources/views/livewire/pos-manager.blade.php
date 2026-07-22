@@ -93,7 +93,7 @@
                             } else {
                                 $price = $product->price;
                             }
-                            $imageUrl = asset('assets/img/placeholder.jpg');
+                            $imageUrl = asset('assets/images/placeholder.webp');
                             if (!empty($product->images)) {
                                 if (is_numeric($product->images[0])) {
                                     $media = \Awcodes\Curator\Models\Media::find($product->images[0]);
@@ -110,7 +110,8 @@
                         @endphp
                         
                         <div class="glass bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden cursor-pointer group border border-gray-100"
-                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $price }}, {{ $hasVariants ? 'true' : 'false' }}, {{ $hasVariants ? htmlspecialchars(json_encode($product->variants->map(fn($v) => ['id' => $v->id, 'name' => $v->name, 'price' => $product->pos_discount_price ?: ($product->pos_price ?: ($v->price ?: $product->price)), 'stock' => $v->stock]))) : 'null' }})">
+                             x-data="{ variantsData: {{ $hasVariants ? \Illuminate\Support\Js::from($product->variants->map(fn($v) => ['id' => $v->id, 'name' => $v->name, 'price' => $product->pos_discount_price ?: ($product->pos_price ?: ($v->price ?: $product->price)), 'stock' => $v->stock])) : 'null' }} }"
+                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $price }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData)">
                             <div class="aspect-square bg-gray-100 relative overflow-hidden">
                                 <img src="{{ $image }}" alt="{{ $product->name }}" class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500">
                                 @if($hasVariants)
