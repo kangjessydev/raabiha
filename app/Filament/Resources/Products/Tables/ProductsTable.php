@@ -154,9 +154,29 @@ class ProductsTable
                     ->iconButton()
                     ->tooltip('Hapus Produk'),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+            ->bulkActions([
+                \Filament\Actions\BulkActionGroup::make([
+                    \Filament\Actions\DeleteBulkAction::make(),
+                    \Filament\Actions\BulkAction::make('change_channel_visibility')
+                        ->label('Ubah Visibilitas (POS/Web)')
+                        ->icon('heroicon-o-eye')
+                        ->color('warning')
+                        ->form([
+                            \Filament\Forms\Components\Select::make('channel_visibility')
+                                ->label('Tampil di')
+                                ->options([
+                                    'both' => 'Web & POS Kasir',
+                                    'online_only' => 'Web Toko Online Saja',
+                                    'pos_only' => 'POS Kasir Saja',
+                                ])
+                                ->required(),
+                        ])
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data): void {
+                            foreach ($records as $record) {
+                                $record->update(['channel_visibility' => $data['channel_visibility']]);
+                            }
+                        })
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ]);
     }

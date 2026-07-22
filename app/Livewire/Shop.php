@@ -66,7 +66,8 @@ class Shop extends Component
     {
         $query = Product::with(['category', 'variants.attributeOptions'])
             ->where('is_active', true)
-            ->where('is_hidden', false);
+            ->where('is_hidden', false)
+            ->whereIn('channel_visibility', ['online_only', 'both']);
 
         if ($this->search) {
             $searchTerm = '%' . str_replace(' ', '', strtolower($this->search)) . '%';

@@ -39,6 +39,9 @@ Route::middleware(['auth'])->group(function () {
         $request->session()->regenerateToken();
         return redirect('/login');
     })->name('logout');
+
+    // Route POS
+    Route::get('/pos', \App\Livewire\PosManager::class)->name('pos.index');
 });
 
 Route::get('/checkout', \App\Livewire\Checkout::class)->name('checkout');

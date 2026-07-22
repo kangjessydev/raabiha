@@ -20,6 +20,10 @@ class Product extends Model
         'images',
         'price',
         'discount_price',
+        'channel_visibility',
+        'pos_price',
+        'pos_discount_price',
+
         'reseller_price',
         'stock',
         'weight',

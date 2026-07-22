@@ -40,6 +40,10 @@ class Order extends Model
         'courier',
         'awb_number',
         'notes',
+        'pos_session_id',
+        'cashier_id',
+        'cash_paid',
+        'cash_change',
     ];
 
     protected $casts = [

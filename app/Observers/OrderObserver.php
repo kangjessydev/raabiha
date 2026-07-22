@@ -74,6 +74,8 @@ class OrderObserver
      */
     public function created(Order $order): void
     {
+        if ($order->source === 'pos') return; // Transaksi POS ditangani terpisah oleh PosTransactionService
+
         // Notifikasi Filament ke semua admin — pesanan baru masuk
         // Email dikirim dari Checkout.php SETELAH semua item dibuat agar $order->items tidak kosong.
         $this->sendOrderNotification(
@@ -94,6 +96,8 @@ class OrderObserver
      */
     public function sendNewOrderEmails(Order $order): void
     {
+        if ($order->source === 'pos') return; // Transaksi POS tidak perlu email konfirmasi
+
         // 1. Kirim Email Konfirmasi ke Customer
         $customerEmail = $this->getCustomerEmail($order);
         if ($customerEmail) {
@@ -144,6 +148,8 @@ class OrderObserver
      */
     public function updated(Order $order): void
     {
+        if ($order->source === 'pos') return; // Transaksi POS ditangani terpisah oleh PosTransactionService
+
         $customerEmail = $this->getCustomerEmail($order);
 
         // Notif saat payment_status berubah ke paid
@@ -377,6 +383,8 @@ class OrderObserver
      */
     private function recordCashIn(Order $order): void
     {
+        if ($order->source === 'pos') return; // POS handles its own cashflow
+
         Cashflow::updateOrCreate(
             [
                 'order_id' => $order->id,

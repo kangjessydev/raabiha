@@ -25,6 +25,9 @@ class ProductVariant extends Model
         'is_active',
         'minimum_stock',
         'purchase_price',
+        'channel_visibility',
+        'pos_price',
+        'pos_discount_price',
     ];
 
     protected $casts = [
