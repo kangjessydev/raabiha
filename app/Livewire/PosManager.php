@@ -292,17 +292,114 @@ class PosManager extends Component
             return;
         }
 
-        $supervisors = User::whereHas('roles', function($q) {
-            $q->whereIn('name', ['super_admin', 'owner', 'manager', 'finance']);
-        })->get();
+        $supervisors = User::all();
         foreach ($supervisors as $supervisor) {
-            if ($supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
+            $isSupRole = $supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']);
+            if ($isSupRole && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
                 $this->dispatch('supervisor-authorized', ['actionType' => $actionType]);
                 return;
             }
         }
 
         $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor salah atau pengguna tidak memiliki wewenang!']);
+    }
+
+    public function voidOrder($orderId, $supervisorPin, $reason = '')
+    {
+        $order = Order::with(['items', 'voidBy'])->find($orderId);
+        if (!$order) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi tidak ditemukan.']);
+            return;
+        }
+
+        if ($order->status === 'cancelled') {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi ini sudah pernah dibatalkan (Void).']);
+            return;
+        }
+
+        $supervisor = null;
+        $supervisors = User::all();
+        foreach ($supervisors as $sup) {
+            $isSupervisorRole = $sup->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($sup->role, ['super_admin', 'owner', 'manager', 'finance']);
+            if ($isSupervisorRole && $sup->pos_pin && \Illuminate\Support\Facades\Hash::check($supervisorPin, $sup->pos_pin)) {
+                $supervisor = $sup;
+                break;
+            }
+        }
+
+        if (!$supervisor) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor salah atau pengguna tidak berhak mengizinkan void!']);
+            return;
+        }
+
+        try {
+            DB::transaction(function () use ($order, $supervisor, $reason) {
+                // 1. Mark order as cancelled/void
+                $order->update([
+                    'status'         => 'cancelled',
+                    'payment_status' => 'failed',
+                    'void_by_id'     => $supervisor->id,
+                    'void_reason'    => $reason ?: 'Void Kasir POS',
+                    'void_at'        => now(),
+                ]);
+
+                // 2. Restock product items
+                foreach ($order->items as $item) {
+                    if ($item->product_variant_id) {
+                        $variant = \App\Models\ProductVariant::find($item->product_variant_id);
+                        if ($variant) {
+                            $variant->increment('stock', $item->quantity);
+                        }
+                    } else {
+                        $product = Product::find($item->product_id);
+                        if ($product) {
+                            $product->increment('stock', $item->quantity);
+                        }
+                    }
+
+                    // Stock log
+                    if (class_exists(\App\Models\StockLog::class)) {
+                        $currentStock = $item->product_variant_id
+                            ? (\App\Models\ProductVariant::find($item->product_variant_id)->stock ?? 0)
+                            : (\App\Models\Product::find($item->product_id)->stock ?? 0);
+
+                        \App\Models\StockLog::create([
+                            'product_id'         => $item->product_id,
+                            'product_variant_id' => $item->product_variant_id,
+                            'user_id'            => Auth::id(),
+                            'type'               => 'in',
+                            'quantity_before'    => max(0, $currentStock - $item->quantity),
+                            'quantity_change'    => $item->quantity,
+                            'quantity_after'     => $currentStock,
+                            'reason'             => 'pos_void',
+                            'notes'              => 'Restock Void Nota POS #' . $order->order_number . ' (Disetujui Supervisor: ' . $supervisor->name . ')',
+                        ]);
+                    }
+                }
+
+                // 3. Record Cashflow Reversal
+                if ($order->payment_method === 'cash') {
+                    \App\Models\Cashflow::create([
+                        'transaction_date' => now()->toDateString(),
+                        'type'             => 'out',
+                        'category'         => 'pos_void',
+                        'amount'           => $order->grand_total,
+                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
+                        'order_id'         => $order->id,
+                        'source'           => 'pos',
+                        'is_reversed'      => true,
+                    ]);
+                }
+            });
+
+            $this->dispatch('order-voided');
+            $this->dispatch('notify', [
+                'type'    => 'success',
+                'message' => 'Transaksi #' . $order->order_number . ' berhasil dibatalkan (Disetujui Supervisor: ' . $supervisor->name . ').'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal membatalkan transaksi: ' . $e->getMessage()]);
+        }
     }
 
     public function render()
@@ -355,7 +452,7 @@ class PosManager extends Component
             }
 
             /* ---------- Riwayat Transaksi (shift ini) ---------- */
-            $sessionOrders = Order::with('items')
+            $sessionOrders = Order::with(['items', 'voidBy'])
                 ->where('pos_session_id', $this->activeSession->id)
                 ->latest()
                 ->limit(50)
@@ -368,7 +465,7 @@ class PosManager extends Component
                 ->select(
                     'customer_name',
                     'customer_phone',
-                    DB::raw('COUNT(*) as visit_count'),
+                    DB::raw('COUNT(*) as total_orders'),
                     DB::raw('SUM(grand_total) as total_spent'),
                     DB::raw('MAX(created_at) as last_visit')
                 )
@@ -377,8 +474,9 @@ class PosManager extends Component
                 ->get();
 
             /* ---------- Rekap Kas ---------- */
-            $cashSales    = $sessionOrders->where('payment_method', 'cash')->sum('grand_total');
-            $nonCashSales = $sessionOrders->where('payment_method', '!=', 'cash')->sum('grand_total');
+            $validOrders  = $sessionOrders->where('status', '!=', 'cancelled');
+            $cashSales    = $validOrders->where('payment_method', 'cash')->sum('grand_total');
+            $nonCashSales = $validOrders->where('payment_method', '!=', 'cash')->sum('grand_total');
 
             $sessionPettyCash = \App\Models\Cashflow::where('source', 'pos')
                 ->where('category', 'pos_petty_cash')
@@ -390,7 +488,7 @@ class PosManager extends Component
             $pettyCashOut = $sessionPettyCash->where('type', 'out')->sum('amount');
 
             $sessionStats = [
-                'total_trx'      => $sessionOrders->count(),
+                'total_trx'      => $validOrders->count(),
                 'cash_sales'     => $cashSales,
                 'non_cash_sales' => $nonCashSales,
                 'total_sales'    => $cashSales + $nonCashSales,

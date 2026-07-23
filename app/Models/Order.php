@@ -44,6 +44,9 @@ class Order extends Model
         'cashier_id',
         'cash_paid',
         'cash_change',
+        'void_by_id',
+        'void_reason',
+        'void_at',
     ];
 
     protected $casts = [
@@ -53,11 +56,22 @@ class Order extends Model
         'shipping_cost' => 'decimal:2',
         'discount_total' => 'decimal:2',
         'grand_total' => 'decimal:2',
+        'void_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function cashier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function voidBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'void_by_id');
     }
 
     public function voucher(): BelongsTo

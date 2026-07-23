@@ -1053,6 +1053,65 @@
             </div>
         </div>
 
+        <!-- MODAL: Void Transaksi POS -->
+        <div x-show="showVoidModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[110] flex items-center justify-center bg-gray-950/80 backdrop-blur-md p-4" style="display: none;">
+            <div @click.away="showVoidModal = false"
+                 x-show="showVoidModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl border border-red-500/30">
+                
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Batalkan Transaksi (Void)
+                    </h3>
+                    <button type="button" @click="showVoidModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="bg-red-50 rounded-xl p-4 mb-4 border border-red-100">
+                    <div class="text-xs font-semibold text-red-500 uppercase tracking-wider mb-1">Nota yang akan dibatalkan</div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-800 text-lg" x-text="'#' + voidOrderNumber"></span>
+                        <span class="font-black text-red-600 text-lg" x-text="'Rp ' + formatMoney(voidOrderTotal)"></span>
+                    </div>
+                </div>
+
+                <form @submit.prevent="submitVoidOrder()" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Alasan Pembatalan / Void</label>
+                        <input type="text" x-model="voidReasonInput" placeholder="Contoh: Salah input barang / Batal beli"
+                               class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-sm py-3 px-4 shadow-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">PIN Supervisor (6 Digit)</label>
+                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="voidSupervisorPinInput" placeholder="Masukkan 6-digit PIN Supervisor"
+                               class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-sm">
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="showVoidModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                        <button type="submit" :disabled="!voidSupervisorPinInput || String(voidSupervisorPinInput).trim().length !== 6"
+                                class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-red-500/25 transition-all active:scale-95">Batalkan Transaksi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- MODAL: Ganti PIN POS 6-Digit -->
         <div x-show="showChangePinModal"
              x-transition:enter="transition ease-out duration-200"
@@ -1297,19 +1356,38 @@
                                 <span class="font-medium text-gray-700">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
                             </div>
                             @endforeach
-                        </div>
-
-                        <!-- Card Action Footer: Reprint Struk -->
-                        <div class="border-t border-gray-100 mt-3 pt-3 flex justify-between items-center">
+                                                <!-- Card Action Footer: Reprint Struk & Void Order -->
+                        <div class="border-t border-gray-100 mt-3 pt-3 flex flex-wrap justify-between items-center gap-2">
                             <span class="text-xs text-gray-400 font-medium">Kasir: {{ $order->cashier->name ?? 'Kasir' }}</span>
-                            <button wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-brand-50 text-gray-700 hover:text-brand-700 font-bold text-xs rounded-xl border border-gray-200 hover:border-brand-200 transition-all active:scale-95 shadow-sm group">
-                                <svg class="w-3.5 h-3.5 text-gray-500 group-hover:text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                </svg>
-                                <span>Cetak Ulang Struk</span>
-                            </button>
-                        </div>
+                            
+                            @if($order->status === 'cancelled')
+                                <div class="flex items-center gap-2 bg-red-50 text-red-700 px-3 py-1.5 rounded-xl border border-red-200 text-xs font-bold">
+                                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>VOID / DIBATALKAN</span>
+                                    @if($order->voidBy)
+                                        <span class="text-[11px] font-normal text-red-500">· Disetujui: {{ $order->voidBy->name }}</span>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2">
+                                    <button wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-brand-50 text-gray-700 hover:text-brand-700 font-bold text-xs rounded-xl border border-gray-200 hover:border-brand-200 transition-all active:scale-95 shadow-sm group">
+                                        <svg class="w-3.5 h-3.5 text-gray-500 group-hover:text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                        </svg>
+                                        <span>Cetak Ulang Struk</span>
+                                    </button>
+                                    
+                                    <button type="button" @click="openVoidModal({{ $order->id }}, '{{ $order->order_number }}', {{ $order->grand_total }})"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl border border-red-200 hover:border-red-300 transition-all active:scale-95 shadow-sm">
+                                        <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        <span>Batalkan (Void)</span>
+                                    </button>
+                                </div>
+                            @endif
+                        </div>  </div>
                     </div>
                     @endforeach
                 </div>
@@ -1547,6 +1625,32 @@
                     this.showConfirmModal = false;
                 },
 
+                // Void Order Modal State
+                showVoidModal: false,
+                voidOrderId: null,
+                voidOrderNumber: '',
+                voidOrderTotal: 0,
+                voidReasonInput: '',
+                voidSupervisorPinInput: '',
+
+                openVoidModal(id, number, total) {
+                    this.voidOrderId = id;
+                    this.voidOrderNumber = number;
+                    this.voidOrderTotal = total;
+                    this.voidReasonInput = '';
+                    this.voidSupervisorPinInput = '';
+                    this.showVoidModal = true;
+                },
+
+                submitVoidOrder() {
+                    const pin = (this.voidSupervisorPinInput || '').toString().trim();
+                    if (!pin || pin.length !== 6) {
+                        this.showToast('Masukkan 6-digit PIN Supervisor', 'error');
+                        return;
+                    }
+                    @this.call('voidOrder', this.voidOrderId, pin, this.voidReasonInput);
+                },
+
                 // Input Modal State
                 showInputModal: false,
                 showPettyCashModal: false,
@@ -1706,6 +1810,9 @@
                     window.addEventListener('supervisor-auth-failed', (e) => {
                         this.supervisorErrorMessage = e.detail[0].message || 'PIN Supervisor Salah!';
                         this.showToast(this.supervisorErrorMessage, 'error');
+                    });
+                    window.addEventListener('order-voided', () => {
+                        this.showVoidModal = false;
                     });
                     this.startAutoLockChecker();
                     window.addEventListener('notify', (e) => { this.showToast(e.detail[0].message, e.detail[0].type); this.isProcessing = false; });
