@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\PosSession;
+use App\Models\User;
 use App\Services\PosTransactionService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -281,6 +282,27 @@ class PosManager extends Component
 
         $this->dispatch('pin-changed');
         $this->dispatch('notify', ['type' => 'success', 'message' => 'PIN POS 6-digit berhasil diperbarui.']);
+    }
+
+    public function verifySupervisorPin($pin, $actionType = '')
+    {
+        $user = Auth::user();
+        if ($user->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) && $user->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $user->pos_pin)) {
+            $this->dispatch('supervisor-authorized', ['actionType' => $actionType]);
+            return;
+        }
+
+        $supervisors = User::whereHas('roles', function($q) {
+            $q->whereIn('name', ['super_admin', 'owner', 'manager', 'finance']);
+        })->get();
+        foreach ($supervisors as $supervisor) {
+            if ($supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
+                $this->dispatch('supervisor-authorized', ['actionType' => $actionType]);
+                return;
+            }
+        }
+
+        $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor salah atau pengguna tidak memiliki wewenang!']);
     }
 
     public function render()

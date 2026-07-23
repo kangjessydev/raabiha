@@ -1010,6 +1010,49 @@
             </div>
         </div>
 
+        <!-- MODAL: Otorisasi PIN Supervisor -->
+        <div x-show="showSupervisorPinModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-950/80 backdrop-blur-md p-4" style="display: none;">
+            <div @click.away="showSupervisorPinModal = false"
+                 x-show="showSupervisorPinModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl text-center border border-amber-500/30">
+                
+                <div class="w-14 h-14 bg-amber-500/20 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-amber-500/30">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+
+                <h3 class="text-xl font-bold text-gray-800 mb-1">Otorisasi Supervisor</h3>
+                <p class="text-xs text-gray-500 mb-4" x-text="supervisorReasonMessage || 'Tindakan ini memerlukan verifikasi PIN Supervisor/Manager.'"></p>
+
+                <form @submit.prevent="submitSupervisorAuth()" class="space-y-4 text-left">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Masukkan 6-Digit PIN Supervisor</label>
+                        <input type="password" id="posSupervisorPinField" x-model="supervisorPinInput" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="6 Digit PIN"
+                               class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-sm">
+                        <div x-show="supervisorErrorMessage" class="text-xs text-red-500 font-semibold mt-1" x-text="supervisorErrorMessage"></div>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="showSupervisorPinModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                        <button type="submit" :disabled="!supervisorPinInput || String(supervisorPinInput).trim().length !== 6"
+                                class="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-amber-500/25 transition-all active:scale-95">Verifikasi PIN</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- MODAL: Ganti PIN POS 6-Digit -->
         <div x-show="showChangePinModal"
              x-transition:enter="transition ease-out duration-200"
@@ -1508,6 +1551,40 @@
                 showInputModal: false,
                 showPettyCashModal: false,
                 showChangePinModal: false,
+                showSupervisorPinModal: false,
+                supervisorPinInput: '',
+                supervisorErrorMessage: '',
+                supervisorReasonMessage: '',
+                pendingSupervisorCallback: null,
+
+                requestSupervisorAuth(reason, callback) {
+                    const userRole = @json(auth()->user()->roles->pluck('name')->toArray() ?? []);
+                    const isSupervisor = userRole.some(r => ['super_admin', 'owner', 'manager', 'finance'].includes(r));
+                    if (isSupervisor) {
+                        callback();
+                        return;
+                    }
+
+                    this.supervisorReasonMessage = reason;
+                    this.supervisorPinInput = '';
+                    this.supervisorErrorMessage = '';
+                    this.pendingSupervisorCallback = callback;
+                    this.showSupervisorPinModal = true;
+                    setTimeout(() => {
+                        const el = document.getElementById('posSupervisorPinField');
+                        if (el) el.focus();
+                    }, 100);
+                },
+
+                submitSupervisorAuth() {
+                    const pin = (this.supervisorPinInput || '').toString().trim();
+                    if (!pin || pin.length !== 6) {
+                        this.supervisorErrorMessage = 'Masukkan 6 digit angka PIN Supervisor.';
+                        return;
+                    }
+                    this.supervisorErrorMessage = '';
+                    @this.call('verifySupervisorPin', pin, 'general');
+                },
                 isLocked: false,
                 lockPasswordInput: '',
                 lockErrorMessage: '',
@@ -1617,6 +1694,19 @@
                     window.addEventListener('petty-cash-saved', () => { this.showPettyCashModal = false; });
                     window.addEventListener('pin-created', () => { this.showToast('PIN POS 6-digit berhasil dibuat!', 'success'); });
                     window.addEventListener('pin-changed', () => { this.showChangePinModal = false; this.showToast('PIN POS berhasil diperbarui', 'success'); });
+                    window.addEventListener('supervisor-authorized', () => {
+                        this.showSupervisorPinModal = false;
+                        this.showToast('Otorisasi Supervisor Berhasil', 'success');
+                        if (this.pendingSupervisorCallback) {
+                            const cb = this.pendingSupervisorCallback;
+                            this.pendingSupervisorCallback = null;
+                            cb();
+                        }
+                    });
+                    window.addEventListener('supervisor-auth-failed', (e) => {
+                        this.supervisorErrorMessage = e.detail[0].message || 'PIN Supervisor Salah!';
+                        this.showToast(this.supervisorErrorMessage, 'error');
+                    });
                     this.startAutoLockChecker();
                     window.addEventListener('notify', (e) => { this.showToast(e.detail[0].message, e.detail[0].type); this.isProcessing = false; });
                     window.addEventListener('checkout-success', (e) => {
@@ -1934,6 +2024,19 @@
                         return;
                     }
 
+                    const isHighDiscount = (this.tempManualDiscountType === 'percent' && val > 20) || (this.tempManualDiscountType === 'rp' && val > 50000);
+
+                    if (val > 0 && isHighDiscount) {
+                        const reasonText = `Diskon manual ${this.tempManualDiscountType === 'percent' ? val + '%' : 'Rp ' + this.formatMoney(val)} memerlukan otorisasi Supervisor (> 20% / > Rp 50k).`;
+                        this.requestSupervisorAuth(reasonText, () => {
+                            this.commitManualDiscount(val);
+                        });
+                    } else {
+                        this.commitManualDiscount(val);
+                    }
+                },
+
+                commitManualDiscount(val) {
                     this.manualDiscountType = this.tempManualDiscountType;
                     this.manualDiscountValue = val;
                     this.showManualDiscountModal = false;

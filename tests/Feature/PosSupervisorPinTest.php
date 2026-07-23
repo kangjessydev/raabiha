@@ -1,0 +1,54 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use App\Livewire\PosManager;
+use Livewire\Livewire;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class PosSupervisorPinTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Role::create(['name' => 'owner', 'guard_name' => 'web']);
+        Role::create(['name' => 'kasir', 'guard_name' => 'web']);
+    }
+
+    public function test_supervisor_pin_verification()
+    {
+        $owner = User::factory()->create([
+            'pos_pin' => Hash::make('888888'),
+        ]);
+        $owner->assignRole('owner');
+
+        $cashier = User::factory()->create([
+            'pos_pin' => Hash::make('111111'),
+        ]);
+        $cashier->assignRole('kasir');
+
+        // Wrong PIN -> dispatches supervisor-auth-failed
+        Livewire::actingAs($cashier)
+            ->test(PosManager::class)
+            ->call('verifySupervisorPin', '000000', 'manual_discount')
+            ->assertDispatched('supervisor-auth-failed');
+
+        // Cashier's PIN -> fails as cashier is not a supervisor
+        Livewire::actingAs($cashier)
+            ->test(PosManager::class)
+            ->call('verifySupervisorPin', '111111', 'manual_discount')
+            ->assertDispatched('supervisor-auth-failed');
+
+        // Owner's Supervisor PIN -> dispatches supervisor-authorized
+        Livewire::actingAs($cashier)
+            ->test(PosManager::class)
+            ->call('verifySupervisorPin', '888888', 'manual_discount')
+            ->assertDispatched('supervisor-authorized');
+    }
+}
