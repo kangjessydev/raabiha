@@ -25,6 +25,7 @@ class Voucher extends Model
         'starts_at',
         'expires_at',
         'is_active',
+        'usable_channel',
     ];
 
     protected $casts = [

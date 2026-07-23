@@ -44,45 +44,179 @@
         </div>
     @else
         <!-- MAIN POS AREA -->
-        
-        <!-- Left: Products Area -->
-        <div class="flex-1 flex flex-col h-full bg-transparent">
-            <!-- Header/Search -->
-            <div class="glass border-b border-gray-200/50 p-4 sticky top-0 z-10 flex items-center justify-between gap-4">
-                <div class="flex-1 relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
-                    </div>
-                    <input wire:model.live.debounce.300ms="search" type="text" class="block w-full pl-10 pr-3 py-3 border-none bg-gray-100/50 rounded-xl focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all text-sm" placeholder="Cari Produk atau Barcode / SKU...">
+
+        <!-- Sidebar -->
+        <div :class="isSidebarOpen ? 'w-64' : 'w-20'" class="bg-white border-r border-gray-200 flex flex-col justify-between h-full transition-all duration-300 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex-shrink-0 relative">
+            <div class="overflow-y-auto overflow-x-hidden no-scrollbar">
+                <!-- Logo -->
+                <div class="h-16 flex items-center border-b border-gray-100 px-4 transition-all duration-300" :class="isSidebarOpen ? 'justify-start' : 'justify-center'">
+                    <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold shadow-sm shadow-brand-500/30 flex-shrink-0">R</div>
+                    <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="ml-3 font-bold text-gray-800 text-lg tracking-tight whitespace-nowrap">Raabiha POS</span>
                 </div>
                 
-                <div class="flex items-center gap-3">
+                <!-- Menus -->
+                <nav class="p-3 space-y-2 mt-2">
+                    <button @click="activePage = 'kasir'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='kasir' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Kasir">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Kasir</span>
+                    </button>
+                    <button @click="activePage = 'history'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='history' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Riwayat Transaksi">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Riwayat Transaksi</span>
+                    </button>
+                    <button @click="activePage = 'customers'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='customers' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Pelanggan">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Pelanggan</span>
+                    </button>
+                    <button @click="activePage = 'cashsummary'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='cashsummary' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Rekap Kas">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Rekap Kas</span>
+                    </button>
+                    
+                    <div class="pt-4 mt-4 border-t border-gray-100">
+                        <!-- Printer -->
+                        <div class="px-2" :class="isSidebarOpen ? 'lg:px-2' : 'px-0'">
+                            <label x-show="isSidebarOpen" class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 pl-2 transition-opacity duration-300">Perangkat</label>
+                            <div class="flex flex-col gap-2 p-2 rounded-xl border transition-all" :class="isSidebarOpen ? 'bg-gray-50 border-gray-100' : 'bg-transparent border-transparent'">
+                                <select x-show="isSidebarOpen" x-model="printerType" class="w-full text-sm border-none bg-transparent focus:ring-0 cursor-pointer text-gray-700 font-semibold py-1 transition-opacity duration-300">
+                                    <option value="bluetooth">Bluetooth</option>
+                                    <option value="serial">USB/Serial</option>
+                                </select>
+                                <button @click="connectPrinter()" :class="[printerConnected ? 'bg-green-100 text-green-700 border-green-200' : 'bg-white hover:border-red-300 hover:text-red-600 text-red-500 border-red-200', isSidebarOpen ? 'justify-center px-3 py-2 border shadow-sm' : 'justify-center p-2.5']" class="w-full rounded-lg text-sm font-bold transition-all flex items-center gap-2 relative" title="Koneksi Printer">
+                                    <span class="relative flex-shrink-0">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                        <!-- Dot indicator tampil saat sidebar collapsed -->
+                                        <span x-show="!isSidebarOpen" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-white" :class="printerConnected ? 'bg-green-500' : 'bg-red-500 animate-ping'" style="display:none;"></span>
+                                    </span>
+                                    <span x-show="isSidebarOpen" x-text="printerConnected ? '✓ Tersambung' : '✗ Belum Terhubung'" class="whitespace-nowrap"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+            
+            <!-- Profile / User Menu -->
+            <div class="p-3 border-t border-gray-200 bg-gray-50/50" x-data="{ showUserMenu: false }" @click.away="showUserMenu = false">
+                <!-- Profile Button -->
+                <button @click="showUserMenu = !showUserMenu"
+                    class="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 transition-all group"
+                    :class="isSidebarOpen ? 'justify-start' : 'justify-center'"
+                    title="{{ auth()->user()->name }}">
 
-
-                    <div class="flex items-center bg-white rounded-xl p-1 shadow-sm border border-gray-200">
-                        <select x-model="printerType" class="text-xs border-none bg-transparent focus:ring-0 py-1 pl-2 pr-6">
-                            <option value="bluetooth">Bluetooth</option>
-                            <option value="serial">USB/Serial</option>
-                        </select>
-                        <button @click="connectPrinter()" :class="printerConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                            <span x-text="printerConnected ? 'Tersambung' : 'Hubungkan'"></span>
-                        </button>
+                    {{-- Avatar Inisial --}}
+                    <div class="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm shadow-brand-500/30">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </div>
 
-                    <button @click="showCloseSession = true" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-medium text-sm transition-colors flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        Tutup Shift
-                    </button>
-                    <a href="{{ url('/admin') }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-medium text-sm transition-colors">
-                        Kembali ke Admin
-                    </a>
+                    {{-- Nama & Email (muncul saat sidebar terbuka) --}}
+                    <div x-show="isSidebarOpen" x-transition.opacity.duration.200ms class="flex-1 text-left overflow-hidden">
+                        <div class="text-sm font-bold text-gray-800 truncate">{{ auth()->user()->name }}</div>
+                        @if(auth()->user()->email)
+                            <div class="text-xs text-gray-400 truncate">{{ auth()->user()->email }}</div>
+                        @endif
+                    </div>
+
+                    {{-- Chevron --}}
+                    <svg x-show="isSidebarOpen" x-transition.opacity.duration.200ms class="w-4 h-4 text-gray-400 flex-shrink-0 transition-transform" :class="showUserMenu ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <!-- Dropdown Popup (muncul ke atas) -->
+                <div x-show="showUserMenu"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                     class="absolute bottom-[72px] left-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50"
+                     :class="isSidebarOpen ? 'w-[calc(100%-24px)]' : 'w-64'"
+                     style="display:none;">
+
+                    {{-- Header Info --}}
+                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Masuk sebagai</div>
+                        <div class="font-bold text-gray-800 mt-0.5">{{ auth()->user()->name }}</div>
+                        @if(auth()->user()->email)
+                            <div class="text-xs text-gray-400">{{ auth()->user()->email }}</div>
+                        @endif
+                    </div>
+
+                    <div class="p-2 space-y-1">
+                        {{-- Tutup Shift --}}
+                        <button @click="showUserMenu = false; showCloseSession = true;"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-red-600 hover:bg-red-50 transition-colors font-medium text-sm">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            Tutup Shift Kasir
+                        </button>
+
+                        {{-- Ke Admin (hanya untuk yang boleh) --}}
+                        @if(auth()->user()->hasAnyRole(['super_admin', 'owner', 'panel_user', 'marketing', 'finance', 'logistics', 'cs']))
+                        <a href="{{ url('/admin') }}"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-gray-700 hover:bg-gray-100 transition-colors font-medium text-sm">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Admin Panel
+                        </a>
+                        @endif
+
+                        <div class="border-t border-gray-100 my-1"></div>
+
+                        {{-- Keluar --}}
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit"
+                                class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors font-medium text-sm">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                                Keluar
+                            </button>
+                        </form>
+                    </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Center: Products Area (Kasir) -->
+        <div x-show="activePage === 'kasir'" class="flex-1 flex flex-col h-full bg-transparent min-w-0 overflow-hidden">
+            <!-- Header/Search (Cleaned) -->
+            <div class="glass border-b border-gray-200/50 p-4 sticky top-0 z-10 flex items-center gap-4">
+                <button @click="isSidebarOpen = !isSidebarOpen" class="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-brand-600 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" title="Toggle Menu">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <div class="flex-1 relative max-w-2xl">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <input wire:model.live.debounce.300ms="search" type="text" class="block w-full pl-11 pr-4 py-3 border-none bg-gray-100/70 hover:bg-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all text-sm font-medium" placeholder="Cari Produk atau Barcode / SKU...">
+                </div>
+                <!-- Printer Status Indicator -->
+                <button @click="connectPrinter()"
+                    :title="printerConnected ? 'Printer: Tersambung (klik untuk ganti)' : 'Printer: Belum Terhubung — Klik untuk Sambungkan'"
+                    class="flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                    :class="printerConnected
+                        ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                        : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 animate-pulse'">
+                    <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
+                        <span class="absolute inline-flex h-full w-full rounded-full opacity-75"
+                              :class="printerConnected ? 'bg-green-400 animate-ping' : 'bg-red-400'"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5"
+                              :class="printerConnected ? 'bg-green-500' : 'bg-red-500'"></span>
+                    </span>
+                    <span x-text="printerConnected ? 'Printer OK' : 'Printer Offline'" class="hidden sm:inline whitespace-nowrap"></span>
+                </button>
             </div>
 
             <!-- Product Grid -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
                     @forelse($products as $product)
                         @php
                             // Cek jika produk punya varian
@@ -189,11 +323,11 @@
         </div>
 
         <!-- Right: Cart Sidebar -->
-        <div class="w-full md:w-[400px] lg:w-[450px] bg-white border-l border-gray-200/50 shadow-2xl flex flex-col relative z-20">
+        <div x-show="activePage === 'kasir'" class="w-full md:w-[400px] lg:w-[450px] bg-white border-l border-gray-200/50 shadow-2xl flex flex-col relative z-20">
             <!-- Cart Header -->
             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2 transition-transform duration-300" :class="cartBouncing ? 'scale-110 text-brand-600' : ''">
+                    <svg class="w-5 h-5 text-brand-500 transition-transform" :class="cartBouncing ? 'animate-bounce' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                     Keranjang
                 </h2>
                 <div class="flex items-center gap-1">
@@ -221,7 +355,10 @@
                 </template>
 
                 <template x-for="(item, index) in cart" :key="index">
-                    <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2 relative group hover:border-brand-200 transition-colors">
+                    <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2 relative group hover:border-brand-200 transition-all"
+                         x-transition:enter="transition ease-out duration-300 transform"
+                         x-transition:enter-start="opacity-0 -translate-x-4 scale-95"
+                         x-transition:enter-end="opacity-100 translate-x-0 scale-100">
                         <div class="flex justify-between items-start pr-6">
                             <h4 class="font-semibold text-sm text-gray-800 leading-tight" x-text="item.name"></h4>
                             <div class="font-bold text-brand-600 text-sm" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></div>
@@ -251,13 +388,24 @@
                     <span class="text-gray-500">Subtotal</span>
                     <span class="font-semibold text-gray-700" x-text="'Rp ' + formatMoney(subtotal)"></span>
                 </div>
-                <div class="flex justify-between items-center mb-4 cursor-pointer group" @click="showDiscountModal = true">
-                    <span class="text-gray-500 border-b border-dashed border-gray-300 group-hover:border-brand-500 transition-colors">Diskon Manual</span>
-                    <span class="font-semibold text-red-500" x-text="'- Rp ' + formatMoney(discount)"></span>
+                <!-- Voucher Selector Button (Compact) -->
+                <div class="flex justify-between items-center mb-4 cursor-pointer group" @click="showVoucherModal = true">
+                    <span class="flex items-center gap-2 text-brand-600 border-b border-dashed border-brand-300 group-hover:border-brand-500 transition-colors pb-0.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                        <span class="font-semibold" x-text="activeVoucher ? activeVoucher.name : 'Gunakan Kupon Promo'"></span>
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <span x-show="activeVoucher" class="font-bold text-red-500" x-text="'- Rp ' + formatMoney(discount)"></span>
+                        <span x-show="!activeVoucher" class="text-sm font-semibold text-brand-600 group-hover:text-brand-700">Pilih ></span>
+                        <!-- Tombol lepas voucher -->
+                        <button x-show="activeVoucher" @click.stop="removeVoucher()" class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50" title="Lepas Promo">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="flex justify-between items-center mb-6 pt-4 border-t border-gray-100">
                     <span class="text-lg font-bold text-gray-800">Total</span>
-                    <span class="text-2xl font-black text-brand-600" x-text="'Rp ' + formatMoney(grandTotal)"></span>
+                    <span class="text-2xl font-black text-brand-600 transition-all duration-300 inline-block" :class="cartBouncing ? 'scale-110 text-brand-500' : ''" x-text="'Rp ' + formatMoney(grandTotal)"></span>
                 </div>
                 
                 <div class="flex gap-2">
@@ -283,8 +431,23 @@
         </div>
 
         <!-- MODAL: Pilih Varian Produk -->
-        <div x-show="showVariantModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
-            <div @click.away="showVariantModal = false" class="glass w-full max-w-lg rounded-2xl p-6 relative">
+        <div x-show="showVariantModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showVariantModal = false"
+                 x-show="showVariantModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-lg rounded-2xl p-6 relative shadow-2xl">
                  <h3 class="text-xl font-bold mb-1" x-text="currentProductForVariant ? currentProductForVariant.name : 'Pilih Varian'"></h3>
                  <p class="text-gray-500 mb-4 text-sm">Pilih salah satu varian di bawah ini:</p>
                  
@@ -309,8 +472,13 @@
 
         <!-- MODAL: Checkout / Payment -->
         <div x-show="showCheckoutModal" 
-             x-transition.opacity.duration.300ms
-             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-3 md:p-4" style="display: none;">
             
             <div @click.away="if(!isProcessing) showCheckoutModal = false" 
                  x-show="showCheckoutModal"
@@ -320,81 +488,139 @@
                  x-transition:leave="transition ease-in duration-200 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                  x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+                 class="bg-slate-100 w-full max-w-3xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col shadow-2xl border border-gray-200/50">
                 
-                <!-- Modal Header -->
-                <div class="bg-white/50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-gray-800">Pembayaran</h2>
-                    <button @click="showCheckoutModal = false" :disabled="isProcessing" class="text-gray-400 hover:text-gray-600 p-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <!-- Header Modal -->
+                <div class="flex justify-between items-center mb-5 flex-shrink-0">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        Pembayaran Transaksi
+                    </h3>
+                    <button @click="showCheckoutModal = false" :disabled="isProcessing" class="bg-white hover:bg-gray-200 text-gray-400 hover:text-gray-700 p-2 rounded-full shadow-sm transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <!-- Modal Body -->
-                <div class="p-6 flex flex-col md:flex-row gap-6 bg-white/80">
-                    <!-- Detail Tagihan -->
-                    <div class="flex-1 space-y-4">
-                        <div class="bg-brand-50 rounded-2xl p-6 border border-brand-100 text-center">
-                            <p class="text-sm font-medium text-brand-800 mb-1">Total Tagihan</p>
-                            <p class="text-4xl font-black text-brand-600" x-text="'Rp ' + formatMoney(grandTotal)"></p>
+                <!-- Body 2 Kolom: Scrollable -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 overflow-y-auto flex-1 pr-1">
+                    
+                    <!-- Kolom Kiri: Rincian Barang (Col 5) -->
+                    <div class="md:col-span-5 space-y-4 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm mb-3">Rincian Barang</h4>
+                            <div class="max-h-56 overflow-y-auto space-y-2.5 pr-1">
+                                <template x-for="(item, idx) in cart" :key="idx">
+                                    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-200/80 space-y-1">
+                                        <div class="flex justify-between items-start text-sm font-bold text-gray-800">
+                                            <span x-text="item.name" class="pr-2 leading-snug"></span>
+                                            <span class="whitespace-nowrap" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></span>
+                                        </div>
+                                        <div class="text-xs text-gray-400 font-medium" x-text="'Rp ' + formatMoney(item.price) + ' × ' + item.quantity"></div>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
 
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Uang Diterima (Rp)</label>
-                                <input type="number" x-model.number="cashPaid" @input="calculateChange" class="w-full text-2xl font-bold rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 p-4 bg-gray-50 text-right" placeholder="0">
+                        <!-- Card Total Tagihan -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-2 mt-auto">
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span>Subtotal</span>
+                                <span class="font-bold text-gray-800" x-text="'Rp ' + formatMoney(subtotal)"></span>
                             </div>
-                            
-                            <!-- Preset Uang Pas -->
-                            <div class="grid grid-cols-3 gap-2">
-                                <button @click="setCashPaid(grandTotal)" class="py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold transition-colors">Uang Pas</button>
-                                <button @click="setCashPaid(Math.ceil(grandTotal/50000)*50000)" class="py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold transition-colors" x-text="formatMoney(Math.ceil(grandTotal/50000)*50000)"></button>
-                                <button @click="setCashPaid(Math.ceil(grandTotal/100000)*100000)" class="py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold transition-colors" x-text="formatMoney(Math.ceil(grandTotal/100000)*100000)"></button>
+                            <div x-show="activeVoucher" class="flex justify-between text-sm text-brand-600">
+                                <span>Diskon</span>
+                                <span class="font-bold" x-text="'- Rp ' + formatMoney(discount)"></span>
                             </div>
-
-                            <div class="bg-gray-100 rounded-xl p-4 flex justify-between items-center mt-2 border border-gray-200">
-                                <span class="font-medium text-gray-600">Kembalian</span>
-                                <span class="text-2xl font-bold" :class="cashChange >= 0 ? 'text-gray-800' : 'text-red-500'" x-text="'Rp ' + formatMoney(Math.max(0, cashChange))"></span>
+                            <div class="border-t border-gray-100 pt-2 flex justify-between items-center">
+                                <span class="font-bold text-gray-800 text-sm">Total Tagihan</span>
+                                <span class="text-2xl font-black text-brand-600" x-text="'Rp ' + formatMoney(grandTotal)"></span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Detail Pelanggan (Opsional) -->
-                    <div class="w-full md:w-64 space-y-4 border-l border-gray-100 pl-0 md:pl-6">
+                    <!-- Kolom Kanan: Metode Bayar & Nominal (Col 7) -->
+                    <div class="md:col-span-7 space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan (Opsional)</label>
-                            <input type="text" x-model="customerName" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500">
+                            <h4 class="font-bold text-gray-800 text-sm mb-3">Metode Pembayaran</h4>
+                            
+                            <!-- Dynamic Payment Methods Grid from DB (2 Kolom Lapang) -->
+                            <div class="grid grid-cols-2 gap-3 max-h-44 overflow-y-auto pr-1">
+                                <template x-for="method in paymentMethods" :key="method.code">
+                                    <button type="button"
+                                            @click="selectPaymentMethod(method)"
+                                            class="h-12 px-4 rounded-xl text-xs font-bold flex items-center justify-between transition-all shadow-sm cursor-pointer"
+                                            :class="paymentMethod === method.code ? 'border-2 border-brand-500 bg-brand-50/70 text-brand-800 shadow-sm' : 'border border-gray-200 bg-white text-gray-800 hover:border-gray-300 hover:bg-gray-50'">
+                                        <div class="flex items-center gap-2 truncate">
+                                            <template x-if="method.logo">
+                                                <img :src="method.logo" :alt="method.name" class="w-4 h-4 object-contain flex-shrink-0">
+                                            </template>
+                                            <span class="truncate" x-text="method.name"></span>
+                                        </div>
+                                        <span x-show="paymentMethod === method.code" class="w-2.5 h-2.5 rounded-full bg-brand-500 flex-shrink-0"></span>
+                                    </button>
+                                </template>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp (Opsional)</label>
-                            <input type="text" x-model="customerPhone" class="w-full rounded-lg border-gray-300 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="08...">
+
+                        <!-- Nominal Uang (Jika Tunai) -->
+                        <div x-show="isCashSelected()" x-transition.opacity class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-800 mb-2">Uang Diterima (Rp)</label>
+                                <div class="h-14 bg-white rounded-xl border border-gray-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 shadow-sm flex items-center px-4 transition-all">
+                                    <span class="font-bold text-gray-400 text-base mr-3 select-none">Rp</span>
+                                    <input type="number"
+                                           x-model.number="cashPaid"
+                                           @input="calculateChange"
+                                           class="w-full text-2xl font-bold text-gray-900 border-none focus:ring-0 p-0 bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                           placeholder="0">
+                                </div>
+                            </div>
+
+                            <!-- Preset Nominal Buttons -->
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" @click="setCashPaid(grandTotal)" class="h-11 bg-white border border-gray-200 rounded-xl font-bold text-xs text-gray-700 shadow-sm hover:bg-gray-50 transition-colors">Uang Pas</button>
+                                <button type="button" @click="setCashPaid(Math.ceil(grandTotal/50000)*50000)" class="h-11 bg-white border border-gray-200 rounded-xl font-bold text-xs text-gray-700 shadow-sm hover:bg-gray-50 transition-colors" x-text="'Rp ' + formatMoney(Math.ceil(grandTotal/50000)*50000)"></button>
+                                <button type="button" @click="setCashPaid(Math.ceil(grandTotal/100000)*100000)" class="h-11 bg-white border border-gray-200 rounded-xl font-bold text-xs text-gray-700 shadow-sm hover:bg-gray-50 transition-colors" x-text="'Rp ' + formatMoney(Math.ceil(grandTotal/100000)*100000)"></button>
+                            </div>
+
+                            <!-- Status Kembalian / Uang Kurang -->
+                            <div class="p-3.5 rounded-xl flex items-center justify-between text-sm font-bold border shadow-sm"
+                                 :class="cashPaid < grandTotal ? 'bg-red-50 border-red-200 text-red-700' : 'bg-brand-50/80 border-brand-200 text-brand-800'">
+                                <span x-text="cashPaid < grandTotal ? 'UANG KURANG' : 'KEMBALIAN'"></span>
+                                <span class="text-base" x-text="'Rp ' + formatMoney(Math.abs(cashChange))"></span>
+                            </div>
                         </div>
-                        
-                        <div class="pt-4 mt-4 border-t border-gray-100">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Metode Pembayaran</label>
-                            <div class="space-y-2">
-                                <label class="flex items-center p-3 border rounded-lg cursor-pointer transition-all" :class="paymentMethod === 'cash' ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500' : 'border-gray-200 hover:bg-gray-50'">
-                                    <input type="radio" x-model="paymentMethod" value="cash" class="text-brand-600 focus:ring-brand-500">
-                                    <span class="ml-2 font-medium">Tunai (Cash)</span>
-                                </label>
-                                <label class="flex items-center p-3 border rounded-lg cursor-pointer transition-all" :class="paymentMethod === 'qris' ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500' : 'border-gray-200 hover:bg-gray-50'">
-                                    <input type="radio" x-model="paymentMethod" value="qris" class="text-brand-600 focus:ring-brand-500">
-                                    <span class="ml-2 font-medium">QRIS / Transfer</span>
-                                </label>
+
+                        <!-- Catatan Pembayaran Non-Tunai -->
+                        <div x-show="!isCashSelected()" x-transition.opacity class="p-4 bg-white rounded-xl border border-gray-200 text-xs text-gray-600 leading-relaxed shadow-sm">
+                            Metode pembayaran non-tunai (<strong x-text="paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod"></strong>) dipilih. Transaksi akan dicatat otomatis di laporan kasir.
+                        </div>
+
+                        <!-- Identitas Pembeli (Opsional) -->
+                        <div class="pt-2 border-t border-gray-200/80">
+                            <label class="block text-xs font-bold text-gray-700 mb-2">Data Pelanggan (Opsional)</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" x-model="customerName" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-xs py-2.5 px-3 bg-white shadow-sm" placeholder="Nama Pembeli">
+                                <input type="text" x-model="customerPhone" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-xs py-2.5 px-3 bg-white shadow-sm" placeholder="No WhatsApp">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Modal Footer -->
-                <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-                    <button @click="showCheckoutModal = false" :disabled="isProcessing" class="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">Batal</button>
-                    <button @click="submitOrder()" 
-                            :disabled="isProcessing || (paymentMethod === 'cash' && cashPaid < grandTotal)" 
-                            class="px-8 py-3 bg-brand-600 text-white font-bold rounded-xl shadow-lg hover:bg-brand-700 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span x-show="!isProcessing">Bayar & Selesaikan</span>
+                <!-- Footer Action Buttons (Equal 2 Columns) -->
+                <div class="grid grid-cols-2 gap-3 pt-4 border-t border-gray-200/80 mt-4 flex-shrink-0">
+                    <button type="button" @click="showCheckoutModal = false" :disabled="isProcessing" class="h-12 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-xl transition-colors text-sm flex items-center justify-center">
+                        Batal
+                    </button>
+                    <button type="button" @click="submitOrder()" 
+                            :disabled="isProcessing || (isCashSelected() && cashPaid < grandTotal)" 
+                            class="h-12 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="!isProcessing" class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Selesaikan Pembayaran
+                        </span>
                         <span x-show="isProcessing" class="flex items-center gap-2">
-                            <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <svg class="animate-spin -ml-1 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             Memproses...
                         </span>
                     </button>
@@ -403,31 +629,88 @@
         </div>
 
         <!-- MODAL: Tutup Shift -->
-        <div x-show="showCloseSession" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
-            <div @click.away="showCloseSession = false" class="glass w-full max-w-md rounded-2xl p-8 relative shadow-2xl">
+        <div x-show="showCloseSession"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showCloseSession = false"
+                 x-show="showCloseSession"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-md rounded-2xl p-8 relative shadow-2xl">
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">Tutup Shift Kasir</h2>
-                <p class="text-gray-500 text-sm mb-6">Hitung uang fisik di laci kasir dan masukkan di bawah ini.</p>
+                <p class="text-gray-500 text-sm mb-6">Hitung uang fisik di laci kasir dan masukkan di bawah ini untuk mencocokkan dengan sistem.</p>
+                
+                @if($activeSession)
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 font-medium">Modal Awal:</span>
+                        <span class="font-bold text-gray-700">Rp {{ number_format($activeSession->opening_cash, 0, ',', '.') }}</span>
+                    </div>
+                    @php
+                        $sales = $activeSession->orders()->sum('cash_paid') - $activeSession->orders()->sum('cash_change');
+                        $expected = $activeSession->opening_cash + $sales;
+                    @endphp
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500 font-medium">Penjualan Tunai:</span>
+                        <span class="font-bold text-green-600">+ Rp {{ number_format($sales, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="border-t border-dashed border-gray-300 pt-2 mt-2 flex justify-between">
+                        <span class="text-sm font-bold text-gray-700">Estimasi Sistem:</span>
+                        <span class="font-black text-brand-600 text-lg">Rp {{ number_format($expected, 0, ',', '.') }}</span>
+                    </div>
+                </div>
+                @endif
                 
                 <form wire:submit.prevent="closeSession" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Total Uang Fisik (Rp)</label>
-                        <input type="number" wire:model="actualEndingCash" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-lg py-3 px-4" placeholder="0" required>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Total Uang Fisik Aktual (Rp)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rp</span>
+                            <input type="number" wire:model="actualEndingCash" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-xl font-bold py-3 pl-12 pr-4 text-gray-900" placeholder="0" required>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
-                        <textarea wire:model="sessionNotes" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-sm p-3" rows="3" placeholder="Misal: Ada pengeluaran beli lakban Rp 10.000"></textarea>
+                        <textarea wire:model="sessionNotes" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-sm p-3" rows="2" placeholder="Misal: Ada pengeluaran beli lakban Rp 10.000"></textarea>
                     </div>
-                    <div class="flex gap-3 pt-2">
+                    <div class="flex gap-3 pt-4">
                         <button type="button" @click="showCloseSession = false" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition-all">Batal</button>
-                        <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-red-500/30 transition-all">Tutup Shift</button>
+                        <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-red-500/30 transition-all flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Akhiri Shift
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- MODAL: Hold Carts -->
-        <div x-show="showHoldModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
-            <div @click.away="showHoldModal = false" class="glass w-full max-w-2xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col">
+        <div x-show="showHoldModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showHoldModal = false"
+                 x-show="showHoldModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-2xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col shadow-2xl">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                         <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -463,8 +746,23 @@
         </div>
 
         <!-- MODAL: Konfirmasi -->
-        <div x-show="showConfirmModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
-            <div @click.away="showConfirmModal = false" class="glass w-full max-w-sm rounded-2xl p-6 relative shadow-2xl text-center">
+        <div x-show="showConfirmModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showConfirmModal = false"
+                 x-show="showConfirmModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-sm rounded-2xl p-6 relative shadow-2xl text-center">
                 <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
@@ -478,8 +776,23 @@
             </div>
         </div>
         <!-- MODAL: Input Custom -->
-        <div x-show="showInputModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
-            <div @click.away="showInputModal = false" class="glass w-full max-w-sm rounded-2xl p-6 relative shadow-2xl">
+        <div x-show="showInputModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showInputModal = false"
+                 x-show="showInputModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-sm rounded-2xl p-6 relative shadow-2xl">
                 <h3 class="text-xl font-bold text-gray-800 mb-2" x-text="inputTitle"></h3>
                 <p class="text-gray-500 text-sm mb-4" x-text="inputMessage"></p>
                 
@@ -492,20 +805,275 @@
             </div>
         </div>
 
+        <!-- MODAL: Voucher / Promo -->
+        <div x-show="showVoucherModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+            <div @click.away="showVoucherModal = false"
+                 x-show="showVoucherModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-lg rounded-2xl p-6 relative max-h-[80vh] flex flex-col shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                        Pilih Kupon Promo
+                    </h3>
+                    <button @click="showVoucherModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="overflow-y-auto flex-1 space-y-3 pr-2">
+                    <template x-if="vouchers.length === 0">
+                        <div class="text-center py-10 text-gray-400">
+                            <p>Tidak ada promo yang sedang aktif saat ini.</p>
+                        </div>
+                    </template>
+                    
+                    <template x-for="v in vouchers" :key="v.id">
+                        <div 
+                            class="border rounded-xl p-4 flex flex-col gap-2 transition-all"
+                            :class="isVoucherEligible(v) ? (activeVoucher && activeVoucher.id === v.id ? 'bg-brand-50 border-brand-400 shadow-md' : 'bg-white border-gray-200 hover:border-brand-300 cursor-pointer') : 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed'"
+                            @click="isVoucherEligible(v) ? applyVoucher(v) : null">
+                            
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-gray-800" x-text="v.name"></h4>
+                                    <div class="text-xs text-gray-500 font-mono mt-1 bg-gray-100 px-2 py-0.5 rounded inline-block" x-text="v.code"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-black text-brand-600" x-text="v.discount_type === 'percent' ? v.discount_amount + '%' : 'Rp ' + formatMoney(v.discount_amount)"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-sm text-gray-500 mt-2 flex items-center justify-between">
+                                <div class="flex flex-col gap-0.5">
+                                    <span x-show="v.min_purchase > 0" x-text="'Min. Belanja: Rp ' + formatMoney(v.min_purchase)"></span>
+                                    <span x-show="v.min_items > 0" x-text="'Min. Item: ' + v.min_items + ' pcs'"></span>
+                                    <span x-show="v.min_purchase <= 0 && v.min_items <= 0">Tanpa min. belanja</span>
+                                </div>
+                                
+                                <span x-show="!isVoucherEligible(v)" class="text-xs font-semibold text-red-500">Syarat belum terpenuhi</span>
+                                <span x-show="activeVoucher && activeVoucher.id === v.id" class="text-xs font-bold text-brand-600 flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Dipakai
+                                </span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                
+                <div x-show="activeVoucher" class="mt-4 pt-4 border-t border-gray-100 text-center">
+                    <button @click="removeVoucher()" class="text-red-500 text-sm font-semibold hover:underline">Lepas Kupon Saat Ini</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ============================================ -->
+        <!-- PAGE: Riwayat Transaksi                     -->
+        <!-- ============================================ -->
+        <div x-show="activePage === 'history'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
+            <!-- Header -->
+            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center gap-4 shadow-sm">
+                <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                </button>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
+                    <p class="text-sm text-gray-400">Shift hari ini &mdash; {{ count($sessionOrders) }} transaksi</p>
+                </div>
+            </div>
+            <!-- List -->
+            <div class="flex-1 overflow-y-auto">
+                @if(count($sessionOrders) === 0)
+                <div class="flex flex-col items-center justify-center h-full text-gray-300 py-24">
+                    <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <p class="text-lg font-medium">Belum ada transaksi hari ini</p>
+                    <p class="text-sm mt-1">Transaksi yang selesai akan muncul di sini</p>
+                </div>
+                @else
+                <div class="max-w-3xl mx-auto p-6 space-y-3">
+                    @foreach($sessionOrders as $order)
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-brand-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-gray-800">#{{ $order->order_number }}</div>
+                                    <div class="text-xs text-gray-400">{{ $order->created_at->format('H:i') }}{{ $order->customer_name ? ' · ' . $order->customer_name : '' }}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-black text-xl text-brand-600">Rp {{ number_format($order->grand_total, 0, ',', '.') }}</div>
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $order->payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' }}">
+                                    {{ $order->payment_method === 'cash' ? 'Tunai' : 'QRIS / Transfer' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-50 pt-3 space-y-1">
+                            @foreach($order->items as $item)
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">{{ $item->product_name }}{{ $item->variant_name ? ' - '.$item->variant_name : '' }} <span class="text-gray-400">x{{ $item->quantity }}</span></span>
+                                <span class="font-medium text-gray-700">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PAGE: Pelanggan                             -->
+        <!-- ============================================ -->
+        <div x-show="activePage === 'customers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
+            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center gap-4 shadow-sm">
+                <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                </button>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Pelanggan</h1>
+                    <p class="text-sm text-gray-400">{{ count($sessionCustomers) }} pelanggan tercatat shift ini</p>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                @if(count($sessionCustomers) === 0)
+                <div class="flex flex-col items-center justify-center h-full text-gray-300 py-24">
+                    <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <p class="text-lg font-medium">Belum ada pelanggan tercatat</p>
+                    <p class="text-sm mt-1">Isi nama pelanggan saat checkout agar muncul di sini</p>
+                </div>
+                @else
+                <div class="max-w-3xl mx-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach($sessionCustomers as $customer)
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4 hover:border-brand-200 hover:shadow-md transition-all">
+                        <div class="w-12 h-12 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                            {{ strtoupper(substr($customer->customer_name, 0, 1)) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-bold text-gray-800 truncate">{{ $customer->customer_name }}</div>
+                            <div class="text-sm text-gray-400">{{ $customer->customer_phone ?: 'Tanpa nomor telepon' }}</div>
+                            <div class="flex items-center gap-3 mt-2">
+                                <span class="text-xs bg-brand-50 text-brand-600 font-semibold px-2 py-0.5 rounded-full">{{ $customer->visit_count }}x kunjungan</span>
+                                <span class="text-xs font-bold text-gray-700">Rp {{ number_format($customer->total_spent, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PAGE: Rekap Kas                             -->
+        <!-- ============================================ -->
+        <div x-show="activePage === 'cashsummary'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
+            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center gap-4 shadow-sm">
+                <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                </button>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Rekap Kas</h1>
+                    @if(!empty($sessionStats))
+                    <p class="text-sm text-gray-400">Shift dibuka sejak {{ $sessionStats['opened_at'] }}</p>
+                    @endif
+                </div>
+            </div>
+            @if(!empty($sessionStats))
+            <div class="flex-1 overflow-y-auto">
+                <div class="max-w-2xl mx-auto p-6 space-y-5">
+                    <!-- Total Transaksi -->
+                    <div class="bg-brand-600 rounded-3xl p-8 text-center text-white shadow-xl shadow-brand-500/30">
+                        <div class="text-6xl font-black">{{ $sessionStats['total_trx'] }}</div>
+                        <div class="text-brand-200 font-medium mt-2">Total Transaksi Shift Ini</div>
+                    </div>
+                    <!-- Breakdown -->
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+                        <h3 class="font-bold text-gray-700 text-sm uppercase tracking-wider">Rincian Penjualan</h3>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                </div>
+                                <span class="text-gray-600">Modal Awal Shift</span>
+                            </div>
+                            <span class="font-bold text-gray-800">Rp {{ number_format($sessionStats['opening_cash'], 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <span class="text-gray-600">Penjualan Tunai</span>
+                            </div>
+                            <span class="font-bold text-green-600">+ Rp {{ number_format($sessionStats['cash_sales'], 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                </div>
+                                <span class="text-gray-600">QRIS / Transfer</span>
+                            </div>
+                            <span class="font-bold text-blue-600">+ Rp {{ number_format($sessionStats['non_cash_sales'], 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-2">
+                            <span class="font-bold text-gray-800">Total Omzet</span>
+                            <span class="font-black text-2xl text-gray-900">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                    <!-- Estimasi Laci -->
+                    <div class="bg-green-50 rounded-2xl border border-green-200 p-6">
+                        <div class="text-sm font-bold text-green-600 uppercase tracking-wider mb-2">Estimasi Uang di Laci Kasir</div>
+                        <div class="text-4xl font-black text-green-700">Rp {{ number_format($sessionStats['expected_cash'], 0, ',', '.') }}</div>
+                        <div class="text-sm text-green-500 mt-1">Modal awal + seluruh penjualan tunai</div>
+                    </div>
+                    <button @click="activePage = 'kasir'; $nextTick(() => showCloseSession = true)" class="w-full py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/20">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        Tutup Shift Sekarang
+                    </button>
+                </div>
+            </div>
+            @endif
+        </div>
+
     @endif
 
-    <!-- Alpine.js Script -->
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('posSystem', () => ({
+                isSidebarOpen: false,
                 cart: [],
                 discount: 0,
+                cartBouncing: false,
+                bounceTimeout: null,
+                
+                // Voucher State
+                vouchers: @json($vouchers ?? []),
+                paymentMethods: @json($paymentMethods ?? []),
+                showVoucherModal: false,
+                activeVoucher: null,
                 
                 // Modals
                 showVariantModal: false,
                 showCheckoutModal: false,
                 showCloseSession: false,
-                showDiscountModal: false,
+                activePage: 'kasir',
                 
                 // Checkout State
                 cashPaid: 0,
@@ -632,6 +1200,7 @@
                                 time: holdTime,
                                 name: val || defaultName,
                                 cart: JSON.parse(JSON.stringify(this.cart)),
+                                activeVoucher: this.activeVoucher,
                                 discount: this.discount,
                                 customerName: this.customerName,
                                 customerPhone: this.customerPhone,
@@ -651,6 +1220,7 @@
                         const doResume = () => {
                             const hold = this.heldCarts[index];
                             this.cart = hold.cart;
+                            this.activeVoucher = hold.activeVoucher || null;
                             this.discount = hold.discount;
                             this.customerName = hold.customerName || '';
                             this.customerPhone = hold.customerPhone || '';
@@ -702,6 +1272,11 @@
 
                 async connectPrinter() {
                     if (this.printerType === 'bluetooth') {
+                        // Cek apakah browser mendukung Bluetooth
+                        if (!navigator.bluetooth) {
+                            this.showToast('Browser Anda tidak mendukung koneksi Bluetooth. Gunakan Google Chrome atau Microsoft Edge, dan pastikan halaman dibuka lewat HTTPS.', 'error');
+                            return;
+                        }
                         try {
                             const device = await navigator.bluetooth.requestDevice({
                                 filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
@@ -714,26 +1289,42 @@
                             this.printerDevice = device;
                             this.printerCharacteristic = characteristic;
                             this.printerConnected = true;
-                            this.showToast('Printer Bluetooth terhubung!', 'success');
+                            this.showToast('Printer Bluetooth berhasil terhubung!', 'success');
                             
                             device.addEventListener('gattserverdisconnected', () => {
                                 this.printerConnected = false;
-                                this.showToast('Koneksi printer terputus', 'error');
+                                this.showToast('Koneksi printer terputus. Klik "Printer Offline" untuk menyambung kembali.', 'error');
                             });
                         } catch (error) {
                             console.error(error);
-                            this.showToast('Gagal Bluetooth: ' + error.message, 'error');
+                            // Pesan error yang ramah pengguna
+                            if (error.name === 'NotFoundError' || error.message.includes('cancelled')) {
+                                this.showToast('Pencarian printer dibatalkan.', 'error');
+                            } else if (error.name === 'SecurityError') {
+                                this.showToast('Akses Bluetooth ditolak. Pastikan halaman dibuka lewat HTTPS dan izin Bluetooth diaktifkan di browser.', 'error');
+                            } else {
+                                this.showToast('Tidak bisa terhubung ke printer. Pastikan printer sudah dinyalakan dan dalam jangkauan Bluetooth.', 'error');
+                            }
                         }
                     } else if (this.printerType === 'serial') {
+                        // Cek apakah browser mendukung Serial/USB
+                        if (!navigator.serial) {
+                            this.showToast('Browser Anda tidak mendukung koneksi USB/Serial. Gunakan Google Chrome atau Microsoft Edge.', 'error');
+                            return;
+                        }
                         try {
                             const port = await navigator.serial.requestPort();
                             await port.open({ baudRate: 9600 });
                             this.printerPort = port;
                             this.printerConnected = true;
-                            this.showToast('Printer Serial/USB terhubung!', 'success');
+                            this.showToast('Printer USB/Serial berhasil terhubung!', 'success');
                         } catch (error) {
                             console.error(error);
-                            this.showToast('Gagal Serial: ' + error.message, 'error');
+                            if (error.name === 'NotFoundError' || error.message.includes('No port selected')) {
+                                this.showToast('Tidak ada printer USB yang dipilih.', 'error');
+                            } else {
+                                this.showToast('Tidak bisa terhubung ke printer USB. Pastikan kabel terpasang dengan benar.', 'error');
+                            }
                         }
                     }
                 },
@@ -767,7 +1358,14 @@
                     }
                 },
 
+                triggerCartBounce() {
+                    this.cartBouncing = true;
+                    if (this.bounceTimeout) clearTimeout(this.bounceTimeout);
+                    this.bounceTimeout = setTimeout(() => { this.cartBouncing = false; }, 500);
+                },
+
                 addToCart(productId, variantId, name, price) {
+                    this.triggerCartBounce();
                     // Cek jika produk sudah ada di keranjang
                     const existingIndex = this.cart.findIndex(item => item.product_id === productId && item.product_variant_id === variantId);
                     if (existingIndex > -1) {
@@ -781,6 +1379,7 @@
                             quantity: 1
                         });
                     }
+                    this.calculateVoucherDiscount();
                 },
 
                 updateQty(index, change) {
@@ -788,15 +1387,18 @@
                     if (newQty > 0) {
                         this.cart[index].quantity = newQty;
                     }
+                    this.calculateVoucherDiscount();
                 },
 
                 removeItem(index) {
                     this.cart.splice(index, 1);
+                    this.calculateVoucherDiscount();
                 },
 
                 clearCart(force = false) {
                     if (force) {
                         this.cart = [];
+                        this.activeVoucher = null;
                         this.discount = 0;
                         this.cashPaid = 0;
                         return;
@@ -807,10 +1409,67 @@
                         'Semua barang di keranjang akan dihapus. Lanjutkan?',
                         () => {
                             this.cart = [];
+                            this.activeVoucher = null;
                             this.discount = 0;
                             this.cashPaid = 0;
                         }
                     );
+                },
+
+                applyVoucher(voucher) {
+                    if (!this.isVoucherEligible(voucher)) {
+                        this.showToast('Minimal belanja untuk voucher ini belum terpenuhi', 'error');
+                        return;
+                    }
+                    this.activeVoucher = voucher;
+                    this.showVoucherModal = false;
+                    this.calculateVoucherDiscount();
+                    this.showToast('Voucher ' + voucher.name + ' dipasang!', 'success');
+                },
+                
+                removeVoucher() {
+                    this.activeVoucher = null;
+                    this.calculateVoucherDiscount();
+                    this.showToast('Voucher dilepas', 'success');
+                },
+                
+                isVoucherEligible(voucher) {
+                    let eligible = true;
+                    if (voucher.min_purchase > 0 && parseFloat(this.subtotal) < parseFloat(voucher.min_purchase)) {
+                        eligible = false;
+                    }
+                    if (voucher.min_items > 0 && this.totalItems < voucher.min_items) {
+                        eligible = false;
+                    }
+                    return eligible;
+                },
+                
+                calculateVoucherDiscount() {
+                    if (!this.activeVoucher) {
+                        this.discount = 0;
+                        return;
+                    }
+                    
+                    if (!this.isVoucherEligible(this.activeVoucher)) {
+                        this.activeVoucher = null;
+                        this.discount = 0;
+                        this.showToast('Voucher otomatis dilepas karena keranjang tidak memenuhi syarat minimum', 'error');
+                        return;
+                    }
+
+                    if (this.activeVoucher.discount_type === 'percent') {
+                        let disc = (this.subtotal * parseFloat(this.activeVoucher.discount_amount)) / 100;
+                        if (this.activeVoucher.max_discount && disc > parseFloat(this.activeVoucher.max_discount)) {
+                            disc = parseFloat(this.activeVoucher.max_discount);
+                        }
+                        this.discount = disc;
+                    } else {
+                        this.discount = parseFloat(this.activeVoucher.discount_amount);
+                    }
+                },
+
+                get totalItems() {
+                    return this.cart.reduce((sum, item) => sum + item.quantity, 0);
                 },
 
                 get subtotal() {
@@ -821,9 +1480,32 @@
                     return Math.max(0, this.subtotal - this.discount);
                 },
 
+                isCashSelected() {
+                    const found = this.paymentMethods.find(m => m.code === this.paymentMethod);
+                    if (found) return found.is_cash;
+                    return this.paymentMethod === 'tunai' || this.paymentMethod === 'cash';
+                },
+
+                selectPaymentMethod(method) {
+                    this.paymentMethod = method.code;
+                    if (method.is_cash) {
+                        this.calculateChange();
+                    } else {
+                        this.cashPaid = this.grandTotal;
+                        this.calculateChange();
+                    }
+                },
+
                 openCheckoutModal() {
-                    if(this.cart.length === 0) return;
-                    this.cashPaid = this.grandTotal; // Default uang pas
+                    if (this.cart.length === 0) return;
+                    if (this.paymentMethods.length > 0) {
+                        const cashMethod = this.paymentMethods.find(m => m.is_cash);
+                        this.paymentMethod = cashMethod ? cashMethod.code : this.paymentMethods[0].code;
+                    } else {
+                        this.paymentMethod = 'tunai';
+                    }
+                    
+                    this.cashPaid = this.grandTotal;
                     this.calculateChange();
                     this.showCheckoutModal = true;
                 },
@@ -838,7 +1520,7 @@
                 },
 
                 submitOrder() {
-                    if(this.paymentMethod === 'cash' && this.cashPaid < this.grandTotal) {
+                    if (this.isCashSelected() && this.cashPaid < this.grandTotal) {
                         this.showToast('Uang yang dibayarkan kurang!', 'error');
                         return;
                     }
