@@ -78,7 +78,7 @@ class EscPosService
     /**
      * Generate Base64 receipt for an Order
      */
-    public function generateReceipt(Order $order): string
+    public function generateReceipt(Order $order, bool $isReprint = false): string
     {
         // 1. Settings
         $header = SiteSetting::where('key', 'pos_receipt_header')->value('value') ?? "TOKO RAABIHA";
@@ -88,7 +88,7 @@ class EscPosService
         $autoCut = filter_var(SiteSetting::where('key', 'pos_auto_cut')->value('value') ?? false, FILTER_VALIDATE_BOOLEAN);
         $openDrawer = filter_var(SiteSetting::where('key', 'pos_open_cash_drawer')->value('value') ?? false, FILTER_VALIDATE_BOOLEAN);
         
-        if ($openDrawer) {
+        if ($openDrawer && !$isReprint) {
             $this->drawer();
         }
 
@@ -99,6 +99,13 @@ class EscPosService
             $this->line(trim($hLine));
         }
         $this->add(self::BOLD_OFF);
+
+        if ($isReprint) {
+            $this->add(self::BOLD_ON);
+            $this->line("*** SALINAN / REPRINT ***");
+            $this->add(self::BOLD_OFF);
+        }
+
         $this->line();
 
         // Metadata
