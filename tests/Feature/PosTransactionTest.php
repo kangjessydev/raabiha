@@ -96,6 +96,8 @@ class PosTransactionTest extends TestCase
         $cashflows = Cashflow::where('order_id', $order->id)->get();
         $this->assertCount(1, $cashflows);
         $this->assertEquals(90000, $cashflows->first()->amount);
+        $this->assertEquals('pos', $cashflows->first()->source);
+        $this->assertEquals('pos_sale', $cashflows->first()->category);
 
         // Assert No Emails Sent (Observer bypassed)
         Mail::assertNothingSent();

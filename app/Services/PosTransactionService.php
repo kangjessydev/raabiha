@@ -171,11 +171,11 @@ class PosTransactionService
             Cashflow::create([
                 'transaction_date' => now()->toDateString(),
                 'type' => 'in',
-                'category' => 'Sales',
+                'category' => 'pos_sale',
                 'amount' => $grandTotal,
                 'description' => 'Penjualan POS #' . $orderNumber,
                 'order_id' => $order->id,
-                'source' => 'order',
+                'source' => 'pos',
                 'is_reversed' => false,
             ]);
 

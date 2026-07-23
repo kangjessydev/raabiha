@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cashflows', function (Blueprint $table) {
-            $table->enum('source', ['order', 'manual'])->default('manual')->after('order_id');
+            $table->enum('source', ['order', 'manual', 'pos'])->default('manual')->after('order_id');
             $table->boolean('is_reversed')->default(false)->after('source');
             $table->string('reversal_note')->nullable()->after('is_reversed');
 
