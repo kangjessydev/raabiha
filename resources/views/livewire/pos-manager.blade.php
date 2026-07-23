@@ -72,6 +72,10 @@
                         <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Rekap Kas</span>
                     </button>
+                    <button @click="lockScreen()" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium text-amber-700 hover:bg-amber-50 transition-colors" :class="[isSidebarOpen ? 'justify-start' : 'justify-center']" title="Kunci Layar">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Kunci Layar</span>
+                    </button>
                     
                     <div class="pt-4 mt-4 border-t border-gray-100">
                         <!-- Printer -->
@@ -152,6 +156,24 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
                             Tutup Shift Kasir
+                        </button>
+
+                        {{-- Kunci Layar --}}
+                        <button @click="showUserMenu = false; lockScreen();"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-amber-700 hover:bg-amber-50 transition-colors font-medium text-sm">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            Kunci Layar POS
+                        </button>
+
+                        {{-- Ganti PIN POS --}}
+                        <button @click="showUserMenu = false; showChangePinModal = true;"
+                            class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-gray-700 hover:bg-gray-100 transition-colors font-medium text-sm">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                            </svg>
+                            Ganti PIN POS (6-Digit)
                         </button>
 
                         {{-- Ke Admin (hanya untuk yang boleh) --}}
@@ -389,18 +411,44 @@
                     <span class="font-semibold text-gray-700" x-text="'Rp ' + formatMoney(subtotal)"></span>
                 </div>
                 <!-- Voucher Selector Button (Compact) -->
-                <div class="flex justify-between items-center mb-4 cursor-pointer group" @click="showVoucherModal = true">
+                <div class="flex justify-between items-center mb-2.5 cursor-pointer group" @click="showVoucherModal = true">
                     <span class="flex items-center gap-2 text-brand-600 border-b border-dashed border-brand-300 group-hover:border-brand-500 transition-colors pb-0.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
-                        <span class="font-semibold" x-text="activeVoucher ? activeVoucher.name : 'Gunakan Kupon Promo'"></span>
+                        <span class="font-semibold text-sm" x-text="activeVoucher ? activeVoucher.name : 'Gunakan Kupon Promo'"></span>
                     </span>
                     <div class="flex items-center gap-2">
-                        <span x-show="activeVoucher" class="font-bold text-red-500" x-text="'- Rp ' + formatMoney(discount)"></span>
-                        <span x-show="!activeVoucher" class="text-sm font-semibold text-brand-600 group-hover:text-brand-700">Pilih ></span>
+                        <span x-show="activeVoucher" class="font-bold text-red-500 text-sm" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
+                        <span x-show="!activeVoucher" class="text-xs font-semibold text-brand-600 group-hover:text-brand-700">Pilih ></span>
                         <!-- Tombol lepas voucher -->
                         <button x-show="activeVoucher" @click.stop="removeVoucher()" class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50" title="Lepas Promo">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
+                    </div>
+                </div>
+
+                <!-- Diskon Manual Row -->
+                <div class="flex justify-between items-center mb-4">
+                    <span class="flex items-center gap-2 text-amber-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10m-8 5h8"/></svg>
+                        <span class="font-semibold text-sm">Diskon Manual</span>
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <template x-if="manualDiscountValue > 0">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-amber-600 text-sm" x-text="'- Rp ' + formatMoney(manualDiscountAmount)"></span>
+                                <button @click="openManualDiscountModal()" class="text-gray-400 hover:text-amber-600 transition-colors p-1 rounded-full hover:bg-amber-50" title="Edit Diskon Manual">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                </button>
+                                <button @click="removeManualDiscount()" class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50" title="Hapus Diskon Manual">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="!manualDiscountValue || manualDiscountValue <= 0">
+                            <button @click="openManualDiscountModal()" class="text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1">
+                                <span>+ Potongan</span>
+                            </button>
+                        </template>
                     </div>
                 </div>
                 <div class="flex justify-between items-center mb-6 pt-4 border-t border-gray-100">
@@ -528,8 +576,12 @@
                                 <span class="font-bold text-gray-800" x-text="'Rp ' + formatMoney(subtotal)"></span>
                             </div>
                             <div x-show="activeVoucher" class="flex justify-between text-sm text-brand-600">
-                                <span>Diskon</span>
-                                <span class="font-bold" x-text="'- Rp ' + formatMoney(discount)"></span>
+                                <span>Diskon Promo</span>
+                                <span class="font-bold" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
+                            </div>
+                            <div x-show="manualDiscountValue > 0" class="flex justify-between text-sm text-amber-600">
+                                <span>Diskon Manual</span>
+                                <span class="font-bold" x-text="'- Rp ' + formatMoney(manualDiscountAmount)"></span>
                             </div>
                             <div class="border-t border-gray-100 pt-2 flex justify-between items-center">
                                 <span class="font-bold text-gray-800 text-sm">Total Tagihan</span>
@@ -805,6 +857,279 @@
             </div>
         </div>
 
+        <!-- MODAL: Diskon Manual -->
+        <div x-show="showManualDiscountModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4" style="display: none;">
+            <div @click.away="showManualDiscountModal = false"
+                 x-show="showManualDiscountModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+                
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Diskon Manual
+                    </h3>
+                    <button @click="showManualDiscountModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <p class="text-gray-500 text-sm mb-5">Berikan potongan harga langsung (Nominal Rp atau Persen %):</p>
+
+                <!-- Toggle Type: Rp vs % -->
+                <div class="grid grid-cols-2 gap-2 p-1.5 bg-gray-100 rounded-xl mb-4">
+                    <button type="button" @click="tempManualDiscountType = 'rp'"
+                            :class="tempManualDiscountType === 'rp' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 font-medium hover:text-gray-700'"
+                            class="py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5">
+                        <span>Nominal (Rp)</span>
+                    </button>
+                    <button type="button" @click="tempManualDiscountType = 'percent'"
+                            :class="tempManualDiscountType === 'percent' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 font-medium hover:text-gray-700'"
+                            class="py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5">
+                        <span>Persentase (%)</span>
+                    </button>
+                </div>
+
+                <!-- Input Nominal/Persen -->
+                <div class="relative mb-4">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-lg text-gray-400" x-text="tempManualDiscountType === 'rp' ? 'Rp' : '%'"></span>
+                    <input type="number" id="alpineManualDiscountField" x-model="tempManualDiscountValue" @keydown.enter="applyManualDiscount()"
+                           :placeholder="tempManualDiscountType === 'rp' ? 'Contoh: 10000' : 'Contoh: 10'"
+                           class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-xl font-bold py-3.5 pl-12 pr-4 text-gray-900 shadow-sm">
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="mb-6">
+                    <div class="text-xs font-semibold text-gray-400 mb-2">Preset Cepat:</div>
+                    <div class="grid grid-cols-5 gap-1.5" x-show="tempManualDiscountType === 'rp'">
+                        <button type="button" @click="tempManualDiscountValue = 5000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">5k</button>
+                        <button type="button" @click="tempManualDiscountValue = 10000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">10k</button>
+                        <button type="button" @click="tempManualDiscountValue = 20000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">20k</button>
+                        <button type="button" @click="tempManualDiscountValue = 50000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">50k</button>
+                        <button type="button" @click="tempManualDiscountValue = 100000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">100k</button>
+                    </div>
+                    <div class="grid grid-cols-5 gap-1.5" x-show="tempManualDiscountType === 'percent'">
+                        <button type="button" @click="tempManualDiscountValue = 5" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">5%</button>
+                        <button type="button" @click="tempManualDiscountValue = 10" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">10%</button>
+                        <button type="button" @click="tempManualDiscountValue = 15" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">15%</button>
+                        <button type="button" @click="tempManualDiscountValue = 20" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">20%</button>
+                        <button type="button" @click="tempManualDiscountValue = 25" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">25%</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" @click="showManualDiscountModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                    <button type="button" @click="applyManualDiscount()" class="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-500/25 transition-all active:scale-95">Terapkan Diskon</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERLAY: Mandatory Initial POS PIN Setup -->
+        <div x-show="!$wire.hasPosPin"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             class="fixed inset-0 z-[150] flex items-center justify-center bg-gray-950/90 backdrop-blur-xl p-4">
+            <div class="glass w-full max-w-md rounded-3xl p-8 shadow-2xl relative border border-gray-700/50 text-center">
+                <div class="w-16 h-16 bg-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-500/30">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <h2 class="text-2xl font-black text-white mb-2">Buat PIN POS 6-Digit</h2>
+                <p class="text-xs text-gray-400 mb-6 leading-relaxed">Untuk keamanan transaksi kasir, Anda wajib membuat PIN POS 6-digit pertama Anda sebelum menggunakan aplikasi POS.</p>
+
+                <form wire:submit.prevent="saveInitialPosPin" class="space-y-4 text-left">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">PIN POS Baru (6 Digit)</label>
+                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="posPinInput" placeholder="Contoh: 123456"
+                               class="w-full rounded-xl border-gray-700 bg-gray-900/80 text-white placeholder-gray-600 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-inner focus:border-amber-500 focus:ring-amber-500">
+                        @error('posPinInput') <span class="text-red-400 text-xs mt-1 block font-semibold">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Konfirmasi PIN POS (6 Digit)</label>
+                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="posPinConfirm" placeholder="Ulangi 6 digit PIN"
+                               class="w-full rounded-xl border-gray-700 bg-gray-900/80 text-white placeholder-gray-600 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-inner focus:border-amber-500 focus:ring-amber-500">
+                        @error('posPinConfirm') <span class="text-red-400 text-xs mt-1 block font-semibold">{{ $message }}</span> @enderror
+                    </div>
+
+                    <button type="submit"
+                            class="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl shadow-lg shadow-amber-500/30 transition-all active:scale-95 text-sm mt-2">
+                        Simpan & Aktifkan PIN POS
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- OVERLAY: Lock Screen Kasir (PIN 6-Digit) -->
+        <div x-show="isLocked"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-950/95 backdrop-blur-xl p-4" style="display: none;">
+            <div class="glass w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl relative border border-gray-700/50">
+                <div class="w-20 h-20 bg-brand-500 rounded-full flex items-center justify-center text-white text-2xl font-black mx-auto mb-4 shadow-xl shadow-brand-500/30 border-2 border-white/20">
+                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-1">{{ auth()->user()->name }}</h2>
+                <p class="text-xs text-gray-400 mb-6">Masukkan 6-digit PIN POS Anda untuk membuka kunci layar.</p>
+
+                <form @submit.prevent="submitUnlock()" class="space-y-4">
+                    <div class="relative">
+                        <input type="password" id="posLockPasswordField" x-model="lockPasswordInput" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="6 Digit PIN"
+                               class="w-full rounded-2xl border-gray-700 bg-gray-900/90 text-white placeholder-gray-600 focus:border-brand-500 focus:ring-brand-500 text-center text-2xl font-bold tracking-[0.5em] py-3.5 px-4 shadow-inner">
+                    </div>
+                    
+                    <div x-show="lockErrorMessage" class="text-xs text-red-400 font-semibold" x-text="lockErrorMessage"></div>
+
+                    <!-- Visual Numpad Cepat -->
+                    <div class="grid grid-cols-3 gap-2 pt-2">
+                        <template x-for="num in [1,2,3,4,5,6,7,8,9]" :key="num">
+                            <button type="button" @click="appendLockPin(num)"
+                                    class="py-3 bg-gray-800/80 hover:bg-gray-700 text-white font-bold text-lg rounded-xl transition-all border border-gray-700/40 active:scale-95" x-text="num"></button>
+                        </template>
+                        <button type="button" @click="clearLockPin()" class="py-3 bg-red-900/30 hover:bg-red-800/50 text-red-400 font-bold text-xs rounded-xl transition-all border border-red-800/40">Hapus</button>
+                        <button type="button" @click="appendLockPin(0)" class="py-3 bg-gray-800/80 hover:bg-gray-700 text-white font-bold text-lg rounded-xl transition-all border border-gray-700/40 active:scale-95">0</button>
+                        <button type="submit" :disabled="lockPasswordInput.length !== 6" class="py-3 bg-brand-600 disabled:opacity-40 hover:bg-brand-500 text-white font-bold text-xs rounded-xl transition-all border border-brand-500/40">Buka</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: Ganti PIN POS 6-Digit -->
+        <div x-show="showChangePinModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4" style="display: none;">
+            <div @click.away="showChangePinModal = false"
+                 x-show="showChangePinModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+                
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        Ganti PIN POS 6-Digit
+                    </h3>
+                    <button type="button" @click="showChangePinModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="changePosPin" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">PIN Lama (6 Digit)</label>
+                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="oldPosPin" placeholder="PIN Lama" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-center text-lg font-bold tracking-[0.4em] py-3 px-4 shadow-sm">
+                        @error('oldPosPin') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">PIN Baru (6 Digit)</label>
+                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="newPosPin" placeholder="PIN Baru" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-center text-lg font-bold tracking-[0.4em] py-3 px-4 shadow-sm">
+                        @error('newPosPin') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Konfirmasi PIN Baru</label>
+                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="newPosPinConfirm" placeholder="Ulangi PIN Baru" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-center text-lg font-bold tracking-[0.4em] py-3 px-4 shadow-sm">
+                        @error('newPosPinConfirm') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="showChangePinModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                        <button type="submit" class="flex-1 px-4 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition-all active:scale-95">Perbarui PIN</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: Petty Cash (Kas Masuk/Keluar) -->
+        <div x-show="showPettyCashModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4" style="display: none;">
+            <div @click.away="showPettyCashModal = false"
+                 x-show="showPettyCashModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+                
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Kas Masuk / Keluar (Petty Cash)
+                    </h3>
+                    <button type="button" @click="showPettyCashModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="recordPettyCash" class="space-y-4">
+                    <!-- Toggle Type: Kas Keluar vs Kas Masuk -->
+                    <div class="grid grid-cols-2 gap-2 p-1.5 bg-gray-100 rounded-xl">
+                        <button type="button" wire:click="$set('pettyCashType', 'out')"
+                                class="py-2.5 rounded-lg text-sm transition-all font-bold flex items-center justify-center gap-1.5 {{ $pettyCashType === 'out' ? 'bg-red-500 text-white shadow-md' : 'text-gray-600 hover:text-gray-900' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
+                            <span>Kas Keluar</span>
+                        </button>
+                        <button type="button" wire:click="$set('pettyCashType', 'in')"
+                                class="py-2.5 rounded-lg text-sm transition-all font-bold flex items-center justify-center gap-1.5 {{ $pettyCashType === 'in' ? 'bg-green-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+                            <span>Kas Masuk</span>
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nominal Uang (Rp)</label>
+                        <input type="number" wire:model="pettyCashAmount" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-xl font-bold py-3 px-4 shadow-sm" placeholder="0">
+                        @error('pettyCashAmount') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Keterangan / Alasan</label>
+                        <input type="text" wire:model="pettyCashNotes" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-sm py-3 px-4 shadow-sm" placeholder="Contoh: Beli air galon ruko / Beli lakban">
+                        @error('pettyCashNotes') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="showPettyCashModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                        <button type="submit" class="flex-1 px-4 py-3 {{ $pettyCashType === 'out' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/25' : 'bg-green-600 hover:bg-green-700 shadow-green-500/25' }} text-white font-bold rounded-xl shadow-lg transition-all active:scale-95">Simpan Kas</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- MODAL: Voucher / Promo -->
         <div x-show="showVoucherModal"
              x-transition:enter="transition ease-out duration-200"
@@ -930,6 +1255,18 @@
                             </div>
                             @endforeach
                         </div>
+
+                        <!-- Card Action Footer: Reprint Struk -->
+                        <div class="border-t border-gray-100 mt-3 pt-3 flex justify-between items-center">
+                            <span class="text-xs text-gray-400 font-medium">Kasir: {{ $order->cashier->name ?? 'Kasir' }}</span>
+                            <button wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-brand-50 text-gray-700 hover:text-brand-700 font-bold text-xs rounded-xl border border-gray-200 hover:border-brand-200 transition-all active:scale-95 shadow-sm group">
+                                <svg class="w-3.5 h-3.5 text-gray-500 group-hover:text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
+                                <span>Cetak Ulang Struk</span>
+                            </button>
+                        </div>
                     </div>
                     @endforeach
                 </div>
@@ -983,16 +1320,22 @@
         <!-- PAGE: Rekap Kas                             -->
         <!-- ============================================ -->
         <div x-show="activePage === 'cashsummary'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
-            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center gap-4 shadow-sm">
-                <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                </button>
-                <div>
-                    <h1 class="text-xl font-bold text-gray-800">Rekap Kas</h1>
-                    @if(!empty($sessionStats))
-                    <p class="text-sm text-gray-400">Shift dibuka sejak {{ $sessionStats['opened_at'] }}</p>
-                    @endif
+            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-4">
+                    <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Rekap Kas</h1>
+                        @if(!empty($sessionStats))
+                        <p class="text-sm text-gray-400">Shift dibuka sejak {{ $sessionStats['opened_at'] }}</p>
+                        @endif
+                    </div>
                 </div>
+                <button @click="showPettyCashModal = true" class="px-4 py-2.5 bg-brand-600 text-white font-bold text-sm rounded-xl hover:bg-brand-700 transition-all flex items-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    <span>+ Catat Kas Masuk / Keluar</span>
+                </button>
             </div>
             @if(!empty($sessionStats))
             <div class="flex-1 overflow-y-auto">
@@ -1032,6 +1375,24 @@
                             </div>
                             <span class="font-bold text-blue-600">+ Rp {{ number_format($sessionStats['non_cash_sales'], 0, ',', '.') }}</span>
                         </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+                                </div>
+                                <span class="text-gray-600">Kas Masuk (Tambahan)</span>
+                            </div>
+                            <span class="font-bold text-emerald-600">+ Rp {{ number_format($sessionStats['petty_cash_in'], 0, ',', '.') }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
+                                </div>
+                                <span class="text-gray-600">Kas Keluar (Pengeluaran)</span>
+                            </div>
+                            <span class="font-bold text-red-600">- Rp {{ number_format($sessionStats['petty_cash_out'], 0, ',', '.') }}</span>
+                        </div>
                         <div class="flex justify-between items-center pt-2">
                             <span class="font-bold text-gray-800">Total Omzet</span>
                             <span class="font-black text-2xl text-gray-900">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</span>
@@ -1041,8 +1402,34 @@
                     <div class="bg-green-50 rounded-2xl border border-green-200 p-6">
                         <div class="text-sm font-bold text-green-600 uppercase tracking-wider mb-2">Estimasi Uang di Laci Kasir</div>
                         <div class="text-4xl font-black text-green-700">Rp {{ number_format($sessionStats['expected_cash'], 0, ',', '.') }}</div>
-                        <div class="text-sm text-green-500 mt-1">Modal awal + seluruh penjualan tunai</div>
+                        <div class="text-sm text-green-500 mt-1">Modal awal + penjualan tunai + kas masuk - kas keluar</div>
                     </div>
+
+                    <!-- Riwayat Petty Cash Shift Ini -->
+                    @if(count($sessionPettyCash) > 0)
+                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
+                        <h3 class="font-bold text-gray-700 text-sm uppercase tracking-wider mb-2">Riwayat Kas Masuk / Keluar Shift Ini</h3>
+                        <div class="space-y-2">
+                            @foreach($sessionPettyCash as $cashLog)
+                            <div class="flex items-center justify-between p-3.5 rounded-xl border border-gray-100 bg-gray-50/50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs {{ $cashLog->type === 'out' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600' }}">
+                                        {{ $cashLog->type === 'out' ? 'OUT' : 'IN' }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-gray-800">{{ $cashLog->description }}</div>
+                                        <div class="text-xs text-gray-400">{{ $cashLog->created_at->format('H:i') }}</div>
+                                    </div>
+                                </div>
+                                <div class="font-bold text-sm {{ $cashLog->type === 'out' ? 'text-red-600' : 'text-green-600' }}">
+                                    {{ $cashLog->type === 'out' ? '-' : '+' }} Rp {{ number_format($cashLog->amount, 0, ',', '.') }}
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
                     <button @click="activePage = 'kasir'; $nextTick(() => showCloseSession = true)" class="w-full py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/20">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                         Tutup Shift Sekarang
@@ -1119,6 +1506,59 @@
 
                 // Input Modal State
                 showInputModal: false,
+                showPettyCashModal: false,
+                showChangePinModal: false,
+                isLocked: false,
+                lockPasswordInput: '',
+                lockErrorMessage: '',
+                lastActivityTime: Date.now(),
+
+                appendLockPin(num) {
+                    if (this.lockPasswordInput.length < 6) {
+                        this.lockPasswordInput += num.toString();
+                    }
+                },
+
+                clearLockPin() {
+                    this.lockPasswordInput = '';
+                },
+
+                lockScreen() {
+                    this.isLocked = true;
+                    this.lockPasswordInput = '';
+                    this.lockErrorMessage = '';
+                    sessionStorage.setItem('pos_locked', 'true');
+                    setTimeout(() => {
+                        const el = document.getElementById('posLockPasswordField');
+                        if (el) el.focus();
+                    }, 100);
+                },
+
+                submitUnlock() {
+                    if (!this.lockPasswordInput || this.lockPasswordInput.length !== 6) {
+                        this.lockErrorMessage = 'Masukkan 6 digit angka PIN.';
+                        return;
+                    }
+                    $wire.unlockScreenWithPin(this.lockPasswordInput);
+                },
+
+                resetAutoLockTimer() {
+                    this.lastActivityTime = Date.now();
+                },
+
+                startAutoLockChecker() {
+                    // Check every 10 seconds for 5 minutes (300,000 ms) inactivity
+                    setInterval(() => {
+                        if (!this.isLocked && (Date.now() - this.lastActivityTime > 300000)) {
+                            this.lockScreen();
+                        }
+                    }, 10000);
+
+                    const events = ['mousemove', 'keydown', 'touchstart', 'click'];
+                    events.forEach(evt => {
+                        window.addEventListener(evt, () => this.resetAutoLockTimer(), { passive: true });
+                    });
+                },
                 inputTitle: '',
                 inputMessage: '',
                 inputValue: '',
@@ -1154,8 +1594,26 @@
                     }
 
                     // Menerima event dari Livewire
+                    if (sessionStorage.getItem('pos_locked') === 'true') {
+                        this.isLocked = true;
+                    }
+                    window.addEventListener('screen-unlocked', () => {
+                        this.isLocked = false;
+                        this.lockPasswordInput = '';
+                        this.lockErrorMessage = '';
+                        sessionStorage.removeItem('pos_locked');
+                        this.showToast('Layar kasir berhasil dibuka', 'success');
+                    });
+                    window.addEventListener('screen-unlock-failed', (e) => {
+                        this.lockErrorMessage = e.detail[0].message || 'Password salah!';
+                        this.showToast(this.lockErrorMessage, 'error');
+                    });
                     window.addEventListener('session-opened', () => { this.showToast('Sesi kasir berhasil dibuka', 'success'); });
                     window.addEventListener('session-closed', () => { this.showCloseSession = false; this.showToast('Sesi kasir berhasil ditutup', 'success'); });
+                    window.addEventListener('petty-cash-saved', () => { this.showPettyCashModal = false; });
+                    window.addEventListener('pin-created', () => { this.showToast('PIN POS 6-digit berhasil dibuat!', 'success'); });
+                    window.addEventListener('pin-changed', () => { this.showChangePinModal = false; this.showToast('PIN POS berhasil diperbarui', 'success'); });
+                    this.startAutoLockChecker();
                     window.addEventListener('notify', (e) => { this.showToast(e.detail[0].message, e.detail[0].type); this.isProcessing = false; });
                     window.addEventListener('checkout-success', (e) => {
                         this.isProcessing = false;
@@ -1201,7 +1659,8 @@
                                 name: val || defaultName,
                                 cart: JSON.parse(JSON.stringify(this.cart)),
                                 activeVoucher: this.activeVoucher,
-                                discount: this.discount,
+                                manualDiscountType: this.manualDiscountType,
+                                manualDiscountValue: this.manualDiscountValue,
                                 customerName: this.customerName,
                                 customerPhone: this.customerPhone,
                                 total: this.subtotal
@@ -1221,7 +1680,8 @@
                             const hold = this.heldCarts[index];
                             this.cart = hold.cart;
                             this.activeVoucher = hold.activeVoucher || null;
-                            this.discount = hold.discount;
+                            this.manualDiscountType = hold.manualDiscountType || 'rp';
+                            this.manualDiscountValue = hold.manualDiscountValue || 0;
                             this.customerName = hold.customerName || '';
                             this.customerPhone = hold.customerPhone || '';
                             
@@ -1399,7 +1859,7 @@
                     if (force) {
                         this.cart = [];
                         this.activeVoucher = null;
-                        this.discount = 0;
+                        this.manualDiscountValue = 0;
                         this.cashPaid = 0;
                         return;
                     }
@@ -1410,7 +1870,7 @@
                         () => {
                             this.cart = [];
                             this.activeVoucher = null;
-                            this.discount = 0;
+                            this.manualDiscountValue = 0;
                             this.cashPaid = 0;
                         }
                     );
@@ -1444,27 +1904,80 @@
                     return eligible;
                 },
                 
-                calculateVoucherDiscount() {
-                    if (!this.activeVoucher) {
-                        this.discount = 0;
+                // Diskon Manual State
+                manualDiscountType: 'rp',
+                manualDiscountValue: 0,
+                showManualDiscountModal: false,
+                tempManualDiscountType: 'rp',
+                tempManualDiscountValue: '',
+
+                openManualDiscountModal() {
+                    this.tempManualDiscountType = this.manualDiscountType;
+                    this.tempManualDiscountValue = this.manualDiscountValue > 0 ? this.manualDiscountValue : '';
+                    this.showManualDiscountModal = true;
+                    setTimeout(() => {
+                        const el = document.getElementById('alpineManualDiscountField');
+                        if (el) el.focus();
+                    }, 50);
+                },
+
+                applyManualDiscount() {
+                    let val = parseFloat(this.tempManualDiscountValue) || 0;
+                    if (val < 0) val = 0;
+
+                    if (this.tempManualDiscountType === 'percent' && val > 100) {
+                        this.showToast('Diskon persen maksimal 100%', 'error');
                         return;
                     }
-                    
-                    if (!this.isVoucherEligible(this.activeVoucher)) {
-                        this.activeVoucher = null;
-                        this.discount = 0;
-                        this.showToast('Voucher otomatis dilepas karena keranjang tidak memenuhi syarat minimum', 'error');
-                        return;
+
+                    this.manualDiscountType = this.tempManualDiscountType;
+                    this.manualDiscountValue = val;
+                    this.showManualDiscountModal = false;
+
+                    if (val > 0) {
+                        this.showToast('Diskon manual berhasil diterapkan', 'success');
                     }
+                },
+
+                removeManualDiscount() {
+                    this.manualDiscountValue = 0;
+                    this.showToast('Diskon manual dilepas', 'success');
+                },
+
+                get voucherDiscountAmount() {
+                    if (!this.activeVoucher) return 0;
+                    if (!this.isVoucherEligible(this.activeVoucher)) return 0;
 
                     if (this.activeVoucher.discount_type === 'percent') {
                         let disc = (this.subtotal * parseFloat(this.activeVoucher.discount_amount)) / 100;
                         if (this.activeVoucher.max_discount && disc > parseFloat(this.activeVoucher.max_discount)) {
                             disc = parseFloat(this.activeVoucher.max_discount);
                         }
-                        this.discount = disc;
+                        return disc;
                     } else {
-                        this.discount = parseFloat(this.activeVoucher.discount_amount);
+                        return parseFloat(this.activeVoucher.discount_amount);
+                    }
+                },
+
+                get manualDiscountAmount() {
+                    if (!this.manualDiscountValue || this.manualDiscountValue <= 0 || this.subtotal <= 0) return 0;
+                    if (this.manualDiscountType === 'percent') {
+                        return Math.min(this.subtotal, (this.subtotal * parseFloat(this.manualDiscountValue)) / 100);
+                    } else {
+                        return Math.min(this.subtotal, parseFloat(this.manualDiscountValue));
+                    }
+                },
+
+                get discount() {
+                    return Math.min(this.subtotal, this.voucherDiscountAmount + this.manualDiscountAmount);
+                },
+
+                calculateVoucherDiscount() {
+                    if (!this.activeVoucher) return;
+                    
+                    if (!this.isVoucherEligible(this.activeVoucher)) {
+                        this.activeVoucher = null;
+                        this.showToast('Voucher otomatis dilepas karena keranjang tidak memenuhi syarat minimum', 'error');
                     }
                 },
 

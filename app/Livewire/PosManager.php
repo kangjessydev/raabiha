@@ -23,9 +23,62 @@ class PosManager extends Component
     public $actualEndingCash = 0;
     public $sessionNotes = '';
 
+    // State Petty Cash
+    public $pettyCashType = 'out';
+    public $pettyCashAmount = 0;
+    public $pettyCashNotes = '';
+
+    // State PIN POS 6-Digit
+    public $hasPosPin = false;
+    public $posPinInput = '';
+    public $posPinConfirm = '';
+    public $oldPosPin = '';
+    public $newPosPin = '';
+    public $newPosPinConfirm = '';
+
+    public function recordPettyCash()
+    {
+        if (!$this->activeSession) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Sesi shift kasir belum dibuka!']);
+            return;
+        }
+
+        $this->validate([
+            'pettyCashType'   => 'required|in:in,out',
+            'pettyCashAmount' => 'required|numeric|gt:0',
+            'pettyCashNotes'  => 'required|string|max:255',
+        ], [
+            'pettyCashAmount.gt' => 'Nominal petty cash harus lebih besar dari Rp 0.',
+            'pettyCashNotes.required' => 'Keterangan pengeluaran/pemasukan kas wajib diisi.',
+        ]);
+
+        \App\Models\Cashflow::create([
+            'transaction_date' => now()->toDateString(),
+            'type'             => $this->pettyCashType,
+            'category'         => 'pos_petty_cash',
+            'amount'           => $this->pettyCashAmount,
+            'description'      => ($this->pettyCashType === 'out' ? 'Kas Keluar POS: ' : 'Kas Masuk POS: ') . $this->pettyCashNotes,
+            'order_id'         => null,
+            'source'           => 'pos',
+            'is_reversed'      => false,
+        ]);
+
+        $label = $this->pettyCashType === 'out' ? 'Kas Keluar' : 'Kas Masuk';
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => "{$label} senilai Rp " . number_format($this->pettyCashAmount, 0, ',', '.') . " berhasil dicatat."
+        ]);
+        $this->dispatch('petty-cash-saved');
+
+        $this->pettyCashAmount = 0;
+        $this->pettyCashNotes = '';
+        $this->pettyCashType = 'out';
+    }
+
     public function mount()
     {
         $this->loadActiveSession();
+        $this->hasPosPin = !empty(Auth::user()->pos_pin);
     }
 
     public function loadActiveSession()
@@ -60,9 +113,23 @@ class PosManager extends Component
             'actualEndingCash' => 'required|numeric|min:0',
         ]);
 
-        $totalSales    = $this->activeSession->orders()->sum('cash_paid')
-                       - $this->activeSession->orders()->sum('cash_change');
-        $expectedEnding = $this->activeSession->opening_cash + $totalSales;
+        $pettyCashIn = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_petty_cash')
+            ->where('type', 'in')
+            ->where('created_at', '>=', $this->activeSession->opened_at)
+            ->sum('amount');
+
+        $pettyCashOut = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_petty_cash')
+            ->where('type', 'out')
+            ->where('created_at', '>=', $this->activeSession->opened_at)
+            ->sum('amount');
+
+        $totalCashSales = $this->activeSession->orders()
+            ->where('payment_method', 'cash')
+            ->sum('grand_total');
+
+        $expectedEnding = $this->activeSession->opening_cash + $totalCashSales + $pettyCashIn - $pettyCashOut;
 
         $this->activeSession->update([
             'closed_at'            => now(),
@@ -119,6 +186,103 @@ class PosManager extends Component
         }
     }
 
+    public function reprintReceipt($orderId)
+    {
+        $order = Order::with(['items', 'cashier'])->find($orderId);
+        if (!$order) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi tidak ditemukan.']);
+            return;
+        }
+
+        try {
+            $escPosService = new \App\Services\EscPosService();
+            $receiptBase64 = $escPosService->generateReceipt($order, isReprint: true);
+
+            $this->dispatch('print-receipt', ['base64' => $receiptBase64]);
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Cetak ulang struk #' . $order->order_number . ' dikirim ke printer.']);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal mencetak ulang struk: ' . $e->getMessage()]);
+        }
+    }
+
+    public function saveInitialPosPin()
+    {
+        $this->validate([
+            'posPinInput'   => 'required|digits:6',
+            'posPinConfirm' => 'required|same:posPinInput',
+        ], [
+            'posPinInput.required'   => 'PIN POS wajib diisi.',
+            'posPinInput.digits'     => 'PIN POS harus berupa 6 digit angka.',
+            'posPinConfirm.required' => 'Konfirmasi PIN wajib diisi.',
+            'posPinConfirm.same'     => 'Konfirmasi PIN tidak cocok.',
+        ]);
+
+        Auth::user()->update([
+            'pos_pin' => \Illuminate\Support\Facades\Hash::make($this->posPinInput),
+        ]);
+
+        $this->hasPosPin = true;
+        $this->posPinInput = '';
+        $this->posPinConfirm = '';
+
+        $this->dispatch('pin-created');
+        $this->dispatch('notify', ['type' => 'success', 'message' => 'PIN POS 6-digit berhasil dibuat!']);
+    }
+
+    public function unlockScreenWithPin($pin)
+    {
+        $user = Auth::user();
+        if (empty($user->pos_pin)) {
+            $this->dispatch('screen-unlock-failed', ['message' => 'Anda belum membuat PIN POS. Silakan buat PIN terlebih dahulu.']);
+            return;
+        }
+
+        if (\Illuminate\Support\Facades\Hash::check($pin, $user->pos_pin)) {
+            $this->dispatch('screen-unlocked');
+        } else {
+            $this->dispatch('screen-unlock-failed', ['message' => 'PIN POS 6-digit salah!']);
+        }
+    }
+
+    public function changePosPin()
+    {
+        $user = Auth::user();
+        if (empty($user->pos_pin)) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Anda belum memiliki PIN POS.']);
+            return;
+        }
+
+        $this->validate([
+            'oldPosPin'        => 'required|digits:6',
+            'newPosPin'        => 'required|digits:6|different:oldPosPin',
+            'newPosPinConfirm' => 'required|same:newPosPin',
+        ], [
+            'oldPosPin.required'        => 'PIN lama wajib diisi.',
+            'oldPosPin.digits'          => 'PIN lama harus 6 digit angka.',
+            'newPosPin.required'        => 'PIN baru wajib diisi.',
+            'newPosPin.digits'          => 'PIN baru harus 6 digit angka.',
+            'newPosPin.different'       => 'PIN baru harus berbeda dengan PIN lama.',
+            'newPosPinConfirm.required' => 'Konfirmasi PIN baru wajib diisi.',
+            'newPosPinConfirm.same'     => 'Konfirmasi PIN baru tidak cocok.',
+        ]);
+
+        if (!\Illuminate\Support\Facades\Hash::check($this->oldPosPin, $user->pos_pin)) {
+            $this->addError('oldPosPin', 'PIN lama Anda tidak sesuai.');
+            return;
+        }
+
+        $user->update([
+            'pos_pin' => \Illuminate\Support\Facades\Hash::make($this->newPosPin),
+        ]);
+
+        $this->oldPosPin = '';
+        $this->newPosPin = '';
+        $this->newPosPinConfirm = '';
+
+        $this->dispatch('pin-changed');
+        $this->dispatch('notify', ['type' => 'success', 'message' => 'PIN POS 6-digit berhasil diperbarui.']);
+    }
+
     public function render()
     {
         $products         = [];
@@ -146,7 +310,7 @@ class PosManager extends Component
                 $top3 = (clone $query)
                     ->selectRaw('*, (CASE WHEN has_variants = 1 THEN (SELECT COALESCE(SUM(stock), 0) FROM product_variants WHERE product_variants.product_id = products.id) ELSE stock END) as computed_stock')
                     ->where('sold_count', '>=', 5)
-                    ->having('computed_stock', '>', 0)
+                    ->whereRaw('(CASE WHEN has_variants = 1 THEN (SELECT COALESCE(SUM(stock), 0) FROM product_variants WHERE product_variants.product_id = products.id) ELSE stock END) > 0')
                     ->orderBy('sold_count', 'desc')
                     ->limit(3)
                     ->get()
@@ -194,15 +358,28 @@ class PosManager extends Component
             $cashSales    = $sessionOrders->where('payment_method', 'cash')->sum('grand_total');
             $nonCashSales = $sessionOrders->where('payment_method', '!=', 'cash')->sum('grand_total');
 
+            $sessionPettyCash = \App\Models\Cashflow::where('source', 'pos')
+                ->where('category', 'pos_petty_cash')
+                ->where('created_at', '>=', $this->activeSession->opened_at)
+                ->latest()
+                ->get();
+
+            $pettyCashIn  = $sessionPettyCash->where('type', 'in')->sum('amount');
+            $pettyCashOut = $sessionPettyCash->where('type', 'out')->sum('amount');
+
             $sessionStats = [
                 'total_trx'      => $sessionOrders->count(),
                 'cash_sales'     => $cashSales,
                 'non_cash_sales' => $nonCashSales,
                 'total_sales'    => $cashSales + $nonCashSales,
                 'opening_cash'   => $this->activeSession->opening_cash,
-                'expected_cash'  => $this->activeSession->opening_cash + $cashSales,
+                'petty_cash_in'  => $pettyCashIn,
+                'petty_cash_out' => $pettyCashOut,
+                'expected_cash'  => $this->activeSession->opening_cash + $cashSales + $pettyCashIn - $pettyCashOut,
                 'opened_at'      => $this->activeSession->opened_at->format('d M Y, H:i'),
             ];
+        } else {
+            $sessionPettyCash = collect();
         }
 
         $vouchers = \App\Models\Voucher::whereIn('usable_channel', ['pos_only', 'both'])
@@ -239,6 +416,7 @@ class PosManager extends Component
             'paymentMethods'   => $paymentMethods,
             'sessionOrders'    => $sessionOrders,
             'sessionCustomers' => $sessionCustomers,
+            'sessionPettyCash' => $sessionPettyCash,
             'sessionStats'     => $sessionStats,
         ]);
     }
