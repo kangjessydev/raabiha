@@ -1038,7 +1038,17 @@
 
                 <form @submit.prevent="submitSupervisorAuth()" class="space-y-4 text-left">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Masukkan 6-Digit PIN Supervisor</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">1. Pilih Supervisor yang Bertugas</label>
+                        <select x-model="selectedSupervisorId" class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm font-bold py-3 px-4 shadow-sm bg-white mb-3">
+                            <option value="">-- Pilih Supervisor / Manager --</option>
+                            <template x-for="sup in supervisors" :key="sup.id">
+                                <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">2. Masukkan 6-Digit PIN Supervisor</label>
                         <input type="password" id="posSupervisorPinField" x-model="supervisorPinInput" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="6 Digit PIN"
                                class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-sm">
                         <div x-show="supervisorErrorMessage" class="text-xs text-red-500 font-semibold mt-1" x-text="supervisorErrorMessage"></div>
@@ -1046,7 +1056,7 @@
 
                     <div class="flex gap-3 pt-2">
                         <button type="button" @click="showSupervisorPinModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
-                        <button type="submit" :disabled="!supervisorPinInput || String(supervisorPinInput).trim().length !== 6"
+                        <button type="submit" :disabled="!selectedSupervisorId || !supervisorPinInput || String(supervisorPinInput).trim().length !== 6"
                                 class="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-amber-500/25 transition-all active:scale-95">Verifikasi PIN</button>
                     </div>
                 </form>
@@ -1092,20 +1102,30 @@
 
                 <form @submit.prevent="submitVoidOrder()" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Alasan Pembatalan / Void</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">1. Pilih Supervisor Pengizin Void</label>
+                        <select x-model="voidSupervisorIdInput" class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-sm font-bold py-3 px-4 shadow-sm bg-white mb-3">
+                            <option value="">-- Pilih Supervisor / Manager --</option>
+                            <template x-for="sup in supervisors" :key="sup.id">
+                                <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">2. Alasan Pembatalan / Void</label>
                         <input type="text" x-model="voidReasonInput" placeholder="Contoh: Salah input barang / Batal beli"
                                class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-sm py-3 px-4 shadow-sm">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">PIN Supervisor (6 Digit)</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">3. PIN Supervisor (6 Digit)</label>
                         <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="voidSupervisorPinInput" placeholder="Masukkan 6-digit PIN Supervisor"
                                class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-sm">
                     </div>
 
                     <div class="flex gap-3 pt-2">
                         <button type="button" @click="showVoidModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
-                        <button type="submit" :disabled="!voidSupervisorPinInput || String(voidSupervisorPinInput).trim().length !== 6"
+                        <button type="submit" :disabled="!voidSupervisorIdInput || !voidSupervisorPinInput || String(voidSupervisorPinInput).trim().length !== 6"
                                 class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-red-500/25 transition-all active:scale-95">Batalkan Transaksi</button>
                     </div>
                 </form>
@@ -1626,6 +1646,9 @@
                 },
 
                 // Void Order Modal State
+                supervisors: @json($supervisorsList ?? []),
+                selectedSupervisorId: '',
+                voidSupervisorIdInput: '',
                 showVoidModal: false,
                 voidOrderId: null,
                 voidOrderNumber: '',
@@ -1638,17 +1661,22 @@
                     this.voidOrderNumber = number;
                     this.voidOrderTotal = total;
                     this.voidReasonInput = '';
+                    this.voidSupervisorIdInput = this.supervisors.length === 1 ? this.supervisors[0].id : '';
                     this.voidSupervisorPinInput = '';
                     this.showVoidModal = true;
                 },
 
                 submitVoidOrder() {
+                    if (!this.voidSupervisorIdInput) {
+                        this.showToast('Pilih Supervisor terlebih dahulu', 'error');
+                        return;
+                    }
                     const pin = (this.voidSupervisorPinInput || '').toString().trim();
                     if (!pin || pin.length !== 6) {
                         this.showToast('Masukkan 6-digit PIN Supervisor', 'error');
                         return;
                     }
-                    @this.call('voidOrder', this.voidOrderId, pin, this.voidReasonInput);
+                    @this.call('voidOrder', this.voidOrderId, this.voidSupervisorIdInput, pin, this.voidReasonInput);
                 },
 
                 // Input Modal State
@@ -1670,6 +1698,7 @@
                     }
 
                     this.supervisorReasonMessage = reason;
+                    this.selectedSupervisorId = this.supervisors.length === 1 ? this.supervisors[0].id : '';
                     this.supervisorPinInput = '';
                     this.supervisorErrorMessage = '';
                     this.pendingSupervisorCallback = callback;
@@ -1681,13 +1710,17 @@
                 },
 
                 submitSupervisorAuth() {
+                    if (!this.selectedSupervisorId) {
+                        this.supervisorErrorMessage = 'Pilih Supervisor yang bertugas terlebih dahulu.';
+                        return;
+                    }
                     const pin = (this.supervisorPinInput || '').toString().trim();
                     if (!pin || pin.length !== 6) {
                         this.supervisorErrorMessage = 'Masukkan 6 digit angka PIN Supervisor.';
                         return;
                     }
                     this.supervisorErrorMessage = '';
-                    @this.call('verifySupervisorPin', pin, 'general');
+                    @this.call('verifySupervisorPin', this.selectedSupervisorId, pin, 'general');
                 },
                 isLocked: false,
                 lockPasswordInput: '',

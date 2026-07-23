@@ -75,7 +75,7 @@ class PosVoidOrderTest extends TestCase
         // Wrong supervisor PIN -> fails
         Livewire::actingAs($cashier)
             ->test(PosManager::class)
-            ->call('voidOrder', $order->id, '000000', 'Salah input barang')
+            ->call('voidOrder', $order->id, $owner->id, '000000', 'Salah input barang')
             ->assertDispatched('notify');
 
         $order->refresh();
@@ -84,7 +84,7 @@ class PosVoidOrderTest extends TestCase
         // Correct Supervisor PIN -> succeeds
         $test = Livewire::actingAs($cashier)
             ->test(PosManager::class)
-            ->call('voidOrder', $order->id, '888888', 'Pelanggan minta ganti barang');
+            ->call('voidOrder', $order->id, $owner->id, '888888', 'Pelanggan minta ganti barang');
         
         $test->assertDispatched('order-voided');
 

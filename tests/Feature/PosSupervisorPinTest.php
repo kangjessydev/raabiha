@@ -36,19 +36,19 @@ class PosSupervisorPinTest extends TestCase
         // Wrong PIN -> dispatches supervisor-auth-failed
         Livewire::actingAs($cashier)
             ->test(PosManager::class)
-            ->call('verifySupervisorPin', '000000', 'manual_discount')
+            ->call('verifySupervisorPin', $owner->id, '000000', 'manual_discount')
             ->assertDispatched('supervisor-auth-failed');
 
-        // Cashier's PIN -> fails as cashier is not a supervisor
+        // Cashier's PIN -> fails as cashier is not selected supervisor
         Livewire::actingAs($cashier)
             ->test(PosManager::class)
-            ->call('verifySupervisorPin', '111111', 'manual_discount')
+            ->call('verifySupervisorPin', $owner->id, '111111', 'manual_discount')
             ->assertDispatched('supervisor-auth-failed');
 
         // Owner's Supervisor PIN -> dispatches supervisor-authorized
         Livewire::actingAs($cashier)
             ->test(PosManager::class)
-            ->call('verifySupervisorPin', '888888', 'manual_discount')
+            ->call('verifySupervisorPin', $owner->id, '888888', 'manual_discount')
             ->assertDispatched('supervisor-authorized');
     }
 }

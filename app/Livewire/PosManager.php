@@ -284,7 +284,7 @@ class PosManager extends Component
         $this->dispatch('notify', ['type' => 'success', 'message' => 'PIN POS 6-digit berhasil diperbarui.']);
     }
 
-    public function verifySupervisorPin($pin, $actionType = '')
+    public function verifySupervisorPin($supervisorId, $pin, $actionType = '')
     {
         $lockKey = 'sup_pin_lock_' . Auth::id();
         $attemptsKey = 'sup_pin_attempts_' . Auth::id();
@@ -295,24 +295,12 @@ class PosManager extends Component
             return;
         }
 
-        $user = Auth::user();
-        $isSup = false;
-        if ($user->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) && $user->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $user->pos_pin)) {
-            $isSup = true;
-        } else {
-            $supervisors = User::all();
-            foreach ($supervisors as $supervisor) {
-                $isSupRole = $supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']);
-                if ($isSupRole && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
-                    $isSup = true;
-                    break;
-                }
-            }
-        }
+        $supervisor = User::find($supervisorId);
+        $isSupRole = $supervisor && ($supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']));
 
-        if ($isSup) {
+        if ($supervisor && $isSupRole && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
             \Illuminate\Support\Facades\Cache::forget($attemptsKey);
-            $this->dispatch('supervisor-authorized', ['actionType' => $actionType]);
+            $this->dispatch('supervisor-authorized', ['actionType' => $actionType, 'supervisorName' => $supervisor->name]);
         } else {
             $attempts = \Illuminate\Support\Facades\Cache::get($attemptsKey, 0) + 1;
             \Illuminate\Support\Facades\Cache::put($attemptsKey, $attempts, 300);
@@ -323,12 +311,12 @@ class PosManager extends Component
                 $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor salah 3x. Akses terkunci selama 60 detik demi keamanan.']);
             } else {
                 $remaining = 3 - $attempts;
-                $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor salah! Sisa percobaan: ' . $remaining . 'x.']);
+                $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor ' . ($supervisor ? $supervisor->name : '') . ' salah! Sisa percobaan: ' . $remaining . 'x.']);
             }
         }
     }
 
-    public function voidOrder($orderId, $supervisorPin, $reason = '')
+    public function voidOrder($orderId, $supervisorId, $supervisorPin, $reason = '')
     {
         $lockKey = 'sup_pin_lock_' . Auth::id();
         $attemptsKey = 'sup_pin_attempts_' . Auth::id();
@@ -350,17 +338,11 @@ class PosManager extends Component
             return;
         }
 
-        $supervisor = null;
-        $supervisors = User::all();
-        foreach ($supervisors as $sup) {
-            $isSupervisorRole = $sup->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($sup->role, ['super_admin', 'owner', 'manager', 'finance']);
-            if ($isSupervisorRole && $sup->pos_pin && \Illuminate\Support\Facades\Hash::check($supervisorPin, $sup->pos_pin)) {
-                $supervisor = $sup;
-                break;
-            }
-        }
+        $supervisor = User::find($supervisorId);
+        $isSupervisorRole = $supervisor && ($supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']));
+        $isValidPin = $supervisor && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($supervisorPin, $supervisor->pos_pin);
 
-        if (!$supervisor) {
+        if (!$supervisor || !$isSupervisorRole || !$isValidPin) {
             $attempts = \Illuminate\Support\Facades\Cache::get($attemptsKey, 0) + 1;
             \Illuminate\Support\Facades\Cache::put($attemptsKey, $attempts, 300);
 
@@ -370,7 +352,7 @@ class PosManager extends Component
                 $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor salah 3x. Akses terkunci selama 60 detik demi keamanan.']);
             } else {
                 $remaining = 3 - $attempts;
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor salah! Sisa percobaan: ' . $remaining . 'x.']);
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor ' . ($supervisor ? $supervisor->name : '') . ' salah! Sisa percobaan: ' . $remaining . 'x.']);
             }
             return;
         }
@@ -575,6 +557,16 @@ class PosManager extends Component
             })
             ->values();
 
+        $supervisorsList = User::whereNotNull('pos_pin')->get()->filter(function ($u) {
+            return $u->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($u->role, ['super_admin', 'owner', 'manager', 'finance']);
+        })->map(function ($u) {
+            return [
+                'id'   => $u->id,
+                'name' => $u->name,
+                'role' => strtoupper($u->roles->pluck('name')->first() ?? $u->role ?? 'SUPERVISOR'),
+            ];
+        })->values();
+
         return view('livewire.pos-manager', [
             'products'         => $products,
             'vouchers'         => $vouchers,
@@ -583,6 +575,7 @@ class PosManager extends Component
             'sessionCustomers' => $sessionCustomers,
             'sessionPettyCash' => $sessionPettyCash,
             'sessionStats'     => $sessionStats,
+            'supervisorsList'  => $supervisorsList,
         ]);
     }
 }
