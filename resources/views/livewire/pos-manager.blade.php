@@ -1004,7 +1004,7 @@
                         </template>
                         <button type="button" @click="clearLockPin()" class="py-3 bg-red-900/30 hover:bg-red-800/50 text-red-400 font-bold text-xs rounded-xl transition-all border border-red-800/40">Hapus</button>
                         <button type="button" @click="appendLockPin(0)" class="py-3 bg-gray-800/80 hover:bg-gray-700 text-white font-bold text-lg rounded-xl transition-all border border-gray-700/40 active:scale-95">0</button>
-                        <button type="submit" :disabled="lockPasswordInput.length !== 6" class="py-3 bg-brand-600 disabled:opacity-40 hover:bg-brand-500 text-white font-bold text-xs rounded-xl transition-all border border-brand-500/40">Buka</button>
+                        <button type="submit" :disabled="!lockPasswordInput || String(lockPasswordInput).trim().length !== 6" class="py-3 bg-emerald-600 disabled:opacity-40 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all border border-emerald-500/40 cursor-pointer">Buka</button>
                     </div>
                 </form>
             </div>
@@ -1514,6 +1514,7 @@
                 lastActivityTime: Date.now(),
 
                 appendLockPin(num) {
+                    this.lockPasswordInput = (this.lockPasswordInput || '').toString();
                     if (this.lockPasswordInput.length < 6) {
                         this.lockPasswordInput += num.toString();
                     }
@@ -1521,6 +1522,7 @@
 
                 clearLockPin() {
                     this.lockPasswordInput = '';
+                    this.lockErrorMessage = '';
                 },
 
                 lockScreen() {
@@ -1535,11 +1537,13 @@
                 },
 
                 submitUnlock() {
-                    if (!this.lockPasswordInput || this.lockPasswordInput.length !== 6) {
+                    const pin = (this.lockPasswordInput || '').toString().trim();
+                    if (!pin || pin.length !== 6) {
                         this.lockErrorMessage = 'Masukkan 6 digit angka PIN.';
                         return;
                     }
-                    $wire.unlockScreenWithPin(this.lockPasswordInput);
+                    this.lockErrorMessage = '';
+                    @this.call('unlockScreenWithPin', pin);
                 },
 
                 resetAutoLockTimer() {
