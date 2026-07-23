@@ -218,6 +218,14 @@ class PosManager extends Component
             'posPinConfirm.same'     => 'Konfirmasi PIN tidak cocok.',
         ]);
 
+        $existingUsers = User::whereNotNull('pos_pin')->where('id', '!=', Auth::id())->get();
+        foreach ($existingUsers as $exUser) {
+            if (\Illuminate\Support\Facades\Hash::check($this->posPinInput, $exUser->pos_pin)) {
+                $this->addError('posPinInput', 'PIN 6-digit ini sudah digunakan pengguna lain. Harap gunakan kombinasi PIN unik yang berbeda.');
+                return;
+            }
+        }
+
         Auth::user()->update([
             'pos_pin' => \Illuminate\Support\Facades\Hash::make($this->posPinInput),
         ]);
@@ -270,6 +278,14 @@ class PosManager extends Component
         if (!\Illuminate\Support\Facades\Hash::check($this->oldPosPin, $user->pos_pin)) {
             $this->addError('oldPosPin', 'PIN lama Anda tidak sesuai.');
             return;
+        }
+
+        $existingUsers = User::whereNotNull('pos_pin')->where('id', '!=', $user->id)->get();
+        foreach ($existingUsers as $exUser) {
+            if (\Illuminate\Support\Facades\Hash::check($this->newPosPin, $exUser->pos_pin)) {
+                $this->addError('newPosPin', 'PIN 6-digit ini sudah digunakan pengguna lain. Harap gunakan kombinasi PIN unik yang berbeda.');
+                return;
+            }
         }
 
         $user->update([
