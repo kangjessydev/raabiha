@@ -218,14 +218,6 @@ class PosManager extends Component
             'posPinConfirm.same'     => 'Konfirmasi PIN tidak cocok.',
         ]);
 
-        $existingUsers = User::whereNotNull('pos_pin')->where('id', '!=', Auth::id())->get();
-        foreach ($existingUsers as $exUser) {
-            if (\Illuminate\Support\Facades\Hash::check($this->posPinInput, $exUser->pos_pin)) {
-                $this->addError('posPinInput', 'PIN 6-digit ini sudah digunakan pengguna lain. Harap gunakan kombinasi PIN unik yang berbeda.');
-                return;
-            }
-        }
-
         Auth::user()->update([
             'pos_pin' => \Illuminate\Support\Facades\Hash::make($this->posPinInput),
         ]);
@@ -280,14 +272,6 @@ class PosManager extends Component
             return;
         }
 
-        $existingUsers = User::whereNotNull('pos_pin')->where('id', '!=', $user->id)->get();
-        foreach ($existingUsers as $exUser) {
-            if (\Illuminate\Support\Facades\Hash::check($this->newPosPin, $exUser->pos_pin)) {
-                $this->addError('newPosPin', 'PIN 6-digit ini sudah digunakan pengguna lain. Harap gunakan kombinasi PIN unik yang berbeda.');
-                return;
-            }
-        }
-
         $user->update([
             'pos_pin' => \Illuminate\Support\Facades\Hash::make($this->newPosPin),
         ]);
@@ -302,26 +286,59 @@ class PosManager extends Component
 
     public function verifySupervisorPin($pin, $actionType = '')
     {
-        $user = Auth::user();
-        if ($user->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) && $user->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $user->pos_pin)) {
-            $this->dispatch('supervisor-authorized', ['actionType' => $actionType]);
+        $lockKey = 'sup_pin_lock_' . Auth::id();
+        $attemptsKey = 'sup_pin_attempts_' . Auth::id();
+
+        if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
+            $seconds = \Illuminate\Support\Facades\Cache::get($lockKey) - time();
+            $this->dispatch('supervisor-auth-failed', ['message' => 'Terlalu banyak percobaan PIN salah. Coba lagi dalam ' . max(1, $seconds) . ' detik.']);
             return;
         }
 
-        $supervisors = User::all();
-        foreach ($supervisors as $supervisor) {
-            $isSupRole = $supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']);
-            if ($isSupRole && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
-                $this->dispatch('supervisor-authorized', ['actionType' => $actionType]);
-                return;
+        $user = Auth::user();
+        $isSup = false;
+        if ($user->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) && $user->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $user->pos_pin)) {
+            $isSup = true;
+        } else {
+            $supervisors = User::all();
+            foreach ($supervisors as $supervisor) {
+                $isSupRole = $supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']);
+                if ($isSupRole && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
+                    $isSup = true;
+                    break;
+                }
             }
         }
 
-        $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor salah atau pengguna tidak memiliki wewenang!']);
+        if ($isSup) {
+            \Illuminate\Support\Facades\Cache::forget($attemptsKey);
+            $this->dispatch('supervisor-authorized', ['actionType' => $actionType]);
+        } else {
+            $attempts = \Illuminate\Support\Facades\Cache::get($attemptsKey, 0) + 1;
+            \Illuminate\Support\Facades\Cache::put($attemptsKey, $attempts, 300);
+
+            if ($attempts >= 3) {
+                \Illuminate\Support\Facades\Cache::put($lockKey, time() + 60, 60);
+                \Illuminate\Support\Facades\Cache::forget($attemptsKey);
+                $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor salah 3x. Akses terkunci selama 60 detik demi keamanan.']);
+            } else {
+                $remaining = 3 - $attempts;
+                $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor salah! Sisa percobaan: ' . $remaining . 'x.']);
+            }
+        }
     }
 
     public function voidOrder($orderId, $supervisorPin, $reason = '')
     {
+        $lockKey = 'sup_pin_lock_' . Auth::id();
+        $attemptsKey = 'sup_pin_attempts_' . Auth::id();
+
+        if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
+            $seconds = \Illuminate\Support\Facades\Cache::get($lockKey) - time();
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Terlalu banyak percobaan PIN salah. Coba lagi dalam ' . max(1, $seconds) . ' detik.']);
+            return;
+        }
+
         $order = Order::with(['items', 'voidBy'])->find($orderId);
         if (!$order) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi tidak ditemukan.']);
@@ -344,9 +361,21 @@ class PosManager extends Component
         }
 
         if (!$supervisor) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor salah atau pengguna tidak berhak mengizinkan void!']);
+            $attempts = \Illuminate\Support\Facades\Cache::get($attemptsKey, 0) + 1;
+            \Illuminate\Support\Facades\Cache::put($attemptsKey, $attempts, 300);
+
+            if ($attempts >= 3) {
+                \Illuminate\Support\Facades\Cache::put($lockKey, time() + 60, 60);
+                \Illuminate\Support\Facades\Cache::forget($attemptsKey);
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor salah 3x. Akses terkunci selama 60 detik demi keamanan.']);
+            } else {
+                $remaining = 3 - $attempts;
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor salah! Sisa percobaan: ' . $remaining . 'x.']);
+            }
             return;
         }
+
+        \Illuminate\Support\Facades\Cache::forget($attemptsKey);
 
         try {
             DB::transaction(function () use ($order, $supervisor, $reason) {
