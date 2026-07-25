@@ -91,6 +91,14 @@ class PosManager extends Component
 
     public function openSession()
     {
+        if ($this->activeSession) {
+            $this->dispatch('notify', [
+                'type'    => 'error',
+                'message' => 'Anda masih memiliki sesi kasir yang aktif. Tutup shift terlebih dahulu.',
+            ]);
+            return;
+        }
+
         $this->validate([
             'openingCash' => 'required|numeric|min:0',
         ]);

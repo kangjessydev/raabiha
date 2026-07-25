@@ -158,4 +158,27 @@ class PosTransactionTest extends TestCase
         $this->assertStringContainsString('Diskon', $decodedReceipt);
         $this->assertStringContainsString('-15.000', $decodedReceipt);
     }
+
+    public function test_open_session_prevents_duplicate_active_sessions()
+    {
+        $cashier = User::factory()->create();
+
+        // First session opened
+        \Livewire\Livewire::actingAs($cashier)
+            ->test(\App\Livewire\PosManager::class)
+            ->set('openingCash', 50000)
+            ->call('openSession')
+            ->assertDispatched('session-opened');
+
+        $this->assertEquals(1, PosSession::where('cashier_id', $cashier->id)->where('status', 'open')->count());
+
+        // Attempting to open second session while first is active fails
+        \Livewire\Livewire::actingAs($cashier)
+            ->test(\App\Livewire\PosManager::class)
+            ->set('openingCash', 100000)
+            ->call('openSession')
+            ->assertDispatched('notify');
+
+        $this->assertEquals(1, PosSession::where('cashier_id', $cashier->id)->where('status', 'open')->count());
+    }
 }
