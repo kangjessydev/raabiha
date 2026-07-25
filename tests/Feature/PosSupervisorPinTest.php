@@ -51,4 +51,24 @@ class PosSupervisorPinTest extends TestCase
             ->call('verifySupervisorPin', $owner->id, '888888', 'manual_discount')
             ->assertDispatched('supervisor-authorized');
     }
+
+    public function test_supervisor_must_verify_pin_when_authorizing_self()
+    {
+        $owner = User::factory()->create([
+            'pos_pin' => Hash::make('888888'),
+        ]);
+        $owner->assignRole('owner');
+
+        // Even when logged in as owner, wrong PIN fails
+        Livewire::actingAs($owner)
+            ->test(PosManager::class)
+            ->call('verifySupervisorPin', $owner->id, '123456', 'manual_discount')
+            ->assertDispatched('supervisor-auth-failed');
+
+        // Correct PIN succeeds
+        Livewire::actingAs($owner)
+            ->test(PosManager::class)
+            ->call('verifySupervisorPin', $owner->id, '888888', 'manual_discount')
+            ->assertDispatched('supervisor-authorized');
+    }
 }

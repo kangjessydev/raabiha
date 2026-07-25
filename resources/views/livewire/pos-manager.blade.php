@@ -1690,13 +1690,6 @@
                 pendingSupervisorCallback: null,
 
                 requestSupervisorAuth(reason, callback) {
-                    const userRole = @json(auth()->user()->roles->pluck('name')->toArray() ?? []);
-                    const isSupervisor = userRole.some(r => ['super_admin', 'owner', 'manager', 'finance'].includes(r));
-                    if (isSupervisor) {
-                        callback();
-                        return;
-                    }
-
                     this.supervisorReasonMessage = reason;
                     this.selectedSupervisorId = this.supervisors.length === 1 ? this.supervisors[0].id : '';
                     this.supervisorPinInput = '';
