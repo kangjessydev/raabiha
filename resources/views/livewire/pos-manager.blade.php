@@ -2553,6 +2553,10 @@
                         this.activeVoucher = null;
                         this.manualDiscountValue = 0;
                         this.cashPaid = 0;
+                        this.customerName = '';
+                        this.customerPhone = '';
+                        this.loyaltyRedeemStamps = 0;
+                        this.activeCustomerLoyalty = null;
                         return;
                     }
 
@@ -2564,6 +2568,10 @@
                             this.activeVoucher = null;
                             this.manualDiscountValue = 0;
                             this.cashPaid = 0;
+                            this.customerName = '';
+                            this.customerPhone = '';
+                            this.loyaltyRedeemStamps = 0;
+                            this.activeCustomerLoyalty = null;
                         }
                     );
                 },
