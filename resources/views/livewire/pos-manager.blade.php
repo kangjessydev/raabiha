@@ -2749,6 +2749,7 @@
                         items: this.cart,
                         discount: this.discount,
                         voucher_id: this.activeVoucher ? this.activeVoucher.id : null,
+                        loyalty_redeem_stamps: this.loyaltyRedeemStamps || 0,
                         payment_method: this.paymentMethod,
                         cash_paid: this.cashPaid,
                         cash_change: this.cashChange,

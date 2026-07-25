@@ -168,6 +168,31 @@ class EscPosService
             $this->justify("Kembali", number_format($order->cash_change ?? 0, 0, ',', '.'));
         }
 
+        // Section Loyalti Stempel Digital (jika ada nomor HP)
+        if ($order->customer_phone) {
+            $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
+            $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->first() : null;
+            if ($customer) {
+                $this->divider();
+                $this->add(self::ALIGN_CENTER);
+                $this->add(self::BOLD_ON);
+                $this->line("KARTU CAP DIGITAL RAABIHA");
+                $this->add(self::BOLD_OFF);
+                $this->line("Pelanggan: " . ($customer->name ?: $customer->phone));
+                $this->line("Total Cap: " . $customer->stamp_count . " dari 9 Cap");
+                
+                // Visual Cap 3 baris x 3 kolom
+                $c = $customer->stamp_count;
+                $row1 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [1,2,3]));
+                $row2 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [4,5,6]));
+                $row3 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [7,8,9]));
+
+                $this->line("Row 1 (15k): " . $row1);
+                $this->line("Row 2 (20k): " . $row2);
+                $this->line("Row 3 (25k): " . $row3);
+            }
+        }
+
         // Footer
         $this->line();
         $this->add(self::ALIGN_CENTER);

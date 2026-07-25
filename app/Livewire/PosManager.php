@@ -265,6 +265,35 @@ class PosManager extends Component
         }
     }
 
+    public function lookupPosCustomer($phone)
+    {
+        $normalized = \App\Models\PosCustomer::normalizePhone($phone);
+        if (!$normalized) {
+            return null;
+        }
+
+        $customer = \App\Models\PosCustomer::where('phone', $normalized)->first();
+        if (!$customer) {
+            return [
+                'exists'                => false,
+                'phone'                 => $normalized,
+                'stamp_count'           => 0,
+                'points_balance'        => 0,
+                'completed_cards_count' => 0,
+            ];
+        }
+
+        return [
+            'exists'                => true,
+            'name'                  => $customer->name,
+            'phone'                 => $customer->phone,
+            'stamp_count'           => $customer->stamp_count,
+            'points_balance'        => $customer->points_balance,
+            'completed_cards_count' => $customer->completed_cards_count,
+            'total_visits'          => $customer->total_visits,
+        ];
+    }
+
     public function processReturn($payload)
     {
         if (!$this->activeSession) {
@@ -518,6 +547,34 @@ class PosManager extends Component
                     'source'           => 'pos',
                     'is_reversed'      => true,
                 ]);
+
+                // 4. Rollback Loyalti Stempel Pelanggan jika ada
+                if ($order->customer_phone) {
+                    $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
+                    $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->first() : null;
+                    if ($customer) {
+                        $earnedLogs = \App\Models\PosStampLog::where('order_id', $order->id)->where('type', 'earned')->get();
+                        foreach ($earnedLogs as $eLog) {
+                            $stampsToDeduct = $eLog->stamps;
+                            $pointsToDeduct = $eLog->points;
+                            $newStamps = max(0, $customer->stamp_count - $stampsToDeduct);
+                            $newPoints = max(0, $customer->points_balance - $pointsToDeduct);
+                            $customer->update([
+                                'stamp_count'    => $newStamps,
+                                'points_balance' => $newPoints,
+                            ]);
+
+                            \App\Models\PosStampLog::create([
+                                'pos_customer_id' => $customer->id,
+                                'order_id'        => $order->id,
+                                'type'            => 'adjusted',
+                                'stamps'          => -$stampsToDeduct,
+                                'points'          => -$pointsToDeduct,
+                                'description'     => "Penyesuaian ditarik kembali karena Void Nota POS #{$order->order_number}.",
+                            ]);
+                        }
+                    }
+                }
             });
 
             $this->dispatch('order-voided');

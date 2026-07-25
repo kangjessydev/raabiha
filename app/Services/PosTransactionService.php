@@ -118,12 +118,14 @@ class PosTransactionService
                 }
             }
 
+            $normalizedPhone = \App\Models\PosCustomer::normalizePhone($customerPhone) ?: $customerPhone;
+
             // 2. Buat Order (Gunakan placeholder sementara untuk menjamin keunikan ID)
             $order = Order::create([
                 'order_number' => 'POS-TEMP-' . uniqid(),
                 'user_id' => null, // Pembeli di toko fisik
                 'customer_name' => $customerName,
-                'customer_phone' => $customerPhone,
+                'customer_phone' => $normalizedPhone,
                 'cashier_id' => $cashierId,
                 'pos_session_id' => $posSessionId,
                 'voucher_id' => $voucherId,
@@ -192,8 +194,118 @@ class PosTransactionService
                 'is_reversed' => false,
             ]);
 
+            // 5. Proses Loyalti Stempel Pelanggan POS
+            $this->processPosLoyalty($order, $data);
+
             return $order;
         });
+    }
+
+    /**
+     * Memproses perolehan & penukaran stempel loyalti POS
+     */
+    private function processPosLoyalty(Order $order, array $data): void
+    {
+        $enabled = filter_var(\App\Models\SiteSetting::where('key', 'pos_loyalty_enabled')->value('value') ?? true, FILTER_VALIDATE_BOOLEAN);
+        if (!$enabled) return;
+
+        $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
+        if (!$phone) return;
+
+        $customer = \App\Models\PosCustomer::firstOrCreate(
+            ['phone' => $phone],
+            ['name' => $order->customer_name ?: 'Pelanggan POS']
+        );
+
+        if ($order->customer_name && $customer->name !== $order->customer_name) {
+            $customer->update(['name' => $order->customer_name]);
+        }
+
+        // 1. Cek Masa Berlaku Stempel (Expiry)
+        $expiryMonths = (int) (\App\Models\SiteSetting::where('key', 'pos_loyalty_stamp_expiry_months')->value('value') ?? 6);
+        if ($expiryMonths > 0 && $customer->last_visit_at && $customer->stamp_count > 0) {
+            $monthsSinceLastVisit = $customer->last_visit_at->diffInMonths(now());
+            if ($monthsSinceLastVisit >= $expiryMonths) {
+                $expiredStamps = $customer->stamp_count;
+                $expiredPoints = $customer->points_balance;
+                
+                $customer->update([
+                    'stamp_count'    => 0,
+                    'points_balance' => 0,
+                ]);
+
+                \App\Models\PosStampLog::create([
+                    'pos_customer_id' => $customer->id,
+                    'order_id'        => $order->id,
+                    'type'            => 'expired',
+                    'stamps'          => -$expiredStamps,
+                    'points'          => -$expiredPoints,
+                    'description'     => "Stempel hangus karena tidak bertransaksi > {$expiryMonths} bulan.",
+                ]);
+            }
+        }
+
+        // 2. Proses Penukaran Stempel (Redemption if kasir redeemed tier)
+        $redeemedStamps = (int) ($data['loyalty_redeem_stamps'] ?? 0);
+        $pointsRatio = (int) (\App\Models\SiteSetting::where('key', 'pos_loyalty_stamps_to_points_ratio')->value('value') ?? 10);
+
+        if ($redeemedStamps > 0 && $customer->stamp_count >= $redeemedStamps) {
+            $redeemedPoints = $redeemedStamps * $pointsRatio;
+            $customer->decrement('stamp_count', $redeemedStamps);
+            $customer->decrement('points_balance', min($customer->points_balance, $redeemedPoints));
+
+            \App\Models\PosStampLog::create([
+                'pos_customer_id' => $customer->id,
+                'order_id'        => $order->id,
+                'type'            => 'redeemed',
+                'stamps'          => -$redeemedStamps,
+                'points'          => -$redeemedPoints,
+                'description'     => "Penukaran {$redeemedStamps} Stempel untuk Voucher Reward POS.",
+            ]);
+        }
+
+        // 3. Proses Perolehan Stempel Baru (Earning)
+        $minSpend = (float) (\App\Models\SiteSetting::where('key', 'pos_loyalty_min_spend')->value('value') ?? 100000);
+        
+        if ($order->grand_total >= $minSpend) {
+            // Mode kelipatan: per Rp 100k dapat 1 stempel, atau 1 stempel per transaksi
+            $multiplierMode = filter_var(\App\Models\SiteSetting::where('key', 'pos_loyalty_multiplier_mode')->value('value') ?? false, FILTER_VALIDATE_BOOLEAN);
+            $stampsEarned = $multiplierMode ? (int) floor($order->grand_total / $minSpend) : 1;
+            
+            if ($stampsEarned > 0) {
+                $pointsEarned = $stampsEarned * $pointsRatio;
+
+                $newStampCount = $customer->stamp_count + $stampsEarned;
+                $completedCardsAdd = (int) floor($newStampCount / 9);
+                $finalStampCount = $newStampCount % 9;
+
+                $customer->update([
+                    'stamp_count'           => $finalStampCount,
+                    'points_balance'        => $customer->points_balance + $pointsEarned,
+                    'total_stamps_earned'   => $customer->total_stamps_earned + $stampsEarned,
+                    'completed_cards_count' => $customer->completed_cards_count + $completedCardsAdd,
+                    'total_visits'          => $customer->total_visits + 1,
+                    'total_spent'           => $customer->total_spent + $order->grand_total,
+                    'last_visit_at'         => now(),
+                ]);
+
+                \App\Models\PosStampLog::create([
+                    'pos_customer_id' => $customer->id,
+                    'order_id'        => $order->id,
+                    'type'            => 'earned',
+                    'stamps'          => $stampsEarned,
+                    'points'          => $pointsEarned,
+                    'description'     => "Perolehan {$stampsEarned} Stempel ({$pointsEarned} Poin) dari Nota POS #{$order->order_number}.",
+                ]);
+            }
+        } else {
+            // Tetap update last_visit & total_spent walau tidak dapet stempel
+            $customer->update([
+                'total_visits'  => $customer->total_visits + 1,
+                'total_spent'   => $customer->total_spent + $order->grand_total,
+                'last_visit_at' => now(),
+            ]);
+        }
     }
 
     /**
