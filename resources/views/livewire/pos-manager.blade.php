@@ -64,6 +64,10 @@
                         <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Riwayat Transaksi</span>
                     </button>
+                    <button @click="activePage = 'returns'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='returns' ? 'bg-amber-50 text-amber-800 font-bold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Riwayat Retur">
+                        <svg class="w-6 h-6 flex-shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Riwayat Retur</span>
+                    </button>
                     <button @click="activePage = 'customers'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='customers' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Pelanggan">
                         <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Pelanggan</span>
@@ -1639,6 +1643,127 @@
                                 </div>
                             @endif
                         </div>  </div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PAGE: Riwayat Retur                         -->
+        <!-- ============================================ -->
+        <div x-show="activePage === 'returns'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
+            <!-- Header -->
+            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-4">
+                    <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                            Riwayat Retur & Penukaran Barang
+                        </h1>
+                        <p class="text-xs text-gray-400">Shift hari ini &mdash; {{ count($sessionReturns ?? []) }} retur/penukaran</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List -->
+            <div class="flex-1 overflow-y-auto">
+                @if(count($sessionReturns ?? []) === 0)
+                <div class="flex flex-col items-center justify-center h-full text-gray-300 py-24">
+                    <svg class="w-20 h-20 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    <p class="text-lg font-medium text-gray-400">Belum ada retur pada shift ini</p>
+                    <p class="text-sm text-gray-400 mt-1">Retur dan penukaran barang yang diproses akan muncul di sini</p>
+                </div>
+                @else
+                <div class="max-w-4xl mx-auto p-6 space-y-4">
+                    @foreach($sessionReturns as $ret)
+                    <div class="bg-white rounded-2xl border border-amber-200/70 shadow-sm p-5 hover:shadow-md transition-all relative overflow-hidden">
+                        <div class="flex flex-wrap items-start justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-gray-900 text-base">#{{ $ret->return_number }}</span>
+                                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {{ $ret->type === 'exchange' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800' }}">
+                                        {{ $ret->type === 'exchange' ? 'Tukar Barang' : 'Pengembalian Uang (Refund)' }}
+                                    </span>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    Nota Asli: <strong class="text-gray-700">#{{ $ret->order->order_number ?? '-' }}</strong> · Waktu: {{ $ret->created_at->format('H:i') }}
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                @if($ret->net_amount > 0)
+                                    <div class="text-xs text-gray-500">Status Selisih:</div>
+                                    <div class="font-black text-lg text-green-600">+ Rp {{ number_format($ret->net_amount, 0, ',', '.') }} (Tambah Bayar)</div>
+                                @elseif($ret->net_amount < 0)
+                                    <div class="text-xs text-gray-500">Status Selisih:</div>
+                                    <div class="font-black text-lg text-red-600">- Rp {{ number_format(abs($ret->net_amount), 0, ',', '.') }} (Refund Kas)</div>
+                                @else
+                                    <div class="font-bold text-sm text-gray-600">Selisih Rp 0 (Pas)</div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Items Detail Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <!-- Barang Dikembalikan -->
+                            <div class="bg-red-50/50 rounded-xl p-3 border border-red-100">
+                                <div class="text-xs font-bold text-red-700 uppercase tracking-wider mb-2 flex justify-between">
+                                    <span>Barang Dikembalikan</span>
+                                    <span>- Rp {{ number_format($ret->returned_subtotal, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="space-y-1 text-xs">
+                                    @foreach($ret->returnedItems as $rItem)
+                                    <div class="flex justify-between text-gray-700">
+                                        <span>{{ $rItem->product->name ?? 'Produk' }}{{ $rItem->variant ? ' - '.$rItem->variant->name : '' }} (x{{ $rItem->quantity }})</span>
+                                        <span class="font-semibold">Rp {{ number_format($rItem->total, 0, ',', '.') }}</span>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Barang Pengganti -->
+                            @if($ret->exchangedItems->count() > 0)
+                            <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-100">
+                                <div class="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2 flex justify-between">
+                                    <span>Barang Pengganti (Tukar)</span>
+                                    <span>+ Rp {{ number_format($ret->exchanged_subtotal, 0, ',', '.') }}</span>
+                                </div>
+                                <div class="space-y-1 text-xs">
+                                    @foreach($ret->exchangedItems as $eItem)
+                                    <div class="flex justify-between text-gray-700">
+                                        <span>{{ $eItem->product->name ?? 'Produk' }}{{ $eItem->variant ? ' - '.$eItem->variant->name : '' }} (x{{ $eItem->quantity }})</span>
+                                        <span class="font-semibold">Rp {{ number_format($eItem->total, 0, ',', '.') }}</span>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+
+                        <!-- Footer Info + Action Buttons -->
+                        <div class="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <div class="text-gray-500">
+                                Kasir: <strong class="text-gray-700">{{ $ret->cashier->name ?? 'Kasir' }}</strong>
+                                @if($ret->supervisor)
+                                    · Spv: <strong class="text-gray-700">{{ $ret->supervisor->name }}</strong>
+                                @endif
+                                @if($ret->reason)
+                                    · Alasan: <em>"{{ $ret->reason }}"</em>
+                                @endif
+                            </div>
+
+                            <button wire:click="reprintReturnReceipt({{ $ret->id }})" wire:loading.attr="disabled"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-xl border border-amber-200 transition-all active:scale-95 shadow-sm">
+                                <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
+                                <span>Cetak Struk Retur</span>
+                            </button>
+                        </div>
                     </div>
                     @endforeach
                 </div>

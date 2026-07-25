@@ -243,6 +243,28 @@ class PosManager extends Component
         }
     }
 
+    public function reprintReturnReceipt($returnId)
+    {
+        $posReturn = \App\Models\PosReturn::with([
+            'order', 'cashier', 'supervisor',
+            'returnedItems.product', 'returnedItems.variant',
+            'exchangedItems.product', 'exchangedItems.variant'
+        ])->find($returnId);
+
+        if (!$posReturn) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Data retur tidak ditemukan.']);
+            return;
+        }
+
+        try {
+            $receiptBase64 = $this->escPos()->generateReturnReceipt($posReturn);
+            $this->dispatch('print-receipt', ['base64' => $receiptBase64]);
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Cetak ulang struk retur #' . $posReturn->return_number . ' dikirim ke printer.']);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal mencetak ulang struk retur: ' . $e->getMessage()]);
+        }
+    }
+
     public function processReturn($payload)
     {
         if (!$this->activeSession) {
@@ -631,8 +653,22 @@ class PosManager extends Component
                     - $voidRefundOut,
                 'opened_at'       => $this->activeSession->opened_at->format('d M Y, H:i'),
             ];
+            /* ---------- Riwayat Retur (shift ini) ---------- */
+            $sessionReturns = \App\Models\PosReturn::with([
+                'order',
+                'cashier',
+                'supervisor',
+                'returnedItems.product',
+                'returnedItems.variant',
+                'exchangedItems.product',
+                'exchangedItems.variant'
+            ])
+            ->where('pos_session_id', $this->activeSession->id)
+            ->latest()
+            ->get();
         } else {
             $sessionPettyCash = collect();
+            $sessionReturns   = collect();
         }
 
         $allProductsJson = collect($products)->map(fn($p) => [
@@ -657,6 +693,7 @@ class PosManager extends Component
             'sessionOrders'    => $sessionOrders,
             'sessionCustomers' => $sessionCustomers,
             'sessionPettyCash' => $sessionPettyCash,
+            'sessionReturns'   => $sessionReturns,
             'sessionStats'     => $sessionStats,
             'supervisorsList'  => $this->supervisorsList,
         ]);

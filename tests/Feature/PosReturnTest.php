@@ -359,4 +359,48 @@ class PosReturnTest extends TestCase
             'amount' => 250000,
         ]);
     }
+
+    public function test_reprint_return_receipt_dispatches_print_event()
+    {
+        $cashier = User::factory()->create();
+        $cashier->assignRole('kasir');
+
+        $session = PosSession::create([
+            'cashier_id' => $cashier->id,
+            'opened_at' => now(),
+            'opening_cash' => 100000,
+            'status' => 'open',
+        ]);
+
+        $order = Order::create([
+            'order_number' => 'POS-20260725-7777',
+            'source' => 'pos',
+            'pos_session_id' => $session->id,
+            'cashier_id' => $cashier->id,
+            'subtotal' => 100000,
+            'grand_total' => 100000,
+            'status' => 'completed',
+            'payment_status' => 'paid',
+            'payment_method' => 'cash',
+        ]);
+
+        $posReturn = PosReturn::create([
+            'return_number' => 'RET-20260725-0001',
+            'order_id' => $order->id,
+            'pos_session_id' => $session->id,
+            'cashier_id' => $cashier->id,
+            'type' => 'refund',
+            'reason' => 'Tes Cetak Ulang',
+            'returned_subtotal' => 100000,
+            'exchanged_subtotal' => 0,
+            'net_amount' => -100000,
+        ]);
+
+        // Call reprintReturnReceipt in Livewire component
+        \Livewire\Livewire::actingAs($cashier)
+            ->test(\App\Livewire\PosManager::class)
+            ->call('reprintReturnReceipt', $posReturn->id)
+            ->assertDispatched('print-receipt')
+            ->assertDispatched('notify');
+    }
 }
