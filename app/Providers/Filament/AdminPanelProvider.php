@@ -50,6 +50,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->font('Poppins')
+            ->darkMode(false)
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->userMenuItems([
                 \Filament\Navigation\MenuItem::make()

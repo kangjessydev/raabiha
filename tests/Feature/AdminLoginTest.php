@@ -13,12 +13,12 @@ class AdminLoginTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_login_page_renders_custom_split_screen_view(): void
+    public function test_admin_login_page_renders_default_filament_view(): void
     {
         $response = $this->get('/admin/login');
         $response->assertStatus(200);
-        $response->assertSee('Raabiha Admin');
-        $response->assertSee('Panel Manajemen Toko');
+        $response->assertSee('Username / Email');
+        $response->assertSee('Masuk');
     }
 
     public function test_admin_can_login_with_username_or_email(): void

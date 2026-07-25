@@ -8,13 +8,6 @@ use Filament\Forms\Components\TextInput;
 
 class Login extends BaseLogin
 {
-    protected string $view = 'filament.pages.auth.login';
-
-    public function getLayout(): string
-    {
-        return 'components.layouts.admin-auth';
-    }
-
     protected function getEmailFormComponent(): Component
     {
         return TextInput::make('email')

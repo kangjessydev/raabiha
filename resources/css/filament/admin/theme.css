@@ -114,3 +114,36 @@
 .custom-avatar-picker .curator-media-picker .bg-gray-950 {
     border-radius: 10px !important;
 }
+
+/* Clean white background for Filament Auth Pages */
+body:has(.fi-simple-layout),
+body:has(.fi-simple-layout) .fi-simple-layout,
+.dark body:has(.fi-simple-layout),
+.dark body:has(.fi-simple-layout) .fi-simple-layout,
+.dark .fi-simple-layout {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+body:has(.fi-simple-layout) .fi-simple-main,
+.dark body:has(.fi-simple-layout) .fi-simple-main,
+.dark .fi-simple-main {
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01) !important;
+}
+
+.dark body:has(.fi-simple-layout) h1,
+.dark body:has(.fi-simple-layout) label,
+.dark body:has(.fi-simple-layout) span,
+.dark body:has(.fi-simple-layout) input {
+    color: #111827 !important;
+}
+
+.dark body:has(.fi-simple-layout) input {
+    background-color: #ffffff !important;
+    border-color: #d1d5db !important;
+}
+
+
+
