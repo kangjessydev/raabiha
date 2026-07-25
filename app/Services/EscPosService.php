@@ -75,18 +75,32 @@ class EscPosService
         $this->line($left . str_repeat(" ", $space) . $right);
     }
 
+    protected function getSettings(array $keys): array
+    {
+        return SiteSetting::whereIn('key', $keys)->pluck('value', 'key')->all();
+    }
+
     /**
      * Generate Base64 receipt for an Order
      */
     public function generateReceipt(Order $order, bool $isReprint = false): string
     {
-        // 1. Settings
-        $header = SiteSetting::where('key', 'pos_receipt_header')->value('value') ?? "TOKO RAABIHA";
-        $footer = SiteSetting::where('key', 'pos_receipt_footer')->value('value') ?? "Terima Kasih";
-        $showCashier = filter_var(SiteSetting::where('key', 'pos_show_cashier_name')->value('value') ?? true, FILTER_VALIDATE_BOOLEAN);
-        $showDate = filter_var(SiteSetting::where('key', 'pos_show_date')->value('value') ?? true, FILTER_VALIDATE_BOOLEAN);
-        $autoCut = filter_var(SiteSetting::where('key', 'pos_auto_cut')->value('value') ?? false, FILTER_VALIDATE_BOOLEAN);
-        $openDrawer = filter_var(SiteSetting::where('key', 'pos_open_cash_drawer')->value('value') ?? false, FILTER_VALIDATE_BOOLEAN);
+        // 1. Settings (Batch Query)
+        $settings = $this->getSettings([
+            'pos_receipt_header',
+            'pos_receipt_footer',
+            'pos_show_cashier_name',
+            'pos_show_date',
+            'pos_auto_cut',
+            'pos_open_cash_drawer',
+        ]);
+
+        $header     = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
+        $footer     = $settings['pos_receipt_footer'] ?? "Terima Kasih";
+        $showCashier = filter_var($settings['pos_show_cashier_name'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showDate    = filter_var($settings['pos_show_date'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $autoCut     = filter_var($settings['pos_auto_cut'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $openDrawer  = filter_var($settings['pos_open_cash_drawer'] ?? false, FILTER_VALIDATE_BOOLEAN);
         
         if ($openDrawer && !$isReprint) {
             $this->drawer();
@@ -173,8 +187,9 @@ class EscPosService
      */
     public function generateZReport(PosSession $session): string
     {
-        $header = SiteSetting::where('key', 'pos_receipt_header')->value('value') ?? "TOKO RAABIHA";
-        $autoCut = filter_var(SiteSetting::where('key', 'pos_auto_cut')->value('value') ?? false, FILTER_VALIDATE_BOOLEAN);
+        $settings = $this->getSettings(['pos_receipt_header', 'pos_auto_cut']);
+        $header  = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
+        $autoCut = filter_var($settings['pos_auto_cut'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         $this->add(self::ALIGN_CENTER);
         $this->add(self::BOLD_ON);
@@ -194,8 +209,6 @@ class EscPosService
         $this->divider();
 
         $this->justify("Modal Awal", number_format($session->opening_cash, 0, ',', '.'));
-        // We can add logic to get total cash sales, total non-cash, etc.
-        // For simplicity in this base service, we just show expected and actual.
         if ($session->expected_ending_cash !== null) {
             $this->justify("Harapan Kas Akhir", number_format($session->expected_ending_cash, 0, ',', '.'));
         }

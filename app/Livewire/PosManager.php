@@ -149,7 +149,7 @@ class PosManager extends Component
             'notes'                => $this->sessionNotes,
         ]);
 
-        $escPosService = new \App\Services\EscPosService();
+        $escPosService = $this->escPos();
         $zReportBase64 = $escPosService->generateZReport($this->activeSession);
 
         $this->activeSession    = null;
@@ -179,8 +179,7 @@ class PosManager extends Component
             $service = new PosTransactionService();
             $order   = $service->completePosTransaction($data);
 
-            $escPosService  = new \App\Services\EscPosService();
-            $receiptBase64  = $escPosService->generateReceipt($order);
+            $receiptBase64  = $this->escPos()->generateReceipt($order);
 
             $this->dispatch('checkout-success', [
                 'order_id'     => $order->id,
@@ -204,14 +203,18 @@ class PosManager extends Component
         }
 
         try {
-            $escPosService = new \App\Services\EscPosService();
-            $receiptBase64 = $escPosService->generateReceipt($order, isReprint: true);
+            $receiptBase64 = $this->escPos()->generateReceipt($order, isReprint: true);
 
             $this->dispatch('print-receipt', ['base64' => $receiptBase64]);
             $this->dispatch('notify', ['type' => 'success', 'message' => 'Cetak ulang struk #' . $order->order_number . ' dikirim ke printer.']);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal mencetak ulang struk: ' . $e->getMessage()]);
         }
+    }
+
+    protected function escPos(): \App\Services\EscPosService
+    {
+        return app(\App\Services\EscPosService::class);
     }
 
     public function saveInitialPosPin()
@@ -292,49 +295,63 @@ class PosManager extends Component
         $this->dispatch('notify', ['type' => 'success', 'message' => 'PIN POS 6-digit berhasil diperbarui.']);
     }
 
-    public function verifySupervisorPin($supervisorId, $pin, $actionType = '')
+    private function validateSupervisorPin($supervisorId, $pin, string $failureDispatchEvent = 'notify'): ?User
     {
         $lockKey = 'sup_pin_lock_' . Auth::id();
         $attemptsKey = 'sup_pin_attempts_' . Auth::id();
 
         if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
-            $seconds = \Illuminate\Support\Facades\Cache::get($lockKey) - time();
-            $this->dispatch('supervisor-auth-failed', ['message' => 'Terlalu banyak percobaan PIN salah. Coba lagi dalam ' . max(1, $seconds) . ' detik.']);
-            return;
+            $seconds = max(1, \Illuminate\Support\Facades\Cache::get($lockKey) - time());
+            $msg = 'Terlalu banyak percobaan PIN salah. Coba lagi dalam ' . $seconds . ' detik.';
+            if ($failureDispatchEvent === 'notify') {
+                $this->dispatch('notify', ['type' => 'error', 'message' => $msg]);
+            } else {
+                $this->dispatch($failureDispatchEvent, ['message' => $msg]);
+            }
+            return null;
         }
 
         $supervisor = User::find($supervisorId);
         $isSupRole = $supervisor && ($supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']));
+        $isValidPin = $supervisor && $isSupRole && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin);
 
-        if ($supervisor && $isSupRole && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
+        if ($isValidPin) {
             \Illuminate\Support\Facades\Cache::forget($attemptsKey);
-            $this->dispatch('supervisor-authorized', ['actionType' => $actionType, 'supervisorName' => $supervisor->name]);
-        } else {
-            $attempts = \Illuminate\Support\Facades\Cache::get($attemptsKey, 0) + 1;
-            \Illuminate\Support\Facades\Cache::put($attemptsKey, $attempts, 300);
+            return $supervisor;
+        }
 
-            if ($attempts >= 3) {
-                \Illuminate\Support\Facades\Cache::put($lockKey, time() + 60, 60);
-                \Illuminate\Support\Facades\Cache::forget($attemptsKey);
-                $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor salah 3x. Akses terkunci selama 60 detik demi keamanan.']);
-            } else {
-                $remaining = 3 - $attempts;
-                $this->dispatch('supervisor-auth-failed', ['message' => 'PIN Supervisor ' . ($supervisor ? $supervisor->name : '') . ' salah! Sisa percobaan: ' . $remaining . 'x.']);
-            }
+        $attempts = \Illuminate\Support\Facades\Cache::get($attemptsKey, 0) + 1;
+        \Illuminate\Support\Facades\Cache::put($attemptsKey, $attempts, 300);
+
+        if ($attempts >= 3) {
+            \Illuminate\Support\Facades\Cache::put($lockKey, time() + 60, 60);
+            \Illuminate\Support\Facades\Cache::forget($attemptsKey);
+            $msg = 'PIN Supervisor salah 3x. Akses terkunci selama 60 detik demi keamanan.';
+        } else {
+            $remaining = 3 - $attempts;
+            $supName = $supervisor ? $supervisor->name : '';
+            $msg = 'PIN Supervisor ' . $supName . ' salah! Sisa percobaan: ' . $remaining . 'x.';
+        }
+
+        if ($failureDispatchEvent === 'notify') {
+            $this->dispatch('notify', ['type' => 'error', 'message' => $msg]);
+        } else {
+            $this->dispatch($failureDispatchEvent, ['message' => $msg]);
+        }
+
+        return null;
+    }
+
+    public function verifySupervisorPin($supervisorId, $pin, $actionType = '')
+    {
+        $supervisor = $this->validateSupervisorPin($supervisorId, $pin, 'supervisor-auth-failed');
+        if ($supervisor) {
+            $this->dispatch('supervisor-authorized', ['actionType' => $actionType, 'supervisorName' => $supervisor->name]);
         }
     }
 
     public function voidOrder($orderId, $supervisorId, $supervisorPin, $reason = '')
     {
-        $lockKey = 'sup_pin_lock_' . Auth::id();
-        $attemptsKey = 'sup_pin_attempts_' . Auth::id();
-
-        if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
-            $seconds = \Illuminate\Support\Facades\Cache::get($lockKey) - time();
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Terlalu banyak percobaan PIN salah. Coba lagi dalam ' . max(1, $seconds) . ' detik.']);
-            return;
-        }
-
         $order = Order::with(['items', 'voidBy'])->find($orderId);
         if (!$order) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi tidak ditemukan.']);
@@ -346,26 +363,10 @@ class PosManager extends Component
             return;
         }
 
-        $supervisor = User::find($supervisorId);
-        $isSupervisorRole = $supervisor && ($supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']));
-        $isValidPin = $supervisor && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($supervisorPin, $supervisor->pos_pin);
-
-        if (!$supervisor || !$isSupervisorRole || !$isValidPin) {
-            $attempts = \Illuminate\Support\Facades\Cache::get($attemptsKey, 0) + 1;
-            \Illuminate\Support\Facades\Cache::put($attemptsKey, $attempts, 300);
-
-            if ($attempts >= 3) {
-                \Illuminate\Support\Facades\Cache::put($lockKey, time() + 60, 60);
-                \Illuminate\Support\Facades\Cache::forget($attemptsKey);
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor salah 3x. Akses terkunci selama 60 detik demi keamanan.']);
-            } else {
-                $remaining = 3 - $attempts;
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor ' . ($supervisor ? $supervisor->name : '') . ' salah! Sisa percobaan: ' . $remaining . 'x.']);
-            }
+        $supervisor = $this->validateSupervisorPin($supervisorId, $supervisorPin, 'notify');
+        if (!$supervisor) {
             return;
         }
-
-        \Illuminate\Support\Facades\Cache::forget($attemptsKey);
 
         try {
             DB::transaction(function () use ($order, $supervisor, $reason) {
@@ -537,7 +538,22 @@ class PosManager extends Component
             $sessionPettyCash = collect();
         }
 
-        $vouchers = \App\Models\Voucher::whereIn('usable_channel', ['pos_only', 'both'])
+        return view('livewire.pos-manager', [
+            'products'         => $products,
+            'vouchers'         => $this->vouchers,
+            'paymentMethods'   => $this->paymentMethods,
+            'sessionOrders'    => $sessionOrders,
+            'sessionCustomers' => $sessionCustomers,
+            'sessionPettyCash' => $sessionPettyCash,
+            'sessionStats'     => $sessionStats,
+            'supervisorsList'  => $this->supervisorsList,
+        ]);
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function vouchers()
+    {
+        return \App\Models\Voucher::whereIn('usable_channel', ['pos_only', 'both'])
             ->where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
@@ -546,8 +562,12 @@ class PosManager extends Component
                 $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
             ->get();
+    }
 
-        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
+    #[\Livewire\Attributes\Computed]
+    public function paymentMethods()
+    {
+        return \App\Models\PaymentMethod::where('is_active', true)
             ->get()
             ->filter(function ($method) {
                 $config = is_array($method->config) ? $method->config : (json_decode($method->config ?? '[]', true) ?? []);
@@ -564,8 +584,12 @@ class PosManager extends Component
                 ];
             })
             ->values();
+    }
 
-        $supervisorsList = User::whereNotNull('pos_pin')->get()->filter(function ($u) {
+    #[\Livewire\Attributes\Computed]
+    public function supervisorsList()
+    {
+        return User::whereNotNull('pos_pin')->get()->filter(function ($u) {
             return $u->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($u->role, ['super_admin', 'owner', 'manager', 'finance']);
         })->map(function ($u) {
             return [
@@ -574,16 +598,5 @@ class PosManager extends Component
                 'role' => strtoupper($u->roles->pluck('name')->first() ?? $u->role ?? 'SUPERVISOR'),
             ];
         })->values();
-
-        return view('livewire.pos-manager', [
-            'products'         => $products,
-            'vouchers'         => $vouchers,
-            'paymentMethods'   => $paymentMethods,
-            'sessionOrders'    => $sessionOrders,
-            'sessionCustomers' => $sessionCustomers,
-            'sessionPettyCash' => $sessionPettyCash,
-            'sessionStats'     => $sessionStats,
-            'supervisorsList'  => $supervisorsList,
-        ]);
     }
 }
