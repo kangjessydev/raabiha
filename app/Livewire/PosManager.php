@@ -340,15 +340,20 @@ class PosManager extends Component
 
     public function saveInitialPosPin()
     {
-        $this->validate([
-            'posPinInput'   => 'required|digits:6',
-            'posPinConfirm' => 'required|same:posPinInput',
-        ], [
-            'posPinInput.required'   => 'PIN POS wajib diisi.',
-            'posPinInput.digits'     => 'PIN POS harus berupa 6 digit angka.',
-            'posPinConfirm.required' => 'Konfirmasi PIN wajib diisi.',
-            'posPinConfirm.same'     => 'Konfirmasi PIN tidak cocok.',
-        ]);
+        try {
+            $this->validate([
+                'posPinInput'   => 'required|digits:6',
+                'posPinConfirm' => 'required|same:posPinInput',
+            ], [
+                'posPinInput.required'   => 'PIN POS wajib diisi.',
+                'posPinInput.digits'     => 'PIN POS harus berupa 6 digit angka.',
+                'posPinConfirm.required' => 'Konfirmasi PIN wajib diisi.',
+                'posPinConfirm.same'     => 'Konfirmasi PIN tidak cocok.',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->dispatch('pin-creation-failed');
+            throw $e;
+        }
 
         Auth::user()->update([
             'pos_pin' => \Illuminate\Support\Facades\Hash::make($this->posPinInput),

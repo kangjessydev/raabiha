@@ -1,5 +1,16 @@
 <div x-data="posSystem()" class="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-gray-50/50 relative">
 
+    <style>
+    @keyframes pinShake {
+        0%, 100% { transform: translateX(0); }
+        15%, 45%, 75% { transform: translateX(-8px); }
+        30%, 60%, 90% { transform: translateX(8px); }
+    }
+    .animate-pin-shake {
+        animation: pinShake 0.45s ease-in-out both;
+    }
+    </style>
+
     <!-- Notifications Toast -->
     <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
         <template x-for="(toast, index) in toasts" :key="toast.id">
@@ -27,20 +38,36 @@
                     <p class="text-xs font-medium text-gray-500">Untuk keamanan transaksi kasir, Anda wajib membuat PIN POS 6-digit pertama Anda sebelum menggunakan aplikasi POS.</p>
                 </div>
 
-                <form wire:submit.prevent="saveInitialPosPin" class="space-y-5 text-left" x-data="{
-                    pin1: $wire.entangle('posPinInput'),
-                    pin2: $wire.entangle('posPinConfirm'),
-                    showPin1: false,
-                    showPin2: false,
-                    updatePin1(val) {
-                        let clean = val.replace(/\D/g, '').slice(0, 6);
-                        this.pin1 = clean;
-                    },
-                    updatePin2(val) {
-                        let clean = val.replace(/\D/g, '').slice(0, 6);
-                        this.pin2 = clean;
-                    }
-                }" x-init="$refs.inputPin1.focus()">
+                <form wire:submit.prevent="saveInitialPosPin" 
+                      @pin-creation-failed.window="
+                          isPinError = true;
+                          setTimeout(() => {
+                              pin1 = '';
+                              pin2 = '';
+                              $wire.set('posPinInput', '');
+                              $wire.set('posPinConfirm', '');
+                              isPinError = false;
+                              $refs.inputPin1.focus();
+                          }, 600);
+                      "
+                      class="space-y-5 text-left" 
+                      x-data="{
+                          pin1: $wire.entangle('posPinInput'),
+                          pin2: $wire.entangle('posPinConfirm'),
+                          showPin1: false,
+                          showPin2: false,
+                          isPinError: false,
+                          updatePin1(val) {
+                              this.isPinError = false;
+                              let clean = val.replace(/\D/g, '').slice(0, 6);
+                              this.pin1 = clean;
+                          },
+                          updatePin2(val) {
+                              this.isPinError = false;
+                              let clean = val.replace(/\D/g, '').slice(0, 6);
+                              this.pin2 = clean;
+                          }
+                      }" x-init="$refs.inputPin1.focus()">
                     <!-- PIN POS Baru -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
@@ -66,24 +93,25 @@
                                 class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                                 autofocus
                             />
-                            <div class="grid grid-cols-6 gap-2.5">
+                            <div class="grid grid-cols-6 gap-2.5" :class="isPinError ? 'animate-pin-shake' : ''">
                                 <template x-for="i in 6" :key="i">
                                     <div 
                                         class="h-12 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
                                         :class="{
-                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': (pin1 || '').length === i - 1,
-                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': (pin1 || '').length >= i,
-                                            'border-gray-300 bg-gray-50/60 text-gray-400': (pin1 || '').length < i - 1
+                                            'border-red-500 ring-2 ring-red-500/20 bg-red-50/50 text-red-600': isPinError,
+                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': !isPinError && (pin1 || '').length === i - 1,
+                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': !isPinError && (pin1 || '').length >= i,
+                                            'border-gray-300 bg-gray-50/60 text-gray-400': !isPinError && (pin1 || '').length < i - 1
                                         }"
                                     >
                                         <template x-if="(pin1 || '').length >= i">
-                                            <span x-show="!showPin1" class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span>
+                                            <span x-show="!showPin1" class="w-3 h-3 rounded-full inline-block" :class="isPinError ? 'bg-red-500 animate-pulse' : 'bg-emerald-600'"></span>
                                         </template>
                                         <template x-if="(pin1 || '').length >= i">
-                                            <span x-show="showPin1" class="text-emerald-700 font-bold text-lg" x-text="(pin1 || '')[i - 1]"></span>
+                                            <span x-show="showPin1" class="font-bold text-lg" :class="isPinError ? 'text-red-600' : 'text-emerald-700'" x-text="(pin1 || '')[i - 1]"></span>
                                         </template>
                                         <template x-if="(pin1 || '').length < i">
-                                            <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                                            <span class="w-2 h-2 rounded-full inline-block" :class="isPinError ? 'bg-red-300' : 'bg-gray-300'"></span>
                                         </template>
                                     </div>
                                 </template>
@@ -116,24 +144,25 @@
                                 @input="updatePin2($event.target.value)"
                                 class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                             />
-                            <div class="grid grid-cols-6 gap-2.5">
+                            <div class="grid grid-cols-6 gap-2.5" :class="isPinError ? 'animate-pin-shake' : ''">
                                 <template x-for="i in 6" :key="i">
                                     <div 
                                         class="h-12 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
                                         :class="{
-                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': (pin2 || '').length === i - 1,
-                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': (pin2 || '').length >= i,
-                                            'border-gray-300 bg-gray-50/60 text-gray-400': (pin2 || '').length < i - 1
+                                            'border-red-500 ring-2 ring-red-500/20 bg-red-50/50 text-red-600': isPinError,
+                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': !isPinError && (pin2 || '').length === i - 1,
+                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': !isPinError && (pin2 || '').length >= i,
+                                            'border-gray-300 bg-gray-50/60 text-gray-400': !isPinError && (pin2 || '').length < i - 1
                                         }"
                                     >
                                         <template x-if="(pin2 || '').length >= i">
-                                            <span x-show="!showPin2" class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span>
+                                            <span x-show="!showPin2" class="w-3 h-3 rounded-full inline-block" :class="isPinError ? 'bg-red-500 animate-pulse' : 'bg-emerald-600'"></span>
                                         </template>
                                         <template x-if="(pin2 || '').length >= i">
-                                            <span x-show="showPin2" class="text-emerald-700 font-bold text-lg" x-text="(pin2 || '')[i - 1]"></span>
+                                            <span x-show="showPin2" class="font-bold text-lg" :class="isPinError ? 'text-red-600' : 'text-emerald-700'" x-text="(pin2 || '')[i - 1]"></span>
                                         </template>
                                         <template x-if="(pin2 || '').length < i">
-                                            <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                                            <span class="w-2 h-2 rounded-full inline-block" :class="isPinError ? 'bg-red-300' : 'bg-gray-300'"></span>
                                         </template>
                                     </div>
                                 </template>
@@ -1153,6 +1182,17 @@
 
         <!-- OVERLAY: Lock Screen Kasir (Clean Filament Native Style without calculator numpad) -->
         <div x-show="isLocked"
+             @screen-unlock-failed.window="
+                 isLockError = true;
+                 lockErrorMessage = $event.detail[0]?.message || $event.detail?.message || 'PIN POS 6-digit salah!';
+                 setTimeout(() => {
+                     lockPasswordInput = '';
+                     isLockError = false;
+                     const el = document.getElementById('posLockPasswordField');
+                     if (el) el.focus();
+                 }, 600);
+             "
+             @screen-unlocked.window="isLocked = false; lockPasswordInput = ''; isLockError = false; lockErrorMessage = '';"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
@@ -1163,13 +1203,16 @@
             <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 text-center shadow-xl w-full max-w-md space-y-6">
                 <!-- Icon Padlock Lock/Unlock Animation -->
                 <div class="w-16 h-16 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full flex items-center justify-center mx-auto shadow-xs transition-all duration-300 transform"
-                     :class="(lockPasswordInput || '').length === 6 ? 'bg-emerald-100 text-emerald-700 border-emerald-300 scale-105' : ''">
-                    <!-- Locked Icon (when length < 6) -->
-                    <svg x-show="(lockPasswordInput || '').length < 6" class="w-8 h-8 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     :class="{
+                         'bg-red-50 text-red-600 border-red-200 animate-pin-shake': isLockError,
+                         'bg-emerald-100 text-emerald-700 border-emerald-300 scale-105': !isLockError && (lockPasswordInput || '').length === 6
+                     }">
+                    <!-- Locked Icon (when length < 6 or error) -->
+                    <svg x-show="(lockPasswordInput || '').length < 6 || isLockError" class="w-8 h-8 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                     </svg>
-                    <!-- Unlocked Icon (when length === 6) -->
-                    <svg x-show="(lockPasswordInput || '').length === 6" x-cloak class="w-8 h-8 text-emerald-600 transition-transform duration-300 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <!-- Unlocked Icon (when length === 6 and no error) -->
+                    <svg x-show="(lockPasswordInput || '').length === 6 && !isLockError" x-cloak class="w-8 h-8 text-emerald-600 transition-transform duration-300 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
                     </svg>
                 </div>
@@ -1186,27 +1229,29 @@
                             type="password" 
                             id="posLockPasswordField" 
                             x-model="lockPasswordInput" 
+                            @input="isLockError = false; lockErrorMessage = '';"
                             maxlength="6" 
                             pattern="[0-9]*" 
                             inputmode="numeric" 
                             class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                             autofocus
                         />
-                        <div class="grid grid-cols-6 gap-2.5">
+                        <div class="grid grid-cols-6 gap-2.5" :class="isLockError ? 'animate-pin-shake' : ''">
                             <template x-for="i in 6" :key="i">
                                 <div 
                                     class="h-12 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
                                     :class="{
-                                        'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': (lockPasswordInput || '').length === i - 1,
-                                        'border-emerald-600 bg-white text-emerald-700 shadow-xs': (lockPasswordInput || '').length >= i,
-                                        'border-gray-300 bg-gray-50/60 text-gray-400': (lockPasswordInput || '').length < i - 1
+                                        'border-red-500 ring-2 ring-red-500/20 bg-red-50/50 text-red-600': isLockError,
+                                        'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': !isLockError && (lockPasswordInput || '').length === i - 1,
+                                        'border-emerald-600 bg-white text-emerald-700 shadow-xs': !isLockError && (lockPasswordInput || '').length >= i,
+                                        'border-gray-300 bg-gray-50/60 text-gray-400': !isLockError && (lockPasswordInput || '').length < i - 1
                                     }"
                                 >
                                     <template x-if="(lockPasswordInput || '').length >= i">
-                                        <span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span>
+                                        <span class="w-3 h-3 rounded-full inline-block" :class="isLockError ? 'bg-red-500 animate-pulse' : 'bg-emerald-600'"></span>
                                     </template>
                                     <template x-if="(lockPasswordInput || '').length < i">
-                                        <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                                        <span class="w-2 h-2 rounded-full inline-block" :class="isLockError ? 'bg-red-300' : 'bg-gray-300'"></span>
                                     </template>
                                 </div>
                             </template>
