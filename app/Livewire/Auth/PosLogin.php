@@ -62,10 +62,8 @@ class PosLogin extends Component
     public function render()
     {
         return view('livewire.auth.pos-login')
-            ->layout('components.layouts.app', [
+            ->layout('components.layouts.pos-auth', [
                 'title' => 'Login Kasir POS - Raabiha',
-                'robots' => 'noindex, nofollow',
-                'blank' => true,
             ]);
     }
 }
