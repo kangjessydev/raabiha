@@ -19,25 +19,45 @@
 
     <!-- Cek Session -->
     @if(!$activeSession)
-        <!-- Overlay Buka Shift -->
-        <div class="absolute inset-0 z-40 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
-            <div class="glass w-full max-w-md rounded-2xl p-8 relative shadow-2xl">
-                <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    </div>
-                    <h2 class="text-2xl font-bold text-gray-800">Buka Shift Kasir</h2>
-                    <p class="text-gray-500 text-sm mt-1">Masukkan modal awal (uang kas di laci) untuk memulai transaksi.</p>
+        <!-- Overlay Buka Shift (Clean Filament Native Style) -->
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans">
+            <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-lg w-full max-w-md space-y-6">
+                <div class="text-center space-y-1.5">
+                    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Buka Shift Kasir</h2>
+                    <p class="text-xs font-medium text-gray-500">Masukkan modal awal (uang kas di laci) untuk memulai transaksi.</p>
                 </div>
                 
-                <form wire:submit.prevent="openSession" class="space-y-4">
+                <form wire:submit.prevent="openSession" class="space-y-5">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Modal Awal (Rp)</label>
-                        <input type="number" wire:model="openingCash" class="w-full rounded-xl border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-lg py-3 px-4" placeholder="0">
-                        @error('openingCash') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        <label for="openingCashInput" class="block text-xs font-medium text-gray-700 mb-1.5">
+                            Modal Awal (Rp) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-400">Rp</span>
+                            <input 
+                                type="number" 
+                                id="openingCashInput"
+                                wire:model="openingCash" 
+                                class="w-full pl-10 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-base font-semibold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150" 
+                                placeholder="0"
+                                autofocus
+                            />
+                        </div>
+                        @error('openingCash') 
+                            <p class="mt-1 text-xs text-red-600 font-medium">{{ $message }}</p> 
+                        @enderror
                     </div>
-                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-brand-500/30 transition-all active:scale-95">
-                        Mulai Sesi
+                    <button 
+                        type="submit" 
+                        wire:loading.attr="disabled"
+                        class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                        <svg wire:loading wire:target="openSession" class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="openSession">Mulai Sesi Shift</span>
+                        <span wire:loading wire:target="openSession">Memproses...</span>
                     </button>
                 </form>
             </div>
@@ -684,7 +704,7 @@
             </div>
         </div>
 
-        <!-- MODAL: Tutup Shift -->
+        <!-- MODAL: Tutup Shift (Clean Filament Native Style) -->
         <div x-show="showCloseSession"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
@@ -692,7 +712,7 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans" style="display: none;">
             <div @click.away="showCloseSession = false"
                  x-show="showCloseSession"
                  x-transition:enter="transition ease-out duration-300 transform"
@@ -701,48 +721,73 @@
                  x-transition:leave="transition ease-in duration-200 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                  x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-md rounded-2xl p-8 relative shadow-2xl">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Tutup Shift Kasir</h2>
-                <p class="text-gray-500 text-sm mb-6">Hitung uang fisik di laci kasir dan masukkan di bawah ini untuk mencocokkan dengan sistem.</p>
+                 class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-xl w-full max-w-md space-y-5">
+                <div class="text-center space-y-1">
+                    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Tutup Shift Kasir</h2>
+                    <p class="text-xs font-medium text-gray-500">Hitung uang fisik di laci kasir dan masukkan di bawah ini untuk mencocokkan dengan sistem.</p>
+                </div>
                 
                 @if($activeSession)
-                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 space-y-2">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-500 font-medium">Modal Awal:</span>
-                        <span class="font-bold text-gray-700">Rp {{ number_format($activeSession->opening_cash, 0, ',', '.') }}</span>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2 text-xs">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 font-medium">Modal Awal:</span>
+                        <span class="font-semibold text-gray-900">Rp {{ number_format($activeSession->opening_cash, 0, ',', '.') }}</span>
                     </div>
                     @php
                         $sales = $activeSession->orders()->sum('cash_paid') - $activeSession->orders()->sum('cash_change');
                         $expected = $activeSession->opening_cash + $sales;
                     @endphp
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-500 font-medium">Penjualan Tunai:</span>
-                        <span class="font-bold text-green-600">+ Rp {{ number_format($sales, 0, ',', '.') }}</span>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600 font-medium">Penjualan Tunai:</span>
+                        <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sales, 0, ',', '.') }}</span>
                     </div>
-                    <div class="border-t border-dashed border-gray-300 pt-2 mt-2 flex justify-between">
-                        <span class="text-sm font-bold text-gray-700">Estimasi Sistem:</span>
-                        <span class="font-black text-brand-600 text-lg">Rp {{ number_format($expected, 0, ',', '.') }}</span>
+                    <div class="border-t border-gray-200 pt-2 flex justify-between items-center">
+                        <span class="font-semibold text-gray-700">Estimasi Sistem:</span>
+                        <span class="font-bold text-emerald-700 text-sm">Rp {{ number_format($expected, 0, ',', '.') }}</span>
                     </div>
                 </div>
                 @endif
                 
                 <form wire:submit.prevent="closeSession" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Total Uang Fisik Aktual (Rp)</label>
+                        <label for="actualEndingCash" class="block text-xs font-medium text-gray-700 mb-1.5">
+                            Total Uang Fisik Aktual (Rp) <span class="text-red-500">*</span>
+                        </label>
                         <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rp</span>
-                            <input type="number" wire:model="actualEndingCash" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-xl font-bold py-3 pl-12 pr-4 text-gray-900" placeholder="0" required>
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-400">Rp</span>
+                            <input 
+                                type="number" 
+                                id="actualEndingCash"
+                                wire:model="actualEndingCash" 
+                                class="w-full pl-10 pr-3.5 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-base font-semibold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150" 
+                                placeholder="0" 
+                                required
+                            />
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
-                        <textarea wire:model="sessionNotes" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-sm p-3" rows="2" placeholder="Misal: Ada pengeluaran beli lakban Rp 10.000"></textarea>
+                        <label for="sessionNotes" class="block text-xs font-medium text-gray-700 mb-1.5">Catatan Tambahan (Opsional)</label>
+                        <textarea 
+                            id="sessionNotes"
+                            wire:model="sessionNotes" 
+                            class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150" 
+                            rows="2" 
+                            placeholder="Misal: Ada pengeluaran operasional Rp 10.000"
+                        ></textarea>
                     </div>
-                    <div class="flex gap-3 pt-4">
-                        <button type="button" @click="showCloseSession = false" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition-all">Batal</button>
-                        <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-red-500/30 transition-all flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            Akhiri Shift
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="showCloseSession = false" class="flex-1 py-2 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium text-sm rounded-lg shadow-sm transition duration-150 cursor-pointer">Batal</button>
+                        <button 
+                            type="submit" 
+                            wire:loading.attr="disabled"
+                            class="flex-1 py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2"
+                        >
+                            <svg wire:loading wire:target="closeSession" class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span wire:loading.remove wire:target="closeSession">Akhiri Shift</span>
+                            <span wire:loading wire:target="closeSession">Memproses...</span>
                         </button>
                     </div>
                 </form>
@@ -940,37 +985,60 @@
             </div>
         </div>
 
-        <!-- OVERLAY: Mandatory Initial POS PIN Setup -->
+        <!-- OVERLAY: Mandatory Initial POS PIN Setup (Clean Filament Native Style) -->
         <div x-show="!$wire.hasPosPin"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100"
-             class="fixed inset-0 z-[150] flex items-center justify-center bg-gray-950/90 backdrop-blur-xl p-4">
-            <div class="glass w-full max-w-md rounded-3xl p-8 shadow-2xl relative border border-gray-700/50 text-center">
-                <div class="w-16 h-16 bg-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-500/30">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+             class="fixed inset-0 z-[150] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans">
+            <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-xl w-full max-w-md space-y-5 text-center">
+                <div class="space-y-1">
+                    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Buat PIN POS 6-Digit</h2>
+                    <p class="text-xs font-medium text-gray-500">Untuk keamanan transaksi kasir, Anda wajib membuat PIN POS 6-digit pertama Anda sebelum menggunakan aplikasi POS.</p>
                 </div>
-                <h2 class="text-2xl font-black text-white mb-2">Buat PIN POS 6-Digit</h2>
-                <p class="text-xs text-gray-400 mb-6 leading-relaxed">Untuk keamanan transaksi kasir, Anda wajib membuat PIN POS 6-digit pertama Anda sebelum menggunakan aplikasi POS.</p>
 
                 <form wire:submit.prevent="saveInitialPosPin" class="space-y-4 text-left">
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">PIN POS Baru (6 Digit)</label>
-                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="posPinInput" placeholder="Contoh: 123456"
-                               class="w-full rounded-xl border-gray-700 bg-gray-900/80 text-white placeholder-gray-600 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-inner focus:border-amber-500 focus:ring-amber-500">
-                        @error('posPinInput') <span class="text-red-400 text-xs mt-1 block font-semibold">{{ $message }}</span> @enderror
+                        <label for="posPinInput" class="block text-xs font-medium text-gray-700 mb-1.5">PIN POS Baru (6 Digit) <span class="text-red-500">*</span></label>
+                        <input 
+                            type="password" 
+                            id="posPinInput"
+                            maxlength="6" 
+                            pattern="[0-9]*" 
+                            inputmode="numeric" 
+                            wire:model="posPinInput" 
+                            placeholder="Contoh: 123456"
+                            class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
+                        />
+                        @error('posPinInput') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Konfirmasi PIN POS (6 Digit)</label>
-                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="posPinConfirm" placeholder="Ulangi 6 digit PIN"
-                               class="w-full rounded-xl border-gray-700 bg-gray-900/80 text-white placeholder-gray-600 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-inner focus:border-amber-500 focus:ring-amber-500">
-                        @error('posPinConfirm') <span class="text-red-400 text-xs mt-1 block font-semibold">{{ $message }}</span> @enderror
+                        <label for="posPinConfirm" class="block text-xs font-medium text-gray-700 mb-1.5">Konfirmasi PIN POS (6 Digit) <span class="text-red-500">*</span></label>
+                        <input 
+                            type="password" 
+                            id="posPinConfirm"
+                            maxlength="6" 
+                            pattern="[0-9]*" 
+                            inputmode="numeric" 
+                            wire:model="posPinConfirm" 
+                            placeholder="Ulangi 6 digit PIN"
+                            class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
+                        />
+                        @error('posPinConfirm') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
                     </div>
 
-                    <button type="submit"
-                            class="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl shadow-lg shadow-amber-500/30 transition-all active:scale-95 text-sm mt-2">
-                        Simpan & Aktifkan PIN POS
+                    <button 
+                        type="submit"
+                        wire:loading.attr="disabled"
+                        class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                    >
+                        <svg wire:loading wire:target="saveInitialPosPin" class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="saveInitialPosPin">Simpan & Aktifkan PIN POS</span>
+                        <span wire:loading wire:target="saveInitialPosPin">Memproses...</span>
                     </button>
                 </form>
             </div>
