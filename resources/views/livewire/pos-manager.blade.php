@@ -1211,6 +1211,82 @@
                         </div>
                     </div>
 
+                    <!-- Step 3: Pilih Barang Pengganti (Exchange only) -->
+                    <template x-if="returnType === 'exchange'">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">3. Pilih Barang Pengganti (Tukar)</label>
+
+                            <!-- Daftar item yang sudah ditambah -->
+                            <template x-if="returnExchangedItems.length > 0">
+                                <div class="mb-2 space-y-1">
+                                    <template x-for="(eItem, eIdx) in returnExchangedItems" :key="eIdx">
+                                        <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
+                                            <div>
+                                                <span class="font-bold text-gray-800" x-text="eItem.name"></span>
+                                                <span class="text-gray-500 ml-1" x-text="'Rp ' + formatMoney(eItem.price)"></span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <div class="flex items-center border border-gray-300 rounded overflow-hidden">
+                                                    <button type="button" @click="if(eItem.quantity > 1) eItem.quantity--; else removeExchangeItem(eIdx)" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">-</button>
+                                                    <span class="px-2 font-bold" x-text="eItem.quantity"></span>
+                                                    <button type="button" @click="eItem.quantity++" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">+</button>
+                                                </div>
+                                                <button type="button" @click="removeExchangeItem(eIdx)" class="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <!-- Search + product list -->
+                            <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                                <input type="text" x-model="exchangeSearchQuery"
+                                       placeholder="Cari nama produk pengganti..."
+                                       class="w-full text-sm border-0 border-b border-gray-200 px-3 py-2 focus:ring-0 bg-white"
+                                       autocomplete="off">
+                                <div class="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                                    <template x-for="p in allProducts.filter(p => !exchangeSearchQuery || p.name.toLowerCase().includes(exchangeSearchQuery.toLowerCase())).slice(0,20)" :key="p.id">
+                                        <div>
+                                            <!-- Produk tanpa varian -->
+                                            <template x-if="!p.has_variants">
+                                                <button type="button"
+                                                        :disabled="p.stock <= 0"
+                                                        @click="addExchangeItem(p); exchangeSearchQuery = '';"
+                                                        class="w-full text-left px-3 py-2 text-xs hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed flex justify-between items-center">
+                                                    <div>
+                                                        <span class="font-semibold text-gray-800" x-text="p.name"></span>
+                                                        <span class="text-gray-400 ml-2" x-text="'Rp ' + formatMoney(p.price)"></span>
+                                                    </div>
+                                                    <span class="text-gray-400" x-text="'Stok: ' + p.stock"></span>
+                                                </button>
+                                            </template>
+                                            <!-- Produk dengan varian -->
+                                            <template x-if="p.has_variants">
+                                                <div class="px-3 py-1.5">
+                                                    <div class="text-xs font-semibold text-gray-600 mb-1" x-text="p.name"></div>
+                                                    <div class="flex flex-wrap gap-1.5">
+                                                        <template x-for="v in p.variants" :key="v.id">
+                                                            <button type="button"
+                                                                    :disabled="v.stock <= 0"
+                                                                    @click="addExchangeItem({id: p.id, name: p.name, price: p.price, stock: p.stock, has_variants: true}, {id: v.id, name: v.name, price: v.price, stock: v.stock}); exchangeSearchQuery = '';"
+                                                                    class="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-medium hover:bg-amber-50 hover:border-amber-400 disabled:opacity-40 disabled:cursor-not-allowed">
+                                                                <span x-text="v.name"></span>
+                                                                <span class="text-gray-400 ml-1" x-text="'(' + v.stock + ')'"></span>
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="allProducts.filter(p => !exchangeSearchQuery || p.name.toLowerCase().includes(exchangeSearchQuery.toLowerCase())).length === 0">
+                                        <div class="px-3 py-3 text-xs text-gray-400 text-center">Produk tidak ditemukan.</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
                     <!-- Summary Calculation Box -->
                     <div class="bg-amber-50/60 rounded-xl p-4 border border-amber-200 space-y-2">
                         <div class="flex justify-between text-xs font-medium text-gray-600">
@@ -1749,6 +1825,20 @@
                 // Voucher State
                 vouchers: @json($vouchers ?? []),
                 paymentMethods: @json($paymentMethods ?? []),
+                allProducts: @json(($products ?? collect())->map(fn($p) => [
+                    'id'         => $p->id,
+                    'name'       => $p->name,
+                    'price'      => (float)($p->pos_discount_price ?: ($p->pos_price ?: $p->price)),
+                    'stock'      => (int)($p->computed_stock ?? $p->stock),
+                    'has_variants' => (bool)$p->has_variants,
+                    'variants'   => $p->has_variants ? ($p->relationLoaded('variants') ? $p->variants->map(fn($v) => [
+                        'id'    => $v->id,
+                        'name'  => $v->name,
+                        'price' => (float)($v->pos_discount_price ?: ($v->pos_price ?: ($v->price ?: $p->price))),
+                        'stock' => (int)$v->stock,
+                    ])->values()->all() : []) : [],
+                ])->values()->all()),
+                exchangeSearchQuery: '',
                 showVoucherModal: false,
                 activeVoucher: null,
                 
