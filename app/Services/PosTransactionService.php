@@ -363,7 +363,7 @@ class PosTransactionService
                     if ($var) {
                         $before = $var->stock;
                         $var->increment('stock', $rItem['quantity']);
-                        $after = $var->stock;
+                        $after = $before + $rItem['quantity'];
 
                         StockLog::create([
                             'product_id'         => $rItem['product_id'],
@@ -382,7 +382,7 @@ class PosTransactionService
                     if ($prd) {
                         $before = $prd->stock;
                         $prd->increment('stock', $rItem['quantity']);
-                        $after = $prd->stock;
+                        $after = $before + $rItem['quantity'];
 
                         StockLog::create([
                             'product_id'         => $rItem['product_id'],
