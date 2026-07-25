@@ -85,6 +85,8 @@ class EscPosService
      */
     public function generateReceipt(Order $order, bool $isReprint = false): string
     {
+        $this->buffer = self::INIT; // Reset buffer agar tidak tumpuk jika dipakai ulang via DI container
+
         // 1. Settings (Batch Query)
         $settings = $this->getSettings([
             'pos_receipt_header',
@@ -187,6 +189,8 @@ class EscPosService
      */
     public function generateZReport(PosSession $session): string
     {
+        $this->buffer = self::INIT; // Reset buffer
+
         $settings = $this->getSettings(['pos_receipt_header', 'pos_auto_cut']);
         $header  = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
         $autoCut = filter_var($settings['pos_auto_cut'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -236,6 +240,8 @@ class EscPosService
      */
     public function generateReturnReceipt(\App\Models\PosReturn $posReturn): string
     {
+        $this->buffer = self::INIT; // Reset buffer
+
         $settings = $this->getSettings(['pos_receipt_header', 'pos_receipt_footer', 'pos_auto_cut', 'pos_open_cash_drawer']);
         $header   = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
         $footer   = $settings['pos_receipt_footer'] ?? "Terima Kasih";

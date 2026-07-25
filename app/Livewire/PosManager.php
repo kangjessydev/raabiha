@@ -135,10 +135,33 @@ class PosManager extends Component
             ->sum('amount');
 
         $totalCashSales = $this->activeSession->orders()
-            ->where('payment_method', 'cash')
+            ->whereNotIn('status', ['cancelled'])
+            ->where(function ($q) {
+                $q->where('payment_method', 'cash')
+                  ->orWhere('payment_method', 'tunai');
+            })
             ->sum('grand_total');
 
-        $expectedEnding = $this->activeSession->opening_cash + $totalCashSales + $pettyCashIn - $pettyCashOut;
+        // Kas keluar: Void tunai + Refund retur (dikembalikan ke pelanggan)
+        $voidAndRefundCashOut = \App\Models\Cashflow::where('source', 'pos')
+            ->whereIn('category', ['pos_void', 'pos_return_refund'])
+            ->where('type', 'out')
+            ->where('created_at', '>=', $this->activeSession->opened_at)
+            ->sum('amount');
+
+        // Kas masuk tambahan: Selisih tambah bayar saat penukaran barang
+        $exchangeExtraPayIn = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_exchange_pay')
+            ->where('type', 'in')
+            ->where('created_at', '>=', $this->activeSession->opened_at)
+            ->sum('amount');
+
+        $expectedEnding = $this->activeSession->opening_cash
+            + $totalCashSales
+            + $pettyCashIn
+            + $exchangeExtraPayIn
+            - $pettyCashOut
+            - $voidAndRefundCashOut;
 
         $this->activeSession->update([
             'closed_at'            => now(),
@@ -414,40 +437,44 @@ class PosManager extends Component
 
                 // 2. Restock product items
                 foreach ($order->items as $item) {
+                    $stockBefore = 0;
+                    $stockAfter  = 0;
+
                     if ($item->product_variant_id) {
                         $variant = \App\Models\ProductVariant::find($item->product_variant_id);
                         if ($variant) {
+                            $stockBefore = $variant->stock;
                             $variant->increment('stock', $item->quantity);
+                            $stockAfter = $stockBefore + $item->quantity;
                         }
                     } else {
                         $product = Product::find($item->product_id);
                         if ($product) {
+                            $stockBefore = $product->stock;
                             $product->increment('stock', $item->quantity);
+                            $stockAfter = $stockBefore + $item->quantity;
                         }
                     }
 
-                    // Stock log
-                    if (class_exists(\App\Models\StockLog::class)) {
-                        $currentStock = $item->product_variant_id
-                            ? (\App\Models\ProductVariant::find($item->product_variant_id)->stock ?? 0)
-                            : (\App\Models\Product::find($item->product_id)->stock ?? 0);
-
+                    // Stock log (hanya jika ada model yang ditemukan)
+                    if ($stockAfter > 0 || $stockBefore >= 0) {
                         \App\Models\StockLog::create([
                             'product_id'         => $item->product_id,
                             'product_variant_id' => $item->product_variant_id,
                             'user_id'            => Auth::id(),
                             'type'               => 'in',
-                            'quantity_before'    => max(0, $currentStock - $item->quantity),
+                            'quantity_before'    => $stockBefore,
                             'quantity_change'    => $item->quantity,
-                            'quantity_after'     => $currentStock,
+                            'quantity_after'     => $stockAfter,
                             'reason'             => 'pos_void',
                             'notes'              => 'Restock Void Nota POS #' . $order->order_number . ' (Disetujui Supervisor: ' . $supervisor->name . ')',
                         ]);
                     }
                 }
 
-                // 3. Record Cashflow Reversal
-                if ($order->payment_method === 'cash') {
+                // 3. Record Cashflow Reversal (tunai saja — non-tunai tidak perlu kas keluar fisik)
+                $isCashPayment = in_array(strtolower($order->payment_method), ['cash', 'tunai']);
+                if ($isCashPayment) {
                     \App\Models\Cashflow::create([
                         'transaction_date' => now()->toDateString(),
                         'type'             => 'out',
@@ -544,8 +571,8 @@ class PosManager extends Component
 
             /* ---------- Rekap Kas ---------- */
             $validOrders  = $sessionOrders->where('status', '!=', 'cancelled');
-            $cashSales    = $validOrders->where('payment_method', 'cash')->sum('grand_total');
-            $nonCashSales = $validOrders->where('payment_method', '!=', 'cash')->sum('grand_total');
+            $cashSales    = $validOrders->filter(fn($o) => in_array($o->payment_method, ['cash', 'tunai']))->sum('grand_total');
+            $nonCashSales = $validOrders->filter(fn($o) => !in_array($o->payment_method, ['cash', 'tunai']))->sum('grand_total');
 
             $sessionPettyCash = \App\Models\Cashflow::where('source', 'pos')
                 ->where('category', 'pos_petty_cash')
@@ -556,16 +583,35 @@ class PosManager extends Component
             $pettyCashIn  = $sessionPettyCash->where('type', 'in')->sum('amount');
             $pettyCashOut = $sessionPettyCash->where('type', 'out')->sum('amount');
 
+            $voidRefundOut = \App\Models\Cashflow::where('source', 'pos')
+                ->whereIn('category', ['pos_void', 'pos_return_refund'])
+                ->where('type', 'out')
+                ->where('created_at', '>=', $this->activeSession->opened_at)
+                ->sum('amount');
+
+            $exchangeIn = \App\Models\Cashflow::where('source', 'pos')
+                ->where('category', 'pos_exchange_pay')
+                ->where('type', 'in')
+                ->where('created_at', '>=', $this->activeSession->opened_at)
+                ->sum('amount');
+
             $sessionStats = [
-                'total_trx'      => $validOrders->count(),
-                'cash_sales'     => $cashSales,
-                'non_cash_sales' => $nonCashSales,
-                'total_sales'    => $cashSales + $nonCashSales,
-                'opening_cash'   => $this->activeSession->opening_cash,
-                'petty_cash_in'  => $pettyCashIn,
-                'petty_cash_out' => $pettyCashOut,
-                'expected_cash'  => $this->activeSession->opening_cash + $cashSales + $pettyCashIn - $pettyCashOut,
-                'opened_at'      => $this->activeSession->opened_at->format('d M Y, H:i'),
+                'total_trx'       => $validOrders->count(),
+                'cash_sales'      => $cashSales,
+                'non_cash_sales'  => $nonCashSales,
+                'total_sales'     => $cashSales + $nonCashSales,
+                'opening_cash'    => $this->activeSession->opening_cash,
+                'petty_cash_in'   => $pettyCashIn,
+                'petty_cash_out'  => $pettyCashOut,
+                'void_refund_out' => $voidRefundOut,
+                'exchange_in'     => $exchangeIn,
+                'expected_cash'   => $this->activeSession->opening_cash
+                    + $cashSales
+                    + $pettyCashIn
+                    + $exchangeIn
+                    - $pettyCashOut
+                    - $voidRefundOut,
+                'opened_at'       => $this->activeSession->opened_at->format('d M Y, H:i'),
             ];
         } else {
             $sessionPettyCash = collect();
