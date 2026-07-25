@@ -39,9 +39,22 @@ Route::middleware(['auth'])->group(function () {
         $request->session()->regenerateToken();
         return redirect('/login');
     })->name('logout');
+});
 
-    // Route POS
+// Dedicated POS Auth Routes
+Route::get('/pos/login', \App\Livewire\Auth\PosLogin::class)
+    ->middleware('guest')
+    ->name('pos.login');
+
+Route::middleware([\App\Http\Middleware\EnsurePosAuthenticated::class])->group(function () {
     Route::get('/pos', \App\Livewire\PosManager::class)->name('pos.index');
+    
+    Route::post('/pos/logout', function (\Illuminate\Http\Request $request) {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('pos.login');
+    })->name('pos.logout');
 });
 
 Route::get('/checkout', \App\Livewire\Checkout::class)->name('checkout');

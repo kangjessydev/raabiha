@@ -55,4 +55,43 @@ class KasirAccessTest extends TestCase
 
         $this->assertStringNotContainsString('/pos', $response->headers->get('Location') ?? '');
     }
+
+    public function test_unauthenticated_user_accessing_pos_is_redirected_to_pos_login()
+    {
+        $response = $this->get('/pos');
+        $response->assertRedirect(route('pos.login'));
+    }
+
+    public function test_kasir_can_login_via_pos_login_page()
+    {
+        $kasir = User::factory()->create([
+            'email' => 'kasir1@raabiha.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $kasir->assignRole('kasir');
+
+        \Livewire\Livewire::test(\App\Livewire\Auth\PosLogin::class)
+            ->set('loginInput', 'kasir1@raabiha.com')
+            ->set('password', 'password123')
+            ->call('login')
+            ->assertRedirect(route('pos.index'));
+
+        $this->assertAuthenticatedAs($kasir);
+    }
+
+    public function test_customer_without_pos_role_cannot_login_via_pos_login_page()
+    {
+        $customer = User::factory()->create([
+            'email' => 'customer@gmail.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        \Livewire\Livewire::test(\App\Livewire\Auth\PosLogin::class)
+            ->set('loginInput', 'customer@gmail.com')
+            ->set('password', 'password123')
+            ->call('login')
+            ->assertHasErrors('loginInput');
+
+        $this->assertGuest();
+    }
 }
