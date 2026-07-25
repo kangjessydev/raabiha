@@ -1825,19 +1825,7 @@
                 // Voucher State
                 vouchers: @json($vouchers ?? []),
                 paymentMethods: @json($paymentMethods ?? []),
-                allProducts: @json(($products ?? collect())->map(fn($p) => [
-                    'id'         => $p->id,
-                    'name'       => $p->name,
-                    'price'      => (float)($p->pos_discount_price ?: ($p->pos_price ?: $p->price)),
-                    'stock'      => (int)($p->computed_stock ?? $p->stock),
-                    'has_variants' => (bool)$p->has_variants,
-                    'variants'   => $p->has_variants ? ($p->relationLoaded('variants') ? $p->variants->map(fn($v) => [
-                        'id'    => $v->id,
-                        'name'  => $v->name,
-                        'price' => (float)($v->pos_discount_price ?: ($v->pos_price ?: ($v->price ?: $p->price))),
-                        'stock' => (int)$v->stock,
-                    ])->values()->all() : []) : [],
-                ])->values()->all()),
+                allProducts: @json($allProductsJson ?? []),
                 exchangeSearchQuery: '',
                 showVoucherModal: false,
                 activeVoucher: null,

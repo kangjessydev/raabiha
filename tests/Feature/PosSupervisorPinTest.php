@@ -7,6 +7,7 @@ use App\Livewire\PosManager;
 use Livewire\Livewire;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -70,5 +71,38 @@ class PosSupervisorPinTest extends TestCase
             ->test(PosManager::class)
             ->call('verifySupervisorPin', $owner->id, '888888', 'manual_discount')
             ->assertDispatched('supervisor-authorized');
+    }
+
+    public function test_rate_limiting_is_per_supervisor_not_per_cashier()
+    {
+        Cache::flush();
+
+        $owner = User::factory()->create([
+            'pos_pin' => Hash::make('888888'),
+        ]);
+        $owner->assignRole('owner');
+
+        $cashier1 = User::factory()->create(['pos_pin' => Hash::make('111111')]);
+        $cashier1->assignRole('kasir');
+        $cashier2 = User::factory()->create(['pos_pin' => Hash::make('222222')]);
+        $cashier2->assignRole('kasir');
+
+        // Kasir 1 salah 3x -> supervisor X terkunci
+        for ($i = 0; $i < 3; $i++) {
+            Livewire::actingAs($cashier1)
+                ->test(PosManager::class)
+                ->call('verifySupervisorPin', $owner->id, '000000', 'manual_discount')
+                ->assertDispatched('supervisor-auth-failed');
+        }
+
+        // Kasir 2 mencoba supervisor yang sama -> harus kena lockout juga (meski PIN benar)
+        Livewire::actingAs($cashier2)
+            ->test(PosManager::class)
+            ->call('verifySupervisorPin', $owner->id, '888888', 'manual_discount')
+            ->assertDispatched('supervisor-auth-failed');
+
+        // Verifikasi: cache key berbasis supervisor ID, bukan cashier ID
+        $this->assertTrue(Cache::has('sup_pin_lock_sup_' . $owner->id));
+        $this->assertFalse(Cache::has('sup_pin_lock_sup_' . $cashier1->id));
     }
 }

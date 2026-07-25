@@ -353,12 +353,15 @@ class PosManager extends Component
 
     private function validateSupervisorPin($supervisorId, $pin, string $failureDispatchEvent = 'notify'): ?User
     {
-        $lockKey = 'sup_pin_lock_' . Auth::id();
-        $attemptsKey = 'sup_pin_attempts_' . Auth::id();
+        // Lockout berbasis supervisor yang dicoba — bukan kasir yang mencoba.
+        // Ini mencegah brute force dari banyak terminal kasir sekaligus.
+        $supId      = (int) $supervisorId;
+        $lockKey    = 'sup_pin_lock_sup_' . $supId;
+        $attemptsKey = 'sup_pin_attempts_sup_' . $supId;
 
         if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
             $seconds = max(1, \Illuminate\Support\Facades\Cache::get($lockKey) - time());
-            $msg = 'Terlalu banyak percobaan PIN salah. Coba lagi dalam ' . $seconds . ' detik.';
+            $msg = 'PIN Supervisor terkunci. Coba lagi dalam ' . $seconds . ' detik.';
             if ($failureDispatchEvent === 'notify') {
                 $this->dispatch('notify', ['type' => 'error', 'message' => $msg]);
             } else {
@@ -382,7 +385,8 @@ class PosManager extends Component
         if ($attempts >= 3) {
             \Illuminate\Support\Facades\Cache::put($lockKey, time() + 60, 60);
             \Illuminate\Support\Facades\Cache::forget($attemptsKey);
-            $msg = 'PIN Supervisor salah 3x. Akses terkunci selama 60 detik demi keamanan.';
+            $supName = $supervisor ? $supervisor->name : 'Supervisor';
+            $msg = 'PIN ' . $supName . ' salah 3x. Akses terkunci 60 detik demi keamanan.';
         } else {
             $remaining = 3 - $attempts;
             $supName = $supervisor ? $supervisor->name : '';
@@ -617,8 +621,23 @@ class PosManager extends Component
             $sessionPettyCash = collect();
         }
 
+        $allProductsJson = collect($products)->map(fn($p) => [
+            'id'           => $p->id,
+            'name'         => $p->name,
+            'price'        => (float)($p->pos_discount_price ?: ($p->pos_price ?: $p->price)),
+            'stock'        => (int)($p->computed_stock ?? $p->stock),
+            'has_variants' => (bool)$p->has_variants,
+            'variants'     => $p->has_variants ? ($p->relationLoaded('variants') ? $p->variants->map(fn($v) => [
+                'id'    => $v->id,
+                'name'  => $v->name,
+                'price' => (float)($v->pos_discount_price ?: ($v->pos_price ?: ($v->price ?: $p->price))),
+                'stock' => (int)$v->stock,
+            ])->values()->all() : []) : [],
+        ])->values()->all();
+
         return view('livewire.pos-manager', [
             'products'         => $products,
+            'allProductsJson'  => $allProductsJson,
             'vouchers'         => $this->vouchers,
             'paymentMethods'   => $this->paymentMethods,
             'sessionOrders'    => $sessionOrders,
