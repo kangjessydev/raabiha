@@ -35,7 +35,11 @@ class PosManager extends Component
     public $posPinConfirm = '';
     public $oldPosPin = '';
     public $newPosPin = '';
-    public $newPosPinConfirm = '';
+    // State Filter & Search Riwayat Transaksi
+    public string $historySearch = '';
+    public string $historyPaymentFilter = 'all';
+    public string $historyStatusFilter = 'all';
+    public string $historyDateFilter = 'shift';
 
     public function recordPettyCash()
     {
@@ -638,12 +642,38 @@ class PosManager extends Component
                 $products = $top3->concat($remaining);
             }
 
-            /* ---------- Riwayat Transaksi (shift ini) ---------- */
-            $sessionOrders = Order::with(['items', 'voidBy'])
-                ->where('pos_session_id', $this->activeSession->id)
-                ->latest()
-                ->limit(50)
-                ->get();
+            /* ---------- Riwayat Transaksi (dinamis filter & search) ---------- */
+            $ordersQuery = Order::with(['items', 'cashier', 'voidBy'])
+                ->where('source', 'pos');
+
+            if ($this->historyDateFilter === 'shift') {
+                $ordersQuery->where('pos_session_id', $this->activeSession->id);
+            } elseif ($this->historyDateFilter === 'today') {
+                $ordersQuery->whereDate('created_at', now()->toDateString());
+            }
+
+            if (!empty(trim($this->historySearch))) {
+                $term = '%' . trim($this->historySearch) . '%';
+                $ordersQuery->where(function ($q) use ($term) {
+                    $q->where('order_number', 'like', $term)
+                      ->orWhere('customer_name', 'like', $term)
+                      ->orWhere('customer_phone', 'like', $term);
+                });
+            }
+
+            if ($this->historyPaymentFilter === 'cash') {
+                $ordersQuery->whereIn('payment_method', ['cash', 'tunai']);
+            } elseif ($this->historyPaymentFilter === 'non_cash') {
+                $ordersQuery->whereNotIn('payment_method', ['cash', 'tunai']);
+            }
+
+            if ($this->historyStatusFilter === 'completed') {
+                $ordersQuery->where('status', 'completed');
+            } elseif ($this->historyStatusFilter === 'cancelled') {
+                $ordersQuery->where('status', 'cancelled');
+            }
+
+            $sessionOrders = $ordersQuery->latest()->limit(100)->get();
 
             /* ---------- Pelanggan (shift ini, unik by nama) ---------- */
             $sessionCustomers = Order::where('pos_session_id', $this->activeSession->id)

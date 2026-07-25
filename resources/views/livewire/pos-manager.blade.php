@@ -1554,97 +1554,238 @@
 
 
         <!-- ============================================ -->
-        <!-- PAGE: Riwayat Transaksi                     -->
+        <!-- PAGE: Riwayat Transaksi (Tabel Data Professional) -->
         <!-- ============================================ -->
         <div x-show="activePage === 'history'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
-            <!-- Header -->
-            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center gap-4 shadow-sm">
-                <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                </button>
-                <div>
-                    <h1 class="text-xl font-bold text-gray-800">Riwayat Transaksi</h1>
-                    <p class="text-sm text-gray-400">Shift hari ini &mdash; {{ count($sessionOrders) }} transaksi</p>
+            <!-- Header & Toolbar Filter -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 space-y-4 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        </button>
+                        <div>
+                            <h1 class="text-xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+                                📋 Riwayat Transaksi POS
+                            </h1>
+                            <p class="text-xs text-gray-500 font-medium">Manajemen nota penjualan, cetak ulang struk, retur, dan pembatalan nota.</p>
+                        </div>
+                    </div>
+
+                    <!-- Ringkasan Singkat KPI -->
+                    <div class="flex items-center gap-3 text-xs">
+                        <div class="px-3.5 py-2 bg-emerald-50 border border-emerald-200 rounded-xl">
+                            <span class="text-emerald-700 font-medium">Total Omzet:</span>
+                            <strong class="text-emerald-900 font-extrabold ml-1">Rp {{ number_format($sessionOrders->where('status', '!=', 'cancelled')->sum('grand_total'), 0, ',', '.') }}</strong>
+                        </div>
+                        <div class="px-3.5 py-2 bg-blue-50 border border-blue-200 rounded-xl">
+                            <span class="text-blue-700 font-medium">Selesai:</span>
+                            <strong class="text-blue-900 font-extrabold ml-1">{{ $sessionOrders->where('status', '!=', 'cancelled')->count() }} Nota</strong>
+                        </div>
+                        @if($sessionOrders->where('status', 'cancelled')->count() > 0)
+                        <div class="px-3.5 py-2 bg-red-50 border border-red-200 rounded-xl">
+                            <span class="text-red-700 font-medium">Void/Batal:</span>
+                            <strong class="text-red-900 font-extrabold ml-1">{{ $sessionOrders->where('status', 'cancelled')->count() }} Nota</strong>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Filter Controls Bar -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 border-t border-gray-100">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <input type="text" wire:model.live.debounce.300ms="historySearch" placeholder="Cari No. Nota, Pelanggan, HP..."
+                               class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+                    </div>
+
+                    <!-- Periode Filter -->
+                    <div>
+                        <select wire:model.live="historyDateFilter" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+                            <option value="shift">Shift Hari Ini</option>
+                            <option value="today">Semua Transaksi Hari Ini</option>
+                            <option value="all">Semua Riwayat (Tanpa Batas)</option>
+                        </select>
+                    </div>
+
+                    <!-- Metode Pembayaran Filter -->
+                    <div>
+                        <select wire:model.live="historyPaymentFilter" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+                            <option value="all">Semua Metode Bayar</option>
+                            <option value="cash">💵 Tunai (Cash)</option>
+                            <option value="non_cash">💳 Non-Tunai (QRIS / Transfer / EDC)</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div>
+                        <select wire:model.live="historyStatusFilter" class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+                            <option value="all">Semua Status</option>
+                            <option value="completed">✅ Selesai</option>
+                            <option value="cancelled">🚫 Dibatalkan (Void)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-            <!-- List -->
-            <div class="flex-1 overflow-y-auto">
+
+            <!-- Table Content Area -->
+            <div class="flex-1 overflow-y-auto p-6">
                 @if(count($sessionOrders) === 0)
-                <div class="flex flex-col items-center justify-center h-full text-gray-300 py-24">
-                    <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <p class="text-lg font-medium">Belum ada transaksi hari ini</p>
-                    <p class="text-sm mt-1">Transaksi yang selesai akan muncul di sini</p>
+                <div class="flex flex-col items-center justify-center h-full text-gray-400 py-24 bg-white rounded-2xl border border-gray-200 shadow-sm">
+                    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <p class="text-base font-bold text-gray-700">Tidak ada transaksi ditemukan</p>
+                    <p class="text-xs text-gray-400 mt-1">Coba sesuaikan kata kunci pencarian atau filter di atas.</p>
                 </div>
                 @else
-                <div class="max-w-3xl mx-auto p-6 space-y-3">
-                    @foreach($sessionOrders as $order)
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:border-brand-200 hover:shadow-md transition-all">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                </div>
-                                <div>
-                                    <div class="font-bold text-gray-800">#{{ $order->order_number }}</div>
-                                    <div class="text-xs text-gray-400">{{ $order->created_at->format('H:i') }}{{ $order->customer_name ? ' · ' . $order->customer_name : '' }}</div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <div class="font-black text-xl text-brand-600">Rp {{ number_format($order->grand_total, 0, ',', '.') }}</div>
-                                <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $order->payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' }}">
-                                    {{ $order->payment_method === 'cash' ? 'Tunai' : 'QRIS / Transfer' }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="border-t border-gray-50 pt-3 space-y-1">
-                            @foreach($order->items as $item)
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600">{{ $item->product_name }}{{ $item->variant_name ? ' - '.$item->variant_name : '' }} <span class="text-gray-400">x{{ $item->quantity }}</span></span>
-                                <span class="font-medium text-gray-700">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
-                            </div>
-                            @endforeach
-                                                <!-- Card Action Footer: Reprint Struk & Void Order -->
-                        <div class="border-t border-gray-100 mt-3 pt-3 flex flex-wrap justify-between items-center gap-2">
-                            <span class="text-xs text-gray-400 font-medium">Kasir: {{ $order->cashier->name ?? 'Kasir' }}</span>
-                            
-                            @if($order->status === 'cancelled')
-                                <div class="flex items-center gap-2 bg-red-50 text-red-700 px-3 py-1.5 rounded-xl border border-red-200 text-xs font-bold">
-                                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span>VOID / DIBATALKAN</span>
-                                    @if($order->voidBy)
-                                        <span class="text-[11px] font-normal text-red-500">· Disetujui: {{ $order->voidBy->name }}</span>
-                                    @endif
-                                </div>
-                            @else
-                                <div class="flex items-center gap-2">
-                                    <button wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-brand-50 text-gray-700 hover:text-brand-700 font-bold text-xs rounded-xl border border-gray-200 hover:border-brand-200 transition-all active:scale-95 shadow-sm group">
-                                        <svg class="w-3.5 h-3.5 text-gray-500 group-hover:text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                        </svg>
-                                        <span>Cetak Ulang Struk</span>
-                                    </button>
-                                    
-                                    <button type="button" @click="openVoidModal({{ $order->id }}, '{{ $order->order_number }}', {{ $order->grand_total }})"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl border border-red-200 hover:border-red-300 transition-all active:scale-95 shadow-sm">
-                                        <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                        </svg>
-                                        <span>Batalkan (Void)</span>
-                                    </button>
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50/80 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                    <th class="py-3.5 px-4">No. Nota & Waktu</th>
+                                    <th class="py-3.5 px-4">Pelanggan</th>
+                                    <th class="py-3.5 px-4">Item Barang</th>
+                                    <th class="py-3.5 px-4 text-right">Total Belanja</th>
+                                    <th class="py-3.5 px-4 text-center">Metode</th>
+                                    <th class="py-3.5 px-4 text-center">Status</th>
+                                    <th class="py-3.5 px-4 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-xs">
+                                @foreach($sessionOrders as $order)
+                                <tr class="hover:bg-brand-50/30 transition-colors {{ $order->status === 'cancelled' ? 'bg-red-50/20' : '' }}">
+                                    <!-- No. Nota & Waktu -->
+                                    <td class="py-3.5 px-4 whitespace-nowrap">
+                                        <div class="font-bold font-mono text-gray-900 text-sm">#{{ $order->order_number }}</div>
+                                        <div class="text-[11px] text-gray-400 mt-0.5">{{ $order->created_at->format('d M Y, H:i') }} · Kasir: {{ $order->cashier->name ?? 'Kasir' }}</div>
+                                    </td>
 
-                                    <button type="button" @click="openReturnModal({{ $order->id }}, '{{ $order->order_number }}', @js($order->items->map(fn($i) => ['id' => $i->id, 'product_id' => $i->product_id, 'product_variant_id' => $i->product_variant_id, 'name' => $i->name, 'price' => (float)$i->price, 'quantity' => (int)$i->quantity])))"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs rounded-xl border border-amber-200 hover:border-amber-300 transition-all active:scale-95 shadow-sm">
-                                        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                        </svg>
-                                        <span>Retur / Tukar</span>
-                                    </button>
-                                </div>
-                            @endif
-                        </div>  </div>
+                                    <!-- Pelanggan -->
+                                    <td class="py-3.5 px-4">
+                                        @if($order->customer_name)
+                                            <div class="font-bold text-gray-800">{{ $order->customer_name }}</div>
+                                            <div class="text-[11px] text-gray-400">{{ $order->customer_phone ?: 'Tanpa HP' }}</div>
+                                        @else
+                                            <span class="text-gray-400 italic">Pelanggan Umum</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Item Barang -->
+                                    <td class="py-3.5 px-4 max-w-xs">
+                                        @php
+                                            $firstItem = $order->items->first();
+                                            $otherCount = $order->items->count() - 1;
+                                            $totalPcs = $order->items->sum('quantity');
+                                        @endphp
+                                        @if($firstItem)
+                                            <div class="font-semibold text-gray-800 truncate">
+                                                {{ $firstItem->product_name ?? $firstItem->name }}{{ $firstItem->variant_name ? ' ('.$firstItem->variant_name.')' : '' }}
+                                            </div>
+                                            <div class="text-[11px] text-gray-500">
+                                                {{ $firstItem->quantity }} pcs @if($otherCount > 0) <span class="text-brand-600 font-bold">+{{ $otherCount }} item lain (Total {{ $totalPcs }} pcs)</span> @endif
+                                            </div>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Total Belanja -->
+                                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                        <div class="font-black text-sm text-gray-900">Rp {{ number_format($order->grand_total, 0, ',', '.') }}</div>
+                                        @if($order->discount_total > 0)
+                                            <div class="text-[10px] font-semibold text-emerald-600">Hemat Rp {{ number_format($order->discount_total, 0, ',', '.') }}</div>
+                                        @endif
+                                    </td>
+
+                                    <!-- Metode -->
+                                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                        @if(in_array(strtolower($order->payment_method), ['cash', 'tunai']))
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                                                💵 Tunai
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
+                                                💳 {{ strtoupper($order->payment_method) }}
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Status -->
+                                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                        @if($order->status === 'cancelled')
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-800" title="{{ $order->voidBy ? 'Disetujui: '.$order->voidBy->name : '' }}">
+                                                <svg class="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                VOID
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                Selesai
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Aksi -->
+                                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <!-- Detail Button -->
+                                            <button type="button" @click="openDetailOrderModal(@js([
+                                                'id' => $order->id,
+                                                'order_number' => $order->order_number,
+                                                'created_at' => $order->created_at->format('d M Y, H:i'),
+                                                'cashier_name' => $order->cashier->name ?? 'Kasir',
+                                                'customer_name' => $order->customer_name ?: 'Pelanggan Umum',
+                                                'customer_phone' => $order->customer_phone ?: '-',
+                                                'payment_method' => strtoupper($order->payment_method),
+                                                'subtotal' => (float)$order->subtotal,
+                                                'discount_total' => (float)$order->discount_total,
+                                                'grand_total' => (float)$order->grand_total,
+                                                'cash_paid' => (float)$order->cash_paid,
+                                                'cash_change' => (float)$order->cash_change,
+                                                'status' => $order->status,
+                                                'items' => $order->items->map(fn($i) => [
+                                                    'name' => $i->product_name ?? $i->name,
+                                                    'variant' => $i->variant_name,
+                                                    'qty' => (int)$i->quantity,
+                                                    'price' => (float)$i->price,
+                                                    'subtotal' => (float)($i->total ?? $i->subtotal)
+                                                ])->values()->all()
+                                            ]))"
+                                                    class="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all" title="Detail Rincian Nota">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            </button>
+
+                                            @if($order->status !== 'cancelled')
+                                            <!-- Cetak Ulang Button -->
+                                            <button wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
+                                                    class="p-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg transition-all" title="Cetak Ulang Struk">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                            </button>
+
+                                            <!-- Void Button -->
+                                            <button type="button" @click="openVoidModal({{ $order->id }}, '{{ $order->order_number }}', {{ $order->grand_total }})"
+                                                    class="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-all" title="Batalkan Nota (Void)">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+
+                                            <!-- Retur Button -->
+                                            <button type="button" @click="openReturnModal({{ $order->id }}, '{{ $order->order_number }}', @js($order->items->map(fn($i) => ['id' => $i->id, 'product_id' => $i->product_id, 'product_variant_id' => $i->product_variant_id, 'name' => $i->name, 'price' => (float)$i->price, 'quantity' => (int)$i->quantity])))"
+                                                    class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg transition-all" title="Retur / Tukar Barang">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                            </button>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
-                    @endforeach
                 </div>
                 @endif
             </div>
@@ -1989,6 +2130,80 @@
         </div>
     </div>
 
+    <!-- Modal Detail Rincian Nota Transaksi -->
+    <div x-show="showDetailOrderModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm" x-transition.opacity>
+        <div class="glass w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl bg-white border border-gray-100 flex flex-col max-h-[90vh]" @click.away="showDetailOrderModal = false">
+            <!-- Header -->
+            <div class="p-5 bg-gray-900 text-white flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-lg leading-tight" x-text="'Detail Nota #' + (selectedOrderDetail ? selectedOrderDetail.order_number : '')"></h3>
+                    <p class="text-xs text-gray-400" x-text="selectedOrderDetail ? selectedOrderDetail.created_at + ' · Kasir: ' + selectedOrderDetail.cashier_name : ''"></p>
+                </div>
+                <button @click="showDetailOrderModal = false" class="text-gray-400 hover:text-white text-2xl font-bold p-1">&times;</button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-6 space-y-5 overflow-y-auto flex-1 text-xs" x-show="selectedOrderDetail">
+                <!-- Info Pelanggan & Status -->
+                <div class="flex justify-between items-center p-3.5 bg-gray-50 rounded-xl border border-gray-200">
+                    <div>
+                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Pelanggan</div>
+                        <div class="font-bold text-gray-800 text-sm mt-0.5" x-text="selectedOrderDetail ? selectedOrderDetail.customer_name : ''"></div>
+                        <div class="text-gray-500 text-[11px]" x-text="selectedOrderDetail ? selectedOrderDetail.customer_phone : ''"></div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Metode Bayar</div>
+                        <span class="inline-block mt-0.5 px-2.5 py-0.5 bg-blue-100 text-blue-800 font-bold rounded-full text-xs" x-text="selectedOrderDetail ? selectedOrderDetail.payment_method : ''"></span>
+                    </div>
+                </div>
+
+                <!-- Rincian Item Barang -->
+                <div>
+                    <div class="font-bold text-gray-700 text-xs uppercase tracking-wider mb-2">Rincian Barang</div>
+                    <div class="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+                        <template x-for="item in (selectedOrderDetail ? selectedOrderDetail.items : [])">
+                            <div class="p-3 flex items-center justify-between bg-white">
+                                <div>
+                                    <div class="font-bold text-gray-800" x-text="item.name"></div>
+                                    <div class="text-gray-400 text-[11px]" x-show="item.variant" x-text="item.variant"></div>
+                                    <div class="text-gray-500 mt-0.5" x-text="item.qty + ' x Rp ' + formatMoney(item.price)"></div>
+                                </div>
+                                <div class="font-bold text-gray-900 text-sm" x-text="'Rp ' + formatMoney(item.subtotal)"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Ringkasan Pembayaran -->
+                <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+                    <div class="flex justify-between text-gray-600">
+                        <span>Subtotal</span>
+                        <span class="font-semibold text-gray-800" x-text="'Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.subtotal : 0)"></span>
+                    </div>
+                    <div x-show="selectedOrderDetail && selectedOrderDetail.discount_total > 0" class="flex justify-between text-emerald-600">
+                        <span>Diskon / Voucher</span>
+                        <span class="font-semibold" x-text="'- Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.discount_total : 0)"></span>
+                    </div>
+                    <div class="flex justify-between text-sm font-black text-gray-900 pt-2 border-t border-gray-200">
+                        <span>TOTAL AKHIR</span>
+                        <span class="text-brand-600 text-base" x-text="'Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.grand_total : 0)"></span>
+                    </div>
+                    <div x-show="selectedOrderDetail && selectedOrderDetail.cash_paid > 0" class="flex justify-between text-gray-500 pt-1 text-[11px]">
+                        <span>Tunai Diterima / Kembalian</span>
+                        <span x-text="'Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.cash_paid : 0) + ' / Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.cash_change : 0)"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2">
+                <button @click="showDetailOrderModal = false" class="px-4 py-2 bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 font-bold rounded-xl text-xs transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('posSystem', () => ({
@@ -1997,6 +2212,13 @@
                 discount: 0,
                 cartBouncing: false,
                 bounceTimeout: null,
+                showDetailOrderModal: false,
+                selectedOrderDetail: null,
+
+                openDetailOrderModal(data) {
+                    this.selectedOrderDetail = data;
+                    this.showDetailOrderModal = true;
+                },
                 
                 // Voucher State
                 vouchers: @json($vouchers ?? []),
