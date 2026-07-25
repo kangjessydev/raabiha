@@ -27,7 +27,19 @@
                     <p class="text-xs font-medium text-gray-500">Masukkan modal awal (uang kas di laci) untuk memulai transaksi.</p>
                 </div>
                 
-                <form wire:submit.prevent="openSession" class="space-y-5">
+                <form wire:submit.prevent="openSession" class="space-y-5" x-data="{
+                    displayCash: '',
+                    formatRupiah(val) {
+                        if (!val || val === 0 || val === '0') return '';
+                        let num = val.toString().replace(/\D/g, '');
+                        return num ? parseInt(num, 10).toLocaleString('id-ID') : '';
+                    },
+                    updateCash(val) {
+                        let clean = val.replace(/\D/g, '');
+                        this.displayCash = clean ? parseInt(clean, 10).toLocaleString('id-ID') : '';
+                        $wire.set('openingCash', clean ? parseInt(clean, 10) : 0);
+                    }
+                }" x-init="displayCash = formatRupiah($wire.openingCash)">
                     <div>
                         <label for="openingCashInput" class="block text-xs font-medium text-gray-700 mb-1.5">
                             Modal Awal (Rp) <span class="text-red-500">*</span>
@@ -35,9 +47,10 @@
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-400">Rp</span>
                             <input 
-                                type="number" 
+                                type="text" 
                                 id="openingCashInput"
-                                wire:model="openingCash" 
+                                x-model="displayCash"
+                                @input="updateCash($event.target.value)"
                                 class="w-full pl-10 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-base font-semibold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150" 
                                 placeholder="0"
                                 autofocus
@@ -748,7 +761,19 @@
                 </div>
                 @endif
                 
-                <form wire:submit.prevent="closeSession" class="space-y-4">
+                <form wire:submit.prevent="closeSession" class="space-y-4" x-data="{
+                    displayEndingCash: '',
+                    formatRupiah(val) {
+                        if (!val || val === 0 || val === '0') return '';
+                        let num = val.toString().replace(/\D/g, '');
+                        return num ? parseInt(num, 10).toLocaleString('id-ID') : '';
+                    },
+                    updateEndingCash(val) {
+                        let clean = val.replace(/\D/g, '');
+                        this.displayEndingCash = clean ? parseInt(clean, 10).toLocaleString('id-ID') : '';
+                        $wire.set('actualEndingCash', clean ? parseInt(clean, 10) : 0);
+                    }
+                }" x-init="displayEndingCash = formatRupiah($wire.actualEndingCash)">
                     <div>
                         <label for="actualEndingCash" class="block text-xs font-medium text-gray-700 mb-1.5">
                             Total Uang Fisik Aktual (Rp) <span class="text-red-500">*</span>
@@ -756,9 +781,10 @@
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-400">Rp</span>
                             <input 
-                                type="number" 
+                                type="text" 
                                 id="actualEndingCash"
-                                wire:model="actualEndingCash" 
+                                x-model="displayEndingCash"
+                                @input="updateEndingCash($event.target.value)"
                                 class="w-full pl-10 pr-3.5 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-base font-semibold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150" 
                                 placeholder="0" 
                                 required
