@@ -102,4 +102,60 @@ class PosTransactionTest extends TestCase
         // Assert No Emails Sent (Observer bypassed)
         Mail::assertNothingSent();
     }
+
+    public function test_pos_transaction_with_discount_stores_discount_total()
+    {
+        $cashier = User::factory()->create();
+
+        $session = PosSession::create([
+            'cashier_id' => $cashier->id,
+            'opened_at' => now(),
+            'opening_cash' => 100000,
+            'status' => 'open',
+        ]);
+
+        $product = clone (new Product);
+        $product->fill([
+            'name' => 'Produk Diskon',
+            'slug' => 'produk-diskon',
+            'sku' => 'PRD-DISC',
+            'price' => 100000,
+            'pos_price' => 100000,
+            'stock' => 5,
+            'is_active' => true,
+            'channel_visibility' => 'both',
+        ]);
+        $product->save();
+
+        $service = new PosTransactionService();
+        $payload = [
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'product_variant_id' => null,
+                    'quantity' => 1,
+                ]
+            ],
+            'cashier_id' => $cashier->id,
+            'pos_session_id' => $session->id,
+            'cash_paid' => 100000,
+            'discount' => 15000,
+            'payment_method' => 'cash',
+        ];
+
+        $order = $service->completePosTransaction($payload);
+
+        $this->assertEquals(100000, $order->subtotal);
+        $this->assertEquals(15000, $order->discount_total);
+        $this->assertEquals(85000, $order->grand_total);
+        $this->assertEquals(15000, $order->cash_change);
+
+        // Verify receipt generator reads discount_total
+        $escPosService = new \App\Services\EscPosService();
+        $receiptBase64 = $escPosService->generateReceipt($order);
+        $decodedReceipt = base64_decode($receiptBase64);
+
+        $this->assertStringContainsString('Diskon', $decodedReceipt);
+        $this->assertStringContainsString('-15.000', $decodedReceipt);
+    }
 }

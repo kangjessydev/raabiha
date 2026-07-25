@@ -120,7 +120,7 @@ class PosTransactionService
                 'pos_session_id' => $posSessionId,
                 'source' => 'pos', // Penting untuk guard observer
                 'subtotal' => $subtotal,
-                'discount_amount' => $discount,
+                'discount_total' => $discount,
                 'grand_total' => $grandTotal,
                 'status' => 'completed',
                 'payment_status' => 'paid',

@@ -124,22 +124,22 @@ class EscPosService
 
         // Items
         foreach ($order->items as $item) {
-            $name = $item->product_name;
-            if ($item->variant_name) {
+            $name = $item->name ?: ($item->product_name ?? 'Produk');
+            if (!empty($item->variant_name) && !str_contains($name, $item->variant_name)) {
                 $name .= ' - ' . $item->variant_name;
             }
-            $this->line($name);
+            $this->line((string) $name);
             
             $qtyStr = $item->quantity . "x " . number_format($item->price, 0, ',', '.');
-            $subtotalStr = number_format($item->subtotal, 0, ',', '.');
+            $subtotalStr = number_format($item->total ?? $item->subtotal ?? 0, 0, ',', '.');
             $this->justify("  " . $qtyStr, $subtotalStr);
         }
         $this->divider();
 
         // Totals
         $this->justify("Subtotal", number_format($order->subtotal, 0, ',', '.'));
-        if ($order->discount_amount > 0) {
-            $this->justify("Diskon", "-" . number_format($order->discount_amount, 0, ',', '.'));
+        if ($order->discount_total > 0) {
+            $this->justify("Diskon", "-" . number_format($order->discount_total, 0, ',', '.'));
         }
         
         $this->add(self::BOLD_ON);
