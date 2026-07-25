@@ -27,48 +27,119 @@
                     <p class="text-xs font-medium text-gray-500">Untuk keamanan transaksi kasir, Anda wajib membuat PIN POS 6-digit pertama Anda sebelum menggunakan aplikasi POS.</p>
                 </div>
 
-                <form wire:submit.prevent="saveInitialPosPin" class="space-y-4 text-left" x-data="{ showPin1: false, showPin2: false }">
+                <form wire:submit.prevent="saveInitialPosPin" class="space-y-5 text-left" x-data="{
+                    pin1: $wire.entangle('posPinInput'),
+                    pin2: $wire.entangle('posPinConfirm'),
+                    showPin1: false,
+                    showPin2: false,
+                    updatePin1(val) {
+                        let clean = val.replace(/\D/g, '').slice(0, 6);
+                        this.pin1 = clean;
+                    },
+                    updatePin2(val) {
+                        let clean = val.replace(/\D/g, '').slice(0, 6);
+                        this.pin2 = clean;
+                    }
+                }" x-init="$refs.inputPin1.focus()">
+                    <!-- PIN POS Baru -->
                     <div>
-                        <label for="posPinInput" class="block text-xs font-medium text-gray-700 mb-1.5">PIN POS Baru (6 Digit) <span class="text-red-500">*</span></label>
-                        <div class="relative">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-medium text-gray-700">
+                                PIN POS Baru (6 Digit) <span class="text-red-500">*</span>
+                            </label>
+                            <button type="button" @click="showPin1 = !showPin1" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 focus:outline-none cursor-pointer flex items-center gap-1" tabindex="-1">
+                                <span x-text="showPin1 ? 'Sembunyikan' : 'Lihat PIN'"></span>
+                            </button>
+                        </div>
+
+                        <!-- 6 Boxes Indicator -->
+                        <div class="relative cursor-pointer" @click="$refs.inputPin1.focus()">
                             <input 
-                                :type="showPin1 ? 'text' : 'password'" 
+                                x-ref="inputPin1"
+                                type="text" 
                                 id="posPinInput"
                                 maxlength="6" 
                                 pattern="[0-9]*" 
                                 inputmode="numeric" 
-                                wire:model="posPinInput" 
-                                placeholder="Masukkan 6 digit PIN baru"
-                                class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 placeholder:font-normal text-center text-sm font-semibold py-2.5 pl-3.5 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
+                                :value="pin1"
+                                @input="updatePin1($event.target.value)"
+                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                                 autofocus
                             />
-                            <button type="button" @click="showPin1 = !showPin1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer" tabindex="-1">
-                                <svg x-show="!showPin1" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                <svg x-show="showPin1" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a8.96 8.96 0 012.122-.063c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m-4.692-4.692a3 3 0 00-4.243-4.243"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18"></path></svg>
-                            </button>
+                            <div class="grid grid-cols-6 gap-2.5">
+                                <template x-for="i in 6" :key="i">
+                                    <div 
+                                        class="h-12 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
+                                        :class="{
+                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': (pin1 || '').length === i - 1,
+                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': (pin1 || '').length >= i,
+                                            'border-gray-300 bg-gray-50/60 text-gray-400': (pin1 || '').length < i - 1
+                                        }"
+                                    >
+                                        <template x-if="(pin1 || '').length >= i">
+                                            <span x-show="!showPin1" class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span>
+                                        </template>
+                                        <template x-if="(pin1 || '').length >= i">
+                                            <span x-show="showPin1" class="text-emerald-700 font-bold text-lg" x-text="(pin1 || '')[i - 1]"></span>
+                                        </template>
+                                        <template x-if="(pin1 || '').length < i">
+                                            <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
-                        @error('posPinInput') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
+                        @error('posPinInput') <p class="text-red-600 text-xs mt-1.5 font-medium">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- Konfirmasi PIN POS -->
                     <div>
-                        <label for="posPinConfirm" class="block text-xs font-medium text-gray-700 mb-1.5">Konfirmasi PIN POS (6 Digit) <span class="text-red-500">*</span></label>
-                        <div class="relative">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-medium text-gray-700">
+                                Konfirmasi PIN POS (6 Digit) <span class="text-red-500">*</span>
+                            </label>
+                            <button type="button" @click="showPin2 = !showPin2" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 focus:outline-none cursor-pointer flex items-center gap-1" tabindex="-1">
+                                <span x-text="showPin2 ? 'Sembunyikan' : 'Lihat PIN'"></span>
+                            </button>
+                        </div>
+
+                        <!-- 6 Boxes Indicator -->
+                        <div class="relative cursor-pointer" @click="$refs.inputPin2.focus()">
                             <input 
-                                :type="showPin2 ? 'text' : 'password'" 
+                                x-ref="inputPin2"
+                                type="text" 
                                 id="posPinConfirm"
                                 maxlength="6" 
                                 pattern="[0-9]*" 
                                 inputmode="numeric" 
-                                wire:model="posPinConfirm" 
-                                placeholder="Ulangi 6 digit PIN"
-                                class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 placeholder:font-normal text-center text-sm font-semibold py-2.5 pl-3.5 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
+                                :value="pin2"
+                                @input="updatePin2($event.target.value)"
+                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                             />
-                            <button type="button" @click="showPin2 = !showPin2" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer" tabindex="-1">
-                                <svg x-show="!showPin2" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                <svg x-show="showPin2" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a8.96 8.96 0 012.122-.063c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m-4.692-4.692a3 3 0 00-4.243-4.243"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18"></path></svg>
-                            </button>
+                            <div class="grid grid-cols-6 gap-2.5">
+                                <template x-for="i in 6" :key="i">
+                                    <div 
+                                        class="h-12 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
+                                        :class="{
+                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': (pin2 || '').length === i - 1,
+                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': (pin2 || '').length >= i,
+                                            'border-gray-300 bg-gray-50/60 text-gray-400': (pin2 || '').length < i - 1
+                                        }"
+                                    >
+                                        <template x-if="(pin2 || '').length >= i">
+                                            <span x-show="!showPin2" class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span>
+                                        </template>
+                                        <template x-if="(pin2 || '').length >= i">
+                                            <span x-show="showPin2" class="text-emerald-700 font-bold text-lg" x-text="(pin2 || '')[i - 1]"></span>
+                                        </template>
+                                        <template x-if="(pin2 || '').length < i">
+                                            <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
-                        @error('posPinConfirm') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
+                        @error('posPinConfirm') <p class="text-red-600 text-xs mt-1.5 font-medium">{{ $message }}</p> @enderror
                     </div>
 
                     <button 
