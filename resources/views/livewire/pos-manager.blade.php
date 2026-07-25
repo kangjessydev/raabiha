@@ -1935,8 +1935,59 @@
             </div>
             @endif
         </div>
-
     @endif
+
+    <!-- Modal Preview Struk & Sukses Pembayaran -->
+    <div x-show="showReceiptPreviewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm" x-transition.opacity>
+        <div class="glass w-full max-w-md rounded-2xl overflow-hidden shadow-2xl bg-white border border-gray-100 flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="p-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg leading-tight">Pembayaran Berhasil!</h3>
+                        <p class="text-xs text-emerald-100" x-text="previewReceiptData.orderNumber"></p>
+                    </div>
+                </div>
+                <button @click="showReceiptPreviewModal = false" class="text-white/80 hover:text-white text-2xl font-bold p-1">&times;</button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-5 space-y-4 overflow-y-auto flex-1">
+                <!-- High Contrast Change Display -->
+                <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-emerald-700">Uang Kembalian Pelanggan</div>
+                    <div class="text-3xl font-extrabold text-emerald-800 mt-1">
+                        Rp <span x-text="formatMoney(previewReceiptData.cashChange)"></span>
+                    </div>
+                </div>
+
+                <!-- Receipt Thermal Text Paper Preview -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Pratinjau Struk Thermal (ESC/POS)</span>
+                        <span class="text-[11px] text-gray-400">32 Kolom Monospace</span>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-inner">
+                        <pre class="font-mono text-xs leading-relaxed text-emerald-400 whitespace-pre overflow-x-auto select-all" x-text="previewReceiptData.text"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3">
+                <button @click="printBase64(previewReceiptData.base64)" class="flex-1 py-3 px-4 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer text-sm">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>🖨️ Cetak Struk</span>
+                </button>
+                <button @click="showReceiptPreviewModal = false" class="py-3 px-5 bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 font-bold rounded-xl transition cursor-pointer text-sm">
+                    <span>Selesai</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('alpine:init', () => {
@@ -1984,6 +2035,8 @@
                 printerPort: null,
                 heldCarts: [],
                 showHoldModal: false,
+                showReceiptPreviewModal: false,
+                previewReceiptData: { orderNumber: '', cashChange: 0, text: '', base64: '' },
 
                 // Confirmation Modal State
                 showConfirmModal: false,
@@ -2306,10 +2359,16 @@
                         this.showVoidModal = false;
                     });
                     this.startAutoLockChecker();
-                    window.addEventListener('notify', (e) => { this.showToast(e.detail[0].message, e.detail[0].type); this.isProcessing = false; });
                     window.addEventListener('checkout-success', (e) => {
                         this.isProcessing = false;
                         this.showCheckoutModal = false;
+                        this.previewReceiptData = {
+                            orderNumber: e.detail[0].order_number,
+                            cashChange: e.detail[0].cash_change,
+                            text: e.detail[0].receipt_text,
+                            base64: e.detail[0].base64
+                        };
+                        this.showReceiptPreviewModal = true;
                         this.clearCart(true);
                         this.showToast('Pembayaran Berhasil! Kembalian: Rp ' + this.formatMoney(e.detail[0].cash_change), 'success');
                     });

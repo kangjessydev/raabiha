@@ -210,6 +210,113 @@ class EscPosService
     }
 
     /**
+     * Generate Plain Text Struk (Preview di Layar POS)
+     */
+    public function generateReceiptText(Order $order, bool $isReprint = false): string
+    {
+        $settings = $this->getSettings([
+            'pos_receipt_header', 'pos_receipt_footer',
+            'pos_show_cashier_name', 'pos_show_date',
+        ]);
+
+        $header      = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
+        $footer      = $settings['pos_receipt_footer'] ?? "Terima Kasih\nBarang tidak dapat ditukar/dikembalikan";
+        $showCashier = filter_var($settings['pos_show_cashier_name'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showDate    = filter_var($settings['pos_show_date'] ?? true, FILTER_VALIDATE_BOOLEAN);
+
+        $lines = [];
+
+        foreach (explode("\n", $header) as $hLine) {
+            $lines[] = str_pad(trim($hLine), 32, ' ', STR_PAD_BOTH);
+        }
+
+        if ($isReprint) {
+            $lines[] = str_pad("*** SALINAN / REPRINT ***", 32, ' ', STR_PAD_BOTH);
+        }
+
+        $lines[] = str_repeat('-', 32);
+        $lines[] = "Nota  : " . $order->order_number;
+        if ($showDate && $order->created_at) {
+            $lines[] = "Waktu : " . $order->created_at->format('d/m/Y H:i');
+        }
+        if ($showCashier && $order->cashier) {
+            $lines[] = "Kasir : " . $order->cashier->name;
+        }
+        if ($order->customer_name) {
+            $lines[] = "Plgn  : " . $order->customer_name;
+        }
+        $lines[] = str_repeat('-', 32);
+
+        foreach ($order->items as $item) {
+            $name = $item->name ?: ($item->product_name ?? 'Produk');
+            if (!empty($item->variant_name) && !str_contains($name, $item->variant_name)) {
+                $name .= ' - ' . $item->variant_name;
+            }
+            $lines[] = $name;
+
+            $qtyStr = $item->quantity . "x " . number_format($item->price, 0, ',', '.');
+            $subtotalStr = number_format($item->total ?? $item->subtotal ?? 0, 0, ',', '.');
+            $leftPad = "  " . $qtyStr;
+            $spaces = max(1, 32 - strlen($leftPad) - strlen($subtotalStr));
+            $lines[] = $leftPad . str_repeat(' ', $spaces) . $subtotalStr;
+        }
+
+        $lines[] = str_repeat('-', 32);
+        
+        $subLeft = "Subtotal";
+        $subRight = number_format($order->subtotal, 0, ',', '.');
+        $lines[] = $subLeft . str_repeat(' ', max(1, 32 - strlen($subLeft) - strlen($subRight))) . $subRight;
+
+        if ($order->discount_total > 0) {
+            $discLeft = "Diskon";
+            $discRight = "-" . number_format($order->discount_total, 0, ',', '.');
+            $lines[] = $discLeft . str_repeat(' ', max(1, 32 - strlen($discLeft) - strlen($discRight))) . $discRight;
+        }
+
+        $totLeft = "TOTAL";
+        $totRight = number_format($order->grand_total, 0, ',', '.');
+        $lines[] = $totLeft . str_repeat(' ', max(1, 32 - strlen($totLeft) - strlen($totRight))) . $totRight;
+
+        if ($order->cash_paid) {
+            $lines[] = str_repeat('-', 32);
+            $paidLeft = "Tunai";
+            $paidRight = number_format($order->cash_paid, 0, ',', '.');
+            $lines[] = $paidLeft . str_repeat(' ', max(1, 32 - strlen($paidLeft) - strlen($paidRight))) . $paidRight;
+
+            $changeLeft = "Kembali";
+            $changeRight = number_format($order->cash_change ?? 0, 0, ',', '.');
+            $lines[] = $changeLeft . str_repeat(' ', max(1, 32 - strlen($changeLeft) - strlen($changeRight))) . $changeRight;
+        }
+
+        if ($order->customer_phone) {
+            $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
+            $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->first() : null;
+            if ($customer) {
+                $lines[] = str_repeat('-', 32);
+                $lines[] = str_pad("KARTU CAP DIGITAL RAABIHA", 32, ' ', STR_PAD_BOTH);
+                $lines[] = "Pelanggan: " . ($customer->name ?: $customer->phone);
+                $lines[] = "Total Cap: " . $customer->stamp_count . " dari 9 Cap";
+
+                $c = $customer->stamp_count;
+                $row1 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [1,2,3]));
+                $row2 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [4,5,6]));
+                $row3 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [7,8,9]));
+
+                $lines[] = "Row 1 (15k): " . $row1;
+                $lines[] = "Row 2 (20k): " . $row2;
+                $lines[] = "Row 3 (25k): " . $row3;
+            }
+        }
+
+        $lines[] = str_repeat('-', 32);
+        foreach (explode("\n", $footer) as $fLine) {
+            $lines[] = str_pad(trim($fLine), 32, ' ', STR_PAD_BOTH);
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
      * Generate Base64 Z-Report for a closed Shift
      */
     public function generateZReport(PosSession $session): string

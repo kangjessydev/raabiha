@@ -210,15 +210,17 @@ class PosManager extends Component
             $service = new PosTransactionService();
             $order   = $service->completePosTransaction($data);
 
-            $receiptBase64  = $this->escPos()->generateReceipt($order);
+            $receiptBase64 = $this->escPos()->generateReceipt($order);
+            $receiptText   = $this->escPos()->generateReceiptText($order);
 
             $this->dispatch('checkout-success', [
                 'order_id'     => $order->id,
                 'order_number' => $order->order_number,
                 'grand_total'  => $order->grand_total,
                 'cash_change'  => $order->cash_change,
+                'receipt_text' => $receiptText,
+                'base64'       => $receiptBase64,
             ]);
-            $this->dispatch('print-receipt', ['base64' => $receiptBase64]);
 
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);
