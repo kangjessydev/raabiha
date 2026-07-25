@@ -105,14 +105,9 @@ class PosTransactionService
             if ($grandTotal < 0) $grandTotal = 0;
             $cashChange = $cashPaid - $grandTotal;
 
-            // Generate Order Number
-            $latestOrder = Order::orderBy('id', 'desc')->first();
-            $nextId = $latestOrder ? $latestOrder->id + 1 : 1;
-            $orderNumber = 'POS-' . date('Ymd') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
-
-            // 2. Buat Order
+            // 2. Buat Order (Gunakan placeholder sementara untuk menjamin keunikan ID)
             $order = Order::create([
-                'order_number' => $orderNumber,
+                'order_number' => 'POS-TEMP-' . uniqid(),
                 'user_id' => null, // Pembeli di toko fisik
                 'customer_name' => $customerName,
                 'customer_phone' => $customerPhone,
@@ -132,6 +127,10 @@ class PosTransactionService
                 'is_dropship' => false,
             ]);
 
+            // Generate Order Number resmi dari ID auto-increment yang dijamin unik
+            $orderNumber = 'POS-' . date('Ymd') . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT);
+            $order->update(['order_number' => $orderNumber]);
+
             // 3. Kurangi stok, catat Log, dan buat OrderItem
             foreach ($orderItemsData as $itemData) {
                 $qty = $itemData['quantity'];
@@ -150,7 +149,7 @@ class PosTransactionService
                     'quantity_change' => -$qty,
                     'quantity_after' => $after,
                     'reason' => 'Sales',
-                    'notes' => 'Penjualan POS #' . $orderNumber,
+                    'notes' => 'Penjualan POS #' . $order->order_number,
                     'user_id' => $cashierId,
                 ]);
 
@@ -173,7 +172,7 @@ class PosTransactionService
                 'type' => 'in',
                 'category' => 'pos_sale',
                 'amount' => $grandTotal,
-                'description' => 'Penjualan POS #' . $orderNumber,
+                'description' => 'Penjualan POS #' . $order->order_number,
                 'order_id' => $order->id,
                 'source' => 'pos',
                 'is_reversed' => false,
