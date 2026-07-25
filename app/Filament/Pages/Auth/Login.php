@@ -12,7 +12,7 @@ class Login extends BaseLogin
 
     public function getLayout(): string
     {
-        return 'components.layouts.pos-auth';
+        return 'components.layouts.admin-auth';
     }
 
     protected function getEmailFormComponent(): Component

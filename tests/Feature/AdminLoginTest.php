@@ -17,8 +17,8 @@ class AdminLoginTest extends TestCase
     {
         $response = $this->get('/admin/login');
         $response->assertStatus(200);
-        $response->assertSee('RAABIHA');
-        $response->assertSee('Selamat Datang Kembali');
+        $response->assertSee('Raabiha Admin');
+        $response->assertSee('Panel Manajemen Toko');
     }
 
     public function test_admin_can_login_with_username_or_email(): void
