@@ -412,7 +412,7 @@
         </div>
         
         <!-- Center: Products Area (Kasir - Clean Filament Native Style) -->
-        <div x-show="activePage === 'kasir'" class="flex-1 flex flex-col h-full bg-gray-50/40 min-w-0 overflow-hidden font-sans">
+        <div x-show="activePage === 'kasir'" wire:key="pos-page-kasir" class="flex-1 flex flex-col h-full bg-gray-50/40 min-w-0 overflow-hidden font-sans">
             <!-- Header/Search (Filament Native Style) -->
             <div class="bg-white border-b border-gray-200 p-3.5 sticky top-0 z-10 flex items-center gap-3 shadow-xs">
                 <button @click="isSidebarOpen = !isSidebarOpen" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Toggle Menu">
@@ -678,114 +678,136 @@
             </div>
         </div>
 
-        <!-- MODAL: Pilih Varian Produk -->
+        <!-- MODAL: Pilih Varian Produk - Filament Native Style -->
         <div x-show="showVariantModal"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showVariantModal = false"
                  x-show="showVariantModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-lg rounded-2xl p-6 relative shadow-2xl">
-                 <h3 class="text-xl font-bold mb-1" x-text="currentProductForVariant ? currentProductForVariant.name : 'Pilih Varian'"></h3>
-                 <p class="text-gray-500 mb-4 text-sm">Pilih salah satu varian di bawah ini:</p>
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-lg rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans">
                  
-                 <div class="space-y-2 mb-6 max-h-[50vh] overflow-y-auto">
+                 <!-- Modal Header -->
+                 <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                     <div>
+                         <h3 class="text-base font-bold text-gray-950" x-text="currentProductForVariant ? currentProductForVariant.name : 'Pilih Varian Produk'"></h3>
+                         <p class="text-xs text-gray-500 font-medium">Pilih salah satu varian opsi produk di bawah ini</p>
+                     </div>
+                     <button type="button" @click="showVariantModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                     </button>
+                 </div>
+                 
+                 <!-- Modal Body -->
+                 <div class="p-6 space-y-2 max-h-[60vh] overflow-y-auto">
                      <template x-for="variant in currentVariants" :key="variant.id">
                          <button @click="addVariantToCart(variant.id, variant.name, variant.price)" 
                                  :disabled="variant.stock <= 0"
-                                 class="w-full flex justify-between items-center p-4 border rounded-xl hover:bg-brand-50 hover:border-brand-300 transition-colors text-left"
-                                 :class="variant.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'bg-white'">
+                                 class="w-full flex justify-between items-center p-3.5 border rounded-lg hover:border-emerald-500 hover:bg-emerald-50/50 transition-all text-left cursor-pointer"
+                                 :class="variant.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200' : 'bg-white border-gray-200 shadow-xs'">
                              <div>
-                                 <div class="font-bold text-gray-800" x-text="variant.name"></div>
-                                 <div class="text-sm" :class="variant.stock > 0 ? 'text-brand-600' : 'text-red-500'" x-text="variant.stock > 0 ? 'Stok: ' + variant.stock : 'Habis'"></div>
+                                 <div class="font-bold text-xs text-gray-900" x-text="variant.name"></div>
+                                 <div class="text-[11px] font-medium" :class="variant.stock > 0 ? 'text-emerald-600' : 'text-rose-600'" x-text="variant.stock > 0 ? 'Stok Tersedia: ' + variant.stock : 'Stok Habis'"></div>
                              </div>
-                             <div class="font-black text-gray-800" x-text="'Rp ' + formatMoney(variant.price)"></div>
+                             <div class="font-bold text-xs text-gray-950" x-text="'Rp ' + formatMoney(variant.price)"></div>
                          </button>
                      </template>
                  </div>
 
-                 <button @click="showVariantModal = false" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-xl transition-all">Batal</button>
+                 <!-- Modal Footer -->
+                 <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end rounded-b-xl">
+                     <button type="button" @click="showVariantModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                         Batal
+                     </button>
+                 </div>
             </div>
         </div>
 
-        <!-- MODAL: Checkout / Payment -->
+        <!-- MODAL: Checkout / Payment - Filament Native Style -->
         <div x-show="showCheckoutModal" 
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-3 md:p-4" style="display: none;">
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-3 md:p-4" style="display: none;">
             
             <div @click.away="if(!isProcessing) showCheckoutModal = false" 
                  x-show="showCheckoutModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="bg-slate-100 w-full max-w-3xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col shadow-2xl border border-gray-200/50">
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-3xl rounded-xl border border-gray-200 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden font-sans">
                 
-                <!-- Header Modal -->
-                <div class="flex justify-between items-center mb-5 flex-shrink-0">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        Pembayaran Transaksi
-                    </h3>
-                    <button @click="showCheckoutModal = false" :disabled="isProcessing" class="bg-white hover:bg-gray-200 text-gray-400 hover:text-gray-700 p-2 rounded-full shadow-sm transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950">Pembayaran Transaksi Kasir</h3>
+                            <p class="text-xs text-gray-500 font-medium">Pilih metode pembayaran dan masukkan nominal bayar</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showCheckoutModal = false" :disabled="isProcessing" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
                 <!-- Body 2 Kolom: Scrollable -->
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 overflow-y-auto flex-1 pr-1">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 overflow-y-auto flex-1 bg-gray-50/50">
                     
                     <!-- Kolom Kiri: Rincian Barang (Col 5) -->
                     <div class="md:col-span-5 space-y-4 flex flex-col justify-between">
                         <div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-3">Rincian Barang</h4>
-                            <div class="max-h-56 overflow-y-auto space-y-2.5 pr-1">
+                            <h4 class="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2.5">Rincian Barang Belanja</h4>
+                            <div class="max-h-56 overflow-y-auto space-y-2 pr-1">
                                 <template x-for="(item, idx) in cart" :key="idx">
-                                    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-200/80 space-y-1">
-                                        <div class="flex justify-between items-start text-sm font-bold text-gray-800">
+                                    <div class="bg-white p-3 rounded-lg shadow-xs border border-gray-200 space-y-0.5 text-xs">
+                                        <div class="flex justify-between items-start font-bold text-gray-900">
                                             <span x-text="item.name" class="pr-2 leading-snug"></span>
                                             <span class="whitespace-nowrap" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></span>
                                         </div>
-                                        <div class="text-xs text-gray-400 font-medium" x-text="'Rp ' + formatMoney(item.price) + ' × ' + item.quantity"></div>
+                                        <div class="text-[11px] text-gray-500 font-medium" x-text="'Rp ' + formatMoney(item.price) + ' × ' + item.quantity + ' pcs'"></div>
                                     </div>
                                 </template>
                             </div>
                         </div>
 
                         <!-- Card Total Tagihan -->
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-2 mt-auto">
-                            <div class="flex justify-between text-sm text-gray-500">
-                                <span>Subtotal</span>
-                                <span class="font-bold text-gray-800" x-text="'Rp ' + formatMoney(subtotal)"></span>
+                        <div class="bg-white p-4 rounded-xl shadow-xs border border-gray-200 space-y-2 mt-auto">
+                            <div class="flex justify-between text-xs text-gray-500 font-medium">
+                                <span>Subtotal Belanja</span>
+                                <span class="font-bold text-gray-900" x-text="'Rp ' + formatMoney(subtotal)"></span>
                             </div>
-                            <div x-show="activeVoucher" class="flex justify-between text-sm text-brand-600">
+                            <div x-show="activeVoucher" class="flex justify-between text-xs text-emerald-700 font-medium">
                                 <span>Diskon Promo</span>
                                 <span class="font-bold" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
                             </div>
-                            <div x-show="manualDiscountValue > 0" class="flex justify-between text-sm text-amber-600">
+                            <div x-show="manualDiscountValue > 0" class="flex justify-between text-xs text-amber-700 font-medium">
                                 <span>Diskon Manual</span>
                                 <span class="font-bold" x-text="'- Rp ' + formatMoney(manualDiscountAmount)"></span>
                             </div>
-                            <div class="border-t border-gray-100 pt-2 flex justify-between items-center">
-                                <span class="font-bold text-gray-800 text-sm">Total Tagihan</span>
-                                <span class="text-2xl font-black text-brand-600" x-text="'Rp ' + formatMoney(grandTotal)"></span>
+                            <div class="border-t border-gray-200 pt-2.5 flex justify-between items-center">
+                                <span class="font-bold text-gray-900 text-xs uppercase tracking-wider">Total Tagihan</span>
+                                <span class="text-xl font-extrabold text-emerald-600" x-text="'Rp ' + formatMoney(grandTotal)"></span>
                             </div>
                         </div>
                     </div>
@@ -793,22 +815,21 @@
                     <!-- Kolom Kanan: Metode Bayar & Nominal (Col 7) -->
                     <div class="md:col-span-7 space-y-4">
                         <div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-3">Metode Pembayaran</h4>
+                            <h4 class="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2.5">Metode Pembayaran</h4>
                             
-                            <!-- Dynamic Payment Methods Grid from DB (2 Kolom Lapang) -->
-                            <div class="grid grid-cols-2 gap-3 max-h-44 overflow-y-auto pr-1">
+                            <div class="grid grid-cols-2 gap-2.5 max-h-44 overflow-y-auto pr-1">
                                 <template x-for="method in paymentMethods" :key="method.code">
                                     <button type="button"
                                             @click="selectPaymentMethod(method)"
-                                            class="h-12 px-4 rounded-xl text-xs font-bold flex items-center justify-between transition-all shadow-sm cursor-pointer"
-                                            :class="paymentMethod === method.code ? 'border-2 border-brand-500 bg-brand-50/70 text-brand-800 shadow-sm' : 'border border-gray-200 bg-white text-gray-800 hover:border-gray-300 hover:bg-gray-50'">
+                                            class="h-11 px-3 rounded-lg text-xs font-semibold flex items-center justify-between transition duration-150 shadow-xs cursor-pointer"
+                                            :class="paymentMethod === method.code ? 'border-2 border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'">
                                         <div class="flex items-center gap-2 truncate">
                                             <template x-if="method.logo">
                                                 <img :src="method.logo" :alt="method.name" class="w-4 h-4 object-contain flex-shrink-0">
                                             </template>
                                             <span class="truncate" x-text="method.name"></span>
                                         </div>
-                                        <span x-show="paymentMethod === method.code" class="w-2.5 h-2.5 rounded-full bg-brand-500 flex-shrink-0"></span>
+                                        <span x-show="paymentMethod === method.code" class="w-2.5 h-2.5 rounded-full bg-emerald-600 flex-shrink-0"></span>
                                     </button>
                                 </template>
                             </div>
@@ -817,63 +838,63 @@
                         <!-- Nominal Uang (Jika Tunai) -->
                         <div x-show="isCashSelected()" x-transition.opacity class="space-y-3">
                             <div>
-                                <label class="block text-sm font-bold text-gray-800 mb-2">Uang Diterima (Rp)</label>
-                                <div class="h-14 bg-white rounded-xl border border-gray-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 shadow-sm flex items-center px-4 transition-all">
-                                    <span class="font-bold text-gray-400 text-base mr-3 select-none">Rp</span>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Uang Diterima (Rp)</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-500">Rp</div>
                                     <input type="number"
                                            x-model.number="cashPaid"
                                            @input="calculateChange"
-                                           class="w-full text-2xl font-bold text-gray-900 border-none focus:ring-0 p-0 bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                           class="w-full pl-9 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
                                            placeholder="0">
                                 </div>
                             </div>
 
                             <!-- Preset Nominal Buttons -->
                             <div class="grid grid-cols-3 gap-2">
-                                <button type="button" @click="setCashPaid(grandTotal)" class="h-11 bg-white border border-gray-200 rounded-xl font-bold text-xs text-gray-700 shadow-sm hover:bg-gray-50 transition-colors">Uang Pas</button>
-                                <button type="button" @click="setCashPaid(Math.ceil(grandTotal/50000)*50000)" class="h-11 bg-white border border-gray-200 rounded-xl font-bold text-xs text-gray-700 shadow-sm hover:bg-gray-50 transition-colors" x-text="'Rp ' + formatMoney(Math.ceil(grandTotal/50000)*50000)"></button>
-                                <button type="button" @click="setCashPaid(Math.ceil(grandTotal/100000)*100000)" class="h-11 bg-white border border-gray-200 rounded-xl font-bold text-xs text-gray-700 shadow-sm hover:bg-gray-50 transition-colors" x-text="'Rp ' + formatMoney(Math.ceil(grandTotal/100000)*100000)"></button>
+                                <button type="button" @click="setCashPaid(grandTotal)" class="py-2 bg-white border border-gray-300 rounded-lg font-bold text-xs text-gray-800 shadow-xs hover:bg-gray-50 transition cursor-pointer">Uang Pas</button>
+                                <button type="button" @click="setCashPaid(Math.ceil(grandTotal/50000)*50000)" class="py-2 bg-white border border-gray-300 rounded-lg font-bold text-xs text-gray-800 shadow-xs hover:bg-gray-50 transition cursor-pointer" x-text="'Rp ' + formatMoney(Math.ceil(grandTotal/50000)*50000)"></button>
+                                <button type="button" @click="setCashPaid(Math.ceil(grandTotal/100000)*100000)" class="py-2 bg-white border border-gray-300 rounded-lg font-bold text-xs text-gray-800 shadow-xs hover:bg-gray-50 transition cursor-pointer" x-text="'Rp ' + formatMoney(Math.ceil(grandTotal/100000)*100000)"></button>
                             </div>
 
                             <!-- Status Kembalian / Uang Kurang -->
-                            <div class="p-3.5 rounded-xl flex items-center justify-between text-sm font-bold border shadow-sm"
-                                 :class="cashPaid < grandTotal ? 'bg-red-50 border-red-200 text-red-700' : 'bg-brand-50/80 border-brand-200 text-brand-800'">
+                            <div class="p-3 rounded-lg flex items-center justify-between text-xs font-bold border shadow-xs"
+                                 :class="cashPaid < grandTotal ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-900'">
                                 <span x-text="cashPaid < grandTotal ? 'UANG KURANG' : 'KEMBALIAN'"></span>
-                                <span class="text-base" x-text="'Rp ' + formatMoney(Math.abs(cashChange))"></span>
+                                <span class="text-sm font-extrabold" x-text="'Rp ' + formatMoney(Math.abs(cashChange))"></span>
                             </div>
                         </div>
 
                         <!-- Catatan Pembayaran Non-Tunai -->
-                        <div x-show="!isCashSelected()" x-transition.opacity class="p-4 bg-white rounded-xl border border-gray-200 text-xs text-gray-600 leading-relaxed shadow-sm">
-                            Metode pembayaran non-tunai (<strong x-text="paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod"></strong>) dipilih. Transaksi akan dicatat otomatis di laporan kasir.
+                        <div x-show="!isCashSelected()" x-transition.opacity class="p-3.5 bg-white rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed shadow-xs">
+                            Metode pembayaran non-tunai (<strong x-text="paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod"></strong>) dipilih. Transaksi akan dicatat di laporan kasir.
                         </div>
 
                         <!-- Identitas Pembeli (Opsional) -->
-                        <div class="pt-2 border-t border-gray-200/80">
-                            <label class="block text-xs font-bold text-gray-700 mb-2">Data Pelanggan (Opsional)</label>
+                        <div class="pt-2 border-t border-gray-200">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Data Pelanggan (Opsional)</label>
                             <div class="grid grid-cols-2 gap-2">
-                                <input type="text" x-model="customerName" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-xs py-2.5 px-3 bg-white shadow-sm" placeholder="Nama Pembeli">
-                                <input type="text" x-model="customerPhone" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-xs py-2.5 px-3 bg-white shadow-sm" placeholder="No WhatsApp">
+                                <input type="text" x-model="customerName" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" placeholder="Nama Pembeli">
+                                <input type="text" x-model="customerPhone" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" placeholder="No WhatsApp">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Footer Action Buttons (Equal 2 Columns) -->
-                <div class="grid grid-cols-2 gap-3 pt-4 border-t border-gray-200/80 mt-4 flex-shrink-0">
-                    <button type="button" @click="showCheckoutModal = false" :disabled="isProcessing" class="h-12 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-xl transition-colors text-sm flex items-center justify-center">
+                <!-- Footer Action Buttons -->
+                <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
+                    <button type="button" @click="showCheckoutModal = false" :disabled="isProcessing" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                         Batal
                     </button>
                     <button type="button" @click="submitOrder()" 
                             :disabled="isProcessing || (isCashSelected() && cashPaid < grandTotal)" 
-                            class="h-12 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span x-show="!isProcessing" class="flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            Selesaikan Pembayaran
+                            class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="!isProcessing" class="flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Selesaikan Pembayaran</span>
                         </span>
                         <span x-show="isProcessing" class="flex items-center gap-2">
-                            <svg class="animate-spin -ml-1 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Memproses...
+                            <svg class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <span>Memproses...</span>
                         </span>
                     </button>
                 </div>
@@ -882,49 +903,41 @@
 
         <!-- MODAL: Tutup Shift (Clean Filament Native Style) -->
         <div x-show="showCloseSession"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans" style="display: none;">
+             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4 font-sans" style="display: none;">
             <div @click.away="showCloseSession = false"
                  x-show="showCloseSession"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-xl w-full max-w-md space-y-5">
-                <div class="text-center space-y-1">
-                    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Tutup Shift Kasir</h2>
-                    <p class="text-xs font-medium text-gray-500">Hitung uang fisik di laci kasir dan masukkan di bawah ini untuk mencocokkan dengan sistem.</p>
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white border border-gray-200 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+                
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950">Tutup Shift Kasir</h3>
+                            <p class="text-xs text-gray-500 font-medium">Hitung uang fisik aktual di laci kasir</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showCloseSession = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
                 
-                @if($activeSession)
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2 text-xs">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600 font-medium">Modal Awal:</span>
-                        <span class="font-semibold text-gray-900">Rp {{ number_format($activeSession->opening_cash, 0, ',', '.') }}</span>
-                    </div>
-                    @php
-                        $sales = $activeSession->orders()->sum('cash_paid') - $activeSession->orders()->sum('cash_change');
-                        $expected = $activeSession->opening_cash + $sales;
-                    @endphp
-                    <div class="flex justify-between">
-                        <span class="text-gray-600 font-medium">Penjualan Tunai:</span>
-                        <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sales, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="border-t border-gray-200 pt-2 flex justify-between items-center">
-                        <span class="font-semibold text-gray-700">Estimasi Sistem:</span>
-                        <span class="font-bold text-emerald-700 text-sm">Rp {{ number_format($expected, 0, ',', '.') }}</span>
-                    </div>
-                </div>
-                @endif
-                
-                <form wire:submit.prevent="closeSession" class="space-y-4" x-data="{
+                <form wire:submit.prevent="closeSession" class="space-y-0" x-data="{
                     displayEndingCash: '',
                     formatRupiah(val) {
                         if (!val || val === 0 || val === '0') return '';
@@ -937,39 +950,65 @@
                         $wire.set('actualEndingCash', clean ? parseInt(clean, 10) : 0);
                     }
                 }" x-init="displayEndingCash = formatRupiah($wire.actualEndingCash)">
-                    <div>
-                        <label for="actualEndingCash" class="block text-xs font-medium text-gray-700 mb-1.5">
-                            Total Uang Fisik Aktual (Rp) <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-400">Rp</span>
-                            <input 
-                                type="text" 
-                                id="actualEndingCash"
-                                x-model="displayEndingCash"
-                                @input="updateEndingCash($event.target.value)"
-                                class="w-full pl-10 pr-3.5 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-base font-semibold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150" 
-                                placeholder="0" 
-                                required
-                            />
+                    <div class="p-6 space-y-4">
+                        @if($activeSession)
+                        <div class="bg-gray-50 p-3.5 rounded-lg border border-gray-200 space-y-2 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 font-medium">Modal Awal Shift:</span>
+                                <span class="font-semibold text-gray-900">Rp {{ number_format($activeSession->opening_cash, 0, ',', '.') }}</span>
+                            </div>
+                            @php
+                                $sales = $activeSession->orders()->sum('cash_paid') - $activeSession->orders()->sum('cash_change');
+                                $expected = $activeSession->opening_cash + $sales;
+                            @endphp
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 font-medium">Penjualan Tunai:</span>
+                                <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sales, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="border-t border-gray-200 pt-2 flex justify-between items-center">
+                                <span class="font-semibold text-gray-700">Estimasi Uang Fisik Laci:</span>
+                                <span class="font-bold text-emerald-700 text-xs">Rp {{ number_format($expected, 0, ',', '.') }}</span>
+                            </div>
+                        </div>
+                        @endif
+
+                        <div>
+                            <label for="actualEndingCash" class="block text-xs font-semibold text-gray-700 mb-1">
+                                Total Uang Fisik Aktual (Rp) <span class="text-rose-600">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-500">Rp</span>
+                                <input 
+                                    type="text" 
+                                    id="actualEndingCash"
+                                    x-model="displayEndingCash"
+                                    @input="updateEndingCash($event.target.value)"
+                                    class="w-full pl-9 pr-3.5 py-2 bg-white border border-gray-300 rounded-lg text-base font-bold text-gray-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" 
+                                    placeholder="0" 
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="sessionNotes" class="block text-xs font-semibold text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
+                            <textarea 
+                                id="sessionNotes"
+                                wire:model="sessionNotes" 
+                                class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" 
+                                rows="2" 
+                                placeholder="Misal: Ada pengeluaran operasional Rp 10.000"
+                            ></textarea>
                         </div>
                     </div>
-                    <div>
-                        <label for="sessionNotes" class="block text-xs font-medium text-gray-700 mb-1.5">Catatan Tambahan (Opsional)</label>
-                        <textarea 
-                            id="sessionNotes"
-                            wire:model="sessionNotes" 
-                            class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150" 
-                            rows="2" 
-                            placeholder="Misal: Ada pengeluaran operasional Rp 10.000"
-                        ></textarea>
-                    </div>
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" @click="showCloseSession = false" class="flex-1 py-2 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium text-sm rounded-lg shadow-sm transition duration-150 cursor-pointer">Batal</button>
+
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl">
+                        <button type="button" @click="showCloseSession = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
                         <button 
                             type="submit" 
                             wire:loading.attr="disabled"
-                            class="flex-1 py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2"
+                            class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1.5"
                         >
                             <svg wire:loading wire:target="closeSession" class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -983,193 +1022,232 @@
             </div>
         </div>
 
-        <!-- MODAL: Hold Carts -->
+        <!-- MODAL: Hold Carts - Filament Native Style -->
         <div x-show="showHoldModal"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showHoldModal = false"
                  x-show="showHoldModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-2xl rounded-2xl p-6 relative max-h-[90vh] flex flex-col shadow-2xl">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Daftar Antrean Pesanan
-                    </h3>
-                    <button @click="showHoldModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-xl rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans flex flex-col max-h-[85vh]">
+                
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950">Daftar Antrean Pesanan</h3>
+                            <p class="text-xs text-gray-500 font-medium">Keranjang belanja yang ditahan sementara</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showHoldModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
                 
-                <div class="overflow-y-auto flex-1 space-y-3">
+                <div class="p-6 overflow-y-auto flex-1 space-y-3 bg-gray-50/50">
                     <template x-if="heldCarts.length === 0">
                         <div class="text-center py-10 text-gray-400">
-                            <p>Tidak ada antrean pesanan.</p>
+                            <p class="text-xs font-semibold">Tidak ada antrean pesanan aktif.</p>
                         </div>
                     </template>
                     
                     <template x-for="hold in heldCarts" :key="hold.id">
-                        <div class="bg-white border border-gray-100 shadow-sm p-4 rounded-xl flex items-center justify-between gap-4">
+                        <div class="bg-white border border-gray-200 shadow-xs p-4 rounded-xl flex items-center justify-between gap-4">
                             <div>
-                                <div class="font-bold text-gray-800" x-text="hold.name"></div>
-                                <div class="text-sm text-gray-500" x-text="hold.cart.length + ' item | Antre sejak ' + hold.time"></div>
-                                <div class="font-semibold text-brand-600 mt-1" x-text="'Rp ' + formatMoney(hold.total)"></div>
+                                <div class="font-bold text-xs text-gray-950" x-text="hold.name"></div>
+                                <div class="text-[11px] text-gray-500 font-medium" x-text="hold.cart.length + ' item · Antre sejak ' + hold.time"></div>
+                                <div class="font-bold text-xs text-emerald-600 mt-0.5" x-text="'Rp ' + formatMoney(hold.total)"></div>
                             </div>
                             <div class="flex gap-2">
-                                <button @click="deleteHeldCart(hold.id)" class="px-4 py-2 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors">Hapus</button>
-                                <button @click="resumeCart(hold.id)" class="px-4 py-2 bg-brand-600 text-white font-bold rounded-lg hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/30">Lanjutkan</button>
+                                <button @click="deleteHeldCart(hold.id)" class="px-3 py-1.5 bg-white border border-gray-300 text-rose-600 font-semibold rounded-lg hover:bg-rose-50 text-xs shadow-xs transition">Hapus</button>
+                                <button @click="resumeCart(hold.id)" class="px-3 py-1.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 text-xs shadow-xs transition">Lanjutkan</button>
                             </div>
                         </div>
                     </template>
                 </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end rounded-b-xl flex-shrink-0">
+                    <button type="button" @click="showHoldModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                        Tutup
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- MODAL: Konfirmasi -->
+        <!-- MODAL: Konfirmasi - Filament Native Style -->
         <div x-show="showConfirmModal"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showConfirmModal = false"
                  x-show="showConfirmModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-sm rounded-2xl p-6 relative shadow-2xl text-center">
-                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-sm rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans p-6 text-center">
+                <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 border border-rose-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2" x-text="confirmTitle"></h3>
-                <p class="text-gray-500 text-sm mb-6" x-text="confirmMessage"></p>
+                <h3 class="text-base font-bold text-gray-950 mb-1" x-text="confirmTitle"></h3>
+                <p class="text-xs text-gray-500 font-medium mb-5" x-text="confirmMessage"></p>
                 
-                <div class="flex gap-3">
-                    <button @click="showConfirmModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
-                    <button @click="executeConfirm()" class="flex-1 px-4 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/30">Ya, Lanjutkan</button>
-                </div>
-            </div>
-        </div>
-        <!-- MODAL: Input Custom -->
-        <div x-show="showInputModal"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
-            <div @click.away="showInputModal = false"
-                 x-show="showInputModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
-                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-sm rounded-2xl p-6 relative shadow-2xl">
-                <h3 class="text-xl font-bold text-gray-800 mb-2" x-text="inputTitle"></h3>
-                <p class="text-gray-500 text-sm mb-4" x-text="inputMessage"></p>
-                
-                <input type="text" id="alpineInputModalField" x-model="inputValue" @keydown.enter="executeInput()" :placeholder="inputPlaceholder" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-sm py-3 px-4 mb-6">
-                
-                <div class="flex gap-3">
-                    <button @click="showInputModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
-                    <button @click="executeInput()" class="flex-1 px-4 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/30">Simpan</button>
+                <div class="flex gap-2.5">
+                    <button @click="showConfirmModal = false" class="flex-1 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
+                    <button @click="executeConfirm()" class="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Ya, Lanjutkan</button>
                 </div>
             </div>
         </div>
 
-        <!-- MODAL: Diskon Manual -->
-        <div x-show="showManualDiscountModal"
+        <!-- MODAL: Input Custom - Filament Native Style -->
+        <div x-show="showInputModal"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4" style="display: none;">
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
+            <div @click.away="showInputModal = false"
+                 x-show="showInputModal"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-sm rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans">
+                
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                    <h3 class="text-base font-bold text-gray-950" x-text="inputTitle"></h3>
+                    <button type="button" @click="showInputModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                
+                <div class="p-6 space-y-3">
+                    <p class="text-xs text-gray-500 font-medium" x-text="inputMessage"></p>
+                    <input type="text" id="alpineInputModalField" x-model="inputValue" @keydown.enter="executeInput()" :placeholder="inputPlaceholder" class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs">
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl">
+                    <button type="button" @click="showInputModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
+                    <button type="button" @click="executeInput()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Simpan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Diskon Manual - Filament Native Style -->
+        <div x-show="showManualDiscountModal"
+             x-cloak
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showManualDiscountModal = false"
                  x-show="showManualDiscountModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-md rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans">
                 
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Diskon Manual
-                    </h3>
-                    <button @click="showManualDiscountModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950">Diskon Manual Pesanan</h3>
+                            <p class="text-xs text-gray-500 font-medium">Potongan harga dalam Rupiah (Rp) atau Persen (%)</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showManualDiscountModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <p class="text-gray-500 text-sm mb-5">Berikan potongan harga langsung (Nominal Rp atau Persen %):</p>
-
-                <!-- Toggle Type: Rp vs % -->
-                <div class="grid grid-cols-2 gap-2 p-1.5 bg-gray-100 rounded-xl mb-4">
-                    <button type="button" @click="tempManualDiscountType = 'rp'"
-                            :class="tempManualDiscountType === 'rp' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 font-medium hover:text-gray-700'"
-                            class="py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5">
-                        <span>Nominal (Rp)</span>
-                    </button>
-                    <button type="button" @click="tempManualDiscountType = 'percent'"
-                            :class="tempManualDiscountType === 'percent' ? 'bg-white text-gray-900 shadow-sm font-bold' : 'text-gray-500 font-medium hover:text-gray-700'"
-                            class="py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5">
-                        <span>Persentase (%)</span>
-                    </button>
-                </div>
-
-                <!-- Input Nominal/Persen -->
-                <div class="relative mb-4">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-lg text-gray-400" x-text="tempManualDiscountType === 'rp' ? 'Rp' : '%'"></span>
-                    <input type="number" id="alpineManualDiscountField" x-model="tempManualDiscountValue" @keydown.enter="applyManualDiscount()"
-                           :placeholder="tempManualDiscountType === 'rp' ? 'Contoh: 10000' : 'Contoh: 10'"
-                           class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-xl font-bold py-3.5 pl-12 pr-4 text-gray-900 shadow-sm">
-                </div>
-
-                <!-- Quick Presets -->
-                <div class="mb-6">
-                    <div class="text-xs font-semibold text-gray-400 mb-2">Preset Cepat:</div>
-                    <div class="grid grid-cols-5 gap-1.5" x-show="tempManualDiscountType === 'rp'">
-                        <button type="button" @click="tempManualDiscountValue = 5000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">5k</button>
-                        <button type="button" @click="tempManualDiscountValue = 10000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">10k</button>
-                        <button type="button" @click="tempManualDiscountValue = 20000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">20k</button>
-                        <button type="button" @click="tempManualDiscountValue = 50000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">50k</button>
-                        <button type="button" @click="tempManualDiscountValue = 100000" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">100k</button>
+                <div class="p-6 space-y-4">
+                    <!-- Segmented Switch: Rp vs % -->
+                    <div class="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-lg border border-gray-200/80">
+                        <button type="button" @click="tempManualDiscountType = 'rp'"
+                                class="py-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                :class="tempManualDiscountType === 'rp' ? 'bg-white text-amber-800 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-gray-900'">
+                            <span>Nominal (Rp)</span>
+                        </button>
+                        <button type="button" @click="tempManualDiscountType = 'percent'"
+                                class="py-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                :class="tempManualDiscountType === 'percent' ? 'bg-white text-amber-800 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-gray-900'">
+                            <span>Persentase (%)</span>
+                        </button>
                     </div>
-                    <div class="grid grid-cols-5 gap-1.5" x-show="tempManualDiscountType === 'percent'">
-                        <button type="button" @click="tempManualDiscountValue = 5" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">5%</button>
-                        <button type="button" @click="tempManualDiscountValue = 10" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">10%</button>
-                        <button type="button" @click="tempManualDiscountValue = 15" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">15%</button>
-                        <button type="button" @click="tempManualDiscountValue = 20" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">20%</button>
-                        <button type="button" @click="tempManualDiscountValue = 25" class="py-2 bg-gray-50 hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-all">25%</button>
+
+                    <!-- Input Nominal/Persen -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Nilai Diskon</label>
+                        <div class="relative">
+                            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-xs text-gray-500" x-text="tempManualDiscountType === 'rp' ? 'Rp' : '%'"></span>
+                            <input type="number" id="alpineManualDiscountField" x-model="tempManualDiscountValue" @keydown.enter="applyManualDiscount()"
+                                   :placeholder="tempManualDiscountType === 'rp' ? 'Contoh: 10000' : 'Contoh: 10'"
+                                   class="w-full pl-9 pr-3.5 py-2 bg-white border border-gray-300 rounded-lg text-base font-bold text-gray-950 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs">
+                        </div>
+                    </div>
+
+                    <!-- Quick Presets -->
+                    <div>
+                        <div class="text-[11px] font-semibold text-gray-500 mb-1.5">Preset Cepat:</div>
+                        <div class="grid grid-cols-5 gap-1.5" x-show="tempManualDiscountType === 'rp'">
+                            <button type="button" @click="tempManualDiscountValue = 5000" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">5k</button>
+                            <button type="button" @click="tempManualDiscountValue = 10000" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">10k</button>
+                            <button type="button" @click="tempManualDiscountValue = 20000" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">20k</button>
+                            <button type="button" @click="tempManualDiscountValue = 50000" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">50k</button>
+                            <button type="button" @click="tempManualDiscountValue = 100000" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">100k</button>
+                        </div>
+                        <div class="grid grid-cols-5 gap-1.5" x-show="tempManualDiscountType === 'percent'">
+                            <button type="button" @click="tempManualDiscountValue = 5" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">5%</button>
+                            <button type="button" @click="tempManualDiscountValue = 10" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">10%</button>
+                            <button type="button" @click="tempManualDiscountValue = 15" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">15%</button>
+                            <button type="button" @click="tempManualDiscountValue = 20" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">20%</button>
+                            <button type="button" @click="tempManualDiscountValue = 25" class="py-1.5 bg-white hover:bg-amber-50 hover:border-amber-300 border border-gray-200 text-gray-800 rounded-lg text-xs font-bold transition cursor-pointer shadow-xs">25%</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex gap-3">
-                    <button type="button" @click="showManualDiscountModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
-                    <button type="button" @click="applyManualDiscount()" class="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-500/25 transition-all active:scale-95">Terapkan Diskon</button>
+                <!-- Modal Footer Bar -->
+                <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl">
+                    <button type="button" @click="showManualDiscountModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
+                    <button type="button" @click="applyManualDiscount()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Terapkan Diskon</button>
                 </div>
             </div>
         </div>
@@ -1316,293 +1394,303 @@
             </div>
         </div>
 
-        <!-- MODAL: Void Transaksi POS -->
+        <!-- MODAL: Void Transaksi POS - Filament Native Style -->
         <div x-show="showVoidModal"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[110] flex items-center justify-center bg-gray-950/80 backdrop-blur-md p-4" style="display: none;">
+             class="fixed inset-0 z-[110] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showVoidModal = false"
                  x-show="showVoidModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl border border-red-500/30">
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-md rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans">
                 
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        Batalkan Transaksi (Void)
-                    </h3>
-                    <button type="button" @click="showVoidModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950">Batalkan Transaksi (Void)</h3>
+                            <p class="text-xs text-gray-500 font-medium">Otorisasi supervisor untuk membatalkan nota</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showVoidModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <div class="bg-red-50 rounded-xl p-4 mb-4 border border-red-100">
-                    <div class="text-xs font-semibold text-red-500 uppercase tracking-wider mb-1">Nota yang akan dibatalkan</div>
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-gray-800 text-lg" x-text="'#' + voidOrderNumber"></span>
-                        <span class="font-black text-red-600 text-lg" x-text="'Rp ' + formatMoney(voidOrderTotal)"></span>
-                    </div>
-                </div>
+                <form @submit.prevent="submitVoidOrder()" class="space-y-0">
+                    <div class="p-6 space-y-4">
+                        <div class="bg-rose-50 rounded-lg p-3.5 border border-rose-200">
+                            <div class="text-[10px] font-bold text-rose-700 uppercase tracking-wider mb-1">Nota yang akan dibatalkan</div>
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-gray-900 text-sm" x-text="'#' + voidOrderNumber"></span>
+                                <span class="font-extrabold text-rose-700 text-base" x-text="'Rp ' + formatMoney(voidOrderTotal)"></span>
+                            </div>
+                        </div>
 
-                <form @submit.prevent="submitVoidOrder()" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">1. Pilih Supervisor Pengizin Void</label>
-                        <select x-model="voidSupervisorIdInput" class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-sm font-bold py-3 px-4 shadow-sm bg-white mb-3">
-                            <option value="">-- Pilih Supervisor / Manager --</option>
-                            <template x-for="sup in supervisors" :key="sup.id">
-                                <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
-                            </template>
-                        </select>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">1. Supervisor Pengizin Void</label>
+                            <select x-model="voidSupervisorIdInput" class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
+                                <option value="">-- Pilih Supervisor / Manager --</option>
+                                <template x-for="sup in supervisors" :key="sup.id">
+                                    <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">2. Alasan Pembatalan / Void</label>
+                            <input type="text" x-model="voidReasonInput" placeholder="Contoh: Salah input barang / Batal beli"
+                                   class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">3. PIN Supervisor (6 Digit)</label>
+                            <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="voidSupervisorPinInput" placeholder="6 Digit PIN"
+                                   class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-center text-lg font-bold tracking-[0.4em] text-gray-950 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">2. Alasan Pembatalan / Void</label>
-                        <input type="text" x-model="voidReasonInput" placeholder="Contoh: Salah input barang / Batal beli"
-                               class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-sm py-3 px-4 shadow-sm">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">3. PIN Supervisor (6 Digit)</label>
-                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="voidSupervisorPinInput" placeholder="Masukkan 6-digit PIN Supervisor"
-                               class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-sm">
-                    </div>
-
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" @click="showVoidModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                    <!-- Modal Footer Bar -->
+                    <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl">
+                        <button type="button" @click="showVoidModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
                         <button type="submit" :disabled="!voidSupervisorIdInput || !voidSupervisorPinInput || String(voidSupervisorPinInput).trim().length !== 6"
-                                class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-red-500/25 transition-all active:scale-95">Batalkan Transaksi</button>
+                                class="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batalkan Transaksi</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- MODAL: Retur & Penukaran Ukuran Barang POS -->
+        <!-- MODAL: Retur & Penukaran Ukuran Barang POS - Filament Native Style -->
         <div x-show="showReturnModal"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[115] flex items-center justify-center bg-gray-950/80 backdrop-blur-md p-4" style="display: none;">
+             class="fixed inset-0 z-[115] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showReturnModal = false"
                  x-show="showReturnModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative shadow-2xl border border-amber-500/30">
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans">
                 
-                <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                            Retur & Penukaran Ukuran Barang
-                        </h3>
-                        <p class="text-xs text-gray-500 mt-0.5" x-text="'Nota Asli: #' + returnOrderNumber"></p>
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950">Retur & Penukaran Ukuran Barang</h3>
+                            <p class="text-xs text-gray-500 font-medium" x-text="'Nota Asli: #' + returnOrderNumber"></p>
+                        </div>
                     </div>
-                    <button type="button" @click="showReturnModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                    <button type="button" @click="showReturnModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <form @submit.prevent="submitReturnProcess()" class="space-y-5">
-                    <!-- Step 1: Pilih Barang Di-retur -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">1. Pilih Barang & Jumlah yang Dikembalikan</label>
-                        <div class="space-y-2 bg-gray-50/80 rounded-xl p-3 border border-gray-200">
-                            <template x-for="(item, idx) in returnOrderItems" :key="item.id">
-                                <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                                    <div class="flex-1 pr-3">
-                                        <div class="font-bold text-sm text-gray-800" x-text="item.name"></div>
-                                        <div class="text-xs text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' · Beli: ' + item.quantity + ' unit'"></div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <label class="text-xs font-semibold text-gray-500">Jumlah Retur:</label>
-                                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
-                                            <button type="button" @click="item.return_qty = Math.max(0, (item.return_qty || 0) - 1)" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">-</button>
-                                            <input type="number" x-model.number="item.return_qty" min="0" :max="item.quantity" class="w-12 text-center text-xs font-bold border-none bg-transparent p-1 focus:ring-0">
-                                            <button type="button" @click="item.return_qty = Math.min(item.quantity, (item.return_qty || 0) + 1)" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">+</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <!-- Step 2: Pilih Tipe Aksi -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">2. Jenis Transaksi Retur</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all"
-                                   :class="returnType === 'exchange' ? 'border-amber-500 bg-amber-50/50 text-amber-900 font-bold' : 'border-gray-200 bg-white text-gray-600'">
-                                <input type="radio" x-model="returnType" value="exchange" class="text-amber-600 focus:ring-amber-500">
-                                <div>
-                                    <div class="text-sm">Tukar Ukuran / Barang</div>
-                                    <div class="text-[11px] font-normal text-gray-500">Tukar ke varian/produk pengganti</div>
-                                </div>
-                            </label>
-                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all"
-                                   :class="returnType === 'refund' ? 'border-red-500 bg-red-50/50 text-red-900 font-bold' : 'border-gray-200 bg-white text-gray-600'">
-                                <input type="radio" x-model="returnType" value="refund" class="text-red-600 focus:ring-red-500">
-                                <div>
-                                    <div class="text-sm">Pengembalian Uang (Refund)</div>
-                                    <div class="text-[11px] font-normal text-gray-500">Kembalikan kas ke pelanggan</div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Step 3: Pilih Barang Pengganti (Exchange only) -->
-                    <template x-if="returnType === 'exchange'">
+                <form @submit.prevent="submitReturnProcess()" class="flex flex-col flex-1 overflow-hidden space-y-0">
+                    <div class="p-6 space-y-5 overflow-y-auto flex-1 bg-gray-50/50">
+                        <!-- Step 1: Pilih Barang Di-retur -->
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">3. Pilih Barang Pengganti (Tukar)</label>
-
-                            <!-- Daftar item yang sudah ditambah -->
-                            <template x-if="returnExchangedItems.length > 0">
-                                <div class="mb-2 space-y-1">
-                                    <template x-for="(eItem, eIdx) in returnExchangedItems" :key="eIdx">
-                                        <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
-                                            <div>
-                                                <span class="font-bold text-gray-800" x-text="eItem.name"></span>
-                                                <span class="text-gray-500 ml-1" x-text="'Rp ' + formatMoney(eItem.price)"></span>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <div class="flex items-center border border-gray-300 rounded overflow-hidden">
-                                                    <button type="button" @click="if(eItem.quantity > 1) eItem.quantity--; else removeExchangeItem(eIdx)" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">-</button>
-                                                    <span class="px-2 font-bold" x-text="eItem.quantity"></span>
-                                                    <button type="button" @click="eItem.quantity++" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">+</button>
-                                                </div>
-                                                <button type="button" @click="removeExchangeItem(eIdx)" class="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
+                            <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">1. Pilih Barang & Jumlah yang Dikembalikan</label>
+                            <div class="space-y-2 bg-white rounded-lg p-3 border border-gray-200 shadow-xs">
+                                <template x-for="(item, idx) in returnOrderItems" :key="item.id">
+                                    <div class="flex items-center justify-between bg-gray-50/80 p-2.5 rounded-lg border border-gray-200">
+                                        <div class="flex-1 pr-3">
+                                            <div class="font-bold text-xs text-gray-900" x-text="item.name"></div>
+                                            <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' · Dibeli: ' + item.quantity + ' pcs'"></div>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <label class="text-[11px] font-medium text-gray-500">Retur:</label>
+                                            <div class="flex items-center border border-gray-300 rounded-md overflow-hidden bg-white shadow-xs">
+                                                <button type="button" @click="item.return_qty = Math.max(0, (item.return_qty || 0) - 1)" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-700 text-xs">-</button>
+                                                <input type="number" x-model.number="item.return_qty" min="0" :max="item.quantity" class="w-10 text-center text-xs font-bold border-none bg-transparent p-0.5 focus:ring-0">
+                                                <button type="button" @click="item.return_qty = Math.min(item.quantity, (item.return_qty || 0) + 1)" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-700 text-xs">+</button>
                                             </div>
                                         </div>
-                                    </template>
-                                </div>
-                            </template>
-
-                            <!-- Search + product list -->
-                            <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
-                                <input type="text" x-model="exchangeSearchQuery"
-                                       placeholder="Cari nama produk pengganti..."
-                                       class="w-full text-sm border-0 border-b border-gray-200 px-3 py-2 focus:ring-0 bg-white"
-                                       autocomplete="off">
-                                <div class="max-h-48 overflow-y-auto divide-y divide-gray-100">
-                                    <template x-for="p in allProducts.filter(p => !exchangeSearchQuery || p.name.toLowerCase().includes(exchangeSearchQuery.toLowerCase())).slice(0,20)" :key="p.id">
-                                        <div>
-                                            <!-- Produk tanpa varian -->
-                                            <template x-if="!p.has_variants">
-                                                <button type="button"
-                                                        :disabled="p.stock <= 0"
-                                                        @click="addExchangeItem(p); exchangeSearchQuery = '';"
-                                                        class="w-full text-left px-3 py-2 text-xs hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed flex justify-between items-center">
-                                                    <div>
-                                                        <span class="font-semibold text-gray-800" x-text="p.name"></span>
-                                                        <span class="text-gray-400 ml-2" x-text="'Rp ' + formatMoney(p.price)"></span>
-                                                    </div>
-                                                    <span class="text-gray-400" x-text="'Stok: ' + p.stock"></span>
-                                                </button>
-                                            </template>
-                                            <!-- Produk dengan varian -->
-                                            <template x-if="p.has_variants">
-                                                <div class="px-3 py-1.5">
-                                                    <div class="text-xs font-semibold text-gray-600 mb-1" x-text="p.name"></div>
-                                                    <div class="flex flex-wrap gap-1.5">
-                                                        <template x-for="v in p.variants" :key="v.id">
-                                                            <button type="button"
-                                                                    :disabled="v.stock <= 0"
-                                                                    @click="addExchangeItem({id: p.id, name: p.name, price: p.price, stock: p.stock, has_variants: true}, {id: v.id, name: v.name, price: v.price, stock: v.stock}); exchangeSearchQuery = '';"
-                                                                    class="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-medium hover:bg-amber-50 hover:border-amber-400 disabled:opacity-40 disabled:cursor-not-allowed">
-                                                                <span x-text="v.name"></span>
-                                                                <span class="text-gray-400 ml-1" x-text="'(' + v.stock + ')'"></span>
-                                                            </button>
-                                                        </template>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
-                                    <template x-if="allProducts.filter(p => !exchangeSearchQuery || p.name.toLowerCase().includes(exchangeSearchQuery.toLowerCase())).length === 0">
-                                        <div class="px-3 py-3 text-xs text-gray-400 text-center">Produk tidak ditemukan.</div>
-                                    </template>
-                                </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
-                    </template>
 
-                    <!-- Summary Calculation Box -->
-                    <div class="bg-amber-50/60 rounded-xl p-4 border border-amber-200 space-y-2">
-                        <div class="flex justify-between text-xs font-medium text-gray-600">
-                            <span>Subtotal Barang Retur:</span>
-                            <span class="font-bold text-gray-800" x-text="'- Rp ' + formatMoney(returnSubtotal)"></span>
+                        <!-- Step 2: Pilih Tipe Aksi -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">2. Jenis Transaksi Retur</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition"
+                                       :class="returnType === 'exchange' ? 'border-2 border-amber-600 bg-amber-50/70 text-amber-950 font-bold' : 'border-gray-300 bg-white text-gray-700'">
+                                    <input type="radio" x-model="returnType" value="exchange" class="text-amber-600 focus:ring-amber-500">
+                                    <div>
+                                        <div class="text-xs font-bold">Tukar Ukuran / Barang</div>
+                                        <div class="text-[11px] font-normal text-gray-500">Tukar ke varian/produk pengganti</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition"
+                                       :class="returnType === 'refund' ? 'border-2 border-rose-600 bg-rose-50/70 text-rose-950 font-bold' : 'border-gray-300 bg-white text-gray-700'">
+                                    <input type="radio" x-model="returnType" value="refund" class="text-rose-600 focus:ring-rose-500">
+                                    <div>
+                                        <div class="text-xs font-bold">Pengembalian Uang (Refund)</div>
+                                        <div class="text-[11px] font-normal text-gray-500">Kembalikan kas ke pelanggan</div>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
+
+                        <!-- Step 3: Pilih Barang Pengganti (Exchange only) -->
                         <template x-if="returnType === 'exchange'">
-                            <div class="flex justify-between text-xs font-medium text-gray-600">
-                                <span>Subtotal Barang Tukar:</span>
-                                <span class="font-bold text-gray-800" x-text="'+ Rp ' + formatMoney(exchangeSubtotal)"></span>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">3. Pilih Barang Pengganti (Tukar)</label>
+
+                                <template x-if="returnExchangedItems.length > 0">
+                                    <div class="mb-2.5 space-y-1.5">
+                                        <template x-for="(eItem, eIdx) in returnExchangedItems" :key="eIdx">
+                                            <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
+                                                <div>
+                                                    <span class="font-bold text-gray-900" x-text="eItem.name"></span>
+                                                    <span class="text-gray-500 ml-1" x-text="'Rp ' + formatMoney(eItem.price)"></span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex items-center border border-gray-300 rounded bg-white">
+                                                        <button type="button" @click="if(eItem.quantity > 1) eItem.quantity--; else removeExchangeItem(eIdx)" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">-</button>
+                                                        <span class="px-2 font-bold" x-text="eItem.quantity"></span>
+                                                        <button type="button" @click="eItem.quantity++" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">+</button>
+                                                    </div>
+                                                    <button type="button" @click="removeExchangeItem(eIdx)" class="text-rose-600 font-bold text-xs hover:underline">Hapus</button>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <div class="border border-gray-300 rounded-lg overflow-hidden bg-white shadow-xs">
+                                    <input type="text" x-model="exchangeSearchQuery"
+                                           placeholder="Cari produk pengganti..."
+                                           class="w-full text-xs border-0 border-b border-gray-200 px-3.5 py-2 focus:ring-0 bg-white"
+                                           autocomplete="off">
+                                    <div class="max-h-44 overflow-y-auto divide-y divide-gray-100">
+                                        <template x-for="p in allProducts.filter(p => !exchangeSearchQuery || p.name.toLowerCase().includes(exchangeSearchQuery.toLowerCase())).slice(0,20)" :key="p.id">
+                                            <div>
+                                                <template x-if="!p.has_variants">
+                                                    <button type="button"
+                                                            :disabled="p.stock <= 0"
+                                                            @click="addExchangeItem(p); exchangeSearchQuery = '';"
+                                                            class="w-full text-left px-3 py-2 text-xs hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed flex justify-between items-center cursor-pointer">
+                                                        <div>
+                                                            <span class="font-semibold text-gray-900" x-text="p.name"></span>
+                                                            <span class="text-gray-500 ml-2" x-text="'Rp ' + formatMoney(p.price)"></span>
+                                                        </div>
+                                                        <span class="text-gray-400 text-[11px]" x-text="'Stok: ' + p.stock"></span>
+                                                    </button>
+                                                </template>
+                                                <template x-if="p.has_variants">
+                                                    <div class="px-3 py-1.5 bg-gray-50/50">
+                                                        <div class="text-[11px] font-bold text-gray-700 mb-1" x-text="p.name"></div>
+                                                        <div class="flex flex-wrap gap-1.5">
+                                                            <template x-for="v in p.variants" :key="v.id">
+                                                                <button type="button"
+                                                                        :disabled="v.stock <= 0"
+                                                                        @click="addExchangeItem({id: p.id, name: p.name, price: p.price, stock: p.stock, has_variants: true}, {id: v.id, name: v.name, price: v.price, stock: v.stock}); exchangeSearchQuery = '';"
+                                                                        class="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-medium hover:bg-amber-50 hover:border-amber-400 cursor-pointer disabled:opacity-40 shadow-xs">
+                                                                    <span x-text="v.name"></span>
+                                                                    <span class="text-gray-400 ml-1" x-text="'(' + v.stock + ')'"></span>
+                                                                </button>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </template>
-                        <div class="pt-2 border-t border-amber-200/80 flex justify-between items-center">
-                            <span class="text-xs font-bold uppercase tracking-wider text-gray-700">Status Selisih:</span>
-                            <template x-if="returnNetAmount > 0">
-                                <span class="text-sm font-black text-green-700" x-text="'Pelanggan Tambah Bayar: Rp ' + formatMoney(returnNetAmount)"></span>
-                            </template>
-                            <template x-if="returnNetAmount < 0">
-                                <span class="text-sm font-black text-red-700" x-text="'Pengembalian Uang Kas: Rp ' + formatMoney(Math.abs(returnNetAmount))"></span>
-                            </template>
-                            <template x-if="returnNetAmount === 0">
-                                <span class="text-sm font-black text-gray-700">Pas (Selisih Rp 0)</span>
-                            </template>
-                        </div>
-                    </div>
 
-                    <!-- Reason Field -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Alasan Retur / Tukar Barang</label>
-                        <input type="text" x-model="returnReasonInput" placeholder="Contoh: Ukuran kekecilan / Tukar warna / Cacat jahitan"
-                               class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm py-2.5 px-4 shadow-sm">
-                    </div>
-
-                    <!-- Supervisor Otorisasi (If refund or netAmount < 0) -->
-                    <template x-if="returnType === 'refund' || returnNetAmount < 0">
-                        <div class="p-4 bg-red-50/80 rounded-xl border border-red-200 space-y-3">
-                            <div class="flex items-center gap-2 text-xs font-bold text-red-700 uppercase tracking-wider">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                Otorisasi PIN Supervisor Wajib (Pengembalian Uang Kas)
+                        <!-- Summary Box -->
+                        <div class="bg-amber-50/70 rounded-lg p-3.5 border border-amber-200 space-y-1.5">
+                            <div class="flex justify-between text-xs font-medium text-gray-600">
+                                <span>Subtotal Barang Retur:</span>
+                                <span class="font-bold text-gray-900" x-text="'- Rp ' + formatMoney(returnSubtotal)"></span>
                             </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Supervisor Pengizin</label>
-                                    <select x-model="returnSupervisorIdInput" class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-xs font-bold py-2.5 px-3 shadow-sm bg-white">
-                                        <option value="">-- Pilih Supervisor --</option>
-                                        <template x-for="sup in supervisors" :key="sup.id">
-                                            <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
-                                        </template>
-                                    </select>
+                            <template x-if="returnType === 'exchange'">
+                                <div class="flex justify-between text-xs font-medium text-gray-600">
+                                    <span>Subtotal Barang Tukar:</span>
+                                    <span class="font-bold text-gray-900" x-text="'+ Rp ' + formatMoney(exchangeSubtotal)"></span>
                                 </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">PIN 6-Digit</label>
-                                    <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="returnSupervisorPinInput" placeholder="6 Digit PIN"
-                                           class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-center text-sm font-bold tracking-[0.3em] py-2.5 px-3 shadow-sm">
-                                </div>
+                            </template>
+                            <div class="pt-2 border-t border-amber-200 flex justify-between items-center">
+                                <span class="text-xs font-bold uppercase tracking-wider text-gray-700">Status Selisih:</span>
+                                <template x-if="returnNetAmount > 0">
+                                    <span class="text-xs font-bold text-emerald-700" x-text="'Pelanggan Tambah Bayar: Rp ' + formatMoney(returnNetAmount)"></span>
+                                </template>
+                                <template x-if="returnNetAmount < 0">
+                                    <span class="text-xs font-bold text-rose-700" x-text="'Pengembalian Uang Kas: Rp ' + formatMoney(Math.abs(returnNetAmount))"></span>
+                                </template>
+                                <template x-if="returnNetAmount === 0">
+                                    <span class="text-xs font-bold text-gray-700">Pas (Selisih Rp 0)</span>
+                                </template>
                             </div>
                         </div>
-                    </template>
 
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" @click="showReturnModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                        <!-- Reason Field -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Alasan Retur / Tukar Barang</label>
+                            <input type="text" x-model="returnReasonInput" placeholder="Contoh: Ukuran kekecilan / Tukar warna / Cacat jahitan"
+                                   class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs">
+                        </div>
+
+                        <!-- Supervisor PIN Otorisasi -->
+                        <template x-if="returnType === 'refund' || returnNetAmount < 0">
+                            <div class="p-3.5 bg-rose-50 rounded-lg border border-rose-200 space-y-2.5">
+                                <div class="flex items-center gap-1.5 text-xs font-bold text-rose-700 uppercase tracking-wider">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    Otorisasi PIN Supervisor Wajib (Pengembalian Uang)
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Supervisor Pengizin</label>
+                                        <select x-model="returnSupervisorIdInput" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
+                                            <option value="">-- Pilih Supervisor --</option>
+                                            <template x-for="sup in supervisors" :key="sup.id">
+                                                <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">PIN 6-Digit</label>
+                                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="returnSupervisorPinInput" placeholder="6 Digit PIN"
+                                               class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-center text-xs font-bold tracking-[0.3em] text-gray-950 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
+                        <button type="button" @click="showReturnModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
                         <button type="submit" :disabled="returnSubtotal <= 0"
-                                class="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-amber-500/25 transition-all active:scale-95">Proses Retur / Tukar</button>
+                                class="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Proses Retur / Tukar</button>
                     </div>
                 </form>
             </div>
@@ -1664,234 +1752,351 @@
             </div>
         </div>
 
-        <!-- MODAL: Petty Cash (Kas Masuk/Keluar) -->
+        <!-- MODAL: Petty Cash (Kas Masuk/Keluar) - Filament Native Style -->
         <div x-show="showPettyCashModal"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4" style="display: none;">
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showPettyCashModal = false"
                  x-show="showPettyCashModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-md rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans">
                 
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Kas Masuk / Keluar (Petty Cash)
-                    </h3>
-                    <button type="button" @click="showPettyCashModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950">Catat Kas Masuk / Keluar</h3>
+                            <p class="text-xs text-gray-500 font-medium">Pencatatan kas petty kasir shift ini</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showPettyCashModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <form wire:submit.prevent="recordPettyCash" class="space-y-4">
-                    <!-- Toggle Type: Kas Keluar vs Kas Masuk -->
-                    <div class="grid grid-cols-2 gap-2 p-1.5 bg-gray-100 rounded-xl">
-                        <button type="button" wire:click="$set('pettyCashType', 'out')"
-                                class="py-2.5 rounded-lg text-sm transition-all font-bold flex items-center justify-center gap-1.5 {{ $pettyCashType === 'out' ? 'bg-red-500 text-white shadow-md' : 'text-gray-600 hover:text-gray-900' }}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
-                            <span>Kas Keluar</span>
+                <form wire:submit.prevent="recordPettyCash" class="space-y-0">
+                    <div class="p-6 space-y-4">
+                        <!-- Segmented Switch: Kas Keluar vs Kas Masuk -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Tipe Pencatatan Kas</label>
+                            <div class="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-lg border border-gray-200/80">
+                                <button type="button" wire:click="$set('pettyCashType', 'out')"
+                                        class="py-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer {{ $pettyCashType === 'out' ? 'bg-white text-rose-700 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-gray-900' }}">
+                                    <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
+                                    <span>Kas Keluar (Pengeluaran)</span>
+                                </button>
+                                <button type="button" wire:click="$set('pettyCashType', 'in')"
+                                        class="py-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer {{ $pettyCashType === 'in' ? 'bg-white text-emerald-700 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-gray-900' }}">
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+                                    <span>Kas Masuk (Pemasukan)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Input Nominal -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Nominal Uang (Rp)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-500">Rp</div>
+                                <input type="number" wire:model="pettyCashAmount" class="w-full pl-9 pr-3.5 py-2 bg-white border border-gray-300 rounded-lg text-base font-bold text-gray-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs" placeholder="0">
+                            </div>
+                            @error('pettyCashAmount') <span class="text-rose-600 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Input Keterangan -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Keterangan / Alasan</label>
+                            <input type="text" wire:model="pettyCashNotes" class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs" placeholder="Contoh: Beli air galon toko / Pembelian lakban">
+                            @error('pettyCashNotes') <span class="text-rose-600 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer Action Bar -->
+                    <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl">
+                        <button type="button" @click="showPettyCashModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                            Batal
                         </button>
-                        <button type="button" wire:click="$set('pettyCashType', 'in')"
-                                class="py-2.5 rounded-lg text-sm transition-all font-bold flex items-center justify-center gap-1.5 {{ $pettyCashType === 'in' ? 'bg-green-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900' }}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
-                            <span>Kas Masuk</span>
+                        <button type="submit" class="px-4 py-2 {{ $pettyCashType === 'out' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700' }} text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Simpan Kas</span>
                         </button>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nominal Uang (Rp)</label>
-                        <input type="number" wire:model="pettyCashAmount" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-xl font-bold py-3 px-4 shadow-sm" placeholder="0">
-                        @error('pettyCashAmount') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Keterangan / Alasan</label>
-                        <input type="text" wire:model="pettyCashNotes" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-sm py-3 px-4 shadow-sm" placeholder="Contoh: Beli air galon ruko / Beli lakban">
-                        @error('pettyCashNotes') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="flex gap-3 pt-2">
-                        <button type="button" @click="showPettyCashModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
-                        <button type="submit" class="flex-1 px-4 py-3 {{ $pettyCashType === 'out' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/25' : 'bg-green-600 hover:bg-green-700 shadow-green-500/25' }} text-white font-bold rounded-xl shadow-lg transition-all active:scale-95">Simpan Kas</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- MODAL: Voucher / Promo -->
+        <!-- MODAL: Voucher / Promo - Filament Native Style -->
         <div x-show="showVoucherModal"
+             x-cloak
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" style="display: none;">
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showVoucherModal = false"
                  x-show="showVoucherModal"
-                 x-transition:enter="transition ease-out duration-300 transform"
-                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-lg rounded-2xl p-6 relative max-h-[80vh] flex flex-col shadow-2xl">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
-                        Pilih Kupon Promo
-                    </h3>
-                    <button @click="showVoucherModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-lg rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans flex flex-col max-h-[85vh]">
+                
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-gray-950">Pilih Kupon Promo</h3>
+                            <p class="text-xs text-gray-500 font-medium">Voucher diskon aktif untuk transaksi ini</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showVoucherModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
                 
-                <div class="overflow-y-auto flex-1 space-y-3 pr-2">
+                <div class="p-6 overflow-y-auto flex-1 space-y-3 bg-gray-50/50">
                     <template x-if="vouchers.length === 0">
                         <div class="text-center py-10 text-gray-400">
-                            <p>Tidak ada promo yang sedang aktif saat ini.</p>
+                            <p class="text-xs font-semibold">Tidak ada promo yang sedang aktif saat ini.</p>
                         </div>
                     </template>
                     
                     <template x-for="v in vouchers" :key="v.id">
                         <div 
-                            class="border rounded-xl p-4 flex flex-col gap-2 transition-all"
-                            :class="isVoucherEligible(v) ? (activeVoucher && activeVoucher.id === v.id ? 'bg-brand-50 border-brand-400 shadow-md' : 'bg-white border-gray-200 hover:border-brand-300 cursor-pointer') : 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed'"
+                            class="border rounded-lg p-3.5 flex flex-col gap-2 transition-all shadow-xs"
+                            :class="isVoucherEligible(v) ? (activeVoucher && activeVoucher.id === v.id ? 'bg-emerald-50/80 border-emerald-500' : 'bg-white border-gray-200 hover:border-emerald-400 cursor-pointer') : 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed'"
                             @click="isVoucherEligible(v) ? applyVoucher(v) : null">
                             
                             <div class="flex justify-between items-start">
                                 <div>
-                                    <h4 class="font-bold text-gray-800" x-text="v.name"></h4>
-                                    <div class="text-xs text-gray-500 font-mono mt-1 bg-gray-100 px-2 py-0.5 rounded inline-block" x-text="v.code"></div>
+                                    <h4 class="font-bold text-xs text-gray-950" x-text="v.name"></h4>
+                                    <div class="text-[10px] text-gray-500 font-mono mt-0.5 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded inline-block uppercase" x-text="v.code"></div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="font-black text-brand-600" x-text="v.discount_type === 'percent' ? v.discount_amount + '%' : 'Rp ' + formatMoney(v.discount_amount)"></div>
+                                    <div class="font-extrabold text-xs text-emerald-700" x-text="v.discount_type === 'percent' ? v.discount_amount + '%' : 'Rp ' + formatMoney(v.discount_amount)"></div>
                                 </div>
                             </div>
                             
-                            <div class="text-sm text-gray-500 mt-2 flex items-center justify-between">
+                            <div class="text-[11px] text-gray-500 flex items-center justify-between">
                                 <div class="flex flex-col gap-0.5">
                                     <span x-show="v.min_purchase > 0" x-text="'Min. Belanja: Rp ' + formatMoney(v.min_purchase)"></span>
                                     <span x-show="v.min_items > 0" x-text="'Min. Item: ' + v.min_items + ' pcs'"></span>
                                     <span x-show="v.min_purchase <= 0 && v.min_items <= 0">Tanpa min. belanja</span>
                                 </div>
                                 
-                                <span x-show="!isVoucherEligible(v)" class="text-xs font-semibold text-red-500">Syarat belum terpenuhi</span>
-                                <span x-show="activeVoucher && activeVoucher.id === v.id" class="text-xs font-bold text-brand-600 flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Dipakai
+                                <span x-show="!isVoucherEligible(v)" class="text-[11px] font-semibold text-rose-600">Syarat belum terpenuhi</span>
+                                <span x-show="activeVoucher && activeVoucher.id === v.id" class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Dipakai
                                 </span>
                             </div>
                         </div>
                     </template>
                 </div>
                 
-                <div x-show="activeVoucher" class="mt-4 pt-4 border-t border-gray-100 text-center">
-                    <button @click="removeVoucher()" class="text-red-500 text-sm font-semibold hover:underline">Lepas Kupon Saat Ini</button>
+                <!-- Modal Footer -->
+                <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-between rounded-b-xl flex-shrink-0">
+                    <div>
+                        <button type="button" x-show="activeVoucher" @click="removeVoucher()" class="text-rose-600 text-xs font-semibold hover:underline cursor-pointer">Lepas Promo</button>
+                    </div>
+                    <button type="button" @click="showVoucherModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                        Tutup
+                    </button>
                 </div>
             </div>
         </div>
 
-
         <!-- ============================================ -->
-        <!-- PAGE: Riwayat Transaksi (Clean Filament Native Style) -->
+        <!-- PAGE: Riwayat Transaksi (Filament Native Style) -->
         <!-- ============================================ -->
-        <div x-show="activePage === 'history'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/40 overflow-hidden font-sans" style="display:none;">
-            <!-- Header & Toolbar Filter -->
-            <div class="bg-white border-b border-gray-200 px-6 py-4 space-y-4 shadow-xs">
-                <div class="flex flex-wrap items-center justify-between gap-4">
+        <div x-show="activePage === 'history'" wire:key="pos-page-history" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-y-auto font-sans">
+            <div class="p-4 md:p-6 max-w-7xl w-full mx-auto space-y-5">
+                
+                <!-- Header Title Bar -->
+                <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
                         <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                         </button>
                         <div>
-                            <h1 class="text-lg font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                            <h1 class="text-xl font-bold tracking-tight text-gray-950">
                                 Riwayat Transaksi POS
                             </h1>
                             <p class="text-xs text-gray-500 font-medium">Manajemen nota penjualan, cetak ulang struk, retur, dan pembatalan nota.</p>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Ringkasan Singkat KPI (Filament Badges) -->
-                    <div class="flex items-center gap-2 text-xs">
-                        <div class="px-3 py-1.5 bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 rounded-md font-semibold flex items-center gap-1.5">
-                            <span>Total Omzet:</span>
-                            <strong class="font-bold">Rp {{ number_format($sessionOrders->where('status', '!=', 'cancelled')->sum('grand_total'), 0, ',', '.') }}</strong>
+                <!-- Ringkasan KPI (Filament Stat Cards - Grid 3 Kolom) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Total Omzet Filtered</p>
+                            <p class="text-xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionOrders->where('status', '!=', 'cancelled')->sum('grand_total'), 0, ',', '.') }}</p>
                         </div>
-                        <div class="px-3 py-1.5 bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 rounded-md font-semibold flex items-center gap-1.5">
-                            <span>Selesai:</span>
-                            <strong class="font-bold">{{ $sessionOrders->where('status', '!=', 'cancelled')->count() }} Nota</strong>
+                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
-                        @if($sessionOrders->where('status', 'cancelled')->count() > 0)
-                        <div class="px-3 py-1.5 bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20 rounded-md font-semibold flex items-center gap-1.5">
-                            <span>Void/Batal:</span>
-                            <strong class="font-bold">{{ $sessionOrders->where('status', 'cancelled')->count() }} Nota</strong>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Nota Selesai</p>
+                            <p class="text-xl font-bold text-gray-950 mt-1">{{ $sessionOrders->where('status', '!=', 'cancelled')->count() }} <span class="text-xs font-normal text-gray-500">Nota</span></p>
                         </div>
-                        @endif
+                        <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Nota VOID / Batal</p>
+                            <p class="text-xl font-bold text-gray-950 mt-1">{{ $sessionOrders->where('status', 'cancelled')->count() }} <span class="text-xs font-normal text-gray-500">Nota</span></p>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Filter Controls Bar -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2 border-t border-gray-100">
-                    <!-- Search Input -->
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </div>
-                        <input type="text" wire:model.live.debounce.300ms="historySearch" placeholder="Cari No. Nota, Pelanggan, HP..."
-                               class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition duration-150">
-                    </div>
-
-                    <!-- Periode Filter -->
-                    <div>
-                        <select wire:model.live="historyDateFilter" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition duration-150 cursor-pointer">
-                            <option value="shift">Shift Hari Ini</option>
-                            <option value="today">Semua Transaksi Hari Ini</option>
-                            <option value="all">Semua Riwayat (Tanpa Batas)</option>
-                        </select>
-                    </div>
-
-                    <!-- Metode Pembayaran Filter -->
-                    <div>
-                        <select wire:model.live="historyPaymentFilter" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition duration-150 cursor-pointer">
-                            <option value="all">Semua Metode Bayar</option>
-                            <option value="cash">Tunai (Cash)</option>
-                            <option value="non_cash">Non-Tunai (QRIS / Transfer / EDC)</option>
-                        </select>
-                    </div>
-
-                    <!-- Status Filter -->
-                    <div>
-                        <select wire:model.live="historyStatusFilter" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition duration-150 cursor-pointer">
-                            <option value="all">Semua Status</option>
-                            <option value="completed">Selesai</option>
-                            <option value="cancelled">Dibatalkan (Void)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Table Content Area -->
-            <div class="flex-1 overflow-y-auto p-4 md:p-6">
-                @if(count($sessionOrders) === 0)
-                <div class="flex flex-col items-center justify-center h-full text-gray-400 py-20 bg-white rounded-xl border border-gray-200 shadow-xs">
-                    <div class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                        <svg class="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    </div>
-                    <p class="text-sm font-semibold text-gray-700">Tidak ada transaksi ditemukan</p>
-                    <p class="text-xs text-gray-500 mt-1">Coba sesuaikan kata kunci pencarian atau filter di atas.</p>
-                </div>
-                @else
+                <!-- UNIFIED TABLE CARD (Filament Native Card with Toolbar Header) -->
                 <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                    
+                    <!-- Filament Table Header Toolbar (Search FAR LEFT + Filter Button FAR RIGHT) -->
+                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
+                        <!-- SISI KIRI: Search Input -->
+                        <div class="relative min-w-[220px] max-w-xs flex-1">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <input type="text" wire:model.live.debounce.300ms="historySearch" wire:key="history-search-input" placeholder="Cari nota, pelanggan, HP..."
+                                   class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs">
+                        </div>
+
+                        <!-- SISI KANAN: Filter Action Button & Popover Modal -->
+                        <!-- SISI KANAN: Filter Action Button & Popover Modal -->
+                        <div class="relative flex-shrink-0" x-data="{ showFilterPopover: false }" wire:key="history-filter-container">
+                            @php
+                                $activeFilterCount = ($historyDateFilter !== 'shift' ? 1 : 0) +
+                                                     ($historyPaymentFilter !== 'all' ? 1 : 0) +
+                                                     ($historyStatusFilter !== 'all' ? 1 : 0);
+                            @endphp
+
+                            <!-- Filter Action Trigger Button -->
+                            <button type="button" @click="showFilterPopover = !showFilterPopover"
+                                    class="px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg shadow-xs transition duration-150 flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Filter Tabel">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                <span>Filter</span>
+                                @if($activeFilterCount > 0)
+                                <span class="w-4 h-4 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ $activeFilterCount }}</span>
+                                @endif
+                            </button>
+
+                            <!-- Filament Filter Popover Card -->
+                            <div x-show="showFilterPopover"
+                                 x-cloak
+                                 @click.away="showFilterPopover = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4 space-y-4">
+
+                                <!-- Popover Header -->
+                                <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                                    <span class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                        Filter Tabel
+                                    </span>
+                                    @if($activeFilterCount > 0)
+                                    <button type="button"
+                                            wire:click="resetHistoryFilters"
+                                            class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer">
+                                        Reset filter
+                                    </button>
+                                    @endif
+                                </div>
+
+                                <!-- Filter Options List -->
+                                <div class="space-y-3">
+                                    <!-- Periode Filter -->
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Periode Transaksi</label>
+                                        <select wire:key="filter-date-select" wire:model.live="historyDateFilter"
+                                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="shift">Shift Hari Ini</option>
+                                            <option value="today">Hari Ini</option>
+                                            <option value="yesterday">Kemarin</option>
+                                            <option value="7days">7 Hari Terakhir</option>
+                                            <option value="30days">30 Hari Terakhir</option>
+                                            <option value="all">Semua Riwayat</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Metode Pembayaran Filter -->
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Metode Pembayaran</label>
+                                        <select wire:key="filter-payment-select" wire:model.live="historyPaymentFilter"
+                                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="all">Semua Metode</option>
+                                            <option value="cash">Tunai (Cash)</option>
+                                            <option value="non_cash">Non-Tunai (QRIS / Transfer / EDC)</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Status Filter -->
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Status Transaksi</label>
+                                        <select wire:key="filter-status-select" wire:model.live="historyStatusFilter"
+                                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="all">Semua Status</option>
+                                            <option value="completed">Selesai</option>
+                                            <option value="cancelled">VOID / Batal</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Popover Footer -->
+                                <div class="pt-2 border-t border-gray-100 flex justify-end">
+                                    <button type="button" @click="showFilterPopover = false" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-lg transition cursor-pointer">
+                                        Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table Content Area -->
+                    @if(count($sessionOrders) === 0)
+                    <div class="flex flex-col items-center justify-center text-gray-400 py-16">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        <p class="text-sm font-semibold text-gray-900">Tidak ada transaksi ditemukan</p>
+                        <p class="text-xs text-gray-500 mt-1">Coba sesuaikan kata kunci pencarian atau filter di atas.</p>
+                    </div>
+                    @else
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -1907,7 +2112,7 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-xs">
                                 @foreach($sessionOrders as $order)
-                                <tr class="hover:bg-gray-50/80 transition-colors {{ $order->status === 'cancelled' ? 'bg-rose-50/20' : '' }}">
+                                <tr wire:key="order-row-{{ $order->id }}" class="hover:bg-gray-50/80 transition-colors {{ $order->status === 'cancelled' ? 'bg-rose-50/20' : '' }}">
                                     <!-- No. Nota & Waktu -->
                                     <td class="py-3 px-4 whitespace-nowrap">
                                         <div class="font-bold font-mono text-gray-900 text-xs">#{{ $order->order_number }}</div>
@@ -1917,7 +2122,7 @@
                                     <!-- Pelanggan -->
                                     <td class="py-3 px-4">
                                         @if($order->customer_name)
-                                            <div class="font-semibold text-gray-800">{{ $order->customer_name }}</div>
+                                            <div class="font-semibold text-gray-900">{{ $order->customer_name }}</div>
                                             <div class="text-[11px] text-gray-500">{{ $order->customer_phone ?: 'Tanpa HP' }}</div>
                                         @else
                                             <span class="text-gray-400 italic">Pelanggan Umum</span>
@@ -1933,7 +2138,7 @@
                                         @endphp
                                         @if($firstItem)
                                             <div class="font-medium text-gray-900 truncate">
-                                                {{ $firstItem->product_name ?? $firstItem->name }}{{ $firstItem->variant_name ? ' ('.$firstItem->variant_name.')' : '' }}
+                                                {{ $firstItem->product_name ?? $firstItem->name }}
                                             </div>
                                             <div class="text-[11px] text-gray-500">
                                                 {{ $firstItem->quantity }} pcs @if($otherCount > 0) <span class="text-emerald-600 font-semibold">+{{ $otherCount }} item lain (Total {{ $totalPcs }} pcs)</span> @endif
@@ -1958,7 +2163,7 @@
                                                 Tunai
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-600/20">
                                                 {{ strtoupper($order->payment_method) }}
                                             </span>
                                         @endif
@@ -1967,7 +2172,7 @@
                                     <!-- Status -->
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
                                         @if($order->status === 'cancelled')
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20" title="{{ $order->voidBy ? 'Disetujui: '.$order->voidBy->name : '' }}">
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20">
                                                 VOID
                                             </span>
                                         @else
@@ -2008,22 +2213,35 @@
                                             </button>
 
                                             @if($order->status !== 'cancelled')
-                                            <!-- Cetak Ulang Button -->
-                                            <button wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
-                                                    class="p-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-lg transition-all" title="Cetak Ulang Struk">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                            <!-- Reprint Thermal Receipt Button -->
+                                            <button type="button" wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
+                                                    class="p-1.5 bg-white border border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 text-gray-700 rounded-lg transition-colors cursor-pointer" title="Cetak Ulang Struk Thermal">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                             </button>
 
-                                            <!-- Void Button -->
-                                            <button type="button" @click="openVoidModal({{ $order->id }}, '{{ $order->order_number }}', {{ $order->grand_total }})"
-                                                    class="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-all" title="Batalkan Nota (Void)">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <!-- Void Order Button (Supervisor Authorization required) -->
+                                            <button type="button" @click="requestSupervisorAuth('void_order', {{ $order->id }}, 'Membatalkan (Void) Nota #{{ $order->order_number }}')"
+                                                    class="p-1.5 bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 text-gray-700 rounded-lg transition-colors cursor-pointer" title="Batalkan Nota (Butuh PIN Supervisor)">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
 
-                                            <!-- Retur Button -->
-                                            <button type="button" @click="openReturnModal({{ $order->id }}, '{{ $order->order_number }}', @js($order->items->map(fn($i) => ['id' => $i->id, 'product_id' => $i->product_id, 'product_variant_id' => $i->product_variant_id, 'name' => $i->name, 'price' => (float)$i->price, 'quantity' => (int)$i->quantity])))"
-                                                    class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg transition-all" title="Retur / Tukar Barang">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                            <!-- Retur/Tukar Button -->
+                                            <button type="button" @click="openReturnModal(@js([
+                                                'id' => $order->id,
+                                                'order_number' => $order->order_number,
+                                                'grand_total' => (float)$order->grand_total,
+                                                'items' => $order->items->map(fn($i) => [
+                                                    'id' => $i->id,
+                                                    'product_id' => $i->product_id,
+                                                    'product_variant_id' => $i->product_variant_id,
+                                                    'name' => $i->product_name ?? $i->name,
+                                                    'variant' => $i->variant_name,
+                                                    'qty' => (int)$i->quantity,
+                                                    'price' => (float)$i->price
+                                                ])->values()->all()
+                                            ]))"
+                                                    class="p-1.5 bg-white border border-gray-300 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700 text-gray-700 rounded-lg transition-colors cursor-pointer" title="Proses Retur / Tukar Barang">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                                             </button>
                                             @endif
                                         </div>
@@ -2039,315 +2257,573 @@
         </div>
 
         <!-- ============================================ -->
-        <!-- PAGE: Riwayat Retur                         -->
+        <!-- PAGE: Riwayat Retur (Filament Native Table)  -->
         <!-- ============================================ -->
-        <div x-show="activePage === 'returns'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
+        <div x-show="activePage === 'returns'" wire:key="pos-page-returns" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
             <!-- Header -->
-            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-4">
-                    <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3">
+                    <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     </button>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        <h1 class="text-xl font-bold tracking-tight text-gray-950">
                             Riwayat Retur & Penukaran Barang
                         </h1>
-                        <p class="text-xs text-gray-400">Shift hari ini &mdash; {{ count($sessionReturns ?? []) }} retur/penukaran</p>
+                        <p class="text-xs text-gray-500 font-medium">Shift hari ini &mdash; {{ count($sessionReturns ?? []) }} retur/penukaran tercatat</p>
                     </div>
                 </div>
             </div>
 
-            <!-- List -->
-            <div class="flex-1 overflow-y-auto">
-                @if(count($sessionReturns ?? []) === 0)
-                <div class="flex flex-col items-center justify-center h-full text-gray-300 py-24">
-                    <svg class="w-20 h-20 mb-4 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                    <p class="text-lg font-medium text-gray-400">Belum ada retur pada shift ini</p>
-                    <p class="text-sm text-gray-400 mt-1">Retur dan penukaran barang yang diproses akan muncul di sini</p>
-                </div>
-                @else
-                <div class="max-w-4xl mx-auto p-6 space-y-4">
-                    @foreach($sessionReturns as $ret)
-                    <div class="bg-white rounded-2xl border border-amber-200/70 shadow-sm p-5 hover:shadow-md transition-all relative overflow-hidden">
-                        <div class="flex flex-wrap items-start justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-gray-900 text-base">#{{ $ret->return_number }}</span>
-                                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full {{ $ret->type === 'exchange' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800' }}">
-                                        {{ $ret->type === 'exchange' ? 'Tukar Barang' : 'Pengembalian Uang (Refund)' }}
-                                    </span>
-                                </div>
-                                <div class="text-xs text-gray-500 mt-1">
-                                    Nota Asli: <strong class="text-gray-700">#{{ $ret->order->order_number ?? '-' }}</strong> · Waktu: {{ $ret->created_at->format('H:i') }}
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                @if($ret->net_amount > 0)
-                                    <div class="text-xs text-gray-500">Status Selisih:</div>
-                                    <div class="font-black text-lg text-green-600">+ Rp {{ number_format($ret->net_amount, 0, ',', '.') }} (Tambah Bayar)</div>
-                                @elseif($ret->net_amount < 0)
-                                    <div class="text-xs text-gray-500">Status Selisih:</div>
-                                    <div class="font-black text-lg text-red-600">- Rp {{ number_format(abs($ret->net_amount), 0, ',', '.') }} (Refund Kas)</div>
-                                @else
-                                    <div class="font-bold text-sm text-gray-600">Selisih Rp 0 (Pas)</div>
-                                @endif
-                            </div>
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                <!-- Ringkasan KPI Retur (Filament Stat Cards - Grid 3 Kolom) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Total Transaksi Retur</p>
+                            <p class="text-xl font-bold text-gray-950 mt-1">{{ count($sessionReturns ?? []) }} <span class="text-xs font-normal text-gray-500">Transaksi</span></p>
                         </div>
-
-                        <!-- Items Detail Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <!-- Barang Dikembalikan -->
-                            <div class="bg-red-50/50 rounded-xl p-3 border border-red-100">
-                                <div class="text-xs font-bold text-red-700 uppercase tracking-wider mb-2 flex justify-between">
-                                    <span>Barang Dikembalikan</span>
-                                    <span>- Rp {{ number_format($ret->returned_subtotal, 0, ',', '.') }}</span>
-                                </div>
-                                <div class="space-y-1 text-xs">
-                                    @foreach($ret->returnedItems as $rItem)
-                                    <div class="flex justify-between text-gray-700">
-                                        <span>{{ $rItem->product->name ?? 'Produk' }}{{ $rItem->variant ? ' - '.$rItem->variant->name : '' }} (x{{ $rItem->quantity }})</span>
-                                        <span class="font-semibold">Rp {{ number_format($rItem->total, 0, ',', '.') }}</span>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <!-- Barang Pengganti -->
-                            @if($ret->exchangedItems->count() > 0)
-                            <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-100">
-                                <div class="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2 flex justify-between">
-                                    <span>Barang Pengganti (Tukar)</span>
-                                    <span>+ Rp {{ number_format($ret->exchanged_subtotal, 0, ',', '.') }}</span>
-                                </div>
-                                <div class="space-y-1 text-xs">
-                                    @foreach($ret->exchangedItems as $eItem)
-                                    <div class="flex justify-between text-gray-700">
-                                        <span>{{ $eItem->product->name ?? 'Produk' }}{{ $eItem->variant ? ' - '.$eItem->variant->name : '' }} (x{{ $eItem->quantity }})</span>
-                                        <span class="font-semibold">Rp {{ number_format($eItem->total, 0, ',', '.') }}</span>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-
-                        <!-- Footer Info + Action Buttons -->
-                        <div class="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-                            <div class="text-gray-500">
-                                Kasir: <strong class="text-gray-700">{{ $ret->cashier->name ?? 'Kasir' }}</strong>
-                                @if($ret->supervisor)
-                                    · Spv: <strong class="text-gray-700">{{ $ret->supervisor->name }}</strong>
-                                @endif
-                                @if($ret->reason)
-                                    · Alasan: <em>"{{ $ret->reason }}"</em>
-                                @endif
-                            </div>
-
-                            <button wire:click="reprintReturnReceipt({{ $ret->id }})" wire:loading.attr="disabled"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-xl border border-amber-200 transition-all active:scale-95 shadow-sm">
-                                <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                </svg>
-                                <span>Cetak Struk Retur</span>
-                            </button>
+                        <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                         </div>
                     </div>
-                    @endforeach
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Total Refund Kas</p>
+                            <p class="text-xl font-bold text-rose-600 mt-1">Rp {{ number_format(abs(collect($sessionReturns ?? [])->where('net_amount', '<', 0)->sum('net_amount')), 0, ',', '.') }}</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Total Tambah Bayar (Tukar)</p>
+                            <p class="text-xl font-bold text-emerald-600 mt-1">Rp {{ number_format(collect($sessionReturns ?? [])->where('net_amount', '>', 0)->sum('net_amount'), 0, ',', '.') }}</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                    </div>
                 </div>
-                @endif
+
+                <!-- UNIFIED TABLE CARD (Filament Native Card with Table) -->
+                <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
+                        <div class="text-sm font-bold text-gray-900">Daftar Retur & Penukaran Shift Ini</div>
+                        <div class="text-xs font-medium text-gray-500">Total {{ count($sessionReturns ?? []) }} Data</div>
+                    </div>
+
+                    @if(count($sessionReturns ?? []) === 0)
+                    <div class="flex flex-col items-center justify-center text-gray-400 py-16">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                        </div>
+                        <p class="text-sm font-semibold text-gray-900">Belum ada retur pada shift ini</p>
+                        <p class="text-xs text-gray-500 mt-1">Retur dan penukaran barang yang diproses akan muncul di sini.</p>
+                    </div>
+                    @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                <tr>
+                                    <th class="py-3 px-4">No. Retur & Waktu</th>
+                                    <th class="py-3 px-4">Nota Asli</th>
+                                    <th class="py-3 px-4 text-center">Tipe Transaksi</th>
+                                    <th class="py-3 px-4">Rincian Barang</th>
+                                    <th class="py-3 px-4 text-right">Selisih Nominal</th>
+                                    <th class="py-3 px-4">Petugas</th>
+                                    <th class="py-3 px-4 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-xs">
+                                @foreach($sessionReturns as $ret)
+                                <tr wire:key="return-row-{{ $ret->id }}" class="hover:bg-gray-50/80 transition-colors">
+                                    <!-- No. Retur & Waktu -->
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        <div class="font-bold font-mono text-gray-900 text-xs">#{{ $ret->return_number }}</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">{{ $ret->created_at->format('H:i') }} WIB</div>
+                                    </td>
+
+                                    <!-- Nota Asli -->
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        <span class="font-bold font-mono text-gray-800">#{{ $ret->order->order_number ?? '-' }}</span>
+                                    </td>
+
+                                    <!-- Tipe Transaksi -->
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium {{ $ret->type === 'exchange' ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20' : 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20' }}">
+                                            {{ $ret->type === 'exchange' ? 'Tukar Barang' : 'Refund Kas' }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Rincian Barang -->
+                                    <td class="py-3 px-4 max-w-md">
+                                        <div class="space-y-1">
+                                            <div class="text-[11px]">
+                                                <span class="font-semibold text-rose-600">Dikembalikan:</span> 
+                                                @foreach($ret->returnedItems as $rItem)
+                                                    <span class="text-gray-800 font-medium">{{ $rItem->product->name ?? 'Produk' }}{{ $rItem->variant ? ' ('.$rItem->variant->name.')' : '' }} x{{ $rItem->quantity }}</span>@if(!$loop->last), @endif
+                                                @endforeach
+                                            </div>
+                                            @if($ret->exchangedItems->count() > 0)
+                                            <div class="text-[11px]">
+                                                <span class="font-semibold text-amber-700">Pengganti:</span> 
+                                                @foreach($ret->exchangedItems as $eItem)
+                                                    <span class="text-gray-800 font-medium">{{ $eItem->product->name ?? 'Produk' }}{{ $eItem->variant ? ' ('.$eItem->variant->name.')' : '' }} x{{ $eItem->quantity }}</span>@if(!$loop->last), @endif
+                                                @endforeach
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <!-- Selisih Nominal -->
+                                    <td class="py-3 px-4 text-right whitespace-nowrap">
+                                        @if($ret->net_amount > 0)
+                                            <div class="font-bold text-xs text-emerald-600">+ Rp {{ number_format($ret->net_amount, 0, ',', '.') }}</div>
+                                            <div class="text-[10px] text-gray-400">Tambah Bayar</div>
+                                        @elseif($ret->net_amount < 0)
+                                            <div class="font-bold text-xs text-rose-600">- Rp {{ number_format(abs($ret->net_amount), 0, ',', '.') }}</div>
+                                            <div class="text-[10px] text-gray-400">Refund Kas</div>
+                                        @else
+                                            <div class="font-bold text-xs text-gray-600">Rp 0</div>
+                                            <div class="text-[10px] text-gray-400">Pas</div>
+                                        @endif
+                                    </td>
+
+                                    <!-- Petugas -->
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        <div class="text-xs font-semibold text-gray-900">{{ $ret->cashier->name ?? 'Kasir' }}</div>
+                                        @if($ret->supervisor)
+                                            <div class="text-[10px] text-gray-500">Spv: {{ $ret->supervisor->name }}</div>
+                                        @endif
+                                    </td>
+
+                                    <!-- Aksi -->
+                                    <td class="py-3 px-4 text-right whitespace-nowrap">
+                                        <button wire:click="reprintReturnReceipt({{ $ret->id }})" wire:loading.attr="disabled"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                            </svg>
+                                            <span>Cetak Struk</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @endif
+                </div>
             </div>
         </div>
 
         <!-- ============================================ -->
-        <!-- PAGE: Pelanggan                             -->
+        <!-- PAGE: Pelanggan (Filament Native Table)      -->
         <!-- ============================================ -->
-        <div x-show="activePage === 'customers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
-            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center gap-4 shadow-sm">
-                <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                </button>
-                <div>
-                    <h1 class="text-xl font-bold text-gray-800">Pelanggan</h1>
-                    <p class="text-sm text-gray-400">{{ count($sessionCustomers) }} pelanggan tercatat shift ini</p>
-                </div>
-            </div>
-            <div class="flex-1 overflow-y-auto">
-                @if(count($sessionCustomers) === 0)
-                <div class="flex flex-col items-center justify-center h-full text-gray-300 py-24">
-                    <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    <p class="text-lg font-medium">Belum ada pelanggan tercatat</p>
-                    <p class="text-sm mt-1">Isi nama pelanggan saat checkout agar muncul di sini</p>
-                </div>
-                @else
-                <div class="max-w-3xl mx-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @foreach($sessionCustomers as $customer)
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4 hover:border-brand-200 hover:shadow-md transition-all">
-                        <div class="w-12 h-12 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
-                            {{ strtoupper(substr($customer->customer_name, 0, 1)) }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="font-bold text-gray-800 truncate">{{ $customer->customer_name }}</div>
-                            <div class="text-sm text-gray-400">{{ $customer->customer_phone ?: 'Tanpa nomor telepon' }}</div>
-                            <div class="flex items-center gap-3 mt-2">
-                                <span class="text-xs bg-brand-50 text-brand-600 font-semibold px-2 py-0.5 rounded-full">{{ $customer->visit_count }}x kunjungan</span>
-                                <span class="text-xs font-bold text-gray-700">Rp {{ number_format($customer->total_spent, 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                @endif
-            </div>
-        </div>
-
-        <!-- ============================================ -->
-        <!-- PAGE: Rekap Kas                             -->
-        <!-- ============================================ -->
-        <div x-show="activePage === 'cashsummary'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden" style="display:none;">
-            <div class="bg-white border-b border-gray-100 px-6 py-5 flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-4">
-                    <button @click="activePage = 'kasir'" class="p-2 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        <div x-show="activePage === 'customers'"
+             x-data="{ customerSearch: '' }"
+             wire:key="pos-page-customers"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
+            <!-- Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3">
+                    <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                     </button>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-800">Rekap Kas</h1>
+                        <h1 class="text-xl font-bold tracking-tight text-gray-950">Pelanggan POS</h1>
+                        <p class="text-xs text-gray-500 font-medium">{{ count($sessionCustomers) }} pelanggan terdaftar pada shift ini</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                <!-- Ringkasan KPI Pelanggan (Filament Stat Cards - Grid 3 Kolom) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Total Pelanggan Shift Ini</p>
+                            <p class="text-xl font-bold text-gray-950 mt-1">{{ count($sessionCustomers) }} <span class="text-xs font-normal text-gray-500">Orang</span></p>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Total Belanja Pelanggan</p>
+                            <p class="text-xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionCustomers->sum('total_spent'), 0, ',', '.') }}</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Kartu Stempel Gratis Ready</p>
+                            <p class="text-xl font-bold text-amber-600 mt-1">{{ $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= 10 || ($c->completed_cards_count ?? 0) > 0)->count() }} <span class="text-xs font-normal text-gray-500">Voucher</span></p>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 13C10.832 21 4 15.8 4 10a8 8 0 1116 0c0 5.8-6.832 11-8 11z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UNIFIED TABLE CARD (Filament Native Card with Search Toolbar) -->
+                <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                    <!-- Filament Table Header Toolbar -->
+                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
+                        <div class="relative min-w-[220px] max-w-xs flex-1">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <input type="text"
+                                   x-model="customerSearch"
+                                   placeholder="Cari nama atau No. HP pelanggan..."
+                                   class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs">
+                        </div>
+                        <div class="text-xs font-medium text-gray-500">Total {{ count($sessionCustomers) }} Pelanggan</div>
+                    </div>
+
+                    @if(count($sessionCustomers) === 0)
+                    <div class="flex flex-col items-center justify-center text-gray-400 py-16">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                        <p class="text-sm font-semibold text-gray-900">Belum ada pelanggan tercatat</p>
+                        <p class="text-xs text-gray-500 mt-1">Pilih atau daftarkan pelanggan saat checkout kasir.</p>
+                    </div>
+                    @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                <tr>
+                                    <th class="py-3 px-4">Nama Pelanggan</th>
+                                    <th class="py-3 px-4">No. Telepon / HP</th>
+                                    <th class="py-3 px-4 text-center">Total Kunjungan</th>
+                                    <th class="py-3 px-4 text-center">Loyalty & Stempel</th>
+                                    <th class="py-3 px-4 text-right">Total Belanja</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-xs">
+                                @foreach($sessionCustomers as $idx => $customer)
+                                <tr wire:key="cust-row-{{ $idx }}"
+                                    x-show="!customerSearch || '{{ strtolower($customer->customer_name) }}'.includes(customerSearch.toLowerCase()) || '{{ $customer->customer_phone }}'.includes(customerSearch)"
+                                    class="hover:bg-gray-50/80 transition-colors">
+
+                                    <!-- Nama Pelanggan -->
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-emerald-200">
+                                                {{ strtoupper(substr($customer->customer_name, 0, 1)) }}
+                                            </div>
+                                            <div class="font-bold text-gray-900 text-xs">{{ $customer->customer_name }}</div>
+                                        </div>
+                                    </td>
+
+                                    <!-- No. Telepon -->
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        @if($customer->customer_phone)
+                                            <span class="font-mono text-gray-700 text-xs">{{ $customer->customer_phone }}</span>
+                                        @else
+                                            <span class="text-gray-400 italic text-[11px]">Tanpa No. HP</span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Total Kunjungan -->
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-700">
+                                            {{ $customer->total_orders ?? $customer->visit_count ?? 1 }}x Kunjungan
+                                        </span>
+                                    </td>
+
+                                    <!-- Loyalty & Stempel -->
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        @if(($customer->stamp_count ?? 0) >= 10 || ($customer->completed_cards_count ?? 0) > 0)
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20" title="Pelanggan memiliki voucher kartu stempel gratis siap klaim!">
+                                                <svg class="w-3.5 h-3.5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 13C10.832 21 4 15.8 4 10a8 8 0 1116 0c0 5.8-6.832 11-8 11z"/></svg>
+                                                <span>{{ $customer->completed_cards_count ?: 1 }} Kartu Gratis Siap Klaim</span>
+                                            </span>
+                                        @elseif(($customer->stamp_count ?? 0) > 0)
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                                <svg class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span>{{ $customer->stamp_count }}/10 Stempel</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-50 text-gray-400 ring-1 ring-inset ring-gray-200">
+                                                <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span>0/10 Stempel</span>
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    <!-- Total Belanja -->
+                                    <td class="py-3 px-4 text-right whitespace-nowrap">
+                                        <div class="font-bold text-xs text-gray-900">Rp {{ number_format($customer->total_spent, 0, ',', '.') }}</div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PAGE: Rekap Kas (Filament Native Style)      -->
+        <!-- ============================================ -->
+        <div x-show="activePage === 'cashsummary'" wire:key="pos-page-cashsummary" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
+            <!-- Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3">
+                    <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight text-gray-950">Rekap Kas Shift</h1>
                         @if(!empty($sessionStats))
-                        <p class="text-sm text-gray-400">Shift dibuka sejak {{ $sessionStats['opened_at'] }}</p>
+                        <p class="text-xs text-gray-500 font-medium">Shift dibuka sejak {{ $sessionStats['opened_at'] }}</p>
                         @endif
                     </div>
                 </div>
-                <button @click="showPettyCashModal = true" class="px-4 py-2.5 bg-brand-600 text-white font-bold text-sm rounded-xl hover:bg-brand-700 transition-all flex items-center gap-2 shadow-lg shadow-brand-500/25 active:scale-95">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                    <span>+ Catat Kas Masuk / Keluar</span>
-                </button>
             </div>
+
             @if(!empty($sessionStats))
-            <div class="flex-1 overflow-y-auto">
-                <div class="max-w-2xl mx-auto p-6 space-y-5">
-                    <!-- Total Transaksi -->
-                    <div class="bg-brand-600 rounded-3xl p-8 text-center text-white shadow-xl shadow-brand-500/30">
-                        <div class="text-6xl font-black">{{ $sessionStats['total_trx'] }}</div>
-                        <div class="text-brand-200 font-medium mt-2">Total Transaksi Shift Ini</div>
-                    </div>
-                    <!-- Breakdown -->
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-                        <h3 class="font-bold text-gray-700 text-sm uppercase tracking-wider">Rincian Penjualan</h3>
-                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                </div>
-                                <span class="text-gray-600">Modal Awal Shift</span>
-                            </div>
-                            <span class="font-bold text-gray-800">Rp {{ number_format($sessionStats['opening_cash'], 0, ',', '.') }}</span>
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                <!-- Ringkasan KPI Rekap Kas (Filament Stat Cards - Grid 3 Kolom) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Stat 1: Estimasi Kas di Laci (Featured) -->
+                    <div class="bg-emerald-50/70 rounded-xl border border-emerald-200/80 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Estimasi Kas di Laci Kasir</p>
+                            <p class="text-xl font-extrabold text-emerald-950 mt-1">Rp {{ number_format($sessionStats['expected_cash'], 0, ',', '.') }}</p>
+                            <p class="text-[10px] text-emerald-700 font-medium mt-0.5">Modal + Tunai + Kas Masuk - Out</p>
                         </div>
-                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                </div>
-                                <span class="text-gray-600">Penjualan Tunai</span>
-                            </div>
-                            <span class="font-bold text-green-600">+ Rp {{ number_format($sessionStats['cash_sales'], 0, ',', '.') }}</span>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         </div>
-                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                                </div>
-                                <span class="text-gray-600">QRIS / Transfer</span>
-                            </div>
-                            <span class="font-bold text-blue-600">+ Rp {{ number_format($sessionStats['non_cash_sales'], 0, ',', '.') }}</span>
-                        </div>
-                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
-                                </div>
-                                <span class="text-gray-600">Kas Masuk (Tambahan)</span>
-                            </div>
-                            <span class="font-bold text-emerald-600">+ Rp {{ number_format($sessionStats['petty_cash_in'], 0, ',', '.') }}</span>
-                        </div>
-                        <div class="flex justify-between items-center py-3 border-b border-gray-50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
-                                </div>
-                                <span class="text-gray-600">Kas Keluar (Pengeluaran)</span>
-                            </div>
-                            <span class="font-bold text-red-600">- Rp {{ number_format($sessionStats['petty_cash_out'], 0, ',', '.') }}</span>
-                        </div>
-                        <div class="flex justify-between items-center pt-2">
-                            <span class="font-bold text-gray-800">Total Omzet</span>
-                            <span class="font-black text-2xl text-gray-900">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</span>
-                        </div>
-                    </div>
-                    <!-- Estimasi Laci -->
-                    <div class="bg-green-50 rounded-2xl border border-green-200 p-6">
-                        <div class="text-sm font-bold text-green-600 uppercase tracking-wider mb-2">Estimasi Uang di Laci Kasir</div>
-                        <div class="text-4xl font-black text-green-700">Rp {{ number_format($sessionStats['expected_cash'], 0, ',', '.') }}</div>
-                        <div class="text-sm text-green-500 mt-1">Modal awal + penjualan tunai + kas masuk - kas keluar</div>
                     </div>
 
-                    <!-- Riwayat Petty Cash Shift Ini -->
-                    @if(count($sessionPettyCash) > 0)
-                    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
-                        <h3 class="font-bold text-gray-700 text-sm uppercase tracking-wider mb-2">Riwayat Kas Masuk / Keluar Shift Ini</h3>
-                        <div class="space-y-2">
-                            @foreach($sessionPettyCash as $cashLog)
-                            <div class="flex items-center justify-between p-3.5 rounded-xl border border-gray-100 bg-gray-50/50">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs {{ $cashLog->type === 'out' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600' }}">
-                                        {{ $cashLog->type === 'out' ? 'OUT' : 'IN' }}
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-bold text-gray-800">{{ $cashLog->description }}</div>
-                                        <div class="text-xs text-gray-400">{{ $cashLog->created_at->format('H:i') }}</div>
-                                    </div>
-                                </div>
-                                <div class="font-bold text-sm {{ $cashLog->type === 'out' ? 'text-red-600' : 'text-green-600' }}">
-                                    {{ $cashLog->type === 'out' ? '-' : '+' }} Rp {{ number_format($cashLog->amount, 0, ',', '.') }}
-                                </div>
-                            </div>
-                            @endforeach
+                    <!-- Stat 2: Total Omzet Sales -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Total Omzet Penjualan</p>
+                            <p class="text-xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">Tunai + Non-Tunai Shift Ini</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
                     </div>
-                    @endif
 
-                    <button @click="activePage = 'kasir'; $nextTick(() => showCloseSession = true)" class="w-full py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/20">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                        Tutup Shift Sekarang
-                    </button>
+                    <!-- Stat 3: Total Transaksi Selesai -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-gray-500">Total Nota Selesai</p>
+                            <p class="text-xl font-bold text-gray-950 mt-1">{{ $sessionStats['total_trx'] }} <span class="text-xs font-normal text-gray-500">Nota</span></p>
+                            <p class="text-[10px] text-gray-500 mt-0.5">Berhasil Diproses</p>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-COLUMN GRID (Breakdown Arus Kas + Tabel Petty Cash) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- KOLOM KIRI (5/12): Rincian Arus Kas & Akses Tutup Shift -->
+                    <div class="lg:col-span-5 space-y-4">
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-xs p-5 space-y-4">
+                            <div class="border-b border-gray-100 pb-3">
+                                <h3 class="font-bold text-gray-900 text-sm">Rincian Arus Kas Shift</h3>
+                                <p class="text-xs text-gray-500">Komposisi penerimaan & pengeluaran kasir</p>
+                            </div>
+
+                            <div class="space-y-3">
+                                <!-- Modal Awal -->
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                        </div>
+                                        <span class="text-gray-700 font-medium">Modal Awal Shift</span>
+                                    </div>
+                                    <span class="font-semibold text-gray-900">Rp {{ number_format($sessionStats['opening_cash'], 0, ',', '.') }}</span>
+                                </div>
+
+                                <!-- Penjualan Tunai -->
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        </div>
+                                        <span class="text-gray-700 font-medium">Penjualan Tunai (Cash)</span>
+                                    </div>
+                                    <span class="font-bold text-emerald-600">+ Rp {{ number_format($sessionStats['cash_sales'], 0, ',', '.') }}</span>
+                                </div>
+
+                                <!-- Non-Tunai -->
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 bg-sky-50 rounded-lg flex items-center justify-center text-sky-600">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                        </div>
+                                        <span class="text-gray-700 font-medium">Non-Tunai (QRIS / Transfer / EDC)</span>
+                                    </div>
+                                    <span class="font-bold text-sky-600">+ Rp {{ number_format($sessionStats['non_cash_sales'], 0, ',', '.') }}</span>
+                                </div>
+
+                                <!-- Kas Masuk -->
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
+                                        </div>
+                                        <span class="text-gray-700 font-medium">Kas Masuk Petty Cash</span>
+                                    </div>
+                                    <span class="font-bold text-emerald-600">+ Rp {{ number_format($sessionStats['petty_cash_in'], 0, ',', '.') }}</span>
+                                </div>
+
+                                <!-- Kas Keluar -->
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
+                                        </div>
+                                        <span class="text-gray-700 font-medium">Kas Keluar Petty Cash</span>
+                                    </div>
+                                    <span class="font-bold text-rose-600">- Rp {{ number_format($sessionStats['petty_cash_out'], 0, ',', '.') }}</span>
+                                </div>
+
+                                <!-- Total Omzet -->
+                                <div class="flex justify-between items-center pt-2 text-xs">
+                                    <span class="font-bold text-gray-900">Total Omzet Penjualan</span>
+                                    <span class="font-extrabold text-base text-gray-950">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Button Tutup Shift -->
+                        <button @click="activePage = 'kasir'; $nextTick(() => showCloseSession = true)"
+                                class="w-full py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition duration-150 flex items-center justify-center gap-2 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            <span>Tutup Shift Kasir Sekarang</span>
+                        </button>
+                    </div>
+
+                    <!-- KOLOM KANAN (7/12): Tabel Riwayat Kas Masuk / Keluar (Petty Cash Table) -->
+                    <div class="lg:col-span-7">
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden h-full flex flex-col">
+                            <!-- Table Header Toolbar -->
+                            <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
+                                <div>
+                                    <div class="text-sm font-bold text-gray-900">Riwayat Kas Masuk / Keluar</div>
+                                    <div class="text-xs text-gray-500">Pencatatan uang masuk/keluar shift ini</div>
+                                </div>
+                                <button @click="showPettyCashModal = true"
+                                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                                    <span>Catat Kas</span>
+                                </button>
+                            </div>
+
+                            @if(count($sessionPettyCash) === 0)
+                            <div class="flex-1 flex flex-col items-center justify-center text-gray-400 py-12">
+                                <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <p class="text-sm font-semibold text-gray-900">Belum ada kas masuk/keluar</p>
+                                <p class="text-xs text-gray-500 mt-1">Gunakan tombol "Catat Kas" untuk mencatat uang operasional.</p>
+                            </div>
+                            @else
+                            <div class="overflow-x-auto flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                        <tr>
+                                            <th class="py-3 px-4">Waktu</th>
+                                            <th class="py-3 px-4 text-center">Tipe</th>
+                                            <th class="py-3 px-4">Keterangan</th>
+                                            <th class="py-3 px-4 text-right">Nominal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 text-xs">
+                                        @foreach($sessionPettyCash as $cashLog)
+                                        <tr wire:key="cashlog-row-{{ $cashLog->id }}" class="hover:bg-gray-50/80 transition-colors">
+                                            <!-- Waktu -->
+                                            <td class="py-3 px-4 whitespace-nowrap font-mono text-gray-500">
+                                                {{ $cashLog->created_at->format('H:i') }} WIB
+                                            </td>
+
+                                            <!-- Tipe -->
+                                            <td class="py-3 px-4 text-center whitespace-nowrap">
+                                                @if($cashLog->type === 'out')
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20">
+                                                        KAS KELUAR
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                                        KAS MASUK
+                                                    </span>
+                                                @endif
+                                            </td>
+
+                                            <!-- Keterangan -->
+                                            <td class="py-3 px-4">
+                                                <div class="font-semibold text-gray-900">{{ $cashLog->description }}</div>
+                                            </td>
+
+                                            <!-- Nominal -->
+                                            <td class="py-3 px-4 text-right whitespace-nowrap font-bold">
+                                                <span class="{{ $cashLog->type === 'out' ? 'text-rose-600' : 'text-emerald-600' }}">
+                                                    {{ $cashLog->type === 'out' ? '-' : '+' }} Rp {{ number_format($cashLog->amount, 0, ',', '.') }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
             @endif
         </div>
-    @endif
 
-    <!-- Modal Preview Struk & Sukses Pembayaran -->
-    <div x-show="showReceiptPreviewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm" x-transition.opacity>
-        <div class="glass w-full max-w-md rounded-2xl overflow-hidden shadow-2xl bg-white border border-gray-100 flex flex-col max-h-[90vh]">
+    <!-- Modal Preview Struk & Sukses Pembayaran - Filament Native Style -->
+    <div x-show="showReceiptPreviewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+        <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showReceiptPreviewModal = false">
             <!-- Header -->
-            <div class="p-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <div class="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                     <div>
-                        <h3 class="font-bold text-lg leading-tight">Pembayaran Berhasil!</h3>
-                        <p class="text-xs text-emerald-100" x-text="previewReceiptData.orderNumber"></p>
+                        <h3 class="font-bold text-base leading-tight">Pembayaran Berhasil!</h3>
+                        <p class="text-xs text-emerald-100 font-medium" x-text="previewReceiptData.orderNumber"></p>
                     </div>
                 </div>
-                <button @click="showReceiptPreviewModal = false" class="text-white/80 hover:text-white text-2xl font-bold p-1">&times;</button>
+                <button @click="showReceiptPreviewModal = false" class="text-emerald-100 hover:text-white p-1 rounded-lg transition">&times;</button>
             </div>
 
             <!-- Content Area -->
-            <div class="p-5 space-y-4 overflow-y-auto flex-1">
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 bg-gray-50/50">
                 <!-- High Contrast Change Display -->
                 <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-                    <div class="text-xs font-semibold uppercase tracking-wider text-emerald-700">Uang Kembalian Pelanggan</div>
-                    <div class="text-3xl font-extrabold text-emerald-800 mt-1">
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Uang Kembalian Pelanggan</div>
+                    <div class="text-2xl font-black text-emerald-800 mt-0.5">
                         Rp <span x-text="formatMoney(previewReceiptData.cashChange)"></span>
                     </div>
                 </div>
@@ -2355,85 +2831,85 @@
                 <!-- Receipt Thermal Text Paper Preview -->
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Pratinjau Struk Thermal (ESC/POS)</span>
-                        <span class="text-[11px] text-gray-400">32 Kolom Monospace</span>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-700">Pratinjau Struk Thermal (ESC/POS)</span>
+                        <span class="text-[11px] text-gray-400">32 Kolom</span>
                     </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-inner">
+                    <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 shadow-inner">
                         <pre class="font-mono text-xs leading-relaxed text-emerald-400 whitespace-pre overflow-x-auto select-all" x-text="previewReceiptData.text"></pre>
                     </div>
                 </div>
             </div>
 
             <!-- Footer Actions -->
-            <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3">
-                <button @click="printBase64(previewReceiptData.base64)" class="flex-1 py-3 px-4 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer text-sm">
-                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span>🖨️ Cetak Struk</span>
+            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
+                <button @click="showReceiptPreviewModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                    Selesai
                 </button>
-                <button @click="showReceiptPreviewModal = false" class="py-3 px-5 bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 font-bold rounded-xl transition cursor-pointer text-sm">
-                    <span>Selesai</span>
+                <button @click="printBase64(previewReceiptData.base64)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>Cetak Struk</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Detail Rincian Nota Transaksi -->
-    <div x-show="showDetailOrderModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm" x-transition.opacity>
-        <div class="glass w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl bg-white border border-gray-100 flex flex-col max-h-[90vh]" @click.away="showDetailOrderModal = false">
+    <!-- Modal Detail Rincian Nota Transaksi - Filament Native Style -->
+    <div x-show="showDetailOrderModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+        <div class="bg-white w-full max-w-lg rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showDetailOrderModal = false">
             <!-- Header -->
-            <div class="p-5 bg-gray-900 text-white flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
                 <div>
-                    <h3 class="font-bold text-lg leading-tight" x-text="'Detail Nota #' + (selectedOrderDetail ? selectedOrderDetail.order_number : '')"></h3>
-                    <p class="text-xs text-gray-400" x-text="selectedOrderDetail ? selectedOrderDetail.created_at + ' · Kasir: ' + selectedOrderDetail.cashier_name : ''"></p>
+                    <h3 class="font-bold text-base text-gray-950 leading-tight" x-text="'Detail Nota #' + (selectedOrderDetail ? selectedOrderDetail.order_number : '')"></h3>
+                    <p class="text-xs text-gray-500 font-medium" x-text="selectedOrderDetail ? selectedOrderDetail.created_at + ' · Kasir: ' + selectedOrderDetail.cashier_name : ''"></p>
                 </div>
-                <button @click="showDetailOrderModal = false" class="text-gray-400 hover:text-white text-2xl font-bold p-1">&times;</button>
+                <button @click="showDetailOrderModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
             </div>
 
             <!-- Content Area -->
-            <div class="p-6 space-y-5 overflow-y-auto flex-1 text-xs" x-show="selectedOrderDetail">
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs bg-gray-50/50" x-show="selectedOrderDetail">
                 <!-- Info Pelanggan & Status -->
-                <div class="flex justify-between items-center p-3.5 bg-gray-50 rounded-xl border border-gray-200">
+                <div class="flex justify-between items-center p-3.5 bg-white rounded-lg border border-gray-200 shadow-xs">
                     <div>
-                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Pelanggan</div>
-                        <div class="font-bold text-gray-800 text-sm mt-0.5" x-text="selectedOrderDetail ? selectedOrderDetail.customer_name : ''"></div>
+                        <div class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Pelanggan</div>
+                        <div class="font-bold text-gray-900 text-xs mt-0.5" x-text="selectedOrderDetail ? selectedOrderDetail.customer_name : ''"></div>
                         <div class="text-gray-500 text-[11px]" x-text="selectedOrderDetail ? selectedOrderDetail.customer_phone : ''"></div>
                     </div>
                     <div class="text-right">
-                        <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Metode Bayar</div>
-                        <span class="inline-block mt-0.5 px-2.5 py-0.5 bg-blue-100 text-blue-800 font-bold rounded-full text-xs" x-text="selectedOrderDetail ? selectedOrderDetail.payment_method : ''"></span>
+                        <div class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Metode Bayar</div>
+                        <span class="inline-block mt-0.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-md ring-1 ring-inset ring-emerald-600/20 text-[11px]" x-text="selectedOrderDetail ? selectedOrderDetail.payment_method : ''"></span>
                     </div>
                 </div>
 
                 <!-- Rincian Item Barang -->
                 <div>
-                    <div class="font-bold text-gray-700 text-xs uppercase tracking-wider mb-2">Rincian Barang</div>
-                    <div class="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+                    <div class="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2">Rincian Barang</div>
+                    <div class="border border-gray-200 rounded-lg overflow-hidden divide-y divide-gray-100 shadow-xs">
                         <template x-for="item in (selectedOrderDetail ? selectedOrderDetail.items : [])">
                             <div class="p-3 flex items-center justify-between bg-white">
                                 <div>
-                                    <div class="font-bold text-gray-800" x-text="item.name"></div>
+                                    <div class="font-bold text-gray-900" x-text="item.name"></div>
                                     <div class="text-gray-400 text-[11px]" x-show="item.variant" x-text="item.variant"></div>
-                                    <div class="text-gray-500 mt-0.5" x-text="item.qty + ' x Rp ' + formatMoney(item.price)"></div>
+                                    <div class="text-gray-500 text-[11px] mt-0.5" x-text="item.qty + ' x Rp ' + formatMoney(item.price)"></div>
                                 </div>
-                                <div class="font-bold text-gray-900 text-sm" x-text="'Rp ' + formatMoney(item.subtotal)"></div>
+                                <div class="font-bold text-gray-950 text-xs" x-text="'Rp ' + formatMoney(item.subtotal)"></div>
                             </div>
                         </template>
                     </div>
                 </div>
 
                 <!-- Ringkasan Pembayaran -->
-                <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+                <div class="p-4 bg-white rounded-lg border border-gray-200 space-y-2 shadow-xs">
                     <div class="flex justify-between text-gray-600">
                         <span>Subtotal</span>
-                        <span class="font-semibold text-gray-800" x-text="'Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.subtotal : 0)"></span>
+                        <span class="font-semibold text-gray-900" x-text="'Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.subtotal : 0)"></span>
                     </div>
-                    <div x-show="selectedOrderDetail && selectedOrderDetail.discount_total > 0" class="flex justify-between text-emerald-600">
+                    <div x-show="selectedOrderDetail && selectedOrderDetail.discount_total > 0" class="flex justify-between text-emerald-700 font-medium">
                         <span>Diskon / Voucher</span>
                         <span class="font-semibold" x-text="'- Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.discount_total : 0)"></span>
                     </div>
-                    <div class="flex justify-between text-sm font-black text-gray-900 pt-2 border-t border-gray-200">
+                    <div class="flex justify-between text-xs font-bold text-gray-950 pt-2 border-t border-gray-200 uppercase tracking-wider">
                         <span>TOTAL AKHIR</span>
-                        <span class="text-brand-600 text-base" x-text="'Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.grand_total : 0)"></span>
+                        <span class="text-emerald-600 text-sm font-black" x-text="'Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.grand_total : 0)"></span>
                     </div>
                     <div x-show="selectedOrderDetail && selectedOrderDetail.cash_paid > 0" class="flex justify-between text-gray-500 pt-1 text-[11px]">
                         <span>Tunai Diterima / Kembalian</span>
@@ -2443,13 +2919,14 @@
             </div>
 
             <!-- Footer Action -->
-            <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2">
-                <button @click="showDetailOrderModal = false" class="px-4 py-2 bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 font-bold rounded-xl text-xs transition">
+            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end rounded-b-xl flex-shrink-0">
+                <button @click="showDetailOrderModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                     Tutup
                 </button>
             </div>
         </div>
     </div>
+    @endif
 
     <script>
         document.addEventListener('alpine:init', () => {
@@ -2842,10 +3319,12 @@
                         this.showToast('Pembayaran Berhasil! Kembalian: Rp ' + this.formatMoney(e.detail[0].cash_change), 'success');
                     });
                     window.addEventListener('print-receipt', (e) => {
-                        this.printBase64(e.detail[0].base64);
+                        const b64 = e.detail?.base64 || e.detail?.[0]?.base64;
+                        if (b64) this.printBase64(b64);
                     });
                     window.addEventListener('print-z-report', (e) => {
-                        this.printBase64(e.detail[0].base64);
+                        const b64 = e.detail?.base64 || e.detail?.[0]?.base64;
+                        if (b64) this.printBase64(b64);
                     });
                 },
 

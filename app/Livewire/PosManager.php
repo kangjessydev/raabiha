@@ -41,6 +41,14 @@ class PosManager extends Component
     public string $historyStatusFilter = 'all';
     public string $historyDateFilter = 'shift';
 
+    public function resetHistoryFilters()
+    {
+        $this->historySearch = '';
+        $this->historyPaymentFilter = 'all';
+        $this->historyStatusFilter = 'all';
+        $this->historyDateFilter = 'shift';
+    }
+
     public function recordPettyCash()
     {
         if (!$this->activeSession) {
@@ -655,6 +663,12 @@ class PosManager extends Component
                 $ordersQuery->where('pos_session_id', $this->activeSession->id);
             } elseif ($this->historyDateFilter === 'today') {
                 $ordersQuery->whereDate('created_at', now()->toDateString());
+            } elseif ($this->historyDateFilter === 'yesterday') {
+                $ordersQuery->whereDate('created_at', now()->subDay()->toDateString());
+            } elseif ($this->historyDateFilter === '7days') {
+                $ordersQuery->where('created_at', '>=', now()->subDays(7)->startOfDay());
+            } elseif ($this->historyDateFilter === '30days') {
+                $ordersQuery->where('created_at', '>=', now()->subDays(30)->startOfDay());
             }
 
             if (!empty(trim($this->historySearch))) {
@@ -694,6 +708,16 @@ class PosManager extends Component
                 ->groupBy('customer_name', 'customer_phone')
                 ->orderByDesc('total_spent')
                 ->get();
+
+            $posCustomerMap = \App\Models\PosCustomer::all()->keyBy(fn($c) => $c->phone ?: strtolower($c->name));
+
+            $sessionCustomers->transform(function ($c) use ($posCustomerMap) {
+                $key = $c->customer_phone ?: strtolower($c->customer_name);
+                $posCust = $posCustomerMap->get($key) ?? \App\Models\PosCustomer::where('name', $c->customer_name)->first();
+                $c->stamp_count = $posCust ? (int)$posCust->stamp_count : 0;
+                $c->completed_cards_count = $posCust ? (int)$posCust->completed_cards_count : 0;
+                return $c;
+            });
 
             /* ---------- Rekap Kas ---------- */
             $validOrders  = $sessionOrders->where('status', '!=', 'cancelled');
