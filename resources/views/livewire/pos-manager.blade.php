@@ -17,8 +17,65 @@
         </template>
     </div>
 
-    <!-- Cek Session -->
-    @if(!$activeSession)
+    <!-- Cek PIN & Session -->
+    @if(!$hasPosPin)
+        <!-- Overlay Buat PIN POS (Clean Filament Native Style) -->
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans">
+            <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-xl w-full max-w-md space-y-5 text-center">
+                <div class="space-y-1">
+                    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Buat PIN POS 6-Digit</h2>
+                    <p class="text-xs font-medium text-gray-500">Untuk keamanan transaksi kasir, Anda wajib membuat PIN POS 6-digit pertama Anda sebelum menggunakan aplikasi POS.</p>
+                </div>
+
+                <form wire:submit.prevent="saveInitialPosPin" class="space-y-4 text-left">
+                    <div>
+                        <label for="posPinInput" class="block text-xs font-medium text-gray-700 mb-1.5">PIN POS Baru (6 Digit) <span class="text-red-500">*</span></label>
+                        <input 
+                            type="password" 
+                            id="posPinInput"
+                            maxlength="6" 
+                            pattern="[0-9]*" 
+                            inputmode="numeric" 
+                            wire:model="posPinInput" 
+                            placeholder="Contoh: 123456"
+                            class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
+                            autofocus
+                        />
+                        @error('posPinInput') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="posPinConfirm" class="block text-xs font-medium text-gray-700 mb-1.5">Konfirmasi PIN POS (6 Digit) <span class="text-red-500">*</span></label>
+                        <input 
+                            type="password" 
+                            id="posPinConfirm"
+                            maxlength="6" 
+                            pattern="[0-9]*" 
+                            inputmode="numeric" 
+                            wire:model="posPinConfirm" 
+                            placeholder="Ulangi 6 digit PIN"
+                            class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
+                        />
+                        @error('posPinConfirm') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
+                    </div>
+
+                    <button 
+                        type="submit"
+                        wire:loading.attr="disabled"
+                        class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                    >
+                        <svg wire:loading wire:target="saveInitialPosPin" class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span wire:loading.remove wire:target="saveInitialPosPin">Simpan & Aktifkan PIN POS</span>
+                        <span wire:loading wire:target="saveInitialPosPin">Memproses...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    @elseif(!$activeSession)
         <!-- Overlay Buka Shift (Clean Filament Native Style) -->
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans">
             <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-lg w-full max-w-md space-y-6">
@@ -1011,66 +1068,7 @@
             </div>
         </div>
 
-        <!-- OVERLAY: Mandatory Initial POS PIN Setup (Clean Filament Native Style) -->
-        <div x-show="!$wire.hasPosPin"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             class="fixed inset-0 z-[150] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans">
-            <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-xl w-full max-w-md space-y-5 text-center">
-                <div class="space-y-1">
-                    <h2 class="text-2xl font-bold tracking-tight text-gray-900">Buat PIN POS 6-Digit</h2>
-                    <p class="text-xs font-medium text-gray-500">Untuk keamanan transaksi kasir, Anda wajib membuat PIN POS 6-digit pertama Anda sebelum menggunakan aplikasi POS.</p>
-                </div>
-
-                <form wire:submit.prevent="saveInitialPosPin" class="space-y-4 text-left">
-                    <div>
-                        <label for="posPinInput" class="block text-xs font-medium text-gray-700 mb-1.5">PIN POS Baru (6 Digit) <span class="text-red-500">*</span></label>
-                        <input 
-                            type="password" 
-                            id="posPinInput"
-                            maxlength="6" 
-                            pattern="[0-9]*" 
-                            inputmode="numeric" 
-                            wire:model="posPinInput" 
-                            placeholder="Contoh: 123456"
-                            class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
-                        />
-                        @error('posPinInput') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div>
-                        <label for="posPinConfirm" class="block text-xs font-medium text-gray-700 mb-1.5">Konfirmasi PIN POS (6 Digit) <span class="text-red-500">*</span></label>
-                        <input 
-                            type="password" 
-                            id="posPinConfirm"
-                            maxlength="6" 
-                            pattern="[0-9]*" 
-                            inputmode="numeric" 
-                            wire:model="posPinConfirm" 
-                            placeholder="Ulangi 6 digit PIN"
-                            class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
-                        />
-                        @error('posPinConfirm') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
-                    </div>
-
-                    <button 
-                        type="submit"
-                        wire:loading.attr="disabled"
-                        class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2 mt-2"
-                    >
-                        <svg wire:loading wire:target="saveInitialPosPin" class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span wire:loading.remove wire:target="saveInitialPosPin">Simpan & Aktifkan PIN POS</span>
-                        <span wire:loading wire:target="saveInitialPosPin">Memproses...</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- OVERLAY: Lock Screen Kasir (PIN 6-Digit) -->
+        <!-- OVERLAY: Lock Screen Kasir (PIN 6-Digit - Clean Filament Native Style) -->
         <div x-show="isLocked"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 scale-95"
@@ -1078,37 +1076,39 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95"
-             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-950/95 backdrop-blur-xl p-4" style="display: none;">
-            <div class="glass w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl relative border border-gray-700/50">
-                <div class="w-20 h-20 bg-brand-500 rounded-full flex items-center justify-center text-white text-2xl font-black mx-auto mb-4 shadow-xl shadow-brand-500/30 border-2 border-white/20">
+             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans" style="display: none;">
+            <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 text-center shadow-xl w-full max-w-sm space-y-4">
+                <div class="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto shadow-sm">
                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                 </div>
-                <h2 class="text-2xl font-bold text-white mb-1">{{ auth()->user()->name }}</h2>
-                <p class="text-xs text-gray-400 mb-6">Masukkan 6-digit PIN POS Anda untuk membuka kunci layar.</p>
+                <div class="space-y-1">
+                    <h2 class="text-xl font-bold tracking-tight text-gray-900">{{ auth()->user()->name }}</h2>
+                    <p class="text-xs font-medium text-gray-500">Masukkan 6-digit PIN POS Anda untuk membuka kunci layar.</p>
+                </div>
 
                 <form @submit.prevent="submitUnlock()" class="space-y-4">
                     <div class="relative">
                         <input type="password" id="posLockPasswordField" x-model="lockPasswordInput" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="6 Digit PIN"
-                               class="w-full rounded-2xl border-gray-700 bg-gray-900/90 text-white placeholder-gray-600 focus:border-brand-500 focus:ring-brand-500 text-center text-2xl font-bold tracking-[0.5em] py-3.5 px-4 shadow-inner">
+                               class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-center text-2xl font-bold tracking-[0.5em] py-2.5 px-4">
                     </div>
                     
-                    <div x-show="lockErrorMessage" class="text-xs text-red-400 font-semibold" x-text="lockErrorMessage"></div>
+                    <div x-show="lockErrorMessage" class="text-xs text-red-600 font-medium" x-text="lockErrorMessage"></div>
 
                     <!-- Visual Numpad Cepat -->
                     <div class="grid grid-cols-3 gap-2 pt-2">
                         <template x-for="num in [1,2,3,4,5,6,7,8,9]" :key="num">
                             <button type="button" @click="appendLockPin(num)"
-                                    class="py-3 bg-gray-800/80 hover:bg-gray-700 text-white font-bold text-lg rounded-xl transition-all border border-gray-700/40 active:scale-95" x-text="num"></button>
+                                    class="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-base rounded-lg transition duration-150 border border-gray-200 active:scale-95 cursor-pointer" x-text="num"></button>
                         </template>
-                        <button type="button" @click="clearLockPin()" class="py-3 bg-red-900/30 hover:bg-red-800/50 text-red-400 font-bold text-xs rounded-xl transition-all border border-red-800/40">Hapus</button>
-                        <button type="button" @click="appendLockPin(0)" class="py-3 bg-gray-800/80 hover:bg-gray-700 text-white font-bold text-lg rounded-xl transition-all border border-gray-700/40 active:scale-95">0</button>
-                        <button type="submit" :disabled="!lockPasswordInput || String(lockPasswordInput).trim().length !== 6" class="py-3 bg-emerald-600 disabled:opacity-40 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all border border-emerald-500/40 cursor-pointer">Buka</button>
+                        <button type="button" @click="clearLockPin()" class="py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-lg transition duration-150 border border-red-200 cursor-pointer">Hapus</button>
+                        <button type="button" @click="appendLockPin(0)" class="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-base rounded-lg transition duration-150 border border-gray-200 active:scale-95 cursor-pointer">0</button>
+                        <button type="submit" :disabled="!lockPasswordInput || String(lockPasswordInput).trim().length !== 6" class="py-2.5 bg-emerald-600 disabled:opacity-40 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition duration-150 shadow-sm cursor-pointer">Buka</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- MODAL: Otorisasi PIN Supervisor -->
+        <!-- MODAL: Otorisasi PIN Supervisor (Clean Filament Native Style) -->
         <div x-show="showSupervisorPinModal"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
@@ -1116,7 +1116,7 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-950/80 backdrop-blur-md p-4" style="display: none;">
+             class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans" style="display: none;">
             <div @click.away="showSupervisorPinModal = false"
                  x-show="showSupervisorPinModal"
                  x-transition:enter="transition ease-out duration-300 transform"
@@ -1125,19 +1125,17 @@
                  x-transition:leave="transition ease-in duration-200 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                  x-transition:leave-end="opacity-0 scale-95 translate-y-4"
-                 class="glass w-full max-w-md rounded-2xl p-6 relative shadow-2xl text-center border border-amber-500/30">
+                 class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-xl w-full max-w-md space-y-5 text-center">
                 
-                <div class="w-14 h-14 bg-amber-500/20 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-amber-500/30">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <div class="space-y-1">
+                    <h3 class="text-xl font-bold tracking-tight text-gray-900">Otorisasi Supervisor</h3>
+                    <p class="text-xs font-medium text-gray-500" x-text="supervisorReasonMessage || 'Tindakan ini memerlukan verifikasi PIN Supervisor/Manager.'"></p>
                 </div>
-
-                <h3 class="text-xl font-bold text-gray-800 mb-1">Otorisasi Supervisor</h3>
-                <p class="text-xs text-gray-500 mb-4" x-text="supervisorReasonMessage || 'Tindakan ini memerlukan verifikasi PIN Supervisor/Manager.'"></p>
 
                 <form @submit.prevent="submitSupervisorAuth()" class="space-y-4 text-left">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">1. Pilih Supervisor yang Bertugas</label>
-                        <select x-model="selectedSupervisorId" class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm font-bold py-3 px-4 shadow-sm bg-white mb-3">
+                        <label class="block text-xs font-medium text-gray-700 mb-1.5">1. Pilih Supervisor yang Bertugas <span class="text-red-500">*</span></label>
+                        <select x-model="selectedSupervisorId" class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 text-sm font-medium py-2.5 px-3.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150">
                             <option value="">-- Pilih Supervisor / Manager --</option>
                             <template x-for="sup in supervisors" :key="sup.id">
                                 <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
@@ -1146,16 +1144,16 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">2. Masukkan 6-Digit PIN Supervisor</label>
+                        <label class="block text-xs font-medium text-gray-700 mb-1.5">2. Masukkan 6-Digit PIN Supervisor <span class="text-red-500">*</span></label>
                         <input type="password" id="posSupervisorPinField" x-model="supervisorPinInput" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="6 Digit PIN"
-                               class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-center text-xl font-bold tracking-[0.5em] py-3 px-4 shadow-sm">
-                        <div x-show="supervisorErrorMessage" class="text-xs text-red-500 font-semibold mt-1" x-text="supervisorErrorMessage"></div>
+                               class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150">
+                        <div x-show="supervisorErrorMessage" class="text-xs text-red-600 font-medium mt-1" x-text="supervisorErrorMessage"></div>
                     </div>
 
                     <div class="flex gap-3 pt-2">
-                        <button type="button" @click="showSupervisorPinModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                        <button type="button" @click="showSupervisorPinModal = false" class="flex-1 py-2 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium text-sm rounded-lg shadow-sm transition duration-150 cursor-pointer">Batal</button>
                         <button type="submit" :disabled="!selectedSupervisorId || !supervisorPinInput || String(supervisorPinInput).trim().length !== 6"
-                                class="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-amber-500/25 transition-all active:scale-95">Verifikasi PIN</button>
+                                class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 cursor-pointer">Verifikasi PIN</button>
                     </div>
                 </form>
             </div>
