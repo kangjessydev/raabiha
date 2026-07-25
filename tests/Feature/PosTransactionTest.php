@@ -181,4 +181,87 @@ class PosTransactionTest extends TestCase
 
         $this->assertEquals(1, PosSession::where('cashier_id', $cashier->id)->where('status', 'open')->count());
     }
+
+    public function test_pos_transaction_increments_voucher_used_count_and_filters_exhausted_vouchers()
+    {
+        $cashier = User::factory()->create();
+
+        $session = PosSession::create([
+            'cashier_id' => $cashier->id,
+            'opened_at' => now(),
+            'opening_cash' => 100000,
+            'status' => 'open',
+        ]);
+
+        $product = Product::create([
+            'name' => 'Produk B',
+            'slug' => 'produk-b',
+            'sku' => 'PRD-B',
+            'price' => 100000,
+            'stock' => 10,
+            'is_active' => true,
+            'channel_visibility' => 'both',
+        ]);
+
+        // Voucher 1: Active, max_uses = 2, used_count = 1
+        $voucherAvailable = \App\Models\Voucher::create([
+            'name' => 'Diskon POS Quota Ada',
+            'code' => 'QUOTAOK',
+            'discount_type' => 'fixed',
+            'discount_amount' => 10000,
+            'max_uses' => 2,
+            'used_count' => 1,
+            'is_active' => true,
+            'usable_channel' => 'both',
+        ]);
+
+        // Voucher 2: Active, max_uses = 2, used_count = 2 (Exhausted)
+        $voucherExhausted = \App\Models\Voucher::create([
+            'name' => 'Diskon POS Quota Habis',
+            'code' => 'QUOTAFULL',
+            'discount_type' => 'fixed',
+            'discount_amount' => 20000,
+            'max_uses' => 2,
+            'used_count' => 2,
+            'is_active' => true,
+            'usable_channel' => 'both',
+        ]);
+
+        // Assert computed property vouchers filters out exhausted voucher
+        $component = \Livewire\Livewire::actingAs($cashier)->test(\App\Livewire\PosManager::class);
+        $vouchersList = $component->get('vouchers');
+
+        $this->assertTrue($vouchersList->contains('id', $voucherAvailable->id));
+        $this->assertFalse($vouchersList->contains('id', $voucherExhausted->id));
+
+        // Complete POS Transaction with available voucher
+        $service = new PosTransactionService();
+        $payload = [
+            'items' => [
+                ['product_id' => $product->id, 'product_variant_id' => null, 'quantity' => 1]
+            ],
+            'cashier_id' => $cashier->id,
+            'pos_session_id' => $session->id,
+            'voucher_id' => $voucherAvailable->id,
+            'discount' => 10000,
+            'cash_paid' => 100000,
+            'payment_method' => 'cash',
+        ];
+
+        $order = $service->completePosTransaction($payload);
+
+        $this->assertEquals($voucherAvailable->id, $order->voucher_id);
+        
+        // Voucher used_count incremented from 1 to 2
+        $voucherAvailable->refresh();
+        $this->assertEquals(2, $voucherAvailable->used_count);
+
+        // Attempting to use exhausted voucher via service throws exception
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('sudah mencapai batas maksimum kuota penggunaan');
+
+        $payloadExhausted = $payload;
+        $payloadExhausted['voucher_id'] = $voucherExhausted->id;
+        $service->completePosTransaction($payloadExhausted);
+    }
 }

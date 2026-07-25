@@ -673,6 +673,9 @@ class PosManager extends Component
             ->where(function ($q) {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
+            ->where(function ($q) {
+                $q->whereNull('max_uses')->orWhereColumn('used_count', '<', 'max_uses');
+            })
             ->get();
     }
 

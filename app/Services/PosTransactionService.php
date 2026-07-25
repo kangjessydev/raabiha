@@ -106,6 +106,18 @@ class PosTransactionService
             if ($grandTotal < 0) $grandTotal = 0;
             $cashChange = $cashPaid - $grandTotal;
 
+            // Validasi & Increment Voucher jika digunakan
+            $voucherId = $data['voucher_id'] ?? null;
+            if ($voucherId) {
+                $voucher = \App\Models\Voucher::find($voucherId);
+                if ($voucher) {
+                    if ($voucher->max_uses && $voucher->used_count >= $voucher->max_uses) {
+                        throw new Exception("Voucher {$voucher->name} sudah mencapai batas maksimum kuota penggunaan.");
+                    }
+                    $voucher->increment('used_count');
+                }
+            }
+
             // 2. Buat Order (Gunakan placeholder sementara untuk menjamin keunikan ID)
             $order = Order::create([
                 'order_number' => 'POS-TEMP-' . uniqid(),
@@ -114,6 +126,7 @@ class PosTransactionService
                 'customer_phone' => $customerPhone,
                 'cashier_id' => $cashierId,
                 'pos_session_id' => $posSessionId,
+                'voucher_id' => $voucherId,
                 'source' => 'pos', // Penting untuk guard observer
                 'subtotal' => $subtotal,
                 'discount_total' => $discount,

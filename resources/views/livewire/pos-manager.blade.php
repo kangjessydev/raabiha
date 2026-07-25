@@ -2623,6 +2623,7 @@
                     const payload = {
                         items: this.cart,
                         discount: this.discount,
+                        voucher_id: this.activeVoucher ? this.activeVoucher.id : null,
                         payment_method: this.paymentMethod,
                         cash_paid: this.cashPaid,
                         cash_change: this.cashChange,
