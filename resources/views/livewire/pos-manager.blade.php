@@ -1132,6 +1132,153 @@
             </div>
         </div>
 
+        <!-- MODAL: Retur & Penukaran Ukuran Barang POS -->
+        <div x-show="showReturnModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[115] flex items-center justify-center bg-gray-950/80 backdrop-blur-md p-4" style="display: none;">
+            <div @click.away="showReturnModal = false"
+                 x-show="showReturnModal"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+                 class="glass w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative shadow-2xl border border-amber-500/30">
+                
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                            Retur & Penukaran Ukuran Barang
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-0.5" x-text="'Nota Asli: #' + returnOrderNumber"></p>
+                    </div>
+                    <button type="button" @click="showReturnModal = false" class="text-gray-400 hover:text-gray-600 bg-gray-100 p-2 rounded-full transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitReturnProcess()" class="space-y-5">
+                    <!-- Step 1: Pilih Barang Di-retur -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">1. Pilih Barang & Jumlah yang Dikembalikan</label>
+                        <div class="space-y-2 bg-gray-50/80 rounded-xl p-3 border border-gray-200">
+                            <template x-for="(item, idx) in returnOrderItems" :key="item.id">
+                                <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                                    <div class="flex-1 pr-3">
+                                        <div class="font-bold text-sm text-gray-800" x-text="item.name"></div>
+                                        <div class="text-xs text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' · Beli: ' + item.quantity + ' unit'"></div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-xs font-semibold text-gray-500">Jumlah Retur:</label>
+                                        <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                                            <button type="button" @click="item.return_qty = Math.max(0, (item.return_qty || 0) - 1)" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">-</button>
+                                            <input type="number" x-model.number="item.return_qty" min="0" :max="item.quantity" class="w-12 text-center text-xs font-bold border-none bg-transparent p-1 focus:ring-0">
+                                            <button type="button" @click="item.return_qty = Math.min(item.quantity, (item.return_qty || 0) + 1)" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Pilih Tipe Aksi -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">2. Jenis Transaksi Retur</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all"
+                                   :class="returnType === 'exchange' ? 'border-amber-500 bg-amber-50/50 text-amber-900 font-bold' : 'border-gray-200 bg-white text-gray-600'">
+                                <input type="radio" x-model="returnType" value="exchange" class="text-amber-600 focus:ring-amber-500">
+                                <div>
+                                    <div class="text-sm">Tukar Ukuran / Barang</div>
+                                    <div class="text-[11px] font-normal text-gray-500">Tukar ke varian/produk pengganti</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all"
+                                   :class="returnType === 'refund' ? 'border-red-500 bg-red-50/50 text-red-900 font-bold' : 'border-gray-200 bg-white text-gray-600'">
+                                <input type="radio" x-model="returnType" value="refund" class="text-red-600 focus:ring-red-500">
+                                <div>
+                                    <div class="text-sm">Pengembalian Uang (Refund)</div>
+                                    <div class="text-[11px] font-normal text-gray-500">Kembalikan kas ke pelanggan</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Summary Calculation Box -->
+                    <div class="bg-amber-50/60 rounded-xl p-4 border border-amber-200 space-y-2">
+                        <div class="flex justify-between text-xs font-medium text-gray-600">
+                            <span>Subtotal Barang Retur:</span>
+                            <span class="font-bold text-gray-800" x-text="'- Rp ' + formatMoney(returnSubtotal)"></span>
+                        </div>
+                        <template x-if="returnType === 'exchange'">
+                            <div class="flex justify-between text-xs font-medium text-gray-600">
+                                <span>Subtotal Barang Tukar:</span>
+                                <span class="font-bold text-gray-800" x-text="'+ Rp ' + formatMoney(exchangeSubtotal)"></span>
+                            </div>
+                        </template>
+                        <div class="pt-2 border-t border-amber-200/80 flex justify-between items-center">
+                            <span class="text-xs font-bold uppercase tracking-wider text-gray-700">Status Selisih:</span>
+                            <template x-if="returnNetAmount > 0">
+                                <span class="text-sm font-black text-green-700" x-text="'Pelanggan Tambah Bayar: Rp ' + formatMoney(returnNetAmount)"></span>
+                            </template>
+                            <template x-if="returnNetAmount < 0">
+                                <span class="text-sm font-black text-red-700" x-text="'Pengembalian Uang Kas: Rp ' + formatMoney(Math.abs(returnNetAmount))"></span>
+                            </template>
+                            <template x-if="returnNetAmount === 0">
+                                <span class="text-sm font-black text-gray-700">Pas (Selisih Rp 0)</span>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Reason Field -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Alasan Retur / Tukar Barang</label>
+                        <input type="text" x-model="returnReasonInput" placeholder="Contoh: Ukuran kekecilan / Tukar warna / Cacat jahitan"
+                               class="w-full rounded-xl border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm py-2.5 px-4 shadow-sm">
+                    </div>
+
+                    <!-- Supervisor Otorisasi (If refund or netAmount < 0) -->
+                    <template x-if="returnType === 'refund' || returnNetAmount < 0">
+                        <div class="p-4 bg-red-50/80 rounded-xl border border-red-200 space-y-3">
+                            <div class="flex items-center gap-2 text-xs font-bold text-red-700 uppercase tracking-wider">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                Otorisasi PIN Supervisor Wajib (Pengembalian Uang Kas)
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Supervisor Pengizin</label>
+                                    <select x-model="returnSupervisorIdInput" class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-xs font-bold py-2.5 px-3 shadow-sm bg-white">
+                                        <option value="">-- Pilih Supervisor --</option>
+                                        <template x-for="sup in supervisors" :key="sup.id">
+                                            <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">PIN 6-Digit</label>
+                                    <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="returnSupervisorPinInput" placeholder="6 Digit PIN"
+                                           class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-center text-sm font-bold tracking-[0.3em] py-2.5 px-3 shadow-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="showReturnModal = false" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">Batal</button>
+                        <button type="submit" :disabled="returnSubtotal <= 0"
+                                class="flex-1 px-4 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-white font-bold rounded-xl shadow-lg shadow-amber-500/25 transition-all active:scale-95">Proses Retur / Tukar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- MODAL: Ganti PIN POS 6-Digit -->
         <div x-show="showChangePinModal"
              x-transition:enter="transition ease-out duration-200"
@@ -1405,6 +1552,14 @@
                                         </svg>
                                         <span>Batalkan (Void)</span>
                                     </button>
+
+                                    <button type="button" @click="openReturnModal({{ $order->id }}, '{{ $order->order_number }}', @js($order->items->map(fn($i) => ['id' => $i->id, 'product_id' => $i->product_id, 'product_variant_id' => $i->product_variant_id, 'name' => $i->name, 'price' => (float)$i->price, 'quantity' => (int)$i->quantity])))"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs rounded-xl border border-amber-200 hover:border-amber-300 transition-all active:scale-95 shadow-sm">
+                                        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                        <span>Retur / Tukar</span>
+                                    </button>
                                 </div>
                             @endif
                         </div>  </div>
@@ -1677,6 +1832,113 @@
                         return;
                     }
                     @this.call('voidOrder', this.voidOrderId, this.voidSupervisorIdInput, pin, this.voidReasonInput);
+                },
+
+                // Return & Exchange Modal State
+                showReturnModal: false,
+                returnOrderId: null,
+                returnOrderNumber: '',
+                returnType: 'exchange',
+                returnReasonInput: '',
+                returnSupervisorIdInput: '',
+                returnSupervisorPinInput: '',
+                returnOrderItems: [],
+                returnExchangedItems: [],
+
+                openReturnModal(id, number, items) {
+                    this.returnOrderId = id;
+                    this.returnOrderNumber = number;
+                    this.returnType = 'exchange';
+                    this.returnReasonInput = '';
+                    this.returnSupervisorIdInput = this.supervisors.length === 1 ? this.supervisors[0].id : '';
+                    this.returnSupervisorPinInput = '';
+                    this.returnOrderItems = (items || []).map(i => ({
+                        ...i,
+                        return_qty: 0
+                    }));
+                    this.returnExchangedItems = [];
+                    this.showReturnModal = true;
+                },
+
+                get returnSubtotal() {
+                    return (this.returnOrderItems || []).reduce((acc, i) => acc + (i.price * (i.return_qty || 0)), 0);
+                },
+
+                get exchangeSubtotal() {
+                    return (this.returnExchangedItems || []).reduce((acc, i) => acc + (i.price * (i.quantity || 0)), 0);
+                },
+
+                get returnNetAmount() {
+                    return this.returnType === 'refund' ? -this.returnSubtotal : (this.exchangeSubtotal - this.returnSubtotal);
+                },
+
+                addExchangeItem(product, variant = null) {
+                    const price = variant ? (variant.pos_discount_price || variant.pos_price || variant.price || product.price) : (product.pos_discount_price || product.pos_price || product.price);
+                    const name = variant ? (product.name + ' - ' + variant.name) : product.name;
+                    
+                    const existing = this.returnExchangedItems.find(i => i.product_id === product.id && i.product_variant_id === (variant ? variant.id : null));
+                    if (existing) {
+                        existing.quantity += 1;
+                    } else {
+                        this.returnExchangedItems.push({
+                            product_id: product.id,
+                            product_variant_id: variant ? variant.id : null,
+                            name: name,
+                            price: parseFloat(price),
+                            quantity: 1
+                        });
+                    }
+                },
+
+                removeExchangeItem(index) {
+                    this.returnExchangedItems.splice(index, 1);
+                },
+
+                submitReturnProcess() {
+                    const returned = this.returnOrderItems
+                        .filter(i => (i.return_qty || 0) > 0)
+                        .map(i => ({
+                            product_id: i.product_id,
+                            product_variant_id: i.product_variant_id,
+                            quantity: parseInt(i.return_qty)
+                        }));
+
+                    if (returned.length === 0) {
+                        this.showToast('Pilih minimal 1 barang yang akan diretur', 'error');
+                        return;
+                    }
+
+                    const exchanged = this.returnType === 'exchange' ? this.returnExchangedItems.map(i => ({
+                        product_id: i.product_id,
+                        product_variant_id: i.product_variant_id,
+                        quantity: parseInt(i.quantity)
+                    })) : [];
+
+                    const net = this.returnNetAmount;
+                    if (net < 0 || this.returnType === 'refund') {
+                        if (!this.returnSupervisorIdInput) {
+                            this.showToast('Pilih Supervisor pengizin pengembalian uang terlebih dahulu', 'error');
+                            return;
+                        }
+                        const pin = (this.returnSupervisorPinInput || '').toString().trim();
+                        if (!pin || pin.length !== 6) {
+                            this.showToast('Masukkan 6-digit PIN Supervisor', 'error');
+                            return;
+                        }
+                    }
+
+                    const payload = {
+                        order_id: this.returnOrderId,
+                        type: this.returnType,
+                        reason: this.returnReasonInput,
+                        returned_items: returned,
+                        exchanged_items: exchanged,
+                        supervisor_id: this.returnSupervisorIdInput,
+                        supervisor_pin: this.returnSupervisorPinInput
+                    };
+
+                    @this.call('processReturn', JSON.stringify(payload));
+                    this.showReturnModal = false;
                 },
 
                 // Input Modal State

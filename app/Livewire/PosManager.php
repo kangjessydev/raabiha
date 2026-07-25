@@ -212,6 +212,39 @@ class PosManager extends Component
         }
     }
 
+    public function processReturn($payload)
+    {
+        if (!$this->activeSession) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Sesi kasir belum dibuka!']);
+            return;
+        }
+
+        $data = is_string($payload) ? json_decode($payload, true) : $payload;
+        $data['cashier_id']     = Auth::id();
+        $data['pos_session_id'] = $this->activeSession->id;
+
+        try {
+            $service = new PosTransactionService();
+            $posReturn = $service->processPosReturn($data);
+
+            $receiptBase64 = $this->escPos()->generateReturnReceipt($posReturn);
+
+            $this->dispatch('return-success', [
+                'return_id'     => $posReturn->id,
+                'return_number' => $posReturn->return_number,
+                'net_amount'    => $posReturn->net_amount,
+            ]);
+            $this->dispatch('notify', [
+                'type'    => 'success',
+                'message' => 'Retur/Penukaran barang #' . $posReturn->return_number . ' berhasil diproses.'
+            ]);
+            $this->dispatch('print-receipt', ['base64' => $receiptBase64]);
+
+        } catch (\Exception $e) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
     protected function escPos(): \App\Services\EscPosService
     {
         return app(\App\Services\EscPosService::class);

@@ -230,4 +230,92 @@ class EscPosService
 
         return base64_encode($this->buffer);
     }
+
+    /**
+     * Generate Base64 receipt for a PosReturn (Return / Exchange)
+     */
+    public function generateReturnReceipt(\App\Models\PosReturn $posReturn): string
+    {
+        $settings = $this->getSettings(['pos_receipt_header', 'pos_receipt_footer', 'pos_auto_cut', 'pos_open_cash_drawer']);
+        $header   = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
+        $footer   = $settings['pos_receipt_footer'] ?? "Terima Kasih";
+        $autoCut  = filter_var($settings['pos_auto_cut'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if ($posReturn->net_amount < 0 && filter_var($settings['pos_open_cash_drawer'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $this->drawer();
+        }
+
+        $this->add(self::ALIGN_CENTER);
+        $this->add(self::BOLD_ON);
+        foreach (explode("\n", $header) as $hLine) {
+            $this->line(trim($hLine));
+        }
+        $this->line("*** STRUK RETUR / TUKAR ***");
+        $this->add(self::BOLD_OFF);
+        $this->line();
+
+        $this->add(self::ALIGN_LEFT);
+        $this->line("No Retur: " . $posReturn->return_number);
+        $this->line("Nota Asli: " . ($posReturn->order->order_number ?? '-'));
+        $this->line("Waktu   : " . $posReturn->created_at->format('d/m/Y H:i'));
+        $this->line("Kasir   : " . ($posReturn->cashier->name ?? 'Kasir'));
+        if ($posReturn->supervisor) {
+            $this->line("Spv     : " . $posReturn->supervisor->name);
+        }
+        $this->line("Alasan  : " . ($posReturn->reason ?: '-'));
+        $this->divider();
+
+        // Returned Items
+        $this->add(self::BOLD_ON);
+        $this->line("BARANG DIRETUR:");
+        $this->add(self::BOLD_OFF);
+
+        foreach ($posReturn->returnedItems as $rItem) {
+            $name = $rItem->variant ? ($rItem->product->name . ' - ' . $rItem->variant->name) : ($rItem->product->name ?? 'Produk');
+            $this->line($name);
+            $qtyStr = $rItem->quantity . "x " . number_format($rItem->price, 0, ',', '.');
+            $this->justify("  " . $qtyStr, "-" . number_format($rItem->total, 0, ',', '.'));
+        }
+        $this->justify("Subtotal Retur", "-" . number_format($posReturn->returned_subtotal, 0, ',', '.'));
+
+        // Exchanged Items (if any)
+        if ($posReturn->exchangedItems->count() > 0) {
+            $this->divider();
+            $this->add(self::BOLD_ON);
+            $this->line("BARANG PENGGANTI (TUKAR):");
+            $this->add(self::BOLD_OFF);
+
+            foreach ($posReturn->exchangedItems as $eItem) {
+                $name = $eItem->variant ? ($eItem->product->name . ' - ' . $eItem->variant->name) : ($eItem->product->name ?? 'Produk');
+                $this->line($name);
+                $qtyStr = $eItem->quantity . "x " . number_format($eItem->price, 0, ',', '.');
+                $this->justify("  " . $qtyStr, number_format($eItem->total, 0, ',', '.'));
+            }
+            $this->justify("Subtotal Tukar", number_format($posReturn->exchanged_subtotal, 0, ',', '.'));
+        }
+
+        $this->divider();
+        $this->add(self::BOLD_ON);
+        if ($posReturn->net_amount > 0) {
+            $this->justify("TAMBAH BAYAR", number_format($posReturn->net_amount, 0, ',', '.'));
+        } elseif ($posReturn->net_amount < 0) {
+            $this->justify("PENGEMBALIAN UANG", number_format(abs($posReturn->net_amount), 0, ',', '.'));
+        } else {
+            $this->justify("SELISIH", "Rp 0 (PAS)");
+        }
+        $this->add(self::BOLD_OFF);
+
+        $this->line();
+        $this->add(self::ALIGN_CENTER);
+        foreach (explode("\n", $footer) as $fLine) {
+            $this->line(trim($fLine));
+        }
+
+        $this->feed(4);
+        if ($autoCut) {
+            $this->cut();
+        }
+
+        return base64_encode($this->buffer);
+    }
 }
