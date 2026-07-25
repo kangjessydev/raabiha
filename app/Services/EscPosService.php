@@ -195,6 +195,43 @@ class EscPosService
         $header  = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
         $autoCut = filter_var($settings['pos_auto_cut'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
+        // Fetch session data
+        $orders = $session->orders()->get();
+        $validOrders = $orders->where('status', '!=', 'cancelled');
+        $voidedOrders = $orders->where('status', 'cancelled');
+
+        $totalTrxCount = $validOrders->count();
+        $cashSales = $validOrders->filter(fn($o) => in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
+        $nonCashSales = $validOrders->filter(fn($o) => !in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
+        $totalSales = $cashSales + $nonCashSales;
+
+        $voidTotal = $voidedOrders->sum('grand_total');
+
+        $pettyIn = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_petty_cash')
+            ->where('type', 'in')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $pettyOut = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_petty_cash')
+            ->where('type', 'out')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $refundOut = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_return_refund')
+            ->where('type', 'out')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $exchangeIn = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_exchange_pay')
+            ->where('type', 'in')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        // Render ESC/POS Header
         $this->add(self::ALIGN_CENTER);
         $this->add(self::BOLD_ON);
         foreach (explode("\n", $header) as $hLine) {
@@ -206,12 +243,33 @@ class EscPosService
         $this->add(self::BOLD_OFF);
         $this->line();
 
+        // Metadata
         $this->add(self::ALIGN_LEFT);
         $this->line("Kasir : " . ($session->cashier->name ?? 'Unknown'));
         $this->line("Buka  : " . $session->opened_at->format('d/m/Y H:i'));
         $this->line("Tutup : " . ($session->closed_at ? $session->closed_at->format('d/m/Y H:i') : 'Belum'));
         $this->divider();
 
+        // 1. Breakdown Penjualan
+        $this->justify("Total Transaksi", $totalTrxCount . " nota");
+        $this->justify("Penjualan Tunai", number_format($cashSales, 0, ',', '.'));
+        $this->justify("Penjualan Non-Tunai", number_format($nonCashSales, 0, ',', '.'));
+        $this->add(self::BOLD_ON);
+        $this->justify("Total Penjualan", number_format($totalSales, 0, ',', '.'));
+        $this->add(self::BOLD_OFF);
+        $this->divider();
+
+        // 2. Adjustments, Void & Retur
+        if ($pettyIn > 0)    $this->justify("Kas Masuk (Petty)", number_format($pettyIn, 0, ',', '.'));
+        if ($pettyOut > 0)   $this->justify("Kas Keluar (Petty)", "-" . number_format($pettyOut, 0, ',', '.'));
+        if ($exchangeIn > 0) $this->justify("Tambah Bayar Tukar", number_format($exchangeIn, 0, ',', '.'));
+        if ($refundOut > 0)  $this->justify("Refund Retur Kas", "-" . number_format($refundOut, 0, ',', '.'));
+        if ($voidTotal > 0)  $this->justify("Void Order (" . $voidedOrders->count() . ")", "-" . number_format($voidTotal, 0, ',', '.'));
+        if ($pettyIn > 0 || $pettyOut > 0 || $exchangeIn > 0 || $refundOut > 0 || $voidTotal > 0) {
+            $this->divider();
+        }
+
+        // 3. Rekap Kas Laci
         $this->justify("Modal Awal", number_format($session->opening_cash, 0, ',', '.'));
         if ($session->expected_ending_cash !== null) {
             $this->justify("Harapan Kas Akhir", number_format($session->expected_ending_cash, 0, ',', '.'));
@@ -220,13 +278,13 @@ class EscPosService
             $this->justify("Kas Aktual", number_format($session->actual_ending_cash, 0, ',', '.'));
         }
         $this->divider();
-        
+
         $diff = $session->difference_cash ?? 0;
         $diffLabel = $diff < 0 ? "Kurang" : ($diff > 0 ? "Lebih" : "Pas");
         $this->add(self::BOLD_ON);
         $this->justify("Selisih ($diffLabel)", number_format(abs($diff), 0, ',', '.'));
         $this->add(self::BOLD_OFF);
-        
+
         $this->feed(4);
         if ($autoCut) {
             $this->cut();

@@ -264,4 +264,55 @@ class PosTransactionTest extends TestCase
         $payloadExhausted['voucher_id'] = $voucherExhausted->id;
         $service->completePosTransaction($payloadExhausted);
     }
+
+    public function test_z_report_includes_sales_breakdown_and_totals()
+    {
+        $cashier = User::factory()->create();
+
+        $session = PosSession::create([
+            'cashier_id' => $cashier->id,
+            'opened_at' => now(),
+            'opening_cash' => 200000,
+            'status' => 'open',
+        ]);
+
+        $product = Product::create([
+            'name' => 'Produk Z',
+            'slug' => 'produk-z',
+            'sku' => 'PRD-Z',
+            'price' => 50000,
+            'stock' => 20,
+            'is_active' => true,
+            'channel_visibility' => 'both',
+        ]);
+
+        $service = new PosTransactionService();
+        // Sale 1: Cash 50,000
+        $service->completePosTransaction([
+            'items' => [['product_id' => $product->id, 'product_variant_id' => null, 'quantity' => 1]],
+            'cashier_id' => $cashier->id,
+            'pos_session_id' => $session->id,
+            'cash_paid' => 50000,
+            'payment_method' => 'cash',
+        ]);
+
+        // Sale 2: QRIS 50,000
+        $service->completePosTransaction([
+            'items' => [['product_id' => $product->id, 'product_variant_id' => null, 'quantity' => 1]],
+            'cashier_id' => $cashier->id,
+            'pos_session_id' => $session->id,
+            'cash_paid' => 50000,
+            'payment_method' => 'qris',
+        ]);
+
+        $escPos = new \App\Services\EscPosService();
+        $zReportBase64 = $escPos->generateZReport($session);
+        $zReportText = base64_decode($zReportBase64);
+
+        $this->assertStringContainsString('Z-REPORT', $zReportText);
+        $this->assertStringContainsString('Penjualan Tunai', $zReportText);
+        $this->assertStringContainsString('Penjualan Non-Tunai', $zReportText);
+        $this->assertStringContainsString('50.000', $zReportText);
+        $this->assertStringContainsString('100.000', $zReportText);
+    }
 }
