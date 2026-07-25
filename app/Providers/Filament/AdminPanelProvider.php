@@ -53,6 +53,11 @@ class AdminPanelProvider extends PanelProvider
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->userMenuItems([
                 \Filament\Navigation\MenuItem::make()
+                    ->label('Terminal POS Kasir')
+                    ->url('/pos')
+                    ->icon('heroicon-m-computer-desktop')
+                    ->openUrlInNewTab(),
+                \Filament\Navigation\MenuItem::make()
                     ->label('Profil')
                     ->url(fn (): string => \App\Filament\Pages\MyProfile::getUrl())
                     ->icon('heroicon-m-user-circle'),
@@ -65,6 +70,14 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Kunjungi Shop')
                     ->url('/shop')
                     ->icon('heroicon-m-shopping-bag')
+                    ->openUrlInNewTab(),
+            ])
+            ->navigationItems([
+                \Filament\Navigation\NavigationItem::make('Terminal POS Kasir')
+                    ->url('/pos')
+                    ->icon('heroicon-o-computer-desktop')
+                    ->group('Transaksi')
+                    ->sort(0)
                     ->openUrlInNewTab(),
             ])
             ->colors([

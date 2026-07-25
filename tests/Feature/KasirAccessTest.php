@@ -56,6 +56,18 @@ class KasirAccessTest extends TestCase
         $this->assertStringNotContainsString('/pos', $response->headers->get('Location') ?? '');
     }
 
+    public function test_super_admin_can_access_pos_directly()
+    {
+        $admin = User::factory()->create([
+            'email' => 'admin@raabiha.com',
+        ]);
+        $admin->assignRole('super_admin');
+
+        $response = $this->actingAs($admin)->get('/pos');
+
+        $response->assertStatus(200);
+    }
+
     public function test_unauthenticated_user_accessing_pos_is_redirected_to_pos_login()
     {
         $response = $this->get('/pos');
