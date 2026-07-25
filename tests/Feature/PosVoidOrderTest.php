@@ -107,4 +107,48 @@ class PosVoidOrderTest extends TestCase
             'is_reversed' => true,
         ]);
     }
+
+    public function test_void_non_cash_order_records_cashflow_reversal()
+    {
+        $owner = User::factory()->create(['pos_pin' => Hash::make('888888')]);
+        $owner->assignRole('owner');
+
+        $cashier = User::factory()->create(['pos_pin' => Hash::make('111111')]);
+        $cashier->assignRole('kasir');
+
+        $session = PosSession::create([
+            'cashier_id' => $cashier->id,
+            'opened_at' => now(),
+            'opening_cash' => 100000,
+            'status' => 'open',
+        ]);
+
+        $order = Order::create([
+            'order_number' => 'POS-20260725-8888',
+            'source' => 'pos',
+            'pos_session_id' => $session->id,
+            'cashier_id' => $cashier->id,
+            'subtotal' => 75000,
+            'grand_total' => 75000,
+            'status' => 'completed',
+            'payment_status' => 'paid',
+            'payment_method' => 'qris',
+        ]);
+
+        // Void QRIS order
+        Livewire::actingAs($cashier)
+            ->test(PosManager::class)
+            ->call('voidOrder', $order->id, $owner->id, '888888', 'Void QRIS error')
+            ->assertDispatched('order-voided');
+
+        // Cashflow reversal should be created for non-cash void as well
+        $this->assertDatabaseHas('cashflows', [
+            'order_id' => $order->id,
+            'source' => 'pos',
+            'category' => 'pos_void',
+            'type' => 'out',
+            'amount' => 75000,
+            'is_reversed' => true,
+        ]);
+    }
 }

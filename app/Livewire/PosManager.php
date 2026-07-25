@@ -142,11 +142,19 @@ class PosManager extends Component
             })
             ->sum('grand_total');
 
-        // Kas keluar: Void tunai + Refund retur (dikembalikan ke pelanggan)
+        // Kas keluar fisik: Void tunai + Refund retur (dikembalikan dari laci kas)
         $voidAndRefundCashOut = \App\Models\Cashflow::where('source', 'pos')
-            ->whereIn('category', ['pos_void', 'pos_return_refund'])
             ->where('type', 'out')
             ->where('created_at', '>=', $this->activeSession->opened_at)
+            ->where(function ($q) {
+                $q->where('category', 'pos_return_refund')
+                  ->orWhere(function ($q2) {
+                      $q2->where('category', 'pos_void')
+                         ->whereHas('order', function ($q3) {
+                             $q3->whereIn('payment_method', ['cash', 'tunai']);
+                         });
+                  });
+            })
             ->sum('amount');
 
         // Kas masuk tambahan: Selisih tambah bayar saat penukaran barang
@@ -476,20 +484,18 @@ class PosManager extends Component
                     }
                 }
 
-                // 3. Record Cashflow Reversal (tunai saja — non-tunai tidak perlu kas keluar fisik)
-                $isCashPayment = in_array(strtolower($order->payment_method), ['cash', 'tunai']);
-                if ($isCashPayment) {
-                    \App\Models\Cashflow::create([
-                        'transaction_date' => now()->toDateString(),
-                        'type'             => 'out',
-                        'category'         => 'pos_void',
-                        'amount'           => $order->grand_total,
-                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
-                        'order_id'         => $order->id,
-                        'source'           => 'pos',
-                        'is_reversed'      => true,
-                    ]);
-                }
+                // 3. Record Cashflow Reversal untuk SEMUA metode pembayaran
+                // (karena saat checkout awal, SEMUA transaksi mencatat Cashflow 'pos_sale')
+                \App\Models\Cashflow::create([
+                    'transaction_date' => now()->toDateString(),
+                    'type'             => 'out',
+                    'category'         => 'pos_void',
+                    'amount'           => $order->grand_total,
+                    'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
+                    'order_id'         => $order->id,
+                    'source'           => 'pos',
+                    'is_reversed'      => true,
+                ]);
             });
 
             $this->dispatch('order-voided');
@@ -588,9 +594,17 @@ class PosManager extends Component
             $pettyCashOut = $sessionPettyCash->where('type', 'out')->sum('amount');
 
             $voidRefundOut = \App\Models\Cashflow::where('source', 'pos')
-                ->whereIn('category', ['pos_void', 'pos_return_refund'])
                 ->where('type', 'out')
                 ->where('created_at', '>=', $this->activeSession->opened_at)
+                ->where(function ($q) {
+                    $q->where('category', 'pos_return_refund')
+                      ->orWhere(function ($q2) {
+                          $q2->where('category', 'pos_void')
+                             ->whereHas('order', function ($q3) {
+                                 $q3->whereIn('payment_method', ['cash', 'tunai']);
+                             });
+                      });
+                })
                 ->sum('amount');
 
             $exchangeIn = \App\Models\Cashflow::where('source', 'pos')
