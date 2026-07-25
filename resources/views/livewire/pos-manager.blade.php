@@ -27,35 +27,47 @@
                     <p class="text-xs font-medium text-gray-500">Untuk keamanan transaksi kasir, Anda wajib membuat PIN POS 6-digit pertama Anda sebelum menggunakan aplikasi POS.</p>
                 </div>
 
-                <form wire:submit.prevent="saveInitialPosPin" class="space-y-4 text-left">
+                <form wire:submit.prevent="saveInitialPosPin" class="space-y-4 text-left" x-data="{ showPin1: false, showPin2: false }">
                     <div>
                         <label for="posPinInput" class="block text-xs font-medium text-gray-700 mb-1.5">PIN POS Baru (6 Digit) <span class="text-red-500">*</span></label>
-                        <input 
-                            type="password" 
-                            id="posPinInput"
-                            maxlength="6" 
-                            pattern="[0-9]*" 
-                            inputmode="numeric" 
-                            wire:model="posPinInput" 
-                            placeholder="Contoh: 123456"
-                            class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
-                            autofocus
-                        />
+                        <div class="relative">
+                            <input 
+                                :type="showPin1 ? 'text' : 'password'" 
+                                id="posPinInput"
+                                maxlength="6" 
+                                pattern="[0-9]*" 
+                                inputmode="numeric" 
+                                wire:model="posPinInput" 
+                                placeholder="Masukkan 6 digit PIN baru"
+                                class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 placeholder:font-normal text-center text-sm font-semibold py-2.5 pl-3.5 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
+                                autofocus
+                            />
+                            <button type="button" @click="showPin1 = !showPin1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer" tabindex="-1">
+                                <svg x-show="!showPin1" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                <svg x-show="showPin1" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a8.96 8.96 0 012.122-.063c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m-4.692-4.692a3 3 0 00-4.243-4.243"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18"></path></svg>
+                            </button>
+                        </div>
                         @error('posPinInput') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
                         <label for="posPinConfirm" class="block text-xs font-medium text-gray-700 mb-1.5">Konfirmasi PIN POS (6 Digit) <span class="text-red-500">*</span></label>
-                        <input 
-                            type="password" 
-                            id="posPinConfirm"
-                            maxlength="6" 
-                            pattern="[0-9]*" 
-                            inputmode="numeric" 
-                            wire:model="posPinConfirm" 
-                            placeholder="Ulangi 6 digit PIN"
-                            class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
-                        />
+                        <div class="relative">
+                            <input 
+                                :type="showPin2 ? 'text' : 'password'" 
+                                id="posPinConfirm"
+                                maxlength="6" 
+                                pattern="[0-9]*" 
+                                inputmode="numeric" 
+                                wire:model="posPinConfirm" 
+                                placeholder="Ulangi 6 digit PIN"
+                                class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 placeholder:font-normal text-center text-sm font-semibold py-2.5 pl-3.5 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150"
+                            />
+                            <button type="button" @click="showPin2 = !showPin2" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer" tabindex="-1">
+                                <svg x-show="!showPin2" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                <svg x-show="showPin2" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a8.96 8.96 0 012.122-.063c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m-4.692-4.692a3 3 0 00-4.243-4.243"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18"></path></svg>
+                            </button>
+                        </div>
                         @error('posPinConfirm') <p class="text-red-600 text-xs mt-1 font-medium">{{ $message }}</p> @enderror
                     </div>
 
