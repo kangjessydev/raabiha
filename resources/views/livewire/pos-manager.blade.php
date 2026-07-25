@@ -1151,7 +1151,7 @@
             </div>
         </div>
 
-        <!-- OVERLAY: Lock Screen Kasir (PIN 6-Digit - Clean Filament Native Style) -->
+        <!-- OVERLAY: Lock Screen Kasir (PIN 6-Digit - Full Page Overlay & 6-Dots Indicator) -->
         <div x-show="isLocked"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 scale-95"
@@ -1159,8 +1159,8 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100 scale-100"
              x-transition:leave-end="opacity-0 scale-95"
-             class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans" style="display: none;">
-            <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 text-center shadow-xl w-full max-w-sm space-y-4">
+             class="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans" style="display: none;">
+            <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 text-center shadow-xl w-full max-w-md space-y-6">
                 <div class="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto shadow-sm">
                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                 </div>
@@ -1169,16 +1169,43 @@
                     <p class="text-xs font-medium text-gray-500">Masukkan 6-digit PIN POS Anda untuk membuka kunci layar.</p>
                 </div>
 
-                <form @submit.prevent="submitUnlock()" class="space-y-4">
-                    <div class="relative">
-                        <input type="password" id="posLockPasswordField" x-model="lockPasswordInput" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="6 Digit PIN"
-                               class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-center text-2xl font-bold tracking-[0.5em] py-2.5 px-4">
+                <form @submit.prevent="submitUnlock()" class="space-y-5 text-left">
+                    <!-- 6-Dots Indicator UI -->
+                    <div class="relative cursor-pointer" @click="document.getElementById('posLockPasswordField').focus()">
+                        <input 
+                            type="password" 
+                            id="posLockPasswordField" 
+                            x-model="lockPasswordInput" 
+                            maxlength="6" 
+                            pattern="[0-9]*" 
+                            inputmode="numeric" 
+                            class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                        />
+                        <div class="grid grid-cols-6 gap-2.5">
+                            <template x-for="i in 6" :key="i">
+                                <div 
+                                    class="h-12 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
+                                    :class="{
+                                        'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': (lockPasswordInput || '').length === i - 1,
+                                        'border-emerald-600 bg-white text-emerald-700 shadow-xs': (lockPasswordInput || '').length >= i,
+                                        'border-gray-300 bg-gray-50/60 text-gray-400': (lockPasswordInput || '').length < i - 1
+                                    }"
+                                >
+                                    <template x-if="(lockPasswordInput || '').length >= i">
+                                        <span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span>
+                                    </template>
+                                    <template x-if="(lockPasswordInput || '').length < i">
+                                        <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
                     </div>
-                    
-                    <div x-show="lockErrorMessage" class="text-xs text-red-600 font-medium" x-text="lockErrorMessage"></div>
+
+                    <div x-show="lockErrorMessage" class="text-xs text-red-600 font-medium text-center" x-text="lockErrorMessage"></div>
 
                     <!-- Visual Numpad Cepat -->
-                    <div class="grid grid-cols-3 gap-2 pt-2">
+                    <div class="grid grid-cols-3 gap-2 pt-1">
                         <template x-for="num in [1,2,3,4,5,6,7,8,9]" :key="num">
                             <button type="button" @click="appendLockPin(num)"
                                     class="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-base rounded-lg transition duration-150 border border-gray-200 active:scale-95 cursor-pointer" x-text="num"></button>
