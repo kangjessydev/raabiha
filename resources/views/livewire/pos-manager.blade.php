@@ -247,58 +247,57 @@
     @else
         <!-- MAIN POS AREA -->
 
-        <!-- Sidebar -->
-        <div :class="isSidebarOpen ? 'w-64' : 'w-20'" class="bg-white border-r border-gray-200 flex flex-col justify-between h-full transition-all duration-300 z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)] flex-shrink-0 relative">
+        <!-- Sidebar (Clean Filament Native Style) -->
+        <div :class="isSidebarOpen ? 'w-64' : 'w-20'" class="bg-white border-r border-gray-200 flex flex-col justify-between h-full transition-all duration-300 z-30 flex-shrink-0 relative font-sans">
             <div class="overflow-y-auto overflow-x-hidden no-scrollbar">
                 <!-- Logo -->
-                <div class="h-16 flex items-center border-b border-gray-100 px-4 transition-all duration-300" :class="isSidebarOpen ? 'justify-start' : 'justify-center'">
-                    <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center text-white font-bold shadow-sm shadow-brand-500/30 flex-shrink-0">R</div>
-                    <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="ml-3 font-bold text-gray-800 text-lg tracking-tight whitespace-nowrap">Raabiha POS</span>
+                <div class="h-16 flex items-center border-b border-gray-200 px-4 transition-all duration-300" :class="isSidebarOpen ? 'justify-start' : 'justify-center'">
+                    <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold shadow-xs flex-shrink-0">R</div>
+                    <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="ml-3 font-bold text-gray-900 text-lg tracking-tight whitespace-nowrap">Raabiha POS</span>
                 </div>
                 
                 <!-- Menus -->
-                <nav class="p-3 space-y-2 mt-2">
-                    <button @click="activePage = 'kasir'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='kasir' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Kasir">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                <nav class="p-3 space-y-1 mt-1">
+                    <button @click="activePage = 'kasir'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[activePage==='kasir' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Kasir">
+                        <svg class="w-5 h-5 flex-shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Kasir</span>
                     </button>
-                    <button @click="activePage = 'history'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='history' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Riwayat Transaksi">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <button @click="activePage = 'history'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[activePage==='history' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Riwayat Transaksi">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Riwayat Transaksi</span>
                     </button>
-                    <button @click="activePage = 'returns'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='returns' ? 'bg-amber-50 text-amber-800 font-bold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Riwayat Retur">
-                        <svg class="w-6 h-6 flex-shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    <button @click="activePage = 'returns'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[activePage==='returns' ? 'bg-amber-50 text-amber-800 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Riwayat Retur">
+                        <svg class="w-5 h-5 flex-shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Riwayat Retur</span>
                     </button>
-                    <button @click="activePage = 'customers'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='customers' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Pelanggan">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <button @click="activePage = 'customers'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[activePage==='customers' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Pelanggan">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Pelanggan</span>
                     </button>
-                    <button @click="activePage = 'cashsummary'" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-colors" :class="[activePage==='cashsummary' ? 'bg-brand-50 text-brand-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Rekap Kas">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <button @click="activePage = 'cashsummary'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[activePage==='cashsummary' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Rekap Kas">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Rekap Kas</span>
                     </button>
-                    <button @click="lockScreen()" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium text-amber-700 hover:bg-amber-50 transition-colors" :class="[isSidebarOpen ? 'justify-start' : 'justify-center']" title="Kunci Layar">
-                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <button @click="lockScreen()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer" :class="[isSidebarOpen ? 'justify-start' : 'justify-center']" title="Kunci Layar">
+                        <svg class="w-5 h-5 flex-shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Kunci Layar</span>
                     </button>
                     
-                    <div class="pt-4 mt-4 border-t border-gray-100">
+                    <div class="pt-3 mt-3 border-t border-gray-200">
                         <!-- Printer -->
-                        <div class="px-2" :class="isSidebarOpen ? 'lg:px-2' : 'px-0'">
-                            <label x-show="isSidebarOpen" class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 pl-2 transition-opacity duration-300">Perangkat</label>
-                            <div class="flex flex-col gap-2 p-2 rounded-xl border transition-all" :class="isSidebarOpen ? 'bg-gray-50 border-gray-100' : 'bg-transparent border-transparent'">
-                                <select x-show="isSidebarOpen" x-model="printerType" class="w-full text-sm border-none bg-transparent focus:ring-0 cursor-pointer text-gray-700 font-semibold py-1 transition-opacity duration-300">
+                        <div class="px-1" :class="isSidebarOpen ? 'px-1' : 'px-0'">
+                            <label x-show="isSidebarOpen" class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 pl-2 transition-opacity duration-300 block">Perangkat</label>
+                            <div class="flex flex-col gap-1.5 p-1.5 rounded-lg transition-all" :class="isSidebarOpen ? 'bg-gray-50 border border-gray-200' : 'bg-transparent border-transparent'">
+                                <select x-show="isSidebarOpen" x-model="printerType" class="w-full text-xs border-none bg-transparent focus:ring-0 cursor-pointer text-gray-700 font-medium py-1 transition-opacity duration-300">
                                     <option value="bluetooth">Bluetooth</option>
                                     <option value="serial">USB/Serial</option>
                                 </select>
-                                <button @click="connectPrinter()" :class="[printerConnected ? 'bg-green-100 text-green-700 border-green-200' : 'bg-white hover:border-red-300 hover:text-red-600 text-red-500 border-red-200', isSidebarOpen ? 'justify-center px-3 py-2 border shadow-sm' : 'justify-center p-2.5']" class="w-full rounded-lg text-sm font-bold transition-all flex items-center gap-2 relative" title="Koneksi Printer">
+                                <button @click="connectPrinter()" :class="[printerConnected ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white hover:border-red-300 hover:text-red-600 text-red-600 border-gray-200', isSidebarOpen ? 'justify-center px-3 py-1.5 border shadow-xs' : 'justify-center p-2.5']" class="w-full rounded-md text-xs font-semibold transition-all flex items-center gap-2 relative cursor-pointer" title="Koneksi Printer">
                                     <span class="relative flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                        <!-- Dot indicator tampil saat sidebar collapsed -->
-                                        <span x-show="!isSidebarOpen" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-white" :class="printerConnected ? 'bg-green-500' : 'bg-red-500 animate-ping'" style="display:none;"></span>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                        <span x-show="!isSidebarOpen" class="absolute -top-1 -right-1 h-2 w-2 rounded-full border-2 border-white" :class="printerConnected ? 'bg-emerald-500' : 'bg-red-500 animate-ping'" style="display:none;"></span>
                                     </span>
-                                    <span x-show="isSidebarOpen" x-text="printerConnected ? '✓ Tersambung' : '✗ Belum Terhubung'" class="whitespace-nowrap"></span>
+                                    <span x-show="isSidebarOpen" x-text="printerConnected ? 'Tersambung' : 'Belum Terhubung'" class="whitespace-nowrap"></span>
                                 </button>
                             </div>
                         </div>
@@ -307,23 +306,23 @@
             </div>
             
             <!-- Profile / User Menu -->
-            <div class="p-3 border-t border-gray-200 bg-gray-50/50" x-data="{ showUserMenu: false }" @click.away="showUserMenu = false">
+            <div class="p-3 border-t border-gray-200 bg-white" x-data="{ showUserMenu: false }" @click.away="showUserMenu = false">
                 <!-- Profile Button -->
                 <button @click="showUserMenu = !showUserMenu"
-                    class="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-100 transition-all group"
+                    class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-all cursor-pointer"
                     :class="isSidebarOpen ? 'justify-start' : 'justify-center'"
                     title="{{ auth()->user()->name }}">
 
                     {{-- Avatar Inisial --}}
-                    <div class="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm shadow-brand-500/30">
+                    <div class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-xs">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </div>
 
                     {{-- Nama & Email (muncul saat sidebar terbuka) --}}
                     <div x-show="isSidebarOpen" x-transition.opacity.duration.200ms class="flex-1 text-left overflow-hidden">
-                        <div class="text-sm font-bold text-gray-800 truncate">{{ auth()->user()->name }}</div>
+                        <div class="text-xs font-semibold text-gray-900 truncate">{{ auth()->user()->name }}</div>
                         @if(auth()->user()->email)
-                            <div class="text-xs text-gray-400 truncate">{{ auth()->user()->email }}</div>
+                            <div class="text-[11px] text-gray-500 truncate">{{ auth()->user()->email }}</div>
                         @endif
                     </div>
 
@@ -333,7 +332,7 @@
                     </svg>
                 </button>
 
-                <!-- Dropdown Popup (muncul ke atas) -->
+                <!-- Dropdown Popup -->
                 <div x-show="showUserMenu"
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-y-2 scale-95"
@@ -341,23 +340,23 @@
                      x-transition:leave="transition ease-in duration-150"
                      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
                      x-transition:leave-end="opacity-0 translate-y-2 scale-95"
-                     class="absolute bottom-[72px] left-3 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50"
-                     :class="isSidebarOpen ? 'w-[calc(100%-24px)]' : 'w-64'"
+                     class="absolute bottom-[68px] left-3 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
+                     :class="isSidebarOpen ? 'w-[calc(100%-24px)]' : 'w-60'"
                      style="display:none;">
 
                     {{-- Header Info --}}
-                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Masuk sebagai</div>
-                        <div class="font-bold text-gray-800 mt-0.5">{{ auth()->user()->name }}</div>
+                    <div class="px-3.5 py-2.5 bg-gray-50 border-b border-gray-200">
+                        <div class="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Masuk sebagai</div>
+                        <div class="font-semibold text-xs text-gray-900 mt-0.5">{{ auth()->user()->name }}</div>
                         @if(auth()->user()->email)
-                            <div class="text-xs text-gray-400">{{ auth()->user()->email }}</div>
+                            <div class="text-[11px] text-gray-500 truncate">{{ auth()->user()->email }}</div>
                         @endif
                     </div>
 
-                    <div class="p-2 space-y-1">
+                    <div class="p-1.5 space-y-0.5">
                         {{-- Tutup Shift --}}
                         <button @click="showUserMenu = false; showCloseSession = true;"
-                            class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-red-600 hover:bg-red-50 transition-colors font-medium text-sm">
+                            class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-rose-600 hover:bg-rose-50 transition-colors font-medium text-xs cursor-pointer">
                             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
@@ -366,7 +365,7 @@
 
                         {{-- Kunci Layar --}}
                         <button @click="showUserMenu = false; lockScreen();"
-                            class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-amber-700 hover:bg-amber-50 transition-colors font-medium text-sm">
+                            class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-amber-700 hover:bg-amber-50 transition-colors font-medium text-xs cursor-pointer">
                             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
@@ -375,7 +374,7 @@
 
                         {{-- Ganti PIN POS --}}
                         <button @click="showUserMenu = false; showChangePinModal = true;"
-                            class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-gray-700 hover:bg-gray-100 transition-colors font-medium text-sm">
+                            class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-gray-700 hover:bg-gray-100 transition-colors font-medium text-xs cursor-pointer">
                             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                             </svg>
@@ -385,7 +384,7 @@
                         {{-- Ke Admin (hanya untuk yang boleh) --}}
                         @if(auth()->user()->hasAnyRole(['super_admin', 'owner', 'panel_user', 'marketing', 'finance', 'logistics', 'cs']))
                         <a href="{{ url('/admin') }}"
-                            class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-gray-700 hover:bg-gray-100 transition-colors font-medium text-sm">
+                            class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-gray-700 hover:bg-gray-100 transition-colors font-medium text-xs cursor-pointer">
                             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -400,8 +399,8 @@
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit"
-                                class="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors font-medium text-sm">
-                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors font-medium text-xs cursor-pointer">
+                                <svg class="w-4 h-4 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                                 </svg>
                                 Keluar
@@ -412,39 +411,37 @@
             </div>
         </div>
         
-        <!-- Center: Products Area (Kasir) -->
-        <div x-show="activePage === 'kasir'" class="flex-1 flex flex-col h-full bg-transparent min-w-0 overflow-hidden">
-            <!-- Header/Search (Cleaned) -->
-            <div class="glass border-b border-gray-200/50 p-4 sticky top-0 z-10 flex items-center gap-4">
-                <button @click="isSidebarOpen = !isSidebarOpen" class="p-2.5 bg-white border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-brand-600 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20" title="Toggle Menu">
+        <!-- Center: Products Area (Kasir - Clean Filament Native Style) -->
+        <div x-show="activePage === 'kasir'" class="flex-1 flex flex-col h-full bg-gray-50/40 min-w-0 overflow-hidden font-sans">
+            <!-- Header/Search (Filament Native Style) -->
+            <div class="bg-white border-b border-gray-200 p-3.5 sticky top-0 z-10 flex items-center gap-3 shadow-xs">
+                <button @click="isSidebarOpen = !isSidebarOpen" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Toggle Menu">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
                 <div class="flex-1 relative max-w-2xl">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
                     </div>
-                    <input wire:model.live.debounce.300ms="search" type="text" class="block w-full pl-11 pr-4 py-3 border-none bg-gray-100/70 hover:bg-gray-100 rounded-2xl focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all text-sm font-medium" placeholder="Cari Produk atau Barcode / SKU...">
+                    <input wire:model.live.debounce.300ms="search" type="text" class="block w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition duration-150" placeholder="Cari Produk atau Barcode / SKU...">
                 </div>
-                <!-- Printer Status Indicator -->
+                <!-- Printer Status Indicator (Filament Native Badge) -->
                 <button @click="connectPrinter()"
                     :title="printerConnected ? 'Printer: Tersambung (klik untuk ganti)' : 'Printer: Belum Terhubung — Klik untuk Sambungkan'"
-                    class="flex items-center gap-2 pl-3 pr-4 py-2.5 rounded-xl border text-xs font-bold transition-all"
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer"
                     :class="printerConnected
-                        ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
-                        : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100 animate-pulse'">
-                    <span class="relative flex h-2.5 w-2.5 flex-shrink-0">
-                        <span class="absolute inline-flex h-full w-full rounded-full opacity-75"
-                              :class="printerConnected ? 'bg-green-400 animate-ping' : 'bg-red-400'"></span>
-                        <span class="relative inline-flex rounded-full h-2.5 w-2.5"
-                              :class="printerConnected ? 'bg-green-500' : 'bg-red-500'"></span>
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                        : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'">
+                    <span class="relative flex h-2 w-2 flex-shrink-0">
+                        <span class="relative inline-flex rounded-full h-2 w-2"
+                              :class="printerConnected ? 'bg-emerald-600' : 'bg-red-600'"></span>
                     </span>
                     <span x-text="printerConnected ? 'Printer OK' : 'Printer Offline'" class="hidden sm:inline whitespace-nowrap"></span>
                 </button>
             </div>
 
-            <!-- Product Grid -->
+            <!-- Product Grid (Clean Filament Native Style) -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6">
-                <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
+                <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(175px,1fr))]">
                     @forelse($products as $product)
                         @php
                             // Cek jika produk punya varian
@@ -504,7 +501,7 @@
                             $image = $imageUrl;
                         @endphp
                         
-                        <div class="glass bg-white {{ $isOutOfStock ? 'opacity-50 cursor-not-allowed grayscale-[30%]' : 'hover:shadow-2xl hover:-translate-y-1 cursor-pointer group' }} transition-all duration-300 rounded-2xl overflow-hidden border border-gray-100 relative"
+                        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden {{ $isOutOfStock ? 'opacity-60 cursor-not-allowed' : 'hover:border-emerald-500 hover:shadow-md cursor-pointer group' }} transition duration-150 relative flex flex-col justify-between"
                              @if(!$isOutOfStock)
                              x-data="{ variantsData: {{ $hasVariants ? \Illuminate\Support\Js::from($product->variants->map(fn($v) => ['id' => $v->id, 'name' => $v->name, 'price' => $product->pos_discount_price ?: ($product->pos_price ?: ($v->price ?: $product->price)), 'stock' => $v->stock])) : 'null' }} }"
                              @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData)"
@@ -512,173 +509,170 @@
                              >
                              
                              @if($isOutOfStock)
-                                <div class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                                    <span class="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg transform -rotate-12">HABIS</span>
+                                <div class="absolute inset-0 z-10 flex items-center justify-center pointer-events-none bg-gray-50/40">
+                                    <span class="bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20 text-xs font-bold px-3 py-1 rounded-md shadow-xs transform -rotate-6">HABIS</span>
                                 </div>
                              @endif
 
-                            <div class="aspect-square bg-gray-100 relative overflow-hidden">
-                                <img src="{{ $image }}" alt="{{ $product->name }}" class="object-cover w-full h-full {{ !$isOutOfStock ? 'group-hover:scale-105' : '' }} transition-transform duration-500">
+                            <div class="aspect-square bg-gray-50 relative overflow-hidden">
+                                <img src="{{ $image }}" alt="{{ $product->name }}" class="object-cover w-full h-full {{ !$isOutOfStock ? 'group-hover:scale-102' : '' }} transition-transform duration-300">
                                 @if(isset($product->is_best_seller) && $product->is_best_seller)
-                                    <span class="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[10px] px-2 py-1 rounded-md font-bold shadow-sm flex items-center gap-1 z-10">
-                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                    <span class="absolute top-2 left-2 bg-amber-400 text-amber-950 text-[10px] px-2 py-0.5 rounded-md font-bold shadow-xs flex items-center gap-1 z-10">
                                         Terlaris
                                     </span>
                                 @endif
                                 @if($hasVariants)
-                                    <span class="absolute top-2 right-2 bg-gray-900/80 backdrop-blur text-white text-[10px] px-2 py-1 rounded-md font-medium z-10">{{ $product->variants->count() }} Varian</span>
+                                    <span class="absolute top-2 right-2 bg-gray-900/80 text-white text-[10px] px-2 py-0.5 rounded-md font-medium z-10">{{ $product->variants->count() }} Varian</span>
                                 @endif
-                                <span class="absolute bottom-2 left-2 {{ $isOutOfStock ? 'bg-red-500' : 'bg-brand-500' }} text-white text-[10px] px-2 py-1 rounded-md font-medium shadow-sm z-10">Stok: {{ $computedStock }}</span>
+                                <span class="absolute bottom-2 left-2 {{ $isOutOfStock ? 'bg-red-600' : 'bg-emerald-600' }} text-white text-[10px] px-2 py-0.5 rounded-md font-semibold shadow-xs z-10">Stok: {{ $computedStock }}</span>
                             </div>
-                            <div class="p-3">
-                                <h3 class="font-semibold text-gray-800 text-sm line-clamp-2 leading-tight {{ !$isOutOfStock ? 'group-hover:text-brand-600' : '' }} transition-colors">{{ $product->name }}</h3>
-                                <div class="mt-2 flex flex-col">
+                            <div class="p-3 space-y-1.5">
+                                <h3 class="font-semibold text-gray-900 text-xs line-clamp-2 leading-tight {{ !$isOutOfStock ? 'group-hover:text-emerald-600' : '' }} transition-colors">{{ $product->name }}</h3>
+                                <div class="flex flex-col">
                                     @if($hasPromo)
                                         <span class="text-[10px] text-gray-400 line-through">Rp {{ number_format($originalPrice, 0, ',', '.') }}</span>
                                     @endif
-                                    <span class="text-brand-600 font-bold leading-tight">{{ $priceDisplay }}</span>
+                                    <span class="text-emerald-600 font-bold text-sm leading-tight">{{ $priceDisplay }}</span>
                                 </div>
                             </div>
                         </div>
                     @empty
                         <div class="col-span-full py-20 flex flex-col items-center justify-center text-gray-400">
-                            <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                            <p class="text-lg">Tidak ada produk ditemukan.</p>
+                            <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            <p class="text-sm font-medium text-gray-500">Tidak ada produk ditemukan.</p>
                         </div>
                     @endforelse
                 </div>
             </div>
         </div>
 
-        <!-- Right: Cart Sidebar -->
-        <div x-show="activePage === 'kasir'" class="w-full md:w-[400px] lg:w-[450px] bg-white border-l border-gray-200/50 shadow-2xl flex flex-col relative z-20">
+        <!-- Right: Cart Sidebar (Clean Filament Native Style) -->
+        <div x-show="activePage === 'kasir'" class="w-full md:w-[380px] lg:w-[420px] bg-white border-l border-gray-200 flex flex-col relative z-20 font-sans">
             <!-- Cart Header -->
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2 transition-transform duration-300" :class="cartBouncing ? 'scale-110 text-brand-600' : ''">
-                    <svg class="w-5 h-5 text-brand-500 transition-transform" :class="cartBouncing ? 'animate-bounce' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                    Keranjang
+            <div class="p-3.5 border-b border-gray-200 flex justify-between items-center bg-white">
+                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                    Keranjang Belanja
                 </h2>
-                <div class="flex items-center gap-1">
-                    <button @click="showHoldModal = true" class="relative text-brand-600 hover:bg-brand-50 px-3 py-2 rounded-lg transition-colors flex items-center gap-1" title="Lihat Antrean">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span class="text-sm font-bold hidden md:inline">Antrean</span>
-                        <span x-show="heldCarts.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow-sm" x-text="heldCarts.length"></span>
+                <div class="flex items-center gap-1.5">
+                    <button @click="showHoldModal = true" class="relative text-emerald-600 hover:bg-emerald-50 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer" title="Lihat Antrean">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Antrean</span>
+                        <span x-show="heldCarts.length > 0" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full" x-text="heldCarts.length"></span>
                     </button>
-                    <button @click="clearCart()" x-show="cart.length > 0" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors" title="Kosongkan Keranjang">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <button @click="clearCart()" x-show="cart.length > 0" class="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer" title="Kosongkan Keranjang">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>
             </div>
 
             <!-- Cart Items -->
-            <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-gray-50/30">
+            <div class="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50/30">
                 <template x-if="cart.length === 0">
                     <div class="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center">
-                        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </div>
-                        <p class="font-medium text-gray-500">Keranjang masih kosong</p>
-                        <p class="text-sm mt-1">Pilih produk di samping untuk memulai transaksi.</p>
+                        <p class="font-semibold text-gray-700 text-sm">Keranjang masih kosong</p>
+                        <p class="text-xs text-gray-500 mt-1">Pilih produk di samping untuk memulai transaksi.</p>
                     </div>
                 </template>
 
                 <template x-for="(item, index) in cart" :key="index">
-                    <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-2 relative group hover:border-brand-200 transition-all"
-                         x-transition:enter="transition ease-out duration-300 transform"
-                         x-transition:enter-start="opacity-0 -translate-x-4 scale-95"
-                         x-transition:enter-end="opacity-100 translate-x-0 scale-100">
+                    <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-xs flex flex-col gap-1.5 relative group hover:border-emerald-500 transition-all">
                         <div class="flex justify-between items-start pr-6">
-                            <h4 class="font-semibold text-sm text-gray-800 leading-tight" x-text="item.name"></h4>
-                            <div class="font-bold text-brand-600 text-sm" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></div>
+                            <h4 class="font-semibold text-xs text-gray-900 leading-tight" x-text="item.name"></h4>
+                            <div class="font-bold text-emerald-600 text-xs" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></div>
                         </div>
                         
-                        <div class="flex justify-between items-center mt-1">
-                            <div class="text-xs text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' / item'"></div>
+                        <div class="flex justify-between items-center mt-0.5">
+                            <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' / item'"></div>
                             <!-- Qty Controls -->
-                            <div class="flex items-center bg-gray-100 rounded-lg p-1">
-                                <button @click="updateQty(index, -1)" class="w-7 h-7 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-brand-600 active:scale-95 transition-all">-</button>
-                                <input type="number" x-model.number="item.quantity" class="w-10 text-center bg-transparent border-none focus:ring-0 text-sm font-semibold p-0 mx-1" min="1">
-                                <button @click="updateQty(index, 1)" class="w-7 h-7 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-brand-600 active:scale-95 transition-all">+</button>
+                            <div class="flex items-center border border-gray-200 rounded-md bg-gray-50">
+                                <button @click="updateQty(index, -1)" class="w-6 h-6 flex items-center justify-center bg-white rounded-l-md text-gray-700 hover:text-emerald-600 font-bold text-xs cursor-pointer">-</button>
+                                <input type="number" x-model.number="item.quantity" class="w-8 text-center bg-transparent border-none focus:ring-0 text-xs font-semibold p-0 mx-0.5" min="1">
+                                <button @click="updateQty(index, 1)" class="w-6 h-6 flex items-center justify-center bg-white rounded-r-md text-gray-700 hover:text-emerald-600 font-bold text-xs cursor-pointer">+</button>
                             </div>
                         </div>
 
                         <!-- Hapus Item -->
-                        <button @click="removeItem(index)" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <button @click="removeItem(index)" class="absolute top-2 right-2 text-gray-400 hover:text-red-600 bg-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
                 </template>
             </div>
 
-            <!-- Cart Footer (Totals & Checkout) -->
-            <div class="bg-white border-t border-gray-100 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-gray-500">Subtotal</span>
-                    <span class="font-semibold text-gray-700" x-text="'Rp ' + formatMoney(subtotal)"></span>
+            <!-- Cart Footer (Totals & Checkout - Filament Native Style) -->
+            <div class="bg-white border-t border-gray-200 p-4 space-y-3">
+                <div class="flex justify-between items-center text-xs text-gray-600">
+                    <span>Subtotal</span>
+                    <span class="font-semibold text-gray-900 text-sm" x-text="'Rp ' + formatMoney(subtotal)"></span>
                 </div>
-                <!-- Voucher Selector Button (Compact) -->
-                <div class="flex justify-between items-center mb-2.5 cursor-pointer group" @click="showVoucherModal = true">
-                    <span class="flex items-center gap-2 text-brand-600 border-b border-dashed border-brand-300 group-hover:border-brand-500 transition-colors pb-0.5">
+
+                <!-- Voucher Selector Button -->
+                <div class="flex justify-between items-center text-xs cursor-pointer group" @click="showVoucherModal = true">
+                    <span class="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 font-medium">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
-                        <span class="font-semibold text-sm" x-text="activeVoucher ? activeVoucher.name : 'Gunakan Kupon Promo'"></span>
+                        <span x-text="activeVoucher ? activeVoucher.name : 'Gunakan Kupon Promo'"></span>
                     </span>
                     <div class="flex items-center gap-2">
-                        <span x-show="activeVoucher" class="font-bold text-red-500 text-sm" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
-                        <span x-show="!activeVoucher" class="text-xs font-semibold text-brand-600 group-hover:text-brand-700">Pilih ></span>
-                        <!-- Tombol lepas voucher -->
-                        <button x-show="activeVoucher" @click.stop="removeVoucher()" class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50" title="Lepas Promo">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <span x-show="activeVoucher" class="font-semibold text-red-600 text-xs" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
+                        <span x-show="!activeVoucher" class="text-xs font-semibold text-emerald-600 group-hover:text-emerald-700">Pilih ></span>
+                        <button x-show="activeVoucher" @click.stop="removeVoucher()" class="text-gray-400 hover:text-red-600 transition-colors p-0.5 rounded-full hover:bg-red-50" title="Lepas Promo">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
                 </div>
 
                 <!-- Diskon Manual Row -->
-                <div class="flex justify-between items-center mb-4">
-                    <span class="flex items-center gap-2 text-amber-600">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="flex items-center gap-1.5 text-amber-700 font-medium">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10m-8 5h8"/></svg>
-                        <span class="font-semibold text-sm">Diskon Manual</span>
+                        <span>Diskon Manual</span>
                     </span>
                     <div class="flex items-center gap-2">
                         <template x-if="manualDiscountValue > 0">
                             <div class="flex items-center gap-1.5">
-                                <span class="font-bold text-amber-600 text-sm" x-text="'- Rp ' + formatMoney(manualDiscountAmount)"></span>
-                                <button @click="openManualDiscountModal()" class="text-gray-400 hover:text-amber-600 transition-colors p-1 rounded-full hover:bg-amber-50" title="Edit Diskon Manual">
+                                <span class="font-semibold text-amber-700 text-xs" x-text="'- Rp ' + formatMoney(manualDiscountAmount)"></span>
+                                <button @click="openManualDiscountModal()" class="text-gray-400 hover:text-amber-700 transition-colors p-0.5 rounded-full hover:bg-amber-50" title="Edit Diskon Manual">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                 </button>
-                                <button @click="removeManualDiscount()" class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50" title="Hapus Diskon Manual">
+                                <button @click="removeManualDiscount()" class="text-gray-400 hover:text-red-600 transition-colors p-0.5 rounded-full hover:bg-red-50" title="Hapus Diskon Manual">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </button>
                             </div>
                         </template>
                         <template x-if="!manualDiscountValue || manualDiscountValue <= 0">
-                            <button @click="openManualDiscountModal()" class="text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1">
+                            <button @click="openManualDiscountModal()" class="text-xs font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md transition-colors cursor-pointer flex items-center gap-1">
                                 <span>+ Potongan</span>
                             </button>
                         </template>
                     </div>
                 </div>
-                <div class="flex justify-between items-center mb-6 pt-4 border-t border-gray-100">
-                    <span class="text-lg font-bold text-gray-800">Total</span>
-                    <span class="text-2xl font-black text-brand-600 transition-all duration-300 inline-block" :class="cartBouncing ? 'scale-110 text-brand-500' : ''" x-text="'Rp ' + formatMoney(grandTotal)"></span>
+
+                <div class="flex justify-between items-center pt-3 border-t border-gray-200">
+                    <span class="text-base font-bold text-gray-900">Total</span>
+                    <span class="text-xl font-bold text-emerald-600" x-text="'Rp ' + formatMoney(grandTotal)"></span>
                 </div>
                 
-                <div class="flex gap-2">
+                <div class="flex gap-2 pt-1">
                     <button 
                         @click="holdCart()"
                         :disabled="cart.length === 0"
-                        class="px-4 py-4 rounded-xl font-bold text-gray-700 shadow-sm transition-all active:scale-95 flex items-center justify-center border border-gray-200"
+                        class="px-3.5 py-2.5 rounded-lg font-medium text-gray-700 shadow-xs transition duration-150 flex items-center justify-center border border-gray-300 cursor-pointer"
                         :class="cart.length > 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-100 text-gray-400 cursor-not-allowed border-transparent'"
                         title="Masukkan ke Antrean">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </button>
                     
                     <button 
                         @click="openCheckoutModal()"
                         :disabled="cart.length === 0"
-                        class="flex-1 py-4 rounded-xl font-bold text-lg shadow-xl transition-all active:scale-95 flex justify-center items-center gap-2"
-                        :class="cart.length > 0 ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-500/30' : 'bg-gray-200 text-gray-400 cursor-not-allowed'">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                        PROSES PEMBAYARAN
+                        class="flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm shadow-xs transition duration-150 flex justify-center items-center gap-2 cursor-pointer"
+                        :class="cart.length > 0 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span>PROSES PEMBAYARAN</span>
                     </button>
                 </div>
             </div>
