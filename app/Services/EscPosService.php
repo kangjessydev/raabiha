@@ -95,14 +95,16 @@ class EscPosService
             'pos_show_date',
             'pos_auto_cut',
             'pos_open_cash_drawer',
+            'pos_loyalty_enabled',
         ]);
 
-        $header     = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
-        $footer     = $settings['pos_receipt_footer'] ?? "Terima Kasih";
-        $showCashier = filter_var($settings['pos_show_cashier_name'] ?? true, FILTER_VALIDATE_BOOLEAN);
-        $showDate    = filter_var($settings['pos_show_date'] ?? true, FILTER_VALIDATE_BOOLEAN);
-        $autoCut     = filter_var($settings['pos_auto_cut'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        $openDrawer  = filter_var($settings['pos_open_cash_drawer'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $header         = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
+        $footer         = $settings['pos_receipt_footer'] ?? "Terima Kasih";
+        $showCashier    = filter_var($settings['pos_show_cashier_name'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showDate       = filter_var($settings['pos_show_date'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $autoCut        = filter_var($settings['pos_auto_cut'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $openDrawer     = filter_var($settings['pos_open_cash_drawer'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $loyaltyEnabled = filter_var($settings['pos_loyalty_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
         
         if ($openDrawer && !$isReprint) {
             $this->drawer();
@@ -127,7 +129,7 @@ class EscPosService
         // Metadata
         $this->add(self::ALIGN_LEFT);
         $this->line("Nota  : " . $order->order_number);
-        if ($showDate) {
+        if ($showDate && $order->created_at) {
             $this->line("Waktu : " . $order->created_at->format('d/m/Y H:i'));
         }
         if ($showCashier && $order->cashier) {
@@ -168,8 +170,8 @@ class EscPosService
             $this->justify("Kembali", number_format($order->cash_change ?? 0, 0, ',', '.'));
         }
 
-        // Section Loyalti Stempel Digital (jika ada nomor HP)
-        if ($order->customer_phone) {
+        // Section Loyalti Stempel Digital (jika diaktifkan di setting & ada nomor HP)
+        if ($loyaltyEnabled && $order->customer_phone) {
             $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
             $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->first() : null;
             if ($customer) {
@@ -210,31 +212,37 @@ class EscPosService
     }
 
     /**
-     * Generate Plain Text Struk (Preview di Layar POS)
+     * Generate Plain Text Struk (Preview di Layar POS) - Dinamis mengikuti SiteSetting
      */
     public function generateReceiptText(Order $order, bool $isReprint = false): string
     {
+        $width = $this->charWidth;
+
         $settings = $this->getSettings([
-            'pos_receipt_header', 'pos_receipt_footer',
-            'pos_show_cashier_name', 'pos_show_date',
+            'pos_receipt_header',
+            'pos_receipt_footer',
+            'pos_show_cashier_name',
+            'pos_show_date',
+            'pos_loyalty_enabled',
         ]);
 
-        $header      = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
-        $footer      = $settings['pos_receipt_footer'] ?? "Terima Kasih\nBarang tidak dapat ditukar/dikembalikan";
-        $showCashier = filter_var($settings['pos_show_cashier_name'] ?? true, FILTER_VALIDATE_BOOLEAN);
-        $showDate    = filter_var($settings['pos_show_date'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $header         = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
+        $footer         = $settings['pos_receipt_footer'] ?? "Terima Kasih";
+        $showCashier    = filter_var($settings['pos_show_cashier_name'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $showDate       = filter_var($settings['pos_show_date'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $loyaltyEnabled = filter_var($settings['pos_loyalty_enabled'] ?? true, FILTER_VALIDATE_BOOLEAN);
 
         $lines = [];
 
         foreach (explode("\n", $header) as $hLine) {
-            $lines[] = str_pad(trim($hLine), 32, ' ', STR_PAD_BOTH);
+            $lines[] = str_pad(trim($hLine), $width, ' ', STR_PAD_BOTH);
         }
 
         if ($isReprint) {
-            $lines[] = str_pad("*** SALINAN / REPRINT ***", 32, ' ', STR_PAD_BOTH);
+            $lines[] = str_pad("*** SALINAN / REPRINT ***", $width, ' ', STR_PAD_BOTH);
         }
 
-        $lines[] = str_repeat('-', 32);
+        $lines[] = str_repeat('-', $width);
         $lines[] = "Nota  : " . $order->order_number;
         if ($showDate && $order->created_at) {
             $lines[] = "Waktu : " . $order->created_at->format('d/m/Y H:i');
@@ -245,7 +253,7 @@ class EscPosService
         if ($order->customer_name) {
             $lines[] = "Plgn  : " . $order->customer_name;
         }
-        $lines[] = str_repeat('-', 32);
+        $lines[] = str_repeat('-', $width);
 
         foreach ($order->items as $item) {
             $name = $item->name ?: ($item->product_name ?? 'Produk');
@@ -257,43 +265,43 @@ class EscPosService
             $qtyStr = $item->quantity . "x " . number_format($item->price, 0, ',', '.');
             $subtotalStr = number_format($item->total ?? $item->subtotal ?? 0, 0, ',', '.');
             $leftPad = "  " . $qtyStr;
-            $spaces = max(1, 32 - strlen($leftPad) - strlen($subtotalStr));
+            $spaces = max(1, $width - strlen($leftPad) - strlen($subtotalStr));
             $lines[] = $leftPad . str_repeat(' ', $spaces) . $subtotalStr;
         }
 
-        $lines[] = str_repeat('-', 32);
+        $lines[] = str_repeat('-', $width);
         
         $subLeft = "Subtotal";
         $subRight = number_format($order->subtotal, 0, ',', '.');
-        $lines[] = $subLeft . str_repeat(' ', max(1, 32 - strlen($subLeft) - strlen($subRight))) . $subRight;
+        $lines[] = $subLeft . str_repeat(' ', max(1, $width - strlen($subLeft) - strlen($subRight))) . $subRight;
 
         if ($order->discount_total > 0) {
             $discLeft = "Diskon";
             $discRight = "-" . number_format($order->discount_total, 0, ',', '.');
-            $lines[] = $discLeft . str_repeat(' ', max(1, 32 - strlen($discLeft) - strlen($discRight))) . $discRight;
+            $lines[] = $discLeft . str_repeat(' ', max(1, $width - strlen($discLeft) - strlen($discRight))) . $discRight;
         }
 
         $totLeft = "TOTAL";
         $totRight = number_format($order->grand_total, 0, ',', '.');
-        $lines[] = $totLeft . str_repeat(' ', max(1, 32 - strlen($totLeft) - strlen($totRight))) . $totRight;
+        $lines[] = $totLeft . str_repeat(' ', max(1, $width - strlen($totLeft) - strlen($totRight))) . $totRight;
 
         if ($order->cash_paid) {
-            $lines[] = str_repeat('-', 32);
+            $lines[] = str_repeat('-', $width);
             $paidLeft = "Tunai";
             $paidRight = number_format($order->cash_paid, 0, ',', '.');
-            $lines[] = $paidLeft . str_repeat(' ', max(1, 32 - strlen($paidLeft) - strlen($paidRight))) . $paidRight;
+            $lines[] = $paidLeft . str_repeat(' ', max(1, $width - strlen($paidLeft) - strlen($paidRight))) . $paidRight;
 
             $changeLeft = "Kembali";
             $changeRight = number_format($order->cash_change ?? 0, 0, ',', '.');
-            $lines[] = $changeLeft . str_repeat(' ', max(1, 32 - strlen($changeLeft) - strlen($changeRight))) . $changeRight;
+            $lines[] = $changeLeft . str_repeat(' ', max(1, $width - strlen($changeLeft) - strlen($changeRight))) . $changeRight;
         }
 
-        if ($order->customer_phone) {
+        if ($loyaltyEnabled && $order->customer_phone) {
             $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
             $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->first() : null;
             if ($customer) {
-                $lines[] = str_repeat('-', 32);
-                $lines[] = str_pad("KARTU CAP DIGITAL RAABIHA", 32, ' ', STR_PAD_BOTH);
+                $lines[] = str_repeat('-', $width);
+                $lines[] = str_pad("KARTU CAP DIGITAL RAABIHA", $width, ' ', STR_PAD_BOTH);
                 $lines[] = "Pelanggan: " . ($customer->name ?: $customer->phone);
                 $lines[] = "Total Cap: " . $customer->stamp_count . " dari 9 Cap";
 
@@ -308,9 +316,9 @@ class EscPosService
             }
         }
 
-        $lines[] = str_repeat('-', 32);
+        $lines[] = str_repeat('-', $width);
         foreach (explode("\n", $footer) as $fLine) {
-            $lines[] = str_pad(trim($fLine), 32, ' ', STR_PAD_BOTH);
+            $lines[] = str_pad(trim($fLine), $width, ' ', STR_PAD_BOTH);
         }
 
         return implode("\n", $lines);
