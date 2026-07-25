@@ -95,6 +95,35 @@ class PosSettings extends Page implements HasForms
                                     ->label('Tampilkan Tanggal & Jam')
                                     ->default(true),
                             ]),
+                        \Filament\Schemas\Components\Tabs\Tab::make('Loyalti Stempel POS')
+                            ->icon('heroicon-o-sparkles')
+                            ->components([
+                                Forms\Components\Toggle::make('pos_loyalty_enabled')
+                                    ->label('Aktifkan Program Loyalti Stempel Digital POS')
+                                    ->default(true),
+                                Forms\Components\TextInput::make('pos_loyalty_min_spend')
+                                    ->label('Minimal Belanja per 1 Stempel (Rp)')
+                                    ->helperText('Nominal transaksi minimal untuk mendapatkan 1 stempel (Default: Rp 100.000).')
+                                    ->numeric()
+                                    ->default(100000)
+                                    ->required(),
+                                Forms\Components\TextInput::make('pos_loyalty_stamps_to_points_ratio')
+                                    ->label('Rasio Konversi (1 Stempel = Berapa Poin)')
+                                    ->helperText('Jumlah poin yang didapatkan dari 1 stempel (Default: 10 Poin).')
+                                    ->numeric()
+                                    ->default(10)
+                                    ->required(),
+                                Forms\Components\TextInput::make('pos_loyalty_stamp_expiry_months')
+                                    ->label('Masa Berlaku Stempel (Bulan)')
+                                    ->helperText('Stempel akan hangus jika pelanggan tidak bertransaksi selama X bulan (Default: 6 Bulan, isi 0 jika tanpa kadaluarsa).')
+                                    ->numeric()
+                                    ->default(6)
+                                    ->required(),
+                                Forms\Components\Toggle::make('pos_loyalty_multiplier_mode')
+                                    ->label('Mode Kelipatan Nominal Belanja')
+                                    ->helperText('Jika diaktifkan, belanja Rp 200.000 otomatis mendapatkan 2 stempel (kelipatan nominal). Jika dimatikan, 1 transaksi hanya dapat max 1 stempel.')
+                                    ->default(false),
+                            ]),
                     ])
             ])
             ->statePath('data');
