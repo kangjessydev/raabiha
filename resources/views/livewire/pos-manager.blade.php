@@ -1151,7 +1151,7 @@
             </div>
         </div>
 
-        <!-- OVERLAY: Lock Screen Kasir (PIN 6-Digit - Full Page Overlay & 6-Dots Indicator) -->
+        <!-- OVERLAY: Lock Screen Kasir (Clean Filament Native Style without calculator numpad) -->
         <div x-show="isLocked"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 scale-95"
@@ -1161,9 +1161,19 @@
              x-transition:leave-end="opacity-0 scale-95"
              class="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans" style="display: none;">
             <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 text-center shadow-xl w-full max-w-md space-y-6">
-                <div class="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto shadow-sm">
-                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                <!-- Icon Padlock Lock/Unlock Animation -->
+                <div class="w-16 h-16 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full flex items-center justify-center mx-auto shadow-xs transition-all duration-300 transform"
+                     :class="(lockPasswordInput || '').length === 6 ? 'bg-emerald-100 text-emerald-700 border-emerald-300 scale-105' : ''">
+                    <!-- Locked Icon (when length < 6) -->
+                    <svg x-show="(lockPasswordInput || '').length < 6" class="w-8 h-8 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <!-- Unlocked Icon (when length === 6) -->
+                    <svg x-show="(lockPasswordInput || '').length === 6" x-cloak class="w-8 h-8 text-emerald-600 transition-transform duration-300 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                    </svg>
                 </div>
+
                 <div class="space-y-1">
                     <h2 class="text-xl font-bold tracking-tight text-gray-900">{{ auth()->user()->name }}</h2>
                     <p class="text-xs font-medium text-gray-500">Masukkan 6-digit PIN POS Anda untuk membuka kunci layar.</p>
@@ -1180,6 +1190,7 @@
                             pattern="[0-9]*" 
                             inputmode="numeric" 
                             class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                            autofocus
                         />
                         <div class="grid grid-cols-6 gap-2.5">
                             <template x-for="i in 6" :key="i">
@@ -1204,16 +1215,13 @@
 
                     <div x-show="lockErrorMessage" class="text-xs text-red-600 font-medium text-center" x-text="lockErrorMessage"></div>
 
-                    <!-- Visual Numpad Cepat -->
-                    <div class="grid grid-cols-3 gap-2 pt-1">
-                        <template x-for="num in [1,2,3,4,5,6,7,8,9]" :key="num">
-                            <button type="button" @click="appendLockPin(num)"
-                                    class="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-base rounded-lg transition duration-150 border border-gray-200 active:scale-95 cursor-pointer" x-text="num"></button>
-                        </template>
-                        <button type="button" @click="clearLockPin()" class="py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-lg transition duration-150 border border-red-200 cursor-pointer">Hapus</button>
-                        <button type="button" @click="appendLockPin(0)" class="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-base rounded-lg transition duration-150 border border-gray-200 active:scale-95 cursor-pointer">0</button>
-                        <button type="submit" :disabled="!lockPasswordInput || String(lockPasswordInput).trim().length !== 6" class="py-2.5 bg-emerald-600 disabled:opacity-40 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition duration-150 shadow-sm cursor-pointer">Buka</button>
-                    </div>
+                    <button 
+                        type="submit" 
+                        :disabled="!lockPasswordInput || String(lockPasswordInput).trim().length !== 6" 
+                        class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                    >
+                        <span>Buka Kunci Layar</span>
+                    </button>
                 </form>
             </div>
         </div>
