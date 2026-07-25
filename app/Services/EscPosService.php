@@ -208,6 +208,14 @@ class EscPosService
             $this->cut();
         }
 
+        $singleReceiptBuffer = $this->buffer;
+        $copies = intval($settings['pos_print_copies'] ?? 1);
+        if ($copies > 1 && !$isReprint) {
+            for ($i = 1; $i < $copies; $i++) {
+                $this->buffer .= $singleReceiptBuffer;
+            }
+        }
+
         return base64_encode($this->buffer);
     }
 
@@ -521,5 +529,78 @@ class EscPosService
         }
 
         return base64_encode($this->buffer);
+    }
+
+    /**
+     * Generate Plain Text Struk Retur / Tukar
+     */
+    public function generateReturnReceiptText(\App\Models\PosReturn $posReturn): string
+    {
+        $width = $this->charWidth;
+        $settings = $this->getSettings(['pos_receipt_header', 'pos_receipt_footer']);
+        $header   = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
+        $footer   = $settings['pos_receipt_footer'] ?? "Terima Kasih";
+
+        $lines = [];
+        foreach (explode("\n", $header) as $hLine) {
+            $lines[] = str_pad(trim($hLine), $width, ' ', STR_PAD_BOTH);
+        }
+        $lines[] = str_pad("*** STRUK RETUR / TUKAR ***", $width, ' ', STR_PAD_BOTH);
+        $lines[] = str_repeat('-', $width);
+
+        $lines[] = "No Retur: " . $posReturn->return_number;
+        $lines[] = "Nota Asli: " . ($posReturn->order->order_number ?? '-');
+        $lines[] = "Waktu   : " . $posReturn->created_at->format('d/m/Y H:i');
+        $lines[] = "Kasir   : " . ($posReturn->cashier->name ?? 'Kasir');
+        if ($posReturn->supervisor) {
+            $lines[] = "Spv     : " . $posReturn->supervisor->name;
+        }
+        $lines[] = "Alasan  : " . ($posReturn->reason ?: '-');
+        $lines[] = str_repeat('-', $width);
+
+        $lines[] = "BARANG DIRETUR:";
+        foreach ($posReturn->returnedItems as $rItem) {
+            $name = $rItem->variant ? ($rItem->product->name . ' - ' . $rItem->variant->name) : ($rItem->product->name ?? 'Produk');
+            $lines[] = $name;
+            $qtyStr = $rItem->quantity . "x " . number_format($rItem->price, 0, ',', '.');
+            $subStr = "-" . number_format($rItem->total, 0, ',', '.');
+            $lines[] = "  " . $qtyStr . str_repeat(' ', max(1, $width - 2 - strlen($qtyStr) - strlen($subStr))) . $subStr;
+        }
+        $subRet = "-" . number_format($posReturn->returned_subtotal, 0, ',', '.');
+        $lines[] = "Subtotal Retur" . str_repeat(' ', max(1, $width - strlen("Subtotal Retur") - strlen($subRet))) . $subRet;
+
+        if ($posReturn->exchangedItems->count() > 0) {
+            $lines[] = str_repeat('-', $width);
+            $lines[] = "BARANG PENGGANTI (TUKAR):";
+            foreach ($posReturn->exchangedItems as $eItem) {
+                $name = $eItem->variant ? ($eItem->product->name . ' - ' . $eItem->variant->name) : ($eItem->product->name ?? 'Produk');
+                $lines[] = $name;
+                $qtyStr = $eItem->quantity . "x " . number_format($eItem->price, 0, ',', '.');
+                $subStr = number_format($eItem->total, 0, ',', '.');
+                $lines[] = "  " . $qtyStr . str_repeat(' ', max(1, $width - 2 - strlen($qtyStr) - strlen($subStr))) . $subStr;
+            }
+            $subEx = number_format($posReturn->exchanged_subtotal, 0, ',', '.');
+            $lines[] = "Subtotal Tukar" . str_repeat(' ', max(1, $width - strlen("Subtotal Tukar") - strlen($subEx))) . $subEx;
+        }
+
+        $lines[] = str_repeat('-', $width);
+        if ($posReturn->net_amount > 0) {
+            $label = "TAMBAH BAYAR";
+            $val = number_format($posReturn->net_amount, 0, ',', '.');
+        } elseif ($posReturn->net_amount < 0) {
+            $label = "PENGEMBALIAN UANG";
+            $val = number_format(abs($posReturn->net_amount), 0, ',', '.');
+        } else {
+            $label = "SELISIH";
+            $val = "Rp 0 (PAS)";
+        }
+        $lines[] = $label . str_repeat(' ', max(1, $width - strlen($label) - strlen($val))) . $val;
+
+        $lines[] = str_repeat('-', $width);
+        foreach (explode("\n", $footer) as $fLine) {
+            $lines[] = str_pad(trim($fLine), $width, ' ', STR_PAD_BOTH);
+        }
+
+        return implode("\n", $lines);
     }
 }
