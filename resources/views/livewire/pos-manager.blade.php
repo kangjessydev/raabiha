@@ -1,5 +1,31 @@
 <div x-data="posSystem()" class="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-gray-50/50 relative">
 
+    <!-- Sleek POS Fullscreen Splash Loading Screen -->
+    <div x-data="{ isInitializing: true }" 
+         x-init="setTimeout(() => isInitializing = false, 300)"
+         x-show="isInitializing" 
+         x-cloak
+         x-transition:leave="transition ease-out duration-300"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-98"
+         class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center font-sans">
+        <div class="flex flex-col items-center space-y-4 text-center">
+            <!-- Brand Logo Icon (Gambar 1) -->
+            <div class="w-16 h-16 flex items-center justify-center">
+                <img src="{{ asset('assets/images/pos-logo-icon.png') }}" alt="Raabiha Logo" class="w-16 h-16 object-contain animate-pulse">
+            </div>
+            <!-- Title & Status Text -->
+            <div>
+                <h2 class="text-base font-bold text-gray-950 tracking-tight">Kasir POS Raabiha</h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Memuat sistem kasir & memulihkan keranjang...</p>
+            </div>
+            <!-- Loading Indicator -->
+            <div class="w-32 h-1 bg-gray-100 rounded-full overflow-hidden relative mt-2">
+                <div class="absolute left-0 top-0 bottom-0 bg-emerald-600 rounded-full animate-pulse w-full"></div>
+            </div>
+        </div>
+    </div>
+
     <style>
     @keyframes pinShake {
         0%, 100% { transform: translateX(0); }
@@ -11,8 +37,8 @@
     }
     </style>
 
-    <!-- Notifications Toast -->
-    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
+    <!-- Notifications Toast (with Close Button) -->
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         <template x-for="(toast, index) in toasts" :key="toast.id">
             <div x-show="true" 
                  x-transition:enter="transition ease-out duration-300"
@@ -21,9 +47,20 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100 translate-x-0"
                  x-transition:leave-end="opacity-0 translate-x-8"
-                 class="glass px-6 py-4 rounded-xl flex items-center gap-3 shadow-lg"
-                 :class="toast.type === 'error' ? 'border-red-400 bg-red-50/80' : 'border-green-400 bg-green-50/80'">
-                <div x-text="toast.message" class="font-medium" :class="toast.type === 'error' ? 'text-red-800' : 'text-green-800'"></div>
+                 class="pointer-events-auto px-4 py-3 rounded-xl flex items-center justify-between gap-3 shadow-lg border text-sm font-semibold transition-all"
+                 :class="toast.type === 'error' ? 'border-red-300 bg-red-50 text-red-900' : 'border-emerald-300 bg-emerald-50 text-emerald-900'">
+                <div class="flex items-center gap-2">
+                    <template x-if="toast.type === 'error'">
+                        <svg class="w-4 h-4 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </template>
+                    <template x-if="toast.type !== 'error'">
+                        <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </template>
+                    <span x-text="toast.message"></span>
+                </div>
+                <button type="button" @click="removeToast(toast.id)" class="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-black/5 transition cursor-pointer" title="Tutup Notifikasi">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
         </template>
     </div>
@@ -247,13 +284,19 @@
     @else
         <!-- MAIN POS AREA -->
 
+        <!-- Backdrop for mobile sidebar drawer -->
+        <div x-show="isSidebarOpen" 
+             @click="isSidebarOpen = false" 
+             x-cloak 
+             class="md:hidden fixed inset-0 z-30 bg-gray-950/50 backdrop-blur-xs"></div>
+
         <!-- Sidebar (Clean Filament Native Style) -->
-        <div :class="isSidebarOpen ? 'w-64' : 'w-20'" class="bg-white border-r border-gray-200 flex flex-col justify-between h-full transition-all duration-300 z-30 flex-shrink-0 relative font-sans">
+        <div :class="isSidebarOpen ? 'w-64 translate-x-0' : '-translate-x-full md:translate-x-0 md:w-20'" class="fixed md:relative inset-y-0 left-0 bg-white border-r border-gray-200 flex flex-col justify-between h-full transition-all duration-300 z-40 flex-shrink-0 font-sans shadow-xl md:shadow-none">
             <div class="overflow-y-auto overflow-x-hidden no-scrollbar">
                 <!-- Logo -->
                 <div class="h-16 flex items-center border-b border-gray-200 px-4 transition-all duration-300" :class="isSidebarOpen ? 'justify-start' : 'justify-center'">
-                    <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold shadow-xs flex-shrink-0">R</div>
-                    <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="ml-3 font-bold text-gray-900 text-lg tracking-tight whitespace-nowrap">Raabiha POS</span>
+                    <img src="{{ asset('assets/images/pos-logo-icon.png') }}" alt="Raabiha Logo" class="w-8 h-8 object-contain flex-shrink-0">
+                    <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="ml-3 font-bold text-gray-900 text-lg tracking-tight whitespace-nowrap">Raabiha</span>
                 </div>
                 
                 <!-- Menus -->
@@ -278,8 +321,8 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Rekap Kas</span>
                     </button>
-                    <button @click="lockScreen()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer" :class="[isSidebarOpen ? 'justify-start' : 'justify-center']" title="Kunci Layar">
-                        <svg class="w-5 h-5 flex-shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <button @click="lockScreen()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[isSidebarOpen ? 'justify-start' : 'justify-center', 'text-gray-600 hover:bg-gray-100 hover:text-gray-900']" title="Kunci Layar">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Kunci Layar</span>
                     </button>
                     
@@ -412,7 +455,7 @@
         </div>
         
         <!-- Center: Products Area (Kasir - Clean Filament Native Style) -->
-        <div x-show="activePage === 'kasir'" wire:key="pos-page-kasir" class="flex-1 flex flex-col h-full bg-gray-50/40 min-w-0 overflow-hidden font-sans">
+        <div x-show="activePage === 'kasir'" x-cloak wire:key="pos-page-kasir" class="flex-1 flex flex-col h-full bg-gray-50/40 min-w-0 overflow-hidden font-sans">
             <!-- Header/Search (Filament Native Style) -->
             <div class="bg-white border-b border-gray-200 p-3.5 sticky top-0 z-10 flex items-center gap-3 shadow-xs">
                 <button @click="isSidebarOpen = !isSidebarOpen" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Toggle Menu">
@@ -437,11 +480,22 @@
                     </span>
                     <span x-text="printerConnected ? 'Printer OK' : 'Printer Offline'" class="hidden sm:inline whitespace-nowrap"></span>
                 </button>
+
+                <!-- Button Antrean (Khusus Layar Mobile & Tablet < lg) -->
+                <button type="button" @click="showHoldModal = true"
+                        class="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-md shadow-xs transition duration-150 cursor-pointer relative"
+                        title="Lihat Pesanan Tertahan (Antrean)">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="hidden sm:inline">Antrean</span>
+                    <template x-if="heldCarts.length > 0">
+                        <span class="w-4 h-4 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center" x-text="heldCarts.length"></span>
+                    </template>
+                </button>
             </div>
 
-            <!-- Product Grid (Clean Filament Native Style) -->
-            <div class="flex-1 overflow-y-auto p-4 md:p-6">
-                <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(175px,1fr))]">
+            <!-- Product Grid (Clean Filament Native Style - Responsive 2 to 5 Columns) -->
+            <div class="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+                <div class="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pb-24 lg:pb-4">
                     @forelse($products as $product)
                         @php
                             // Cek jika produk punya varian
@@ -503,8 +557,20 @@
                         
                         <div class="bg-white border border-gray-200 rounded-xl overflow-hidden {{ $isOutOfStock ? 'opacity-60 cursor-not-allowed' : 'hover:border-emerald-500 hover:shadow-md cursor-pointer group' }} transition duration-150 relative flex flex-col justify-between"
                              @if(!$isOutOfStock)
-                             x-data="{ variantsData: {{ $hasVariants ? \Illuminate\Support\Js::from($product->variants->map(fn($v) => ['id' => $v->id, 'name' => $v->name, 'price' => $product->pos_discount_price ?: ($product->pos_price ?: ($v->price ?: $product->price)), 'stock' => $v->stock])) : 'null' }} }"
-                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData)"
+                             x-data="{ variantsData: {{ $hasVariants ? \Illuminate\Support\Js::from($product->variants->map(fn($v) => [
+                                 'id' => $v->id, 
+                                 'name' => $v->name, 
+                                 'price' => $product->pos_discount_price ?: ($product->pos_price ?: ($v->price ?: $product->price)), 
+                                 'stock' => $v->stock,
+                                 'image' => $v->media ? Storage::url($v->media->path) : $image,
+                                 'attributes' => $v->attributeOptions->map(fn($opt) => [
+                                     'attr_id' => $opt->attribute_id,
+                                     'attr_name' => $opt->attribute->name ?? '',
+                                     'attr_slug' => $opt->attribute->slug ?? '',
+                                     'value' => $opt->value,
+                                 ])->values()->all()
+                             ])) : 'null' }} }"
+                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData, '{{ $image }}')"
                              @endif
                              >
                              
@@ -546,8 +612,8 @@
             </div>
         </div>
 
-        <!-- Right: Cart Sidebar (Clean Filament Native Style) -->
-        <div x-show="activePage === 'kasir'" class="w-full md:w-[380px] lg:w-[420px] bg-white border-l border-gray-200 flex flex-col relative z-20 font-sans">
+        <!-- Right: Cart Sidebar (Clean Filament Native Style - Desktop / Large Screen) -->
+        <div x-show="activePage === 'kasir'" x-cloak class="hidden lg:flex w-[380px] xl:w-[420px] bg-white border-l border-gray-200 flex-col relative z-20 font-sans flex-shrink-0">
             <!-- Cart Header -->
             <div class="p-3.5 border-b border-gray-200 flex justify-between items-center bg-white">
                 <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -612,10 +678,7 @@
 
                 <!-- Voucher Selector Button -->
                 <div class="flex justify-between items-center text-xs cursor-pointer group" @click="showVoucherModal = true">
-                    <span class="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 font-medium">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
-                        <span x-text="activeVoucher ? activeVoucher.name : 'Gunakan Kupon Promo'"></span>
-                    </span>
+                    <span class="text-emerald-600 hover:text-emerald-700 font-medium" x-text="activeVoucher ? activeVoucher.name : 'Gunakan Kupon Promo'"></span>
                     <div class="flex items-center gap-2">
                         <span x-show="activeVoucher" class="font-semibold text-red-600 text-xs" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
                         <span x-show="!activeVoucher" class="text-xs font-semibold text-emerald-600 group-hover:text-emerald-700">Pilih ></span>
@@ -627,10 +690,7 @@
 
                 <!-- Diskon Manual Row -->
                 <div class="flex justify-between items-center text-xs">
-                    <span class="flex items-center gap-1.5 text-amber-700 font-medium">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10m-8 5h8"/></svg>
-                        <span>Diskon Manual</span>
-                    </span>
+                    <span class="text-gray-600 font-medium">Diskon Manual</span>
                     <div class="flex items-center gap-2">
                         <template x-if="manualDiscountValue > 0">
                             <div class="flex items-center gap-1.5">
@@ -678,7 +738,148 @@
             </div>
         </div>
 
-        <!-- MODAL: Pilih Varian Produk - Filament Native Style -->
+        <!-- FLOATING MOBILE CART BAR (Visible on mobile & tablet portrait < lg) -->
+        <div x-show="activePage === 'kasir' && cart.length > 0" 
+             x-cloak
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="transform translate-y-full opacity-0"
+             x-transition:enter-end="transform translate-y-0 opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="transform translate-y-0 opacity-100"
+             x-transition:leave-end="transform translate-y-full opacity-0"
+             class="lg:hidden fixed bottom-3 left-3 right-3 z-30 font-sans">
+            <button type="button" @click="showMobileCartDrawer = true" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold rounded-2xl flex items-center justify-between shadow-xl transition-all cursor-pointer border border-emerald-500">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs font-extrabold" x-text="totalItems"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider">Keranjang Belanja</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-base font-extrabold" x-text="'Rp ' + formatMoney(grandTotal)"></span>
+                    <svg class="w-5 h-5 text-emerald-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
+                </div>
+            </button>
+        </div>
+
+        <!-- MOBILE CART DRAWER (Bottom Sheet Slide-Over for < lg) -->
+        <!-- 1. Dedicated Mobile Backdrop -->
+        <div x-show="showMobileCartDrawer"
+             x-cloak
+             @click="showMobileCartDrawer = false"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="lg:hidden fixed inset-0 z-50 bg-gray-950/60 backdrop-blur-xs font-sans"></div>
+
+        <!-- 2. Bottom Sheet Content Container -->
+        <div x-show="showMobileCartDrawer"
+             x-cloak
+             class="lg:hidden fixed inset-x-0 bottom-0 z-50 flex flex-col justify-end font-sans pointer-events-none">
+            
+            <div x-show="showMobileCartDrawer"
+                 x-transition:enter="transition ease-out duration-300 transform"
+                 x-transition:enter-start="translate-y-full"
+                 x-transition:enter-end="translate-y-0"
+                 x-transition:leave="transition ease-in duration-200 transform"
+                 x-transition:leave-start="translate-y-0"
+                 x-transition:leave-end="translate-y-full"
+                 class="bg-white w-full rounded-t-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border-t border-gray-200 pointer-events-auto">
+                
+                <!-- Drawer Header -->
+                <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-white flex-shrink-0">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-base font-bold text-gray-900">Keranjang Belanja</h2>
+                        <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full" x-text="totalItems + ' Item'"></span>
+                    </div>
+                    <button type="button" @click="showMobileCartDrawer = false" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Drawer Cart Items List -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-3 divide-y divide-gray-100">
+                    <template x-for="(item, index) in cart" :key="item.product_id + '-' + (item.product_variant_id || '')">
+                        <div class="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-gray-900 truncate" x-text="item.name"></div>
+                                <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price)"></div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="updateQty(index, item.quantity - 1)" class="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">-</button>
+                                <span class="w-6 text-center font-bold text-gray-900" x-text="item.quantity"></span>
+                                <button type="button" @click="updateQty(index, item.quantity + 1)" class="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">+</button>
+                                <button type="button" @click="removeFromCart(index)" class="text-rose-500 hover:text-rose-700 ml-1 p-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Drawer Summary & Action Footer -->
+                <div class="p-4 bg-gray-50 border-t border-gray-200 space-y-3 flex-shrink-0">
+                    <!-- Voucher Selector Button -->
+                    <div class="flex justify-between items-center text-xs cursor-pointer group" @click="showVoucherModal = true">
+                        <span class="text-emerald-600 font-medium" x-text="activeVoucher ? activeVoucher.name : 'Gunakan Kupon Promo'"></span>
+                        <div class="flex items-center gap-2">
+                            <span x-show="activeVoucher" class="font-semibold text-red-600 text-xs" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
+                            <span x-show="!activeVoucher" class="text-xs font-semibold text-emerald-600">Pilih ></span>
+                            <button x-show="activeVoucher" @click.stop="removeVoucher()" class="text-gray-400 hover:text-red-600 p-0.5" title="Lepas Promo">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Diskon Manual Row -->
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-600 font-medium">Diskon Manual</span>
+                        <div class="flex items-center gap-2">
+                            <template x-if="manualDiscountValue > 0">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-semibold text-amber-700 text-xs" x-text="'- Rp ' + formatMoney(manualDiscountAmount)"></span>
+                                    <button @click="openManualDiscountModal()" class="text-gray-400 hover:text-amber-700 p-0.5" title="Edit Diskon Manual">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
+                                    <button @click="removeManualDiscount()" class="text-gray-400 hover:text-red-600 p-0.5" title="Hapus Diskon Manual">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </template>
+                            <template x-if="!manualDiscountValue || manualDiscountValue <= 0">
+                                <button @click="openManualDiscountModal()" class="text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md transition-colors cursor-pointer flex items-center gap-1">
+                                    <span>+ Potongan</span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center text-sm font-bold text-gray-900 pt-2 border-t border-gray-200">
+                        <span>Total Tagihan:</span>
+                        <span class="text-lg text-emerald-700" x-text="'Rp ' + formatMoney(grandTotal)"></span>
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button type="button" 
+                                @click="holdCart(); showMobileCartDrawer = false" 
+                                class="px-3.5 py-3 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+                                title="Masukkan ke Antrean">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="text-xs font-bold text-gray-700">Tahan</span>
+                        </button>
+                        <button type="button" 
+                                @click="showMobileCartDrawer = false; openCheckoutModal()" 
+                                class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-md flex justify-center items-center gap-2 cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            <span>PROSES PEMBAYARAN</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Pilih Varian Produk - Direct Attribute Grid + Live Image Preview -->
         <div x-show="showVariantModal"
              x-cloak
              x-transition:enter="transition ease-out duration-200"
@@ -687,7 +888,7 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
+             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-3 md:p-4" style="display: none;">
             <div @click.away="showVariantModal = false"
                  x-show="showVariantModal"
                  x-transition:enter="transition ease-out duration-200 transform"
@@ -696,45 +897,145 @@
                  x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                  x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-                 class="bg-white w-full max-w-lg rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans">
+                 class="bg-white w-full max-w-3xl rounded-xl border border-gray-200 shadow-2xl overflow-hidden font-sans flex flex-col max-h-[90vh]">
                  
                  <!-- Modal Header -->
-                 <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                 <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
                      <div>
                          <h3 class="text-base font-bold text-gray-950" x-text="currentProductForVariant ? currentProductForVariant.name : 'Pilih Varian Produk'"></h3>
-                         <p class="text-xs text-gray-500 font-medium">Pilih salah satu varian opsi produk di bawah ini</p>
+                         <p class="text-xs text-gray-500 font-medium">Pilih opsi atribut di bawah untuk melihat stok & detail varian</p>
                      </div>
-                     <button type="button" @click="showVariantModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
-                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                     </button>
-                 </div>
-                 
-                 <!-- Modal Body -->
-                 <div class="p-6 space-y-2 max-h-[60vh] overflow-y-auto">
-                     <template x-for="variant in currentVariants" :key="variant.id">
-                         <button @click="addVariantToCart(variant.id, variant.name, variant.price)" 
-                                 :disabled="variant.stock <= 0"
-                                 class="w-full flex justify-between items-center p-3.5 border rounded-lg hover:border-emerald-500 hover:bg-emerald-50/50 transition-all text-left cursor-pointer"
-                                 :class="variant.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200' : 'bg-white border-gray-200 shadow-xs'">
-                             <div>
-                                 <div class="font-bold text-xs text-gray-900" x-text="variant.name"></div>
-                                 <div class="text-[11px] font-medium" :class="variant.stock > 0 ? 'text-emerald-600' : 'text-rose-600'" x-text="variant.stock > 0 ? 'Stok Tersedia: ' + variant.stock : 'Stok Habis'"></div>
-                             </div>
-                             <div class="font-bold text-xs text-gray-950" x-text="'Rp ' + formatMoney(variant.price)"></div>
+                     <div class="flex items-center gap-3">
+                         <label class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+                             <input type="checkbox" x-model="variantShowOutOfStock" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5">
+                             <span>Tampilkan Habis</span>
+                         </label>
+                         <button type="button" @click="showVariantModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                          </button>
-                     </template>
+                     </div>
+                 </div>
+
+                 <!-- Modal Body (Split 2 Columns) -->
+                 <div class="grid grid-cols-1 md:grid-cols-12 overflow-y-auto flex-1 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                     
+                     <!-- KOLOM KIRI: Attribute Selector Groups (7/12 width) -->
+                     <div class="md:col-span-7 p-5 space-y-5 overflow-y-auto max-h-[60vh] md:max-h-none">
+                         <template x-for="group in variantAttributeGroups" :key="group.name">
+                             <div class="space-y-2">
+                                 <!-- Group Header -->
+                                 <div class="flex items-center justify-between">
+                                     <div class="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+                                         <span x-text="group.name"></span>
+                                         <span x-show="selectedVariantAttributes[group.name]" class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-bold lowercase" x-text="'✓ ' + selectedVariantAttributes[group.name]"></span>
+                                     </div>
+                                     
+                                     <!-- Search input if options > 8 -->
+                                     <template x-if="group.optionsArray.length > 8">
+                                         <div class="relative w-36">
+                                             <input type="text"
+                                                    x-model="variantAttributeSearch[group.name]"
+                                                    :placeholder="'Cari ' + group.name + '...'"
+                                                    class="w-full text-[11px] border border-gray-200 rounded-md px-2 py-1 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                         </div>
+                                     </template>
+                                 </div>
+
+                                 <!-- Option Chips Grid -->
+                                 <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-1 bg-gray-50/50 border border-gray-100 rounded-xl">
+                                     <template x-for="optVal in group.optionsArray.filter(o => !variantAttributeSearch[group.name] || o.toLowerCase().includes(variantAttributeSearch[group.name].toLowerCase()))" :key="optVal">
+                                         <button type="button"
+                                                 @click="toggleVariantAttributeOption(group.name, optVal)"
+                                                 :disabled="getOptionStockForAttribute(group.name, optVal) <= 0"
+                                                 class="px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
+                                                 :class="selectedVariantAttributes[group.name] === optVal 
+                                                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' 
+                                                     : (getOptionStockForAttribute(group.name, optVal) <= 0 
+                                                         ? (variantShowOutOfStock ? 'opacity-40 bg-gray-100 border-gray-200 text-gray-400 line-through cursor-not-allowed' : 'hidden') 
+                                                         : 'bg-white border-gray-200 text-gray-800 hover:border-emerald-500 hover:bg-emerald-50/50')">
+                                             <span x-text="optVal"></span>
+                                             <span class="text-[10px] font-normal"
+                                                   :class="selectedVariantAttributes[group.name] === optVal ? 'text-emerald-100' : 'text-gray-400'"
+                                                   x-text="'(' + getOptionStockForAttribute(group.name, optVal) + ')'"></span>
+                                         </button>
+                                     </template>
+                                 </div>
+                             </div>
+                         </template>
+                     </div>
+
+                     <!-- KOLOM KANAN: Live Preview & Details (5/12 width) -->
+                      <div class="md:col-span-5 p-4 sm:p-5 bg-gray-50/60 flex flex-col justify-between items-center text-center">
+                          <div class="w-full flex flex-row sm:flex-col items-center justify-center gap-3 sm:gap-3 text-left sm:text-center">
+                              <!-- Variant / Product Image -->
+                              <div class="w-24 h-24 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-xs flex items-center justify-center p-1 relative flex-shrink-0">
+                                  <img :src="selectedVariantPreviewImage" 
+                                       :alt="currentProductForVariant ? currentProductForVariant.name : ''" 
+                                       class="w-full h-full object-cover rounded-lg transition-all duration-200">
+                                  
+                                  <template x-if="selectedMatchedVariant">
+                                      <span class="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded-md shadow-xs"
+                                            :class="selectedMatchedVariant.stock > 0 ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'"
+                                            x-text="selectedMatchedVariant.stock > 0 ? 'Stok: ' + selectedMatchedVariant.stock : 'HABIS'">
+                                      </span>
+                                  </template>
+                              </div>
+
+                              <!-- Selection Detail Summary -->
+                              <div class="space-y-1 w-full min-w-0">
+                                  <div class="text-xs font-semibold text-gray-500 truncate" x-text="currentProductForVariant ? currentProductForVariant.name : ''"></div>
+                                  <div class="text-sm font-bold text-gray-950 leading-tight">
+                                      <span x-text="selectedMatchedVariant ? selectedMatchedVariant.name : 'Pilih kombinasi atribut'"></span>
+                                  </div>
+                                  <div class="text-base font-extrabold text-emerald-700 mt-1">
+                                      <span x-text="selectedMatchedVariant ? ('Rp ' + formatMoney(selectedMatchedVariant.price)) : (currentProductForVariant ? 'Rp ' + formatMoney(currentProductForVariant.price) : '')"></span>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <!-- Stock Alert / Instruction -->
+                          <div class="w-full mt-3 sm:mt-4">
+                              <template x-if="!isAllVariantAttributesSelected">
+                                  <p class="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-center">
+                                      Lengkapi semua opsi atribut yang tersedia
+                                  </p>
+                              </template>
+                              <template x-if="isAllVariantAttributesSelected && selectedMatchedVariant && selectedMatchedVariant.stock <= 0">
+                                  <p class="text-[11px] font-medium text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-lg text-center">
+                                      Stok varian ini habis, tidak dapat dipilih
+                                  </p>
+                              </template>
+                              <template x-if="isAllVariantAttributesSelected && selectedMatchedVariant && selectedMatchedVariant.stock > 0">
+                                  <p class="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg text-center">
+                                      Stok tersedia: <span class="font-bold" x-text="selectedMatchedVariant.stock"></span> item
+                                  </p>
+                              </template>
+                          </div>
+                      </div>
+
                  </div>
 
                  <!-- Modal Footer -->
-                 <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end rounded-b-xl">
+                 <div class="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between rounded-b-xl flex-shrink-0">
                      <button type="button" @click="showVariantModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                          Batal
+                     </button>
+
+                     <button type="button"
+                             @click="confirmAddSelectedVariantToCart()"
+                             :disabled="!isAllVariantAttributesSelected || !selectedMatchedVariant || selectedMatchedVariant.stock <= 0"
+                             class="px-5 py-2 rounded-lg font-bold text-xs shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer"
+                             :class="(isAllVariantAttributesSelected && selectedMatchedVariant && selectedMatchedVariant.stock > 0) 
+                                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                                 : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-60'">
+                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                         <span>+ TAMBAH KE KERANJANG</span>
                      </button>
                  </div>
             </div>
         </div>
 
-        <!-- MODAL: Checkout / Payment - Filament Native Style -->
+        <!-- MODAL: Checkout / Payment - Filament Native Style (Redesigned Fast POS Layout) -->
         <div x-show="showCheckoutModal" 
              x-cloak
              x-transition:enter="transition ease-out duration-200"
@@ -756,145 +1057,166 @@
                  class="bg-white w-full max-w-3xl rounded-xl border border-gray-200 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden font-sans">
                 
                 <!-- Modal Header -->
-                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-gray-950">Pembayaran Transaksi Kasir</h3>
-                            <p class="text-xs text-gray-500 font-medium">Pilih metode pembayaran dan masukkan nominal bayar</p>
-                        </div>
+                <div class="px-6 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
+                    <div>
+                        <h3 class="text-base font-bold text-gray-950">Pembayaran Transaksi Kasir</h3>
+                        <p class="text-xs text-gray-500 font-medium">Pilih metode pembayaran dan masukkan nominal bayar</p>
                     </div>
-                    <button type="button" @click="showCheckoutModal = false" :disabled="isProcessing" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                    <button type="button" @click="showCheckoutModal = false" :disabled="isProcessing" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <!-- Body 2 Kolom: Scrollable -->
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 overflow-y-auto flex-1 bg-gray-50/50">
+                <!-- Body 2 Kolom Layout -->
+                <div class="grid grid-cols-1 md:grid-cols-12 overflow-y-auto flex-1 divide-y md:divide-y-0 md:divide-x divide-gray-200 bg-white">
                     
-                    <!-- Kolom Kiri: Rincian Barang (Col 5) -->
-                    <div class="md:col-span-5 space-y-4 flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2.5">Rincian Barang Belanja</h4>
-                            <div class="max-h-56 overflow-y-auto space-y-2 pr-1">
-                                <template x-for="(item, idx) in cart" :key="idx">
-                                    <div class="bg-white p-3 rounded-lg shadow-xs border border-gray-200 space-y-0.5 text-xs">
-                                        <div class="flex justify-between items-start font-bold text-gray-900">
-                                            <span x-text="item.name" class="pr-2 leading-snug"></span>
-                                            <span class="whitespace-nowrap" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></span>
+                    <!-- Kolom Kiri: Ringkasan Tagihan & Item (Col 5) -->
+                    <div class="md:col-span-5 p-5 bg-gray-50/50 flex flex-col justify-between space-y-4">
+                        <div class="space-y-4">
+                            <!-- Giant Total Tagihan Display -->
+                            <div class="bg-emerald-600 text-white p-4 rounded-xl shadow-xs">
+                                <span class="text-[11px] font-bold uppercase tracking-wider block opacity-90">Total Tagihan</span>
+                                <span class="text-2xl sm:text-3xl font-extrabold mt-1 block" x-text="'Rp ' + formatMoney(grandTotal)"></span>
+                            </div>
+
+                            <!-- List Items (Scrollable) -->
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-gray-900 text-xs uppercase tracking-wider">Rincian Barang</h4>
+                                    <span class="text-[11px] font-semibold text-gray-500" x-text="cart.length + ' item'"></span>
+                                </div>
+                                <div class="max-h-48 overflow-y-auto space-y-1.5 pr-1 border border-gray-200 rounded-xl p-2.5 bg-white shadow-xs">
+                                    <template x-for="(item, idx) in cart" :key="idx">
+                                        <div class="flex justify-between items-center text-xs py-1 border-b border-gray-100 last:border-b-0">
+                                            <div class="pr-2 truncate">
+                                                <div class="font-bold text-gray-900 truncate" x-text="item.name"></div>
+                                                <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' × ' + item.quantity + ' pcs'"></div>
+                                            </div>
+                                            <div class="font-bold text-gray-950 whitespace-nowrap" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></div>
                                         </div>
-                                        <div class="text-[11px] text-gray-500 font-medium" x-text="'Rp ' + formatMoney(item.price) + ' × ' + item.quantity + ' pcs'"></div>
-                                    </div>
-                                </template>
+                                    </template>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Card Total Tagihan -->
-                        <div class="bg-white p-4 rounded-xl shadow-xs border border-gray-200 space-y-2 mt-auto">
-                            <div class="flex justify-between text-xs text-gray-500 font-medium">
-                                <span>Subtotal Belanja</span>
+                        <!-- Financial Summary Breakdown -->
+                        <div class="bg-white p-3 rounded-xl border border-gray-200 text-xs space-y-1.5 shadow-xs">
+                            <div class="flex justify-between text-gray-600 font-medium">
+                                <span>Subtotal</span>
                                 <span class="font-bold text-gray-900" x-text="'Rp ' + formatMoney(subtotal)"></span>
                             </div>
-                            <div x-show="activeVoucher" class="flex justify-between text-xs text-emerald-700 font-medium">
-                                <span>Diskon Promo</span>
-                                <span class="font-bold" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
-                            </div>
-                            <div x-show="manualDiscountValue > 0" class="flex justify-between text-xs text-amber-700 font-medium">
-                                <span>Diskon Manual</span>
-                                <span class="font-bold" x-text="'- Rp ' + formatMoney(manualDiscountAmount)"></span>
-                            </div>
-                            <div class="border-t border-gray-200 pt-2.5 flex justify-between items-center">
-                                <span class="font-bold text-gray-900 text-xs uppercase tracking-wider">Total Tagihan</span>
-                                <span class="text-xl font-extrabold text-emerald-600" x-text="'Rp ' + formatMoney(grandTotal)"></span>
-                            </div>
+                            <template x-if="voucherDiscountAmount > 0">
+                                <div class="flex justify-between text-emerald-700 font-medium">
+                                    <span>Diskon Voucher</span>
+                                    <span class="font-bold" x-text="'- Rp ' + formatMoney(voucherDiscountAmount)"></span>
+                                </div>
+                            </template>
+                            <template x-if="manualDiscountAmount > 0">
+                                <div class="flex justify-between text-amber-700 font-medium">
+                                    <span>Diskon Manual</span>
+                                    <span class="font-bold" x-text="'- Rp ' + formatMoney(manualDiscountAmount)"></span>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
                     <!-- Kolom Kanan: Metode Bayar & Nominal (Col 7) -->
-                    <div class="md:col-span-7 space-y-4">
-                        <div>
-                            <h4 class="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2.5">Metode Pembayaran</h4>
-                            
-                            <div class="grid grid-cols-2 gap-2.5 max-h-44 overflow-y-auto pr-1">
-                                <template x-for="method in paymentMethods" :key="method.code">
-                                    <button type="button"
-                                            @click="selectPaymentMethod(method)"
-                                            class="h-11 px-3 rounded-lg text-xs font-semibold flex items-center justify-between transition duration-150 shadow-xs cursor-pointer"
-                                            :class="paymentMethod === method.code ? 'border-2 border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'">
-                                        <div class="flex items-center gap-2 truncate">
-                                            <template x-if="method.logo">
-                                                <img :src="method.logo" :alt="method.name" class="w-4 h-4 object-contain flex-shrink-0">
-                                            </template>
-                                            <span class="truncate" x-text="method.name"></span>
-                                        </div>
-                                        <span x-show="paymentMethod === method.code" class="w-2.5 h-2.5 rounded-full bg-emerald-600 flex-shrink-0"></span>
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- Nominal Uang (Jika Tunai) -->
-                        <div x-show="isCashSelected()" x-transition.opacity class="space-y-3">
+                    <div class="md:col-span-7 p-5 space-y-4 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <!-- Metode Pembayaran Grid -->
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Uang Diterima (Rp)</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-500">Rp</div>
-                                    <input type="number"
-                                           x-model.number="cashPaid"
-                                           @input="calculateChange"
-                                           class="w-full pl-9 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-xl font-bold text-gray-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
-                                           placeholder="0">
+                                <h4 class="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2.5">Metode Pembayaran</h4>
+                                
+                                <div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+                                    <template x-for="method in paymentMethods" :key="method.code">
+                                        <button type="button"
+                                                @click="selectPaymentMethod(method)"
+                                                class="h-10 px-3 rounded-xl text-xs font-semibold flex items-center justify-between transition duration-150 shadow-xs cursor-pointer"
+                                                :class="paymentMethod === method.code ? 'border-2 border-emerald-600 bg-emerald-50/90 text-emerald-950 font-bold' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'">
+                                            <div class="flex items-center gap-2 truncate">
+                                                <template x-if="method.logo">
+                                                    <img :src="method.logo" :alt="method.name" class="w-4 h-4 object-contain flex-shrink-0">
+                                                </template>
+                                                <span class="truncate" x-text="method.name"></span>
+                                            </div>
+                                            <span x-show="paymentMethod === method.code" class="w-2.5 h-2.5 rounded-full bg-emerald-600 flex-shrink-0"></span>
+                                        </button>
+                                    </template>
                                 </div>
                             </div>
 
-                            <!-- Preset Nominal Buttons -->
-                            <div class="grid grid-cols-3 gap-2">
-                                <button type="button" @click="setCashPaid(grandTotal)" class="py-2 bg-white border border-gray-300 rounded-lg font-bold text-xs text-gray-800 shadow-xs hover:bg-gray-50 transition cursor-pointer">Uang Pas</button>
-                                <button type="button" @click="setCashPaid(Math.ceil(grandTotal/50000)*50000)" class="py-2 bg-white border border-gray-300 rounded-lg font-bold text-xs text-gray-800 shadow-xs hover:bg-gray-50 transition cursor-pointer" x-text="'Rp ' + formatMoney(Math.ceil(grandTotal/50000)*50000)"></button>
-                                <button type="button" @click="setCashPaid(Math.ceil(grandTotal/100000)*100000)" class="py-2 bg-white border border-gray-300 rounded-lg font-bold text-xs text-gray-800 shadow-xs hover:bg-gray-50 transition cursor-pointer" x-text="'Rp ' + formatMoney(Math.ceil(grandTotal/100000)*100000)"></button>
+                            <!-- Nominal Uang (Jika Tunai) -->
+                            <div x-show="isCashSelected()" x-transition.opacity class="space-y-3 bg-emerald-50/40 p-4 rounded-xl border border-emerald-200/80">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-900 mb-1.5">Uang Diterima (Rp)</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-sm font-extrabold text-gray-400">Rp</div>
+                                        <input type="text"
+                                               x-model="displayCashPaid"
+                                               @input="updateCashPaidInput($event.target.value)"
+                                               @focus="$event.target.select()"
+                                               class="w-full pl-10 pr-3.5 py-2.5 bg-white border border-emerald-300 rounded-lg text-xl font-extrabold text-gray-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
+                                               placeholder="0">
+                                    </div>
+                                </div>
+
+                                <!-- Smart Unique Preset Nominal Buttons -->
+                                <div>
+                                    <span class="text-[11px] font-semibold text-emerald-900 block mb-1">Nominal Cepat:</span>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <template x-for="(preset, pIdx) in getNominalPresets()" :key="pIdx">
+                                            <button type="button" 
+                                                    @click="setCashPaid(preset)" 
+                                                    class="py-2 px-1 rounded-lg font-bold text-xs shadow-xs transition cursor-pointer text-center truncate border"
+                                                    :class="Number(cashPaid) === Number(preset) 
+                                                        ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700' 
+                                                        : 'bg-white text-emerald-900 border-emerald-300 hover:bg-emerald-100'">
+                                                <span x-text="pIdx === 0 ? 'Uang Pas' : ('Rp ' + formatMoney(preset))"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Prominent Kembalian Box -->
+                                <div class="p-3.5 rounded-xl flex items-center justify-between text-xs font-bold border shadow-xs"
+                                     :class="cashPaid < grandTotal ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-100/80 border-emerald-300 text-emerald-950'">
+                                    <span class="uppercase tracking-wider font-extrabold" x-text="cashPaid < grandTotal ? 'Uang Masih Kurang' : 'Kembalian'"></span>
+                                    <span class="text-xl font-extrabold" x-text="'Rp ' + formatMoney(Math.abs(cashChange))"></span>
+                                </div>
                             </div>
 
-                            <!-- Status Kembalian / Uang Kurang -->
-                            <div class="p-3 rounded-lg flex items-center justify-between text-xs font-bold border shadow-xs"
-                                 :class="cashPaid < grandTotal ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-50 border-emerald-200 text-emerald-900'">
-                                <span x-text="cashPaid < grandTotal ? 'UANG KURANG' : 'KEMBALIAN'"></span>
-                                <span class="text-sm font-extrabold" x-text="'Rp ' + formatMoney(Math.abs(cashChange))"></span>
+                            <!-- Catatan Pembayaran Non-Tunai -->
+                            <div x-show="!isCashSelected()" x-transition.opacity class="p-3.5 bg-white rounded-xl border border-gray-200 text-xs text-gray-600 leading-relaxed shadow-xs">
+                                Metode pembayaran non-tunai (<strong x-text="paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod"></strong>) dipilih. Transaksi akan dicatat di laporan kasir.
                             </div>
-                        </div>
 
-                        <!-- Catatan Pembayaran Non-Tunai -->
-                        <div x-show="!isCashSelected()" x-transition.opacity class="p-3.5 bg-white rounded-lg border border-gray-200 text-xs text-gray-600 leading-relaxed shadow-xs">
-                            Metode pembayaran non-tunai (<strong x-text="paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod"></strong>) dipilih. Transaksi akan dicatat di laporan kasir.
-                        </div>
-
-                        <!-- Identitas Pembeli (Opsional) -->
-                        <div class="pt-2 border-t border-gray-200">
-                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Data Pelanggan (Opsional)</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="text" x-model="customerName" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" placeholder="Nama Pembeli">
-                                <input type="text" x-model="customerPhone" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" placeholder="No WhatsApp">
+                            <!-- Identitas Pembeli (Opsional) -->
+                            <div class="pt-2 border-t border-gray-200">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Pelanggan (Opsional)</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" x-model="customerName" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" placeholder="Nama Pembeli">
+                                    <input type="text" x-model="customerPhone" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" placeholder="No WhatsApp">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Footer Action Buttons -->
-                <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
+                <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-between rounded-b-xl flex-shrink-0">
                     <button type="button" @click="showCheckoutModal = false" :disabled="isProcessing" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                         Batal
                     </button>
                     <button type="button" @click="submitOrder()" 
                             :disabled="isProcessing || (isCashSelected() && cashPaid < grandTotal)" 
-                            class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-md transition duration-150 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                         <span x-show="!isProcessing" class="flex items-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>Selesaikan Pembayaran</span>
+                            <span>SELESAIKAN PEMBAYARAN</span>
                         </span>
                         <span x-show="isProcessing" class="flex items-center gap-2">
                             <svg class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            <span>Memproses...</span>
+                            <span>Memproses Transaksi...</span>
                         </span>
                     </button>
                 </div>
@@ -1031,7 +1353,7 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showHoldModal = false"
                  x-show="showHoldModal"
                  x-transition:enter="transition ease-out duration-200 transform"
@@ -1044,14 +1366,9 @@
                 
                 <!-- Modal Header -->
                 <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-gray-950">Daftar Antrean Pesanan</h3>
-                            <p class="text-xs text-gray-500 font-medium">Keranjang belanja yang ditahan sementara</p>
-                        </div>
+                    <div>
+                        <h3 class="text-base font-bold text-gray-950">Daftar Antrean Pesanan</h3>
+                        <p class="text-xs text-gray-500 font-medium">Keranjang belanja yang ditahan sementara</p>
                     </div>
                     <button type="button" @click="showHoldModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -1774,14 +2091,9 @@
                 
                 <!-- Modal Header -->
                 <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-gray-950">Catat Kas Masuk / Keluar</h3>
-                            <p class="text-xs text-gray-500 font-medium">Pencatatan kas petty kasir shift ini</p>
-                        </div>
+                    <div>
+                        <h3 class="text-base font-bold text-gray-950">Catat Kas Masuk / Keluar</h3>
+                        <p class="text-xs text-gray-500 font-medium">Pencatatan kas petty kasir shift ini</p>
                     </div>
                     <button type="button" @click="showPettyCashModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -1848,7 +2160,7 @@
              x-transition:leave="transition ease-in duration-150"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
+             class="fixed inset-0 z-[60] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
             <div @click.away="showVoucherModal = false"
                  x-show="showVoucherModal"
                  x-transition:enter="transition ease-out duration-200 transform"
@@ -1861,14 +2173,9 @@
                 
                 <!-- Modal Header -->
                 <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-gray-950">Pilih Kupon Promo</h3>
-                            <p class="text-xs text-gray-500 font-medium">Voucher diskon aktif untuk transaksi ini</p>
-                        </div>
+                    <div>
+                        <h3 class="text-base font-bold text-gray-950">Pilih Kupon Promo</h3>
+                        <p class="text-xs text-gray-500 font-medium">Voucher diskon aktif untuk transaksi ini</p>
                     </div>
                     <button type="button" @click="showVoucherModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -1929,7 +2236,7 @@
         <!-- ============================================ -->
         <!-- PAGE: Riwayat Transaksi (Filament Native Style) -->
         <!-- ============================================ -->
-        <div x-show="activePage === 'history'" wire:key="pos-page-history" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-y-auto font-sans">
+        <div x-show="activePage === 'history'" x-cloak wire:key="pos-page-history" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-y-auto font-sans">
             <div class="p-4 md:p-6 max-w-7xl w-full mx-auto space-y-5">
                 
                 <!-- Header Title Bar -->
@@ -1947,34 +2254,19 @@
                     </div>
                 </div>
 
-                <!-- Ringkasan KPI (Filament Stat Cards - Grid 3 Kolom) -->
+                <!-- Ringkasan KPI -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Total Omzet Filtered</p>
-                            <p class="text-xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionOrders->where('status', '!=', 'cancelled')->sum('grand_total'), 0, ',', '.') }}</p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Omzet Filtered</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionOrders->where('status', '!=', 'cancelled')->sum('grand_total'), 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Nota Selesai</p>
-                            <p class="text-xl font-bold text-gray-950 mt-1">{{ $sessionOrders->where('status', '!=', 'cancelled')->count() }} <span class="text-xs font-normal text-gray-500">Nota</span></p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Nota Selesai</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">{{ $sessionOrders->where('status', '!=', 'cancelled')->count() }} <span class="text-sm font-normal text-gray-400">nota</span></p>
                     </div>
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Nota VOID / Batal</p>
-                            <p class="text-xl font-bold text-gray-950 mt-1">{{ $sessionOrders->where('status', 'cancelled')->count() }} <span class="text-xs font-normal text-gray-500">Nota</span></p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Nota VOID / Batal</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">{{ $sessionOrders->where('status', 'cancelled')->count() }} <span class="text-sm font-normal text-gray-400">nota</span></p>
                     </div>
                 </div>
 
@@ -2259,7 +2551,7 @@
         <!-- ============================================ -->
         <!-- PAGE: Riwayat Retur (Filament Native Table)  -->
         <!-- ============================================ -->
-        <div x-show="activePage === 'returns'" wire:key="pos-page-returns" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
+        <div x-show="activePage === 'returns'" x-cloak wire:key="pos-page-returns" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
             <!-- Header -->
             <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
                 <div class="flex items-center gap-3">
@@ -2277,34 +2569,19 @@
 
             <!-- Content Area -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-                <!-- Ringkasan KPI Retur (Filament Stat Cards - Grid 3 Kolom) -->
+                <!-- Ringkasan KPI Retur -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Total Transaksi Retur</p>
-                            <p class="text-xl font-bold text-gray-950 mt-1">{{ count($sessionReturns ?? []) }} <span class="text-xs font-normal text-gray-500">Transaksi</span></p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Transaksi Retur</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">{{ count($sessionReturns ?? []) }} <span class="text-sm font-normal text-gray-400">transaksi</span></p>
                     </div>
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Total Refund Kas</p>
-                            <p class="text-xl font-bold text-rose-600 mt-1">Rp {{ number_format(abs(collect($sessionReturns ?? [])->where('net_amount', '<', 0)->sum('net_amount')), 0, ',', '.') }}</p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Refund Kas</p>
+                        <p class="text-2xl font-bold text-rose-600 mt-1">Rp {{ number_format(abs(collect($sessionReturns ?? [])->where('net_amount', '<', 0)->sum('net_amount')), 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Total Tambah Bayar (Tukar)</p>
-                            <p class="text-xl font-bold text-emerald-600 mt-1">Rp {{ number_format(collect($sessionReturns ?? [])->where('net_amount', '>', 0)->sum('net_amount'), 0, ',', '.') }}</p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Tambah Bayar (Tukar)</p>
+                        <p class="text-2xl font-bold text-emerald-600 mt-1">Rp {{ number_format(collect($sessionReturns ?? [])->where('net_amount', '>', 0)->sum('net_amount'), 0, ',', '.') }}</p>
                     </div>
                 </div>
 
@@ -2424,6 +2701,7 @@
         <!-- PAGE: Pelanggan (Filament Native Table)      -->
         <!-- ============================================ -->
         <div x-show="activePage === 'customers'"
+             x-cloak
              x-data="{ customerSearch: '' }"
              wire:key="pos-page-customers"
              x-transition:enter="transition ease-out duration-200"
@@ -2445,34 +2723,19 @@
 
             <!-- Content Area -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-                <!-- Ringkasan KPI Pelanggan (Filament Stat Cards - Grid 3 Kolom) -->
+                <!-- Ringkasan KPI Pelanggan -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Total Pelanggan Shift Ini</p>
-                            <p class="text-xl font-bold text-gray-950 mt-1">{{ count($sessionCustomers) }} <span class="text-xs font-normal text-gray-500">Orang</span></p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Pelanggan Shift Ini</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">{{ count($sessionCustomers) }} <span class="text-sm font-normal text-gray-400">orang</span></p>
                     </div>
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Total Belanja Pelanggan</p>
-                            <p class="text-xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionCustomers->sum('total_spent'), 0, ',', '.') }}</p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Belanja Pelanggan</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionCustomers->sum('total_spent'), 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Kartu Stempel Gratis Ready</p>
-                            <p class="text-xl font-bold text-amber-600 mt-1">{{ $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= 10 || ($c->completed_cards_count ?? 0) > 0)->count() }} <span class="text-xs font-normal text-gray-500">Voucher</span></p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 13C10.832 21 4 15.8 4 10a8 8 0 1116 0c0 5.8-6.832 11-8 11z"/></svg>
-                        </div>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Kartu Stempel Gratis Ready</p>
+                        <p class="text-2xl font-bold text-amber-600 mt-1">{{ $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= 10 || ($c->completed_cards_count ?? 0) > 0)->count() }} <span class="text-sm font-normal text-gray-400">voucher</span></p>
                     </div>
                 </div>
 
@@ -2581,7 +2844,7 @@
         <!-- ============================================ -->
         <!-- PAGE: Rekap Kas (Filament Native Style)      -->
         <!-- ============================================ -->
-        <div x-show="activePage === 'cashsummary'" wire:key="pos-page-cashsummary" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
+        <div x-show="activePage === 'cashsummary'" x-cloak wire:key="pos-page-cashsummary" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
             <!-- Header -->
             <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
                 <div class="flex items-center gap-3">
@@ -2590,7 +2853,7 @@
                     </button>
                     <div>
                         <h1 class="text-xl font-bold tracking-tight text-gray-950">Rekap Kas Shift</h1>
-                        @if(!empty($sessionStats))
+                                        @if(!empty($sessionStats))
                         <p class="text-xs text-gray-500 font-medium">Shift dibuka sejak {{ $sessionStats['opened_at'] }}</p>
                         @endif
                     </div>
@@ -2600,120 +2863,74 @@
             @if(!empty($sessionStats))
             <!-- Content Area -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-                <!-- Ringkasan KPI Rekap Kas (Filament Stat Cards - Grid 3 Kolom) -->
+                <!-- Ringkasan KPI - 3 Stat Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <!-- Stat 1: Estimasi Kas di Laci (Featured) -->
-                    <div class="bg-emerald-50/70 rounded-xl border border-emerald-200/80 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Estimasi Kas di Laci Kasir</p>
-                            <p class="text-xl font-extrabold text-emerald-950 mt-1">Rp {{ number_format($sessionStats['expected_cash'], 0, ',', '.') }}</p>
-                            <p class="text-[10px] text-emerald-700 font-medium mt-0.5">Modal + Tunai + Kas Masuk - Out</p>
-                        </div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        </div>
+                    <div class="bg-emerald-50 rounded-xl border border-emerald-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Estimasi Kas di Laci</p>
+                        <p class="text-2xl font-bold text-emerald-950 mt-1">Rp {{ number_format($sessionStats['expected_cash'], 0, ',', '.') }}</p>
+                        <p class="text-[11px] text-emerald-600 mt-0.5">Modal + Tunai + Kas Masuk - Keluar</p>
                     </div>
 
-                    <!-- Stat 2: Total Omzet Sales -->
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Total Omzet Penjualan</p>
-                            <p class="text-xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5">Tunai + Non-Tunai Shift Ini</p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                    <!-- Stat 2: Total Omzet -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Omzet Penjualan</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Tunai + Non-Tunai shift ini</p>
                     </div>
 
-                    <!-- Stat 3: Total Transaksi Selesai -->
-                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs flex items-center justify-between">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500">Total Nota Selesai</p>
-                            <p class="text-xl font-bold text-gray-950 mt-1">{{ $sessionStats['total_trx'] }} <span class="text-xs font-normal text-gray-500">Nota</span></p>
-                            <p class="text-[10px] text-gray-500 mt-0.5">Berhasil Diproses</p>
-                        </div>
-                        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
+                    <!-- Stat 3: Total Nota -->
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Nota Selesai</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">{{ $sessionStats['total_trx'] }} <span class="text-sm font-normal text-gray-400">nota</span></p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Berhasil diproses</p>
                     </div>
                 </div>
 
-                <!-- 2-COLUMN GRID (Breakdown Arus Kas + Tabel Petty Cash) -->
+                <!-- 2-COLUMN GRID -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    <!-- KOLOM KIRI (5/12): Rincian Arus Kas & Akses Tutup Shift -->
+                    <!-- KOLOM KIRI: Rincian Arus Kas -->
                     <div class="lg:col-span-5 space-y-4">
-                        <div class="bg-white rounded-xl border border-gray-200 shadow-xs p-5 space-y-4">
-                            <div class="border-b border-gray-100 pb-3">
-                                <h3 class="font-bold text-gray-900 text-sm">Rincian Arus Kas Shift</h3>
-                                <p class="text-xs text-gray-500">Komposisi penerimaan & pengeluaran kasir</p>
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                            <div class="px-5 py-3.5 border-b border-gray-200">
+                                <div class="text-sm font-bold text-gray-900">Rincian Arus Kas Shift</div>
+                                <div class="text-xs text-gray-500">Komposisi penerimaan & pengeluaran kasir</div>
                             </div>
 
-                            <div class="space-y-3">
-                                <!-- Modal Awal -->
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                        </div>
-                                        <span class="text-gray-700 font-medium">Modal Awal Shift</span>
-                                    </div>
+                            <div class="divide-y divide-gray-100">
+                                <div class="flex justify-between items-center px-5 py-3 text-xs">
+                                    <span class="text-gray-600">Modal Awal Shift</span>
                                     <span class="font-semibold text-gray-900">Rp {{ number_format($sessionStats['opening_cash'], 0, ',', '.') }}</span>
                                 </div>
 
-                                <!-- Penjualan Tunai -->
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        </div>
-                                        <span class="text-gray-700 font-medium">Penjualan Tunai (Cash)</span>
-                                    </div>
-                                    <span class="font-bold text-emerald-600">+ Rp {{ number_format($sessionStats['cash_sales'], 0, ',', '.') }}</span>
+                                <div class="flex justify-between items-center px-5 py-3 text-xs">
+                                    <span class="text-gray-600">Penjualan Tunai (Cash)</span>
+                                    <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sessionStats['cash_sales'], 0, ',', '.') }}</span>
                                 </div>
 
-                                <!-- Non-Tunai -->
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-7 h-7 bg-sky-50 rounded-lg flex items-center justify-center text-sky-600">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                                        </div>
-                                        <span class="text-gray-700 font-medium">Non-Tunai (QRIS / Transfer / EDC)</span>
-                                    </div>
-                                    <span class="font-bold text-sky-600">+ Rp {{ number_format($sessionStats['non_cash_sales'], 0, ',', '.') }}</span>
+                                <div class="flex justify-between items-center px-5 py-3 text-xs">
+                                    <span class="text-gray-600">Non-Tunai (QRIS / Transfer / EDC)</span>
+                                    <span class="font-semibold text-gray-700">+ Rp {{ number_format($sessionStats['non_cash_sales'], 0, ',', '.') }}</span>
                                 </div>
 
-                                <!-- Kas Masuk -->
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
-                                        </div>
-                                        <span class="text-gray-700 font-medium">Kas Masuk Petty Cash</span>
-                                    </div>
-                                    <span class="font-bold text-emerald-600">+ Rp {{ number_format($sessionStats['petty_cash_in'], 0, ',', '.') }}</span>
+                                <div class="flex justify-between items-center px-5 py-3 text-xs">
+                                    <span class="text-gray-600">Kas Masuk Petty Cash</span>
+                                    <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sessionStats['petty_cash_in'], 0, ',', '.') }}</span>
                                 </div>
 
-                                <!-- Kas Keluar -->
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100 text-xs">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-7 h-7 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
-                                        </div>
-                                        <span class="text-gray-700 font-medium">Kas Keluar Petty Cash</span>
-                                    </div>
-                                    <span class="font-bold text-rose-600">- Rp {{ number_format($sessionStats['petty_cash_out'], 0, ',', '.') }}</span>
+                                <div class="flex justify-between items-center px-5 py-3 text-xs">
+                                    <span class="text-gray-600">Kas Keluar Petty Cash</span>
+                                    <span class="font-semibold text-rose-600">- Rp {{ number_format($sessionStats['petty_cash_out'], 0, ',', '.') }}</span>
                                 </div>
 
-                                <!-- Total Omzet -->
-                                <div class="flex justify-between items-center pt-2 text-xs">
+                                <div class="flex justify-between items-center px-5 py-3.5 text-xs bg-gray-50">
                                     <span class="font-bold text-gray-900">Total Omzet Penjualan</span>
-                                    <span class="font-extrabold text-base text-gray-950">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</span>
+                                    <span class="font-bold text-sm text-gray-950">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Action Button Tutup Shift -->
+                        <!-- Tombol Tutup Shift -->
                         <button @click="activePage = 'kasir'; $nextTick(() => showCloseSession = true)"
                                 class="w-full py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition duration-150 flex items-center justify-center gap-2 cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -2721,10 +2938,10 @@
                         </button>
                     </div>
 
-                    <!-- KOLOM KANAN (7/12): Tabel Riwayat Kas Masuk / Keluar (Petty Cash Table) -->
+                    <!-- KOLOM KANAN: Tabel Riwayat Petty Cash -->
                     <div class="lg:col-span-7">
                         <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden h-full flex flex-col">
-                            <!-- Table Header Toolbar -->
+                            <!-- Toolbar -->
                             <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
                                 <div>
                                     <div class="text-sm font-bold text-gray-900">Riwayat Kas Masuk / Keluar</div>
@@ -2759,30 +2976,19 @@
                                     <tbody class="divide-y divide-gray-100 text-xs">
                                         @foreach($sessionPettyCash as $cashLog)
                                         <tr wire:key="cashlog-row-{{ $cashLog->id }}" class="hover:bg-gray-50/80 transition-colors">
-                                            <!-- Waktu -->
                                             <td class="py-3 px-4 whitespace-nowrap font-mono text-gray-500">
                                                 {{ $cashLog->created_at->format('H:i') }} WIB
                                             </td>
-
-                                            <!-- Tipe -->
                                             <td class="py-3 px-4 text-center whitespace-nowrap">
                                                 @if($cashLog->type === 'out')
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20">
-                                                        KAS KELUAR
-                                                    </span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20">KAS KELUAR</span>
                                                 @else
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                                                        KAS MASUK
-                                                    </span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">KAS MASUK</span>
                                                 @endif
                                             </td>
-
-                                            <!-- Keterangan -->
                                             <td class="py-3 px-4">
                                                 <div class="font-semibold text-gray-900">{{ $cashLog->description }}</div>
                                             </td>
-
-                                            <!-- Nominal -->
                                             <td class="py-3 px-4 text-right whitespace-nowrap font-bold">
                                                 <span class="{{ $cashLog->type === 'out' ? 'text-rose-600' : 'text-emerald-600' }}">
                                                     {{ $cashLog->type === 'out' ? '-' : '+' }} Rp {{ number_format($cashLog->amount, 0, ',', '.') }}
@@ -2805,17 +3011,14 @@
     <div x-show="showReceiptPreviewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
         <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showReceiptPreviewModal = false">
             <!-- Header -->
-            <div class="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-base leading-tight">Pembayaran Berhasil!</h3>
-                        <p class="text-xs text-emerald-100 font-medium" x-text="previewReceiptData.orderNumber"></p>
-                    </div>
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                <div>
+                    <h3 class="font-bold text-base text-gray-950">Pembayaran Berhasil</h3>
+                    <p class="text-xs text-gray-500 font-medium" x-text="previewReceiptData.orderNumber"></p>
                 </div>
-                <button @click="showReceiptPreviewModal = false" class="text-emerald-100 hover:text-white p-1 rounded-lg transition">&times;</button>
+                <button @click="showReceiptPreviewModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
 
             <!-- Content Area -->
@@ -2955,11 +3158,13 @@
                 // Modals
                 showVariantModal: false,
                 showCheckoutModal: false,
+                showMobileCartDrawer: false,
                 showCloseSession: false,
                 activePage: 'kasir',
                 
                 // Checkout State
                 cashPaid: 0,
+                displayCashPaid: '',
                 cashChange: 0,
                 paymentMethod: 'cash',
                 customerName: '',
@@ -2972,6 +3177,10 @@
 
                 currentProductForVariant: null,
                 currentVariants: [],
+                variantShowOutOfStock: false,
+                selectedVariantAttributes: {},
+                variantAttributeSearch: {},
+                variantAttributeGroups: [],
                 
                 // Printer State
                 printerConnected: false,
@@ -3268,6 +3477,14 @@
                         } catch(e) {}
                     }
 
+                    this.loadActiveCart();
+
+                    this.$watch('cart', () => this.saveActiveCart());
+                    this.$watch('activeVoucher', () => this.saveActiveCart());
+                    this.$watch('manualDiscountValue', () => this.saveActiveCart());
+                    this.$watch('customerName', () => this.saveActiveCart());
+                    this.$watch('customerPhone', () => this.saveActiveCart());
+
                     // Menerima event dari Livewire
                     if (sessionStorage.getItem('pos_locked') === 'true') {
                         this.isLocked = true;
@@ -3330,6 +3547,43 @@
 
                 saveHeldCarts() {
                     localStorage.setItem('pos_held_carts', JSON.stringify(this.heldCarts));
+                },
+
+                saveActiveCart() {
+                    if (this.cart && this.cart.length > 0) {
+                        const payload = {
+                            cart: this.cart,
+                            activeVoucher: this.activeVoucher,
+                            manualDiscountType: this.manualDiscountType,
+                            manualDiscountValue: this.manualDiscountValue,
+                            customerName: this.customerName,
+                            customerPhone: this.customerPhone,
+                            loyaltyRedeemStamps: this.loyaltyRedeemStamps,
+                            activeCustomerLoyalty: this.activeCustomerLoyalty,
+                        };
+                        localStorage.setItem('pos_active_cart', JSON.stringify(payload));
+                    } else {
+                        localStorage.removeItem('pos_active_cart');
+                    }
+                },
+
+                loadActiveCart() {
+                    const stored = localStorage.getItem('pos_active_cart');
+                    if (stored) {
+                        try {
+                            const payload = JSON.parse(stored);
+                            if (payload && Array.isArray(payload.cart) && payload.cart.length > 0) {
+                                this.cart = payload.cart;
+                                this.activeVoucher = payload.activeVoucher || null;
+                                this.manualDiscountType = payload.manualDiscountType || 'rp';
+                                this.manualDiscountValue = payload.manualDiscountValue || 0;
+                                this.customerName = payload.customerName || '';
+                                this.customerPhone = payload.customerPhone || '';
+                                this.loyaltyRedeemStamps = payload.loyaltyRedeemStamps || 0;
+                                this.activeCustomerLoyalty = payload.activeCustomerLoyalty || null;
+                            }
+                        } catch(e) {}
+                    }
                 },
 
                 holdCart() {
@@ -3413,14 +3667,133 @@
                     );
                 },
 
-                addProduct(id, name, price, hasVariants, variants = null) {
+                addProduct(id, name, price, hasVariants, variants = null, defaultImage = null) {
                     if (hasVariants && variants) {
-                        this.currentProductForVariant = { id, name };
-                        this.currentVariants = variants;
-                        this.showVariantModal = true;
+                        this.initVariantSelector(id, name, price, variants, defaultImage);
                         return;
                     }
                     this.addToCart(id, null, name, price);
+                },
+
+                initVariantSelector(id, name, price, variants, defaultImage) {
+                    this.currentProductForVariant = { id, name, price, defaultImage: defaultImage || '' };
+                    this.currentVariants = variants || [];
+                    this.variantShowOutOfStock = false;
+                    this.selectedVariantAttributes = {};
+                    this.variantAttributeSearch = {};
+
+                    // Extract ALL attribute groups (INCLUDE ALL ATTRIBUTES: Bahan, Ukuran, Warna, etc.)
+                    const attrMap = {};
+                    this.currentVariants.forEach(v => {
+                        if (v.attributes && Array.isArray(v.attributes)) {
+                            v.attributes.forEach(attr => {
+                                if (attr.attr_name) {
+                                    if (!attrMap[attr.attr_name]) {
+                                        attrMap[attr.attr_name] = {
+                                            name: attr.attr_name,
+                                            slug: attr.attr_slug,
+                                            options: new Set()
+                                        };
+                                    }
+                                    if (attr.value) attrMap[attr.attr_name].options.add(attr.value);
+                                }
+                            });
+                        }
+                    });
+
+                    // Order attribute groups: Ukuran/Size first, then others
+                    const sortedGroupNames = Object.keys(attrMap).sort((a, b) => {
+                        const aL = a.toLowerCase();
+                        const bL = b.toLowerCase();
+                        if (aL.includes('ukuran') || aL.includes('size')) return -1;
+                        if (bL.includes('ukuran') || bL.includes('size')) return 1;
+                        return 0;
+                    });
+
+                    this.variantAttributeGroups = sortedGroupNames.map(attrName => {
+                        const opts = Array.from(attrMap[attrName].options);
+                        this.variantAttributeSearch[attrName] = '';
+
+                        // AUTO-SELECT if attribute only has 1 option for this product!
+                        if (opts.length === 1) {
+                            this.selectedVariantAttributes[attrName] = opts[0];
+                        }
+
+                        return {
+                            name: attrMap[attrName].name,
+                            slug: attrMap[attrName].slug,
+                            optionsArray: opts
+                        };
+                    });
+
+                    this.showVariantModal = true;
+                },
+
+                toggleVariantAttributeOption(attrName, optionValue) {
+                    if (this.selectedVariantAttributes[attrName] === optionValue) {
+                        const group = (this.variantAttributeGroups || []).find(g => g.name === attrName);
+                        if (group && group.optionsArray.length === 1) return; // single option stays selected
+                        delete this.selectedVariantAttributes[attrName];
+                        this.selectedVariantAttributes = { ...this.selectedVariantAttributes };
+                    } else {
+                        this.selectedVariantAttributes[attrName] = optionValue;
+                        this.selectedVariantAttributes = { ...this.selectedVariantAttributes };
+                    }
+                },
+
+                get selectedMatchedVariant() {
+                    if (!this.currentVariants || this.currentVariants.length === 0) return null;
+                    if (!this.variantAttributeGroups || this.variantAttributeGroups.length === 0) return null;
+
+                    return this.currentVariants.find(v => {
+                        if (!v.attributes || !Array.isArray(v.attributes)) return false;
+                        return this.variantAttributeGroups.every(g => {
+                            const selectedVal = this.selectedVariantAttributes[g.name];
+                            if (!selectedVal) return false;
+                            return v.attributes.some(a => a.attr_name === g.name && a.value === selectedVal);
+                        });
+                    }) || null;
+                },
+
+                get isAllVariantAttributesSelected() {
+                    if (!this.variantAttributeGroups || this.variantAttributeGroups.length === 0) return true;
+                    return this.variantAttributeGroups.every(g => !!this.selectedVariantAttributes[g.name]);
+                },
+
+                get selectedVariantPreviewImage() {
+                    const matched = this.selectedMatchedVariant;
+                    if (matched && matched.image) return matched.image;
+                    return this.currentProductForVariant ? this.currentProductForVariant.defaultImage : '';
+                },
+
+                getOptionStockForAttribute(attrName, optionValue) {
+                    const matchingVars = (this.currentVariants || []).filter(v => {
+                        if (!v.attributes || !Array.isArray(v.attributes)) return false;
+                        for (const g of (this.variantAttributeGroups || [])) {
+                            if (g.name === attrName) continue;
+                            const selectedVal = this.selectedVariantAttributes[g.name];
+                            if (selectedVal) {
+                                const match = v.attributes.some(a => a.attr_name === g.name && a.value === selectedVal);
+                                if (!match) return false;
+                            }
+                        }
+                        return v.attributes.some(a => a.attr_name === attrName && a.value === optionValue);
+                    });
+
+                    return matchingVars.reduce((sum, v) => sum + Math.max(0, v.stock), 0);
+                },
+
+                confirmAddSelectedVariantToCart() {
+                    const matched = this.selectedMatchedVariant;
+                    if (!matched) {
+                        this.showToast('Silakan pilih semua opsi atribut varian terlebih dahulu.', 'error');
+                        return;
+                    }
+                    if (matched.stock <= 0) {
+                        this.showToast('Stok varian terpilih sedang habis.', 'error');
+                        return;
+                    }
+                    this.addVariantToCart(matched.id, matched.name, matched.price);
                 },
 
                 addVariantToCart(variantId, variantName, variantPrice) {
@@ -3705,6 +4078,10 @@
                     return this.cart.reduce((sum, item) => sum + item.quantity, 0);
                 },
 
+                get cartItemCount() {
+                    return this.totalItems;
+                },
+
                 get subtotal() {
                     return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                 },
@@ -3725,6 +4102,7 @@
                         this.calculateChange();
                     } else {
                         this.cashPaid = this.grandTotal;
+                        this.displayCashPaid = this.grandTotal > 0 ? this.formatMoney(this.grandTotal) : '';
                         this.calculateChange();
                     }
                 },
@@ -3739,13 +4117,43 @@
                     }
                     
                     this.cashPaid = this.grandTotal;
+                    this.displayCashPaid = this.grandTotal > 0 ? this.formatMoney(this.grandTotal) : '';
                     this.calculateChange();
                     this.showCheckoutModal = true;
                 },
 
                 setCashPaid(amount) {
                     this.cashPaid = amount;
+                    this.displayCashPaid = amount > 0 ? this.formatMoney(amount) : '';
                     this.calculateChange();
+                },
+
+                updateCashPaidInput(rawVal) {
+                    const digitsOnly = String(rawVal || '').replace(/\D/g, '');
+                    const numericVal = parseInt(digitsOnly, 10) || 0;
+                    this.cashPaid = numericVal;
+                    this.displayCashPaid = numericVal > 0 ? this.formatMoney(numericVal) : '';
+                    this.calculateChange();
+                },
+
+                getNominalPresets() {
+                    const total = this.grandTotal;
+                    if (total <= 0) return [0];
+                    const options = new Set();
+                    options.add(total);
+                    const p50 = Math.ceil(total / 50000) * 50000;
+                    const p100 = Math.ceil(total / 100000) * 100000;
+                    if (p50 > total) options.add(p50);
+                    if (p100 > p50) options.add(p100);
+                    if (options.size < 3) {
+                        const maxCurrent = Math.max(...Array.from(options));
+                        options.add(maxCurrent + (maxCurrent >= 100000 ? 100000 : 50000));
+                    }
+                    if (options.size < 3) {
+                        const maxCurrent = Math.max(...Array.from(options));
+                        options.add(maxCurrent + 100000);
+                    }
+                    return Array.from(options).slice(0, 3);
                 },
 
                 calculateChange() {
@@ -3791,6 +4199,10 @@
                     setTimeout(() => {
                         this.toasts = this.toasts.filter(t => t.id !== id);
                     }, 4000);
+                },
+
+                removeToast(id) {
+                    this.toasts = this.toasts.filter(t => t.id !== id);
                 }
             }));
         });

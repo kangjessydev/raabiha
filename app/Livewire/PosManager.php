@@ -615,7 +615,7 @@ class PosManager extends Component
 
         if ($this->activeSession) {
             /* ---------- Product list ---------- */
-            $query = Product::with(['variants'])
+            $query = Product::with(['variants.attributeOptions.attribute', 'variants.media'])
                 ->where('is_active', true)
                 ->whereIn('channel_visibility', ['pos_only', 'both']);
 
@@ -796,10 +796,16 @@ class PosManager extends Component
             'stock'        => (int)($p->computed_stock ?? $p->stock),
             'has_variants' => (bool)$p->has_variants,
             'variants'     => $p->has_variants ? ($p->relationLoaded('variants') ? $p->variants->map(fn($v) => [
-                'id'    => $v->id,
-                'name'  => $v->name,
-                'price' => (float)($v->pos_discount_price ?: ($v->pos_price ?: ($v->price ?: $p->price))),
-                'stock' => (int)$v->stock,
+                'id'         => $v->id,
+                'name'       => $v->name,
+                'price'      => (float)($v->pos_discount_price ?: ($v->pos_price ?: ($v->price ?: $p->price))),
+                'stock'      => (int)$v->stock,
+                'attributes' => $v->attributeOptions ? $v->attributeOptions->map(fn($opt) => [
+                    'attr_id'   => $opt->attribute_id,
+                    'attr_name' => $opt->attribute->name ?? '',
+                    'attr_slug' => $opt->attribute->slug ?? '',
+                    'value'     => $opt->value,
+                ])->values()->all() : [],
             ])->values()->all() : []) : [],
         ])->values()->all();
 

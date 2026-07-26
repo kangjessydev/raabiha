@@ -41,6 +41,9 @@
             }
         }
         
+        /* Hide Alpine elements before initialization */
+        [x-cloak] { display: none !important; }
+
         /* Smooth scrolling */
         html { scroll-behavior: smooth; }
         
