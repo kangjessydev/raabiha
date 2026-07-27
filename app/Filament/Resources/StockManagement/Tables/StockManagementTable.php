@@ -51,6 +51,20 @@ class StockManagementTable
                             return '— (lihat varian)';
                         return $state . ' pcs';
                     }),
+                TextColumn::make('channel_visibility')
+                    ->label('Kanal Penjualan')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'pos_only'    => 'POS Kasir',
+                        'online_only' => 'E-Commerce',
+                        default       => ucwords($state ?? '-'),
+                    })
+                    ->color(fn ($state) => match ($state) {
+                        'pos_only'    => 'warning',
+                        'online_only' => 'info',
+                        default       => 'secondary',
+                    })
+                    ->sortable(),
                 TextColumn::make('variants_count')
                     ->label('Jumlah Varian')
                     ->counts('variants')
@@ -198,6 +212,13 @@ class StockManagementTable
                     ->successNotificationTitle('Stok varian berhasil diperbarui dan log tersimpan!'),
             ])
             ->filters([
+                \Filament\Tables\Filters\SelectFilter::make('channel_visibility')
+                    ->label('Kanal Penjualan')
+                    ->native(false)
+                    ->options([
+                        'pos_only'    => 'POS Kasir Saja (Toko Fisik)',
+                        'online_only' => 'E-Commerce Saja (Website Online)',
+                    ]),
                 \Filament\Tables\Filters\SelectFilter::make('has_variants')
                     ->label('Tipe Produk')
                     ->options([
