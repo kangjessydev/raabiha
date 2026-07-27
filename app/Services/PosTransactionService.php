@@ -245,14 +245,35 @@ class PosTransactionService
             }
         }
 
-        // 2. Proses Penukaran Stempel (Redemption if kasir redeemed tier)
+        // 2. Proses Penukaran Stempel (Redemption if kasir redeemed tier voucher)
         $redeemedStamps = (int) ($data['loyalty_redeem_stamps'] ?? 0);
+
+        if ($order->voucher_id && $redeemedStamps <= 0) {
+            $tiersSetting = \App\Models\SiteSetting::where('key', 'pos_loyalty_tiers')->value('value');
+            if ($tiersSetting) {
+                $tiers = is_string($tiersSetting) ? json_decode($tiersSetting, true) : $tiersSetting;
+                if (is_array($tiers)) {
+                    foreach ($tiers as $tier) {
+                        if (isset($tier['voucher_id']) && $tier['voucher_id'] == $order->voucher_id) {
+                            $redeemedStamps = (int) ($tier['min_stamps'] ?? 0);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         $pointsRatio = (int) (\App\Models\SiteSetting::where('key', 'pos_loyalty_stamps_to_points_ratio')->value('value') ?? 10);
 
-        if ($redeemedStamps > 0 && $customer->stamp_count >= $redeemedStamps) {
+        if ($redeemedStamps > 0) {
+            if ($customer->stamp_count < $redeemedStamps) {
+                throw new \Exception("Stempel pelanggan tidak mencukupi untuk menukarkan voucher ini. Syarat: {$redeemedStamps} Cap, Saldo Pelanggan: {$customer->stamp_count} Cap.");
+            }
+
             $redeemedPoints = $redeemedStamps * $pointsRatio;
             $customer->decrement('stamp_count', $redeemedStamps);
             $customer->decrement('points_balance', min($customer->points_balance, $redeemedPoints));
+            $customer->refresh();
 
             \App\Models\PosStampLog::create([
                 'pos_customer_id' => $customer->id,
@@ -321,6 +342,9 @@ class PosTransactionService
             $reason       = $data['reason'] ?? 'Tukar / Retur Barang POS';
             $returnedItemsPayload  = $data['returned_items'] ?? [];
             $exchangedItemsPayload = $data['exchanged_items'] ?? [];
+            $refundPaymentMethod   = $data['refund_payment_method'] ?? 'cash';
+            $refundBankName        = $data['refund_bank_name'] ?? null;
+            $refundBankAccount     = $data['refund_bank_account'] ?? null;
             $supervisorId  = $data['supervisor_id'] ?? null;
             $supervisorPin = $data['supervisor_pin'] ?? null;
 
@@ -434,11 +458,14 @@ class PosTransactionService
 
             $netAmount = $exchangedSubtotal - $returnedSubtotal;
 
-            // 3. Validasi Otorisasi Supervisor jika ada pengembalian uang dari laci (netAmount < 0 atau type == refund)
+            // 3. Validasi Otorisasi Supervisor jika ada pengembalian uang dari laci (netAmount < 0 atau type == refund) melebihi limit tanpa PIN
+            $maxWithoutPin = (int) (\App\Models\SiteSetting::where('key', 'pos_refund_max_without_pin')->value('value') ?? 0);
+            $refundAmount  = abs($netAmount);
+
             $supervisor = null;
-            if ($netAmount < 0 || $type === 'refund') {
+            if (($netAmount < 0 || $type === 'refund') && $refundAmount > $maxWithoutPin) {
                 if (!$supervisorId || !$supervisorPin) {
-                    throw new Exception("Pengembalian uang kas memerlukan otorisasi PIN Supervisor.");
+                    throw new Exception("Pengembalian uang (Rp " . number_format($refundAmount, 0, ',', '.') . ") melebihi batas tanpa PIN (Rp " . number_format($maxWithoutPin, 0, ',', '.') . ") sehingga membutuhkan otorisasi PIN Supervisor.");
                 }
 
                 $supervisor = User::find($supervisorId);
@@ -462,7 +489,9 @@ class PosTransactionService
                 'returned_subtotal'     => $returnedSubtotal,
                 'exchanged_subtotal'    => $exchangedSubtotal,
                 'net_amount'            => $netAmount,
-                'refund_payment_method' => $netAmount < 0 ? 'cash' : null,
+                'refund_payment_method' => $netAmount < 0 ? $refundPaymentMethod : null,
+                'refund_bank_name'      => $netAmount < 0 && $refundPaymentMethod === 'bank' ? $refundBankName : null,
+                'refund_bank_account'   => $netAmount < 0 && $refundPaymentMethod === 'bank' ? $refundBankAccount : null,
             ]);
 
             $returnNumber = 'RET-' . date('Ymd') . '-' . str_pad($posReturn->id, 4, '0', STR_PAD_LEFT);
@@ -564,12 +593,16 @@ class PosTransactionService
                     'is_reversed'      => false,
                 ]);
             } elseif ($netAmount < 0) {
+                $isBankRefund = ($refundPaymentMethod === 'bank');
+                $bankDetailStr = ($isBankRefund && ($refundBankName || $refundBankAccount)) 
+                    ? (' (' . trim($refundBankName . ' ' . $refundBankAccount) . ')') 
+                    : '';
                 Cashflow::create([
                     'transaction_date' => now()->toDateString(),
                     'type'             => 'out',
-                    'category'         => 'pos_return_refund',
+                    'category'         => $isBankRefund ? 'pos_return_refund_bank' : 'pos_return_refund',
                     'amount'           => abs($netAmount),
-                    'description'      => 'Pengembalian Uang Retur POS #' . $posReturn->return_number . ' (Disetujui Supervisor: ' . ($supervisor ? $supervisor->name : '-') . ')',
+                    'description'      => 'Pengembalian Uang Retur POS #' . $posReturn->return_number . ' (' . ($isBankRefund ? 'Transfer Bank' : 'Tunai Kasir') . ')' . $bankDetailStr . ' (Disetujui Supervisor: ' . ($supervisor ? $supervisor->name : '-') . ')',
                     'order_id'         => $order->id,
                     'source'           => 'pos',
                     'is_reversed'      => false,

@@ -96,6 +96,14 @@ class OrderResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('source')->label('Sumber Pesanan')->badge(),
                     ])->columns(3),
 
+                \Filament\Schemas\Components\Section::make('Informasi Pembatalan Nota (Void POS)')
+                    ->visible(fn ($record) => $record->status === 'cancelled')
+                    ->schema([
+                        \Filament\Infolists\Components\TextEntry::make('voidBy.name')->label('Supervisor Pengizin')->default('-'),
+                        \Filament\Infolists\Components\TextEntry::make('void_at')->label('Waktu Dibatalkan')->dateTime('d M Y H:i')->default('-'),
+                        \Filament\Infolists\Components\TextEntry::make('void_reason')->label('Alasan Pembatalan (Void)')->columnSpanFull()->default('-'),
+                    ])->columns(2),
+
                 \Filament\Schemas\Components\Section::make('Informasi Pelanggan & Pengiriman')
                     ->schema([
                         \Filament\Infolists\Components\TextEntry::make('customer_info')

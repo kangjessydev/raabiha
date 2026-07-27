@@ -828,7 +828,7 @@ class PosManager extends Component
             }
 
             /* ---------- Riwayat Transaksi (dinamis filter & search) ---------- */
-            $ordersQuery = Order::with(['items', 'cashier', 'voidBy'])
+            $ordersQuery = Order::with(['items', 'cashier', 'voidBy', 'posReturns'])
                 ->where('source', 'pos');
 
             if ($this->historyDateFilter === 'shift') {

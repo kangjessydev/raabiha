@@ -1898,190 +1898,343 @@
                     </button>
                 </div>
 
-                <form @submit.prevent="submitReturnProcess()" class="flex flex-col flex-1 overflow-hidden space-y-0">
+                <!-- Modal Wizard Step Indicator -->
+                <div class="px-6 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between text-xs font-semibold text-gray-500">
+                    <div class="flex items-center gap-2" :class="returnStep === 1 ? 'text-amber-700 font-bold' : ''">
+                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="returnStep === 1 ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-600'">1</span>
+                        <span>1. Pilih Barang Retur</span>
+                    </div>
+                    <div class="h-0.5 w-12 bg-gray-200"></div>
+                    <div class="flex items-center gap-2" :class="returnStep === 2 ? 'text-amber-700 font-bold' : ''">
+                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" :class="returnStep === 2 ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-600'">2</span>
+                        <span>2. Opsi Retur & Otorisasi</span>
+                    </div>
+                </div>
+
+                <form @submit.prevent="handleReturnSubmitClick()" class="flex flex-col flex-1 overflow-hidden space-y-0">
                     <div class="p-6 space-y-5 overflow-y-auto flex-1 bg-gray-50/50">
-                        <!-- Step 1: Pilih Barang Di-retur -->
-                        <div>
-                            <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">1. Pilih Barang & Jumlah yang Dikembalikan</label>
-                            <div class="space-y-2 bg-white rounded-lg p-3 border border-gray-200 shadow-xs">
-                                <template x-for="(item, idx) in returnOrderItems" :key="item.id">
-                                    <div class="flex items-center justify-between bg-gray-50/80 p-2.5 rounded-lg border border-gray-200">
-                                        <div class="flex-1 pr-3">
-                                            <div class="font-bold text-xs text-gray-900" x-text="item.name"></div>
-                                            <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' · Dibeli: ' + item.quantity + ' pcs'"></div>
+                        
+                        <!-- ==================== LANGKAH 1: PILIH BARANG NOTA ==================== -->
+                        <div x-show="returnStep === 1" class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider">Pilih Barang & Kuantitas yang Dikembalikan</label>
+                                <span class="text-xs font-medium text-gray-500" x-text="returnOrderItems.filter(i => (i.return_qty || 0) > 0).length + ' barang dipilih'"></span>
+                            </div>
+
+                            <div class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                                <template x-for="(item, idx) in returnOrderItems" :key="item.id || idx">
+                                    <div class="flex items-center justify-between bg-white p-3.5 rounded-xl border transition-all duration-150 shadow-xs"
+                                         :class="(item.return_qty || 0) > 0 ? 'border-amber-400 ring-2 ring-amber-500/10 bg-amber-50/30' : 'border-gray-200'">
+                                        <div class="flex-1 pr-4">
+                                            <div class="font-bold text-xs text-gray-950" x-text="item.name"></div>
+                                            <div class="text-[11px] text-gray-500 mt-0.5 flex items-center gap-2">
+                                                <span>Rp <strong x-text="formatMoney(item.price)"></strong> / pcs</span>
+                                                <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                                <span>Dibeli: <strong class="text-gray-700" x-text="(item.quantity || item.qty || 1) + ' pcs'"></strong></span>
+                                            </div>
                                         </div>
-                                        <div class="flex items-center gap-2">
-                                            <label class="text-[11px] font-medium text-gray-500">Retur:</label>
-                                            <div class="flex items-center border border-gray-300 rounded-md overflow-hidden bg-white shadow-xs">
-                                                <button type="button" @click="item.return_qty = Math.max(0, (item.return_qty || 0) - 1)" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-700 text-xs">-</button>
-                                                <input type="number" x-model.number="item.return_qty" min="0" :max="item.quantity" class="w-10 text-center text-xs font-bold border-none bg-transparent p-0.5 focus:ring-0">
-                                                <button type="button" @click="item.return_qty = Math.min(item.quantity, (item.return_qty || 0) + 1)" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-700 text-xs">+</button>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-[11px] font-semibold text-gray-500">Kuantitas Retur:</span>
+                                            <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-xs">
+                                                <button type="button" @click="item.return_qty = Math.max(0, (item.return_qty || 0) - 1)" class="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 font-bold text-gray-700 text-sm transition cursor-pointer select-none">-</button>
+                                                <input type="text"
+                                                       inputmode="numeric"
+                                                       pattern="[0-9]*"
+                                                       :value="item.return_qty || 0"
+                                                       @input="const val = parseInt($event.target.value.replace(/\D/g, '') || '0', 10); item.return_qty = Math.max(0, Math.min((item.quantity || item.qty || 1), val));"
+                                                       class="w-12 text-center text-xs font-bold border-none bg-transparent p-1 focus:ring-0">
+                                                <button type="button" @click="item.return_qty = Math.min((item.quantity || item.qty || 1), (item.return_qty || 0) + 1)" class="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 font-bold text-gray-700 text-sm transition cursor-pointer select-none">+</button>
                                             </div>
                                         </div>
                                     </div>
                                 </template>
                             </div>
-                        </div>
 
-                        <!-- Step 2: Pilih Tipe Aksi -->
-                        <div>
-                            <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">2. Jenis Transaksi Retur</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                <label class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition"
-                                       :class="returnType === 'exchange' ? 'border-2 border-amber-600 bg-amber-50/70 text-amber-950 font-bold' : 'border-gray-300 bg-white text-gray-700'">
-                                    <input type="radio" x-model="returnType" value="exchange" class="text-amber-600 focus:ring-amber-500">
-                                    <div>
-                                        <div class="text-xs font-bold">Tukar Ukuran / Barang</div>
-                                        <div class="text-[11px] font-normal text-gray-500">Tukar ke varian/produk pengganti</div>
-                                    </div>
-                                </label>
-                                <label class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition"
-                                       :class="returnType === 'refund' ? 'border-2 border-rose-600 bg-rose-50/70 text-rose-950 font-bold' : 'border-gray-300 bg-white text-gray-700'">
-                                    <input type="radio" x-model="returnType" value="refund" class="text-rose-600 focus:ring-rose-500">
-                                    <div>
-                                        <div class="text-xs font-bold">Pengembalian Uang (Refund)</div>
-                                        <div class="text-[11px] font-normal text-gray-500">Kembalikan kas ke pelanggan</div>
-                                    </div>
-                                </label>
+                            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex justify-between items-center text-xs font-semibold text-amber-900">
+                                <span>Subtotal Nilai Barang Retur:</span>
+                                <span class="text-sm font-bold text-amber-700" x-text="'Rp ' + formatMoney(returnSubtotal)"></span>
                             </div>
                         </div>
 
-                        <!-- Step 3: Pilih Barang Pengganti (Exchange only) -->
-                        <template x-if="returnType === 'exchange'">
+                        <!-- ==================== LANGKAH 2: OPSI RETUR & OTORISASI ==================== -->
+                        <div x-show="returnStep === 2" class="space-y-5">
+                            <!-- Jenis Retur -->
                             <div>
-                                <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">3. Pilih Barang Pengganti (Tukar)</label>
-
-                                <template x-if="returnExchangedItems.length > 0">
-                                    <div class="mb-2.5 space-y-1.5">
-                                        <template x-for="(eItem, eIdx) in returnExchangedItems" :key="eIdx">
-                                            <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
-                                                <div>
-                                                    <span class="font-bold text-gray-900" x-text="eItem.name"></span>
-                                                    <span class="text-gray-500 ml-1" x-text="'Rp ' + formatMoney(eItem.price)"></span>
-                                                </div>
-                                                <div class="flex items-center gap-2">
-                                                    <div class="flex items-center border border-gray-300 rounded bg-white">
-                                                        <button type="button" @click="if(eItem.quantity > 1) eItem.quantity--; else removeExchangeItem(eIdx)" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">-</button>
-                                                        <span class="px-2 font-bold" x-text="eItem.quantity"></span>
-                                                        <button type="button" @click="eItem.quantity++" class="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">+</button>
-                                                    </div>
-                                                    <button type="button" @click="removeExchangeItem(eIdx)" class="text-rose-600 font-bold text-xs hover:underline">Hapus</button>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </template>
-
-                                <div class="border border-gray-300 rounded-lg overflow-hidden bg-white shadow-xs">
-                                    <input type="text" x-model="exchangeSearchQuery"
-                                           placeholder="Cari produk pengganti..."
-                                           class="w-full text-xs border-0 border-b border-gray-200 px-3.5 py-2 focus:ring-0 bg-white"
-                                           autocomplete="off">
-                                    <div class="max-h-44 overflow-y-auto divide-y divide-gray-100">
-                                        <template x-for="p in allProducts.filter(p => !exchangeSearchQuery || p.name.toLowerCase().includes(exchangeSearchQuery.toLowerCase())).slice(0,20)" :key="p.id">
-                                            <div>
-                                                <template x-if="!p.has_variants">
-                                                    <button type="button"
-                                                            :disabled="p.stock <= 0"
-                                                            @click="addExchangeItem(p); exchangeSearchQuery = '';"
-                                                            class="w-full text-left px-3 py-2 text-xs hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed flex justify-between items-center cursor-pointer">
-                                                        <div>
-                                                            <span class="font-semibold text-gray-900" x-text="p.name"></span>
-                                                            <span class="text-gray-500 ml-2" x-text="'Rp ' + formatMoney(p.price)"></span>
-                                                        </div>
-                                                        <span class="text-gray-400 text-[11px]" x-text="'Stok: ' + p.stock"></span>
-                                                    </button>
-                                                </template>
-                                                <template x-if="p.has_variants">
-                                                    <div class="px-3 py-1.5 bg-gray-50/50">
-                                                        <div class="text-[11px] font-bold text-gray-700 mb-1" x-text="p.name"></div>
-                                                        <div class="flex flex-wrap gap-1.5">
-                                                            <template x-for="v in p.variants" :key="v.id">
-                                                                <button type="button"
-                                                                        :disabled="v.stock <= 0"
-                                                                        @click="addExchangeItem({id: p.id, name: p.name, price: p.price, stock: p.stock, has_variants: true}, {id: v.id, name: v.name, price: v.price, stock: v.stock}); exchangeSearchQuery = '';"
-                                                                        class="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-medium hover:bg-amber-50 hover:border-amber-400 cursor-pointer disabled:opacity-40 shadow-xs">
-                                                                    <span x-text="v.name"></span>
-                                                                    <span class="text-gray-400 ml-1" x-text="'(' + v.stock + ')'"></span>
-                                                                </button>
-                                                            </template>
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </template>
-                                    </div>
+                                <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Pilih Jenis Transaksi Retur</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label class="flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition shadow-xs"
+                                           :class="returnType === 'exchange' ? 'border-2 border-amber-600 bg-amber-50/80 text-amber-950 font-bold shadow-sm' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'">
+                                        <input type="radio" x-model="returnType" value="exchange" class="text-amber-600 focus:ring-amber-500">
+                                        <div>
+                                            <div class="text-xs font-bold">Tukar Barang / Ukuran</div>
+                                            <div class="text-[11px] font-normal text-gray-500 mt-0.5">Tukar ke varian/produk pengganti</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition shadow-xs"
+                                           :class="returnType === 'refund' ? 'border-2 border-rose-600 bg-rose-50/80 text-rose-950 font-bold shadow-sm' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'">
+                                        <input type="radio" x-model="returnType" value="refund" class="text-rose-600 focus:ring-rose-500">
+                                        <div>
+                                            <div class="text-xs font-bold">Pengembalian Uang (Refund)</div>
+                                            <div class="text-[11px] font-normal text-gray-500 mt-0.5">Kembalikan kas uang ke pelanggan</div>
+                                        </div>
+                                    </label>
                                 </div>
                             </div>
-                        </template>
 
-                        <!-- Summary Box -->
-                        <div class="bg-amber-50/70 rounded-lg p-3.5 border border-amber-200 space-y-1.5">
-                            <div class="flex justify-between text-xs font-medium text-gray-600">
-                                <span>Subtotal Barang Retur:</span>
-                                <span class="font-bold text-gray-900" x-text="'- Rp ' + formatMoney(returnSubtotal)"></span>
-                            </div>
-                            <template x-if="returnType === 'exchange'">
-                                <div class="flex justify-between text-xs font-medium text-gray-600">
-                                    <span>Subtotal Barang Tukar:</span>
-                                    <span class="font-bold text-gray-900" x-text="'+ Rp ' + formatMoney(exchangeSubtotal)"></span>
+                            <!-- Opsi Metode Pengembalian Uang (HANYA MUNCUL JIKA REFUND ATAU TUKAR LEBIH MURAH) -->
+                            <template x-if="returnType === 'refund' || (returnType === 'exchange' && returnExchangedItems.length > 0 && returnNetAmount < 0)">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Metode Pembayaran Refund / Kembalian Kas</label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition shadow-xs"
+                                               :class="refundPaymentMethod === 'cash' ? 'border-2 border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold' : 'border-gray-200 bg-white text-gray-700'">
+                                            <input type="radio" x-model="refundPaymentMethod" value="cash" class="text-emerald-600 focus:ring-emerald-500">
+                                            <div>
+                                                <div class="text-xs font-bold">Tunai di Laci Kasir</div>
+                                                <div class="text-[11px] font-normal text-gray-500">Memotong fisik kas laci shift ini</div>
+                                            </div>
+                                        </label>
+                                        <label class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition shadow-xs"
+                                               :class="refundPaymentMethod === 'bank' ? 'border-2 border-blue-600 bg-blue-50/80 text-blue-950 font-bold' : 'border-gray-200 bg-white text-gray-700'">
+                                            <input type="radio" x-model="refundPaymentMethod" value="bank" class="text-blue-600 focus:ring-blue-500">
+                                            <div>
+                                                <div class="text-xs font-bold">Transfer Bank Utama</div>
+                                                <div class="text-[11px] font-normal text-gray-500">Laci kasir tidak berkurang</div>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- Detail Rekening Tujuan Transfer Bank Refund -->
+                                    <template x-if="refundPaymentMethod === 'bank'">
+                                        <div class="mt-3 p-3 bg-blue-50/80 rounded-xl border border-blue-200 space-y-2 shadow-xs">
+                                            <div class="text-[11px] font-bold text-blue-900 uppercase tracking-wider">Detail Rekening Tujuan Refund</div>
+                                            <div class="grid grid-cols-2 gap-2.5">
+                                                <div>
+                                                    <label class="block text-[11px] font-semibold text-gray-700 mb-1">Bank / E-Wallet</label>
+                                                    <select x-model="refundBankName" class="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 shadow-xs">
+                                                        <option value="BCA">BCA</option>
+                                                        <option value="Mandiri">Mandiri</option>
+                                                        <option value="BRI">BRI</option>
+                                                        <option value="BNI">BNI</option>
+                                                        <option value="BSI">BSI</option>
+                                                        <option value="GoPay">GoPay</option>
+                                                        <option value="OVO">OVO</option>
+                                                        <option value="ShopeePay">ShopeePay</option>
+                                                        <option value="DANA">DANA</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[11px] font-semibold text-gray-700 mb-1">No. Rek / HP & Nama</label>
+                                                    <input type="text" x-model="refundBankAccount" placeholder="Contoh: 1234567890 a.n. Budi"
+                                                           class="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 shadow-xs">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
-                            <div class="pt-2 border-t border-amber-200 flex justify-between items-center">
-                                <span class="text-xs font-bold uppercase tracking-wider text-gray-700">Status Selisih:</span>
-                                <template x-if="returnNetAmount > 0">
-                                    <span class="text-xs font-bold text-emerald-700" x-text="'Pelanggan Tambah Bayar: Rp ' + formatMoney(returnNetAmount)"></span>
-                                </template>
-                                <template x-if="returnNetAmount < 0">
-                                    <span class="text-xs font-bold text-rose-700" x-text="'Pengembalian Uang Kas: Rp ' + formatMoney(Math.abs(returnNetAmount))"></span>
-                                </template>
-                                <template x-if="returnNetAmount === 0">
-                                    <span class="text-xs font-bold text-gray-700">Pas (Selisih Rp 0)</span>
-                                </template>
-                            </div>
-                        </div>
 
-                        <!-- Reason Field -->
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Alasan Retur / Tukar Barang</label>
-                            <input type="text" x-model="returnReasonInput" placeholder="Contoh: Ukuran kekecilan / Tukar warna / Cacat jahitan"
-                                   class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs">
-                        </div>
+                            <!-- Barang Pengganti (Hanya jika Tukar Barang) -->
+                            <template x-if="returnType === 'exchange'">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Pilih Barang Pengganti (Tukar Ukuran/Varian)</label>
 
-                        <!-- Supervisor PIN Otorisasi -->
-                        <template x-if="returnType === 'refund' || returnNetAmount < 0">
-                            <div class="p-3.5 bg-rose-50 rounded-lg border border-rose-200 space-y-2.5">
-                                <div class="flex items-center gap-1.5 text-xs font-bold text-rose-700 uppercase tracking-wider">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                    Otorisasi PIN Supervisor Wajib (Pengembalian Uang)
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Supervisor Pengizin</label>
-                                        <select x-model="returnSupervisorIdInput" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
-                                            <option value="">-- Pilih Supervisor --</option>
-                                            <template x-for="sup in supervisors" :key="sup.id">
-                                                <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
+                                    <template x-if="returnExchangedItems.length > 0">
+                                        <div class="mb-3 space-y-2">
+                                            <template x-for="(eItem, eIdx) in returnExchangedItems" :key="eIdx">
+                                                <div class="flex items-center justify-between bg-amber-50/80 border border-amber-200 rounded-xl px-3.5 py-2.5 text-xs shadow-xs">
+                                                    <div>
+                                                        <span class="font-bold text-gray-950" x-text="eItem.name"></span>
+                                                        <span class="text-amber-800 font-semibold ml-2" x-text="'Rp ' + formatMoney(eItem.price)"></span>
+                                                    </div>
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="flex items-center border border-amber-300 rounded-lg bg-white overflow-hidden shadow-xs">
+                                                            <button type="button" @click="if(eItem.quantity > 1) eItem.quantity--; else removeExchangeItem(eIdx)" class="w-6 h-6 flex items-center justify-center bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 text-xs cursor-pointer">-</button>
+                                                            <span class="px-2.5 font-bold text-xs" x-text="eItem.quantity"></span>
+                                                            <button type="button" @click="eItem.quantity++" class="w-6 h-6 flex items-center justify-center bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 text-xs cursor-pointer">+</button>
+                                                        </div>
+                                                        <button type="button" @click="removeExchangeItem(eIdx)" class="text-rose-600 font-semibold text-xs hover:underline cursor-pointer">Hapus</button>
+                                                    </div>
+                                                </div>
                                             </template>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">PIN 6-Digit</label>
-                                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="returnSupervisorPinInput" placeholder="6 Digit PIN"
-                                               class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-center text-xs font-bold tracking-[0.3em] text-gray-950 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
+                                        </div>
+                                    </template>
+
+                                    <div class="border border-gray-300 rounded-xl overflow-hidden bg-white shadow-xs">
+                                        <input type="text" x-model="exchangeSearchQuery"
+                                               placeholder="Cari produk pengganti di sini..."
+                                               class="w-full text-xs border-0 border-b border-gray-200 px-3.5 py-2.5 focus:ring-0 bg-white"
+                                               autocomplete="off">
+                                        <div class="max-h-40 overflow-y-auto divide-y divide-gray-100">
+                                            <template x-for="p in allProducts.filter(p => !exchangeSearchQuery || p.name.toLowerCase().includes(exchangeSearchQuery.toLowerCase())).slice(0,15)" :key="p.id">
+                                                <div>
+                                                    <template x-if="!p.has_variants">
+                                                        <button type="button"
+                                                                :disabled="p.stock <= 0"
+                                                                @click="addExchangeItem(p); exchangeSearchQuery = '';"
+                                                                class="w-full text-left px-3.5 py-2 text-xs hover:bg-amber-50 disabled:opacity-40 disabled:cursor-not-allowed flex justify-between items-center cursor-pointer">
+                                                            <div>
+                                                                <span class="font-semibold text-gray-900" x-text="p.name"></span>
+                                                                <span class="text-gray-500 ml-2" x-text="'Rp ' + formatMoney(p.price)"></span>
+                                                            </div>
+                                                            <span class="text-gray-400 text-[11px]" x-text="'Stok: ' + p.stock"></span>
+                                                        </button>
+                                                    </template>
+                                                    <template x-if="p.has_variants">
+                                                        <div class="px-3.5 py-2 bg-gray-50/50">
+                                                            <div class="text-[11px] font-bold text-gray-700 mb-1" x-text="p.name"></div>
+                                                            <div class="flex flex-wrap gap-1.5">
+                                                                <template x-for="v in p.variants" :key="v.id">
+                                                                    <button type="button"
+                                                                            :disabled="v.stock <= 0"
+                                                                            @click="addExchangeItem({id: p.id, name: p.name, price: p.price, stock: p.stock, has_variants: true}, {id: v.id, name: v.name, price: v.price, stock: v.stock}); exchangeSearchQuery = '';"
+                                                                            class="px-2.5 py-1 bg-white border border-gray-300 rounded-lg text-xs font-medium hover:bg-amber-50 hover:border-amber-400 cursor-pointer disabled:opacity-40 shadow-xs">
+                                                                        <span x-text="v.name"></span>
+                                                                        <span class="text-gray-400 ml-1" x-text="'(' + v.stock + ')'"></span>
+                                                                    </button>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
                                     </div>
                                 </div>
+                            </template>
+
+                            <!-- Ringkasan Nilai Selisih -->
+                            <div class="bg-amber-50/80 rounded-xl p-4 border border-amber-200 space-y-2 shadow-xs">
+                                <div class="flex justify-between text-xs font-medium text-gray-600">
+                                    <span>Total Barang Retur:</span>
+                                    <span class="font-bold text-gray-900" x-text="'- Rp ' + formatMoney(returnSubtotal)"></span>
+                                </div>
+                                <template x-if="returnType === 'exchange'">
+                                    <div class="flex justify-between text-xs font-medium text-gray-600">
+                                        <span>Total Barang Tukar:</span>
+                                        <span class="font-bold text-gray-900" x-text="'+ Rp ' + formatMoney(exchangeSubtotal)"></span>
+                                    </div>
+                                </template>
+                                <div class="pt-2 border-t border-amber-200 flex justify-between items-center">
+                                    <span class="text-xs font-bold uppercase tracking-wider text-gray-700">Hasil Akhir Selisih:</span>
+                                    <template x-if="returnNetAmount > 0">
+                                        <span class="text-xs font-bold text-amber-800" x-text="'Pelanggan Lebih Mahut: +Rp ' + formatMoney(returnNetAmount)"></span>
+                                    </template>
+                                    <template x-if="returnNetAmount < 0">
+                                        <span class="text-xs font-bold text-rose-700" x-text="'Pengembalian Uang (' + (refundPaymentMethod === 'bank' ? 'Bank Transfer' : 'Kas Laci') + '): Rp ' + formatMoney(Math.abs(returnNetAmount))"></span>
+                                    </template>
+                                    <template x-if="returnNetAmount === 0">
+                                        <span class="text-xs font-bold text-gray-700">Pas (Selisih Rp 0)</span>
+                                    </template>
+                                </div>
                             </div>
-                        </template>
+
+                            <!-- Petunjuk untuk Selisih Positif (Tambah Bayar / Lebih Mahal) -->
+                            <template x-if="returnNetAmount > 0">
+                                <div class="p-3.5 bg-amber-100/90 rounded-xl border border-amber-300 text-amber-950 text-xs space-y-1 shadow-xs">
+                                    <div class="font-bold flex items-center gap-1.5 text-amber-900">
+                                        <svg class="w-4 h-4 text-amber-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>Penukaran Lebih Mahal (+Rp <strong x-text="formatMoney(returnNetAmount)"></strong>)</span>
+                                    </div>
+                                    <p class="text-[11px] leading-relaxed text-amber-900">
+                                        Untuk transaksi dengan penambahan bayar atau pembelian item baru, silakan lakukan <strong>Refund Nota</strong> di sini lebih dahulu, lalu masukkan barang baru ke <strong>Keranjang POS Utama</strong> agar alur pembayaran (Cash/QRIS/EDC) & Struk Pembelian Baru tercetak resmi.
+                                    </p>
+                                </div>
+                            </template>
+
+                            <!-- Alasan Retur -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Alasan Retur / Penukaran</label>
+                                <input type="text" x-model="returnReasonInput" placeholder="Contoh: Ukuran kekecilan / Tukar warna / Cacat barang"
+                                       class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs">
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Modal Footer -->
-                    <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
-                        <button type="button" @click="showReturnModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
-                        <button type="submit" :disabled="returnSubtotal <= 0"
-                                class="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Proses Retur / Tukar</button>
+                    <!-- Modal Footer & Wizard Navigation Buttons -->
+                    <div class="px-6 py-3.5 bg-gray-50/90 border-t border-gray-200 flex items-center justify-between rounded-b-xl flex-shrink-0">
+                        <div>
+                            <button type="button" @click="showReturnModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <template x-if="returnStep === 2">
+                                <button type="button" @click="returnStep = 1" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition cursor-pointer">← Langkah 1</button>
+                            </template>
+                            <template x-if="returnStep === 1">
+                                <button type="button" :disabled="returnSubtotal <= 0" @click="returnStep = 2" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-semibold text-xs rounded-lg shadow-xs transition cursor-pointer">Lanjut ke Langkah 2 →</button>
+                            </template>
+                            <template x-if="returnStep === 2">
+                                <button type="button" @click="handleReturnSubmitClick()" :disabled="returnSubtotal <= 0 || returnNetAmount > 0" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-semibold text-xs rounded-lg shadow-xs transition cursor-pointer">Proses Retur Sekarang</button>
+                            </template>
+                        </div>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- MODAL: Otorisasi Supervisor Retur & Refund (6-Box Dot PIN) -->
+        <div x-show="showReturnSupervisorModal"
+             x-cloak
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[120] flex items-center justify-center bg-gray-950/60 backdrop-blur-xs p-4" style="display: none;">
+            <div @click.away="showReturnSupervisorModal = false"
+                 x-show="showReturnSupervisorModal"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-sm rounded-2xl border border-gray-200 shadow-2xl p-6 font-sans space-y-4">
+                
+                <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <div class="flex items-center gap-2 text-rose-700 font-bold text-sm">
+                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <span>Otorisasi PIN Supervisor</span>
+                    </div>
+                    <button type="button" @click="showReturnSupervisorModal = false" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Pilih Supervisor Pengizin</label>
+                        <select x-model="returnSupervisorIdInput" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
+                            <option value="">-- Pilih Supervisor --</option>
+                            <template x-for="sup in supervisors" :key="sup.id">
+                                <option :value="sup.id" x-text="sup.name + ' (' + sup.role + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5 text-center">PIN 6-Digit Supervisor</label>
+                        <div class="relative cursor-pointer" @click="$refs.returnPinModalInput.focus()">
+                            <input x-ref="returnPinModalInput" type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric"
+                                   x-model="returnSupervisorPinInput"
+                                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" />
+                            <div class="grid grid-cols-6 gap-2">
+                                <template x-for="i in 6" :key="i">
+                                    <div class="h-10 rounded-xl border-2 flex items-center justify-center font-bold text-lg transition-all duration-150 shadow-xs"
+                                         :class="(returnSupervisorPinInput || '').length >= i ? 'border-rose-500 bg-rose-50 text-rose-950 scale-105' : 'border-gray-300 bg-white text-gray-400'">
+                                        <span x-text="(returnSupervisorPinInput || '').length >= i ? '●' : ''"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2">
+                    <button type="button" @click="showReturnSupervisorModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-xl shadow-xs transition">Batal</button>
+                    <button type="button" @click="confirmReturnWithSupervisor()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl shadow-xs transition cursor-pointer">Konfirmasi Otorisasi</button>
+                </div>
             </div>
         </div>
 
@@ -2469,7 +2622,14 @@
                             
                             <div class="flex justify-between items-start">
                                 <div>
-                                    <h4 class="font-bold text-xs text-gray-950" x-text="v.name"></h4>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <h4 class="font-bold text-xs text-gray-950" x-text="v.name"></h4>
+                                        <template x-if="getVoucherLoyaltyTier(v.id)">
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                                🎁 Loyalti Tier <span x-text="getVoucherLoyaltyTier(v.id).min_stamps"></span> Cap
+                                            </span>
+                                        </template>
+                                    </div>
                                     <div class="text-[10px] text-gray-500 font-mono mt-0.5 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded inline-block uppercase" x-text="v.code"></div>
                                 </div>
                                 <div class="text-right">
@@ -2484,7 +2644,10 @@
                                     <span x-show="v.min_purchase <= 0 && v.min_items <= 0">Tanpa min. belanja</span>
                                 </div>
                                 
-                                <span x-show="!isVoucherEligible(v)" class="text-[11px] font-semibold text-rose-600">Syarat belum terpenuhi</span>
+                                <span x-show="isVoucherLoyaltyLocked(v)" class="text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                                    🔒 Wajib <span x-text="getVoucherLoyaltyTier(v.id).min_stamps"></span> Cap (Anda: <span x-text="activeCustomerLoyalty ? activeCustomerLoyalty.stamp_count : 0"></span> Cap)
+                                </span>
+                                <span x-show="!isVoucherLoyaltyLocked(v) && !isVoucherEligible(v)" class="text-[11px] font-semibold text-rose-600">Syarat belum terpenuhi</span>
                                 <span x-show="activeVoucher && activeVoucher.id === v.id" class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
                                     <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Dipakai
                                 </span>
@@ -2741,6 +2904,16 @@
                                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20">
                                                 Dibatalkan
                                             </span>
+                                        @elseif($order->posReturns && $order->posReturns->count() > 0)
+                                            <div class="flex flex-col items-center gap-1">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                                    Selesai
+                                                </span>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/30" title="Nota ini memiliki {{ $order->posReturns->count() }} riwayat retur/penukaran barang">
+                                                    <svg class="w-3 h-3 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                                    Ada Retur ({{ $order->posReturns->count() }})
+                                                </span>
+                                            </div>
                                         @else
                                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
                                                 Selesai
@@ -2786,7 +2959,7 @@
                                             </button>
 
                                             <!-- Void Order Button (Supervisor Authorization required) -->
-                                            <button type="button" @click="requestSupervisorAuth('void_order', {{ $order->id }}, 'Membatalkan (Void) Nota #{{ $order->order_number }}')"
+                                            <button type="button" @click="openVoidModal({{ $order->id }}, '{{ $order->order_number }}', {{ (float)$order->grand_total }})"
                                                     class="p-1.5 bg-white border border-gray-300 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 text-gray-700 rounded-lg transition-colors cursor-pointer" title="Batalkan Nota (Butuh PIN Supervisor)">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
@@ -3589,8 +3762,9 @@
                     this.showDetailOrderModal = true;
                 },
                 
-                // Voucher State
+                // Voucher & Loyalty State
                 vouchers: {{ \Illuminate\Support\Js::from($vouchers ?? []) }},
+                posLoyaltyTiers: {{ \Illuminate\Support\Js::from(json_decode(\App\Models\SiteSetting::where('key', 'pos_loyalty_tiers')->value('value') ?? '[]', true) ?: []) }},
                 paymentMethods: {{ \Illuminate\Support\Js::from($paymentMethods ?? []) }},
                 allProducts: {{ \Illuminate\Support\Js::from($allProductsJson ?? []) }},
                 exchangeSearchQuery: '',
@@ -3689,6 +3863,12 @@
 
                 // Return & Exchange Modal State
                 showReturnModal: false,
+                showReturnSupervisorModal: false,
+                refundMaxWithoutPin: {{ (int) (\App\Models\SiteSetting::where('key', 'pos_refund_max_without_pin')->value('value') ?? 0) }},
+                returnStep: 1,
+                refundPaymentMethod: 'cash', // 'cash' or 'bank'
+                refundBankName: 'BCA',
+                refundBankAccount: '',
                 returnOrderId: null,
                 returnOrderNumber: '',
                 returnType: 'exchange',
@@ -3698,19 +3878,35 @@
                 returnOrderItems: [],
                 returnExchangedItems: [],
 
-                openReturnModal(id, number, items) {
+                openReturnModal(data) {
+                    if (!data) return;
+                    // Format data dari object payload tunggal atau argumen terpisah
+                    const id = typeof data === 'object' ? data.id : arguments[0];
+                    const number = typeof data === 'object' ? data.order_number : arguments[1];
+                    const items = typeof data === 'object' ? data.items : arguments[2];
+
+                    this.returnStep = 1;
+                    this.refundPaymentMethod = 'cash';
+                    this.refundBankName = 'BCA';
+                    this.refundBankAccount = '';
                     this.returnOrderId = id;
-                    this.returnOrderNumber = number;
+                    this.returnOrderNumber = number || '';
                     this.returnType = 'exchange';
                     this.returnReasonInput = '';
                     this.returnSupervisorIdInput = this.supervisors.length === 1 ? this.supervisors[0].id : '';
                     this.returnSupervisorPinInput = '';
-                    this.returnOrderItems = (items || []).map(i => ({
-                        ...i,
-                        return_qty: 0
-                    }));
+                    this.returnOrderItems = (items || []).map(i => {
+                        const purchasedQty = (i.qty !== undefined && i.qty !== null ? parseInt(i.qty) : (i.quantity !== undefined && i.quantity !== null ? parseInt(i.quantity) : 1));
+                        return {
+                            ...i,
+                            quantity: purchasedQty,
+                            qty: purchasedQty,
+                            return_qty: 0
+                        };
+                    });
                     this.returnExchangedItems = [];
                     this.showReturnModal = true;
+                    this.showReturnSupervisorModal = false;
                 },
 
                 get returnSubtotal() {
@@ -3726,29 +3922,79 @@
                 },
 
                 addExchangeItem(product, variant = null) {
-                    const price = variant ? (variant.pos_discount_price || variant.pos_price || variant.price || product.price) : (product.pos_discount_price || product.pos_price || product.price);
+                    const price = variant ? parseFloat(variant.price) : parseFloat(product.price);
                     const name = variant ? (product.name + ' - ' + variant.name) : product.name;
-                    
-                    const existing = this.returnExchangedItems.find(i => i.product_id === product.id && i.product_variant_id === (variant ? variant.id : null));
+                    const vId = variant ? variant.id : null;
+
+                    const existing = this.returnExchangedItems.find(i => i.product_id === product.id && i.product_variant_id === vId);
                     if (existing) {
-                        existing.quantity += 1;
+                        existing.quantity++;
                     } else {
                         this.returnExchangedItems.push({
                             product_id: product.id,
-                            product_variant_id: variant ? variant.id : null,
+                            product_variant_id: vId,
                             name: name,
-                            price: parseFloat(price),
+                            price: price,
                             quantity: 1
                         });
                     }
                 },
 
-                removeExchangeItem(index) {
-                    this.returnExchangedItems.splice(index, 1);
+                removeExchangeItem(idx) {
+                    this.returnExchangedItems.splice(idx, 1);
+                },
+
+                handleReturnSubmitClick() {
+                    const returned = (this.returnOrderItems || [])
+                        .filter(i => (i.return_qty || 0) > 0);
+
+                    if (returned.length === 0) {
+                        this.showToast('Pilih minimal 1 barang yang akan diretur', 'error');
+                        return;
+                    }
+
+                    const net = this.returnNetAmount;
+
+                    if (net > 0) {
+                        this.showToast('Untuk penukaran dengan barang lebih mahal / tambah item, silakan lakukan Refund dulu lalu checkout di Keranjang POS Utama.', 'error');
+                        return;
+                    }
+
+                    const refundAmount = Math.abs(net);
+                    const isRefundOrNegative = (this.returnType === 'refund' || net < 0);
+                    const requiresSupervisor = isRefundOrNegative && (refundAmount > this.refundMaxWithoutPin);
+
+                    if (isRefundOrNegative && this.refundPaymentMethod === 'bank' && !(this.refundBankAccount || '').trim()) {
+                        this.showToast('Masukkan Nomor Rekening / E-Wallet & Nama Pemilik untuk Refund Transfer Bank', 'error');
+                        return;
+                    }
+
+                    if (requiresSupervisor) {
+                        this.returnSupervisorIdInput = this.supervisors.length === 1 ? this.supervisors[0].id : '';
+                        this.returnSupervisorPinInput = '';
+                        this.showReturnSupervisorModal = true;
+                    } else {
+                        // Jika di bawah threshold tanpa PIN atau tukar senilai (Rp 0), eksekusi langsung
+                        this.submitReturnProcess();
+                    }
+                },
+
+                confirmReturnWithSupervisor() {
+                    if (!this.returnSupervisorIdInput) {
+                        this.showToast('Pilih Supervisor pengizin pengembalian uang terlebih dahulu', 'error');
+                        return;
+                    }
+                    const pin = (this.returnSupervisorPinInput || '').toString().trim();
+                    if (!pin || pin.length !== 6) {
+                        this.showToast('Masukkan 6-digit PIN Supervisor yang valid', 'error');
+                        return;
+                    }
+                    this.showReturnSupervisorModal = false;
+                    this.submitReturnProcess();
                 },
 
                 submitReturnProcess() {
-                    const returned = this.returnOrderItems
+                    const returned = (this.returnOrderItems || [])
                         .filter(i => (i.return_qty || 0) > 0)
                         .map(i => ({
                             product_id: i.product_id,
@@ -3767,25 +4013,15 @@
                         quantity: parseInt(i.quantity)
                     })) : [];
 
-                    const net = this.returnNetAmount;
-                    if (net < 0 || this.returnType === 'refund') {
-                        if (!this.returnSupervisorIdInput) {
-                            this.showToast('Pilih Supervisor pengizin pengembalian uang terlebih dahulu', 'error');
-                            return;
-                        }
-                        const pin = (this.returnSupervisorPinInput || '').toString().trim();
-                        if (!pin || pin.length !== 6) {
-                            this.showToast('Masukkan 6-digit PIN Supervisor', 'error');
-                            return;
-                        }
-                    }
-
                     const payload = {
                         order_id: this.returnOrderId,
                         type: this.returnType,
                         reason: this.returnReasonInput,
                         returned_items: returned,
                         exchanged_items: exchanged,
+                        refund_payment_method: this.refundPaymentMethod || 'cash',
+                        refund_bank_name: this.refundBankName,
+                        refund_bank_account: this.refundBankAccount,
                         supervisor_id: this.returnSupervisorIdInput,
                         supervisor_pin: this.returnSupervisorPinInput
                     };
@@ -4454,8 +4690,24 @@
                     this.showToast('Voucher dilepas', 'success');
                 },
                 
+                getVoucherLoyaltyTier(vId) {
+                    if (!this.posLoyaltyTiers || !Array.isArray(this.posLoyaltyTiers)) return null;
+                    return this.posLoyaltyTiers.find(t => t.voucher_id == vId) || null;
+                },
+
+                isVoucherLoyaltyLocked(v) {
+                    const tier = this.getVoucherLoyaltyTier(v.id);
+                    if (!tier) return false;
+                    const stampsNeeded = parseInt(tier.min_stamps || 0);
+                    const currentStamps = this.activeCustomerLoyalty ? parseInt(this.activeCustomerLoyalty.stamp_count || 0) : 0;
+                    return currentStamps < stampsNeeded;
+                },
+
                 isVoucherEligible(voucher) {
                     let eligible = true;
+                    if (this.isVoucherLoyaltyLocked(voucher)) {
+                        return false;
+                    }
                     if (voucher.min_purchase > 0 && parseFloat(this.subtotal) < parseFloat(voucher.min_purchase)) {
                         eligible = false;
                     }

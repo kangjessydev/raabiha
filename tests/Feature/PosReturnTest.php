@@ -403,4 +403,140 @@ class PosReturnTest extends TestCase
             ->assertDispatched('print-receipt')
             ->assertDispatched('notify');
     }
+
+    public function test_return_refund_via_bank_transfer_records_bank_cashflow()
+    {
+        $supervisor = User::factory()->create(['pos_pin' => Hash::make('123456')]);
+        $supervisor->assignRole('owner');
+
+        $cashier = User::factory()->create();
+        $cashier->assignRole('kasir');
+
+        $session = PosSession::create([
+            'cashier_id'   => $cashier->id,
+            'opened_at'    => now(),
+            'opening_cash' => 100000,
+            'status'       => 'open',
+        ]);
+
+        $product = Product::create([
+            'name'               => 'Gamis Syari Raabiha',
+            'slug'               => 'gamis-syari-raabiha',
+            'sku'                => 'GMS-SYR',
+            'price'              => 200000,
+            'pos_price'          => 200000,
+            'stock'              => 10,
+            'is_active'          => true,
+            'channel_visibility' => 'both',
+        ]);
+
+        $service = new PosTransactionService();
+
+        $order = $service->completePosTransaction([
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity'   => 1,
+                ]
+            ],
+            'cashier_id'     => $cashier->id,
+            'pos_session_id' => $session->id,
+            'cash_paid'      => 200000,
+            'payment_method' => 'cash',
+        ]);
+
+        // Process refund via Bank Transfer
+        $posReturn = $service->processPosReturn([
+            'order_id'              => $order->id,
+            'cashier_id'            => $cashier->id,
+            'pos_session_id'        => $session->id,
+            'type'                  => 'refund',
+            'reason'                => 'Cacat barang, refund transfer bank',
+            'refund_payment_method' => 'bank',
+            'supervisor_id'         => $supervisor->id,
+            'supervisor_pin'        => '123456',
+            'returned_items'        => [
+                [
+                    'product_id' => $product->id,
+                    'quantity'   => 1,
+                ]
+            ],
+        ]);
+
+        $this->assertNotNull($posReturn);
+        $this->assertEquals('bank', $posReturn->refund_payment_method);
+        $this->assertEquals(-200000, $posReturn->net_amount);
+
+        // Verify Cashflow category is 'pos_return_refund_bank' (laci kasir tidak berkurang)
+        $this->assertDatabaseHas('cashflows', [
+            'order_id'    => $order->id,
+            'source'      => 'pos',
+            'category'    => 'pos_return_refund_bank',
+            'amount'      => 200000,
+            'is_reversed' => false,
+        ]);
+    }
+
+    public function test_refund_below_threshold_does_not_require_supervisor_pin()
+    {
+        \App\Models\SiteSetting::updateOrCreate(
+            ['key' => 'pos_refund_max_without_pin'],
+            ['value' => 100000]
+        );
+
+        $cashier = User::factory()->create();
+        $cashier->assignRole('kasir');
+
+        $session = PosSession::create([
+            'cashier_id' => $cashier->id,
+            'opened_at' => now(),
+            'opening_cash' => 100000,
+            'status' => 'open',
+        ]);
+
+        $product = Product::create([
+            'name' => 'Aksesoris Murah',
+            'slug' => 'aksesoris-murah',
+            'sku' => 'AKS-01',
+            'price' => 50000,
+            'pos_price' => 50000,
+            'stock' => 10,
+            'is_active' => true,
+            'channel_visibility' => 'both',
+        ]);
+
+        $service = new PosTransactionService();
+
+        $order = $service->completePosTransaction([
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity'   => 1,
+                ]
+            ],
+            'cashier_id'     => $cashier->id,
+            'pos_session_id' => $session->id,
+            'cash_paid'      => 50000,
+            'payment_method' => 'cash',
+        ]);
+
+        // Process refund Rp 50.000 WITHOUT supervisor_id and supervisor_pin (below 100,000 threshold)
+        $posReturn = $service->processPosReturn([
+            'order_id'              => $order->id,
+            'cashier_id'            => $cashier->id,
+            'pos_session_id'        => $session->id,
+            'type'                  => 'refund',
+            'reason'                => 'Barang cacat ringan, refund tanpa PIN',
+            'refund_payment_method' => 'cash',
+            'returned_items'        => [
+                [
+                    'product_id' => $product->id,
+                    'quantity'   => 1,
+                ]
+            ],
+        ]);
+
+        $this->assertNotNull($posReturn);
+        $this->assertEquals(-50000, $posReturn->net_amount);
+    }
 }

@@ -333,4 +333,76 @@ class PosLoyaltyTest extends TestCase
         $this->assertStringContainsString('[X] [X] [X]', $text); // Row 1 complete
         $this->assertStringContainsString('[X] [ ] [ ]', $text); // Row 2 (1 stamp)
     }
+
+    public function test_pos_transaction_redeems_loyalty_tier_voucher_and_deducts_stamps()
+    {
+        $cashier = User::factory()->create();
+
+        $session = PosSession::create([
+            'cashier_id'   => $cashier->id,
+            'opened_at'    => now(),
+            'opening_cash' => 100000,
+            'status'       => 'open',
+        ]);
+
+        $product = Product::create([
+            'name'               => 'Gamis Syari Tier',
+            'slug'               => 'gamis-syari-tier',
+            'sku'                => 'GMS-TIER',
+            'price'              => 100000,
+            'stock'              => 10,
+            'is_active'          => true,
+            'channel_visibility' => 'both',
+        ]);
+
+        $voucher = \App\Models\Voucher::create([
+            'name'            => 'Voucher Member Tier 3 Cap',
+            'code'            => 'TIER-3-CAP',
+            'discount_type'   => 'fixed',
+            'discount_amount' => 15000,
+            'is_active'       => true,
+        ]);
+
+        // Configure loyalty tier setting
+        SiteSetting::updateOrCreate(['key' => 'pos_loyalty_tiers'], [
+            'value' => json_encode([
+                ['min_stamps' => 3, 'voucher_id' => $voucher->id, 'description' => 'Diskon Member Tier 1 (Potong 3 Cap)']
+            ])
+        ]);
+
+        // Create customer with 5 stamps
+        $customer = PosCustomer::create([
+            'phone'         => '081299990000',
+            'name'          => 'Ibu Tier Test',
+            'stamp_count'   => 5,
+            'points_balance'=> 50,
+        ]);
+
+        $service = new PosTransactionService();
+        $order = $service->completePosTransaction([
+            'items' => [
+                ['product_id' => $product->id, 'product_variant_id' => null, 'quantity' => 1]
+            ],
+            'cashier_id'     => $cashier->id,
+            'pos_session_id' => $session->id,
+            'customer_name'  => 'Ibu Tier Test',
+            'customer_phone' => '081299990000',
+            'voucher_id'     => $voucher->id,
+            'discount_total' => 15000,
+            'cash_paid'      => 85000,
+            'payment_method' => 'cash',
+        ]);
+
+        $customer->refresh();
+        // 5 stamps - 3 stamps redeemed + 1 stamp earned (since 100k grand total >= 100k min spend) = 3 stamps
+        $this->assertEquals(3, $customer->stamp_count);
+        $this->assertEquals(30, $customer->points_balance);
+
+        $this->assertDatabaseHas('pos_stamp_logs', [
+            'pos_customer_id' => $customer->id,
+            'order_id'        => $order->id,
+            'type'            => 'redeemed',
+            'stamps'          => -3,
+        ]);
+    }
 }

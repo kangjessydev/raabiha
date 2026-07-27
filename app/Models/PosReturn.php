@@ -23,6 +23,8 @@ class PosReturn extends Model
         'exchanged_subtotal',
         'net_amount',
         'refund_payment_method',
+        'refund_bank_name',
+        'refund_bank_account',
     ];
 
     protected $casts = [

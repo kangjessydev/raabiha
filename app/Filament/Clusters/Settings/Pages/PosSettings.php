@@ -100,16 +100,17 @@ class PosSettings extends Page implements HasForms
                             ->components([
                                 Forms\Components\Toggle::make('pos_loyalty_enabled')
                                     ->label('Aktifkan Program Loyalti Stempel Digital POS')
+                                    ->helperText('🟢 AKTIF: Kasir POS otomatis mengumpulkan stempel & mencetak saldo cap pelanggan di struk thermal. 🔴 NONAKTIF: Seluruh fitur loyalti disembunyikan dari POS & struk.')
                                     ->default(true),
                                 Forms\Components\TextInput::make('pos_loyalty_min_spend')
                                     ->label('Minimal Belanja per 1 Stempel (Rp)')
-                                    ->helperText('Nominal transaksi minimal untuk mendapatkan 1 stempel (Default: Rp 100.000).')
+                                    ->helperText('Nominal transaksi minimal untuk mendapatkan 1 stempel (Bebas Anda atur, misal: Rp 10.000, Rp 50.000, atau Rp 100.000).')
                                     ->numeric()
                                     ->default(100000)
                                     ->required(),
                                 Forms\Components\TextInput::make('pos_loyalty_stamps_to_points_ratio')
                                     ->label('Rasio Konversi (1 Stempel = Berapa Poin)')
-                                    ->helperText('Jumlah poin yang didapatkan dari 1 stempel (Default: 10 Poin).')
+                                    ->helperText('Jumlah poin yang didapatkan dari 1 stempel (Default: 10 Poin per 1 Stempel).')
                                     ->numeric()
                                     ->default(10)
                                     ->required(),
@@ -121,8 +122,48 @@ class PosSettings extends Page implements HasForms
                                     ->required(),
                                 Forms\Components\Toggle::make('pos_loyalty_multiplier_mode')
                                     ->label('Mode Kelipatan Nominal Belanja')
-                                    ->helperText('Jika diaktifkan, belanja Rp 200.000 otomatis mendapatkan 2 stempel (kelipatan nominal). Jika dimatikan, 1 transaksi hanya dapat max 1 stempel.')
+                                    ->helperText('🟢 AKTIF: Dihitung kelipatan (Cth: Min. Belanja Rp 10.000, Belanja Rp 35.000 = 3 Cap). ⚪ DIMATIKAN: 1 transaksi hanya dapat max 1 Cap berapa pun nominal belanjanya.')
                                     ->default(false),
+                                
+                                \Filament\Forms\Components\Placeholder::make('loyalty_simulation_notice')
+                                    ->label('🧮 Contoh Simulasi Perhitungan Stempel POS')
+                                    ->content(new \Illuminate\Support\HtmlString('
+                                        <div class="p-4 bg-emerald-50/80 rounded-xl border border-emerald-200 text-emerald-950 text-xs space-y-2">
+                                            <div class="font-bold text-emerald-900 flex items-center gap-1.5">
+                                                <span>💡 Contoh Kasus Nyata di Kasir POS:</span>
+                                            </div>
+                                            <p class="leading-relaxed">
+                                                Misalkan Anda menetapkan <strong>Minimal Belanja per 1 Stempel = Rp 10.000</strong> & <strong>Rasio = 10 Poin</strong>:
+                                            </p>
+                                            <ul class="list-disc pl-4 space-y-1">
+                                                <li><strong>Jika Mode Kelipatan AKTIF:</strong> Pelanggan belanja <strong>Rp 35.000</strong> &rarr; Otomatis mendapatkan <strong class="text-emerald-700">3 Stempel & 30 Poin</strong>.</li>
+                                                <li><strong>Jika Mode Kelipatan DIMATIKAN:</strong> Pelanggan belanja <strong>Rp 35.000</strong> &rarr; Hanya mendapatkan <strong class="text-emerald-700">1 Stempel & 10 Poin</strong>.</li>
+                                            </ul>
+                                        </div>
+                                    ')),
+
+                                \Filament\Forms\Components\Repeater::make('pos_loyalty_tiers')
+                                    ->label('🎁 Daftar Tier Hadiah Penukaran Stempel POS')
+                                    ->helperText('Pilih Voucher Promo yang sudah Anda buat di menu Voucher, lalu tentukan syarat minimal stempel yang harus dimiliki pelanggan di POS untuk membuka voucher tersebut.')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('min_stamps')
+                                            ->label('Jumlah Stempel Wajib (Syarat)')
+                                            ->helperText('Jumlah stempel minimal yang dipotong saat klaim')
+                                            ->numeric()
+                                            ->required()
+                                            ->default(3),
+                                        Forms\Components\Select::make('voucher_id')
+                                            ->label('Voucher Promo Hadiah')
+                                            ->options(fn () => \App\Models\Voucher::where('is_active', true)->pluck('name', 'id'))
+                                            ->searchable()
+                                            ->required(),
+                                        Forms\Components\TextInput::make('description')
+                                            ->label('Keterangan Tier Hadiah (Tampil di POS)')
+                                            ->placeholder('Contoh: Diskon Member Tier 1 (Potong 3 Cap)')
+                                            ->maxLength(255),
+                                    ])
+                                    ->columns(3)
+                                    ->default([]),
                             ]),
                         \Filament\Schemas\Components\Tabs\Tab::make('Keamanan & Kas Kecil')
                             ->icon('heroicon-o-shield-check')
@@ -142,6 +183,12 @@ class PosSettings extends Page implements HasForms
                                     ->helperText('Pengeluaran kasir yang melebihi limit ini WAJIB membutuhkan verifikasi PIN Supervisor (Default: Rp 50.000).')
                                     ->numeric()
                                     ->default(50000)
+                                    ->required(),
+                                Forms\Components\TextInput::make('pos_refund_max_without_pin')
+                                    ->label('Batas Maksimal Refund Tanpa PIN Supervisor (Rp)')
+                                    ->helperText('Pengembalian uang tunai / transfer bank yang nilainya sama atau di bawah nominal ini DAPAT diproses langsung oleh kasir tanpa PIN Supervisor. Isi 0 jika INGIN SELURUH REFUND WAJIB PIN Supervisor.')
+                                    ->numeric()
+                                    ->default(0)
                                     ->required(),
                                 Forms\Components\Toggle::make('pos_auto_open_drawer_on_petty_cash')
                                     ->label('Otomatis Buka Laci Kasir saat Catat Kas')
