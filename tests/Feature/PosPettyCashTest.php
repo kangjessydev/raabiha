@@ -69,4 +69,44 @@ class PosPettyCashTest extends TestCase
         $this->assertEquals(0, $session->difference_cash);
         $this->assertEquals('closed', $session->status);
     }
+
+    public function test_petty_cash_over_limit_requires_supervisor_pin()
+    {
+        $cashier = User::factory()->create();
+        $supervisor = User::factory()->create([
+            'role' => 'manager',
+            'pos_pin' => \Illuminate\Support\Facades\Hash::make('123456'),
+        ]);
+
+        $this->actingAs($cashier);
+
+        PosSession::create([
+            'cashier_id' => $cashier->id,
+            'opened_at' => now(),
+            'opening_cash' => 100000,
+            'status' => 'open',
+        ]);
+
+        // Limit default is 50.000, try recording 75.000 without supervisor PIN
+        Livewire::test(PosManager::class)
+            ->set('pettyCashType', 'out')
+            ->set('pettyCashAmount', 75000)
+            ->set('pettyCashNotes', 'Beli perlengkapan mahal')
+            ->call('addPettyCash')
+            ->assertDispatched('require-supervisor-pin');
+
+        // Now record with valid supervisor PIN
+        Livewire::test(PosManager::class)
+            ->set('pettyCashType', 'out')
+            ->set('pettyCashAmount', 75000)
+            ->set('pettyCashNotes', 'Beli perlengkapan mahal')
+            ->call('addPettyCash', $supervisor->id, '123456')
+            ->assertDispatched('petty-cash-saved')
+            ->assertDispatched('trigger-cash-drawer');
+
+        $this->assertDatabaseHas('cashflows', [
+            'amount' => 75000,
+            'type' => 'out',
+        ]);
+    }
 }

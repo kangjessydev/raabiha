@@ -1696,10 +1696,47 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1.5">2. Masukkan 6-Digit PIN Supervisor <span class="text-red-500">*</span></label>
-                        <input type="password" id="posSupervisorPinField" x-model="supervisorPinInput" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="6 Digit PIN"
-                               class="w-full rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-center text-xl font-bold tracking-[0.5em] py-2.5 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150">
-                        <div x-show="supervisorErrorMessage" class="text-xs text-red-600 font-medium mt-1" x-text="supervisorErrorMessage"></div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-medium text-gray-700">2. Masukkan 6-Digit PIN Supervisor <span class="text-red-500">*</span></label>
+                            <button type="button" @click="showSupervisorPinText = !showSupervisorPinText" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 focus:outline-none cursor-pointer flex items-center gap-1" tabindex="-1">
+                                <span x-text="showSupervisorPinText ? 'Sembunyikan' : 'Lihat PIN'"></span>
+                            </button>
+                        </div>
+                        <div class="relative cursor-pointer" @click="$refs.supervisorPinField.focus()">
+                            <input 
+                                x-ref="supervisorPinField"
+                                type="text" 
+                                id="posSupervisorPinField" 
+                                maxlength="6" 
+                                pattern="[0-9]*" 
+                                inputmode="numeric" 
+                                :value="supervisorPinInput"
+                                @input="supervisorPinInput = $event.target.value.replace(/\D/g, '').slice(0, 6); supervisorErrorMessage = ''"
+                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                            />
+                            <div class="grid grid-cols-6 gap-2">
+                                <template x-for="i in 6" :key="i">
+                                    <div class="h-11 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
+                                        :class="{
+                                            'border-red-500 ring-2 ring-red-500/20 bg-red-50/50 text-red-600': supervisorErrorMessage,
+                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': !supervisorErrorMessage && (supervisorPinInput || '').length === i - 1,
+                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': !supervisorErrorMessage && (supervisorPinInput || '').length >= i,
+                                            'border-gray-300 bg-gray-50/60 text-gray-400': !supervisorErrorMessage && (supervisorPinInput || '').length < i - 1
+                                        }">
+                                        <template x-if="(supervisorPinInput || '').length >= i">
+                                            <span x-show="!showSupervisorPinText" class="w-2.5 h-2.5 rounded-full inline-block" :class="supervisorErrorMessage ? 'bg-red-500 animate-pulse' : 'bg-emerald-600'"></span>
+                                        </template>
+                                        <template x-if="(supervisorPinInput || '').length >= i">
+                                            <span x-show="showSupervisorPinText" class="font-bold text-base" :class="supervisorErrorMessage ? 'text-red-600' : 'text-emerald-700'" x-text="(supervisorPinInput || '')[i - 1]"></span>
+                                        </template>
+                                        <template x-if="(supervisorPinInput || '').length < i">
+                                            <span class="w-2 h-2 rounded-full inline-block" :class="supervisorErrorMessage ? 'bg-red-300' : 'bg-gray-300'"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div x-show="supervisorErrorMessage" class="text-xs text-red-600 font-medium mt-1.5" x-text="supervisorErrorMessage"></div>
                     </div>
 
                     <div class="flex gap-3 pt-2">
@@ -1774,9 +1811,44 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">3. PIN Supervisor (6 Digit)</label>
-                            <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" x-model="voidSupervisorPinInput" placeholder="6 Digit PIN"
-                                   class="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-center text-lg font-bold tracking-[0.4em] text-gray-950 focus:outline-none focus:ring-2 focus:ring-rose-500 shadow-xs">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-semibold text-gray-700">3. PIN Supervisor (6 Digit) <span class="text-red-500">*</span></label>
+                                <button type="button" @click="showVoidPinText = !showVoidPinText" class="text-xs font-medium text-rose-600 hover:text-rose-700 focus:outline-none cursor-pointer flex items-center gap-1" tabindex="-1">
+                                    <span x-text="showVoidPinText ? 'Sembunyikan' : 'Lihat PIN'"></span>
+                                </button>
+                            </div>
+                            <div class="relative cursor-pointer" @click="$refs.voidPinField.focus()">
+                                <input 
+                                    x-ref="voidPinField"
+                                    type="text" 
+                                    maxlength="6" 
+                                    pattern="[0-9]*" 
+                                    inputmode="numeric" 
+                                    :value="voidSupervisorPinInput"
+                                    @input="voidSupervisorPinInput = $event.target.value.replace(/\D/g, '').slice(0, 6)"
+                                    class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                                />
+                                <div class="grid grid-cols-6 gap-2">
+                                    <template x-for="i in 6" :key="i">
+                                        <div class="h-11 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
+                                            :class="{
+                                                'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/40': (voidSupervisorPinInput || '').length === i - 1,
+                                                'border-rose-600 bg-white text-rose-700 shadow-xs': (voidSupervisorPinInput || '').length >= i,
+                                                'border-gray-300 bg-gray-50/60 text-gray-400': (voidSupervisorPinInput || '').length < i - 1
+                                            }">
+                                            <template x-if="(voidSupervisorPinInput || '').length >= i">
+                                                <span x-show="!showVoidPinText" class="w-2.5 h-2.5 rounded-full inline-block bg-rose-600"></span>
+                                            </template>
+                                            <template x-if="(voidSupervisorPinInput || '').length >= i">
+                                                <span x-show="showVoidPinText" class="font-bold text-base text-rose-700" x-text="(voidSupervisorPinInput || '')[i - 1]"></span>
+                                            </template>
+                                            <template x-if="(voidSupervisorPinInput || '').length < i">
+                                                <span class="w-2 h-2 rounded-full inline-block bg-gray-300"></span>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -2042,23 +2114,116 @@
                     </button>
                 </div>
 
-                <form wire:submit.prevent="changePosPin" class="space-y-4">
+                <form wire:submit.prevent="changePosPin" class="space-y-4" x-data="{ showOld: false, showNew: false, showConfirm: false }">
+                    <!-- PIN Lama -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">PIN Lama (6 Digit)</label>
-                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="oldPosPin" placeholder="PIN Lama" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-center text-lg font-bold tracking-[0.4em] py-3 px-4 shadow-sm">
-                        @error('oldPosPin') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-gray-700">PIN Lama (6 Digit) <span class="text-red-500">*</span></label>
+                            <button type="button" @click="showOld = !showOld" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer" tabindex="-1">
+                                <span x-text="showOld ? 'Sembunyikan' : 'Lihat PIN'"></span>
+                            </button>
+                        </div>
+                        <div class="relative cursor-pointer" @click="$refs.oldPinField.focus()">
+                            <input x-ref="oldPinField" type="text" maxlength="6" pattern="[0-9]*" inputmode="numeric"
+                                   :value="$wire.oldPosPin"
+                                   @input="$wire.set('oldPosPin', $event.target.value.replace(/\D/g, '').slice(0, 6))"
+                                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" />
+                            <div class="grid grid-cols-6 gap-2">
+                                <template x-for="i in 6" :key="i">
+                                    <div class="h-11 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
+                                        :class="{
+                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': ($wire.oldPosPin || '').length === i - 1,
+                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': ($wire.oldPosPin || '').length >= i,
+                                            'border-gray-300 bg-gray-50/60 text-gray-400': ($wire.oldPosPin || '').length < i - 1
+                                        }">
+                                        <template x-if="($wire.oldPosPin || '').length >= i">
+                                            <span x-show="!showOld" class="w-2.5 h-2.5 rounded-full inline-block bg-emerald-600"></span>
+                                        </template>
+                                        <template x-if="($wire.oldPosPin || '').length >= i">
+                                            <span x-show="showOld" class="font-bold text-base text-emerald-700" x-text="($wire.oldPosPin || '')[i - 1]"></span>
+                                        </template>
+                                        <template x-if="($wire.oldPosPin || '').length < i">
+                                            <span class="w-2 h-2 rounded-full inline-block bg-gray-300"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        @error('oldPosPin') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
+                    <!-- PIN Baru -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">PIN Baru (6 Digit)</label>
-                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="newPosPin" placeholder="PIN Baru" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-center text-lg font-bold tracking-[0.4em] py-3 px-4 shadow-sm">
-                        @error('newPosPin') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-gray-700">PIN Baru (6 Digit) <span class="text-red-500">*</span></label>
+                            <button type="button" @click="showNew = !showNew" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer" tabindex="-1">
+                                <span x-text="showNew ? 'Sembunyikan' : 'Lihat PIN'"></span>
+                            </button>
+                        </div>
+                        <div class="relative cursor-pointer" @click="$refs.newPinField.focus()">
+                            <input x-ref="newPinField" type="text" maxlength="6" pattern="[0-9]*" inputmode="numeric"
+                                   :value="$wire.newPosPin"
+                                   @input="$wire.set('newPosPin', $event.target.value.replace(/\D/g, '').slice(0, 6))"
+                                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" />
+                            <div class="grid grid-cols-6 gap-2">
+                                <template x-for="i in 6" :key="i">
+                                    <div class="h-11 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
+                                        :class="{
+                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': ($wire.newPosPin || '').length === i - 1,
+                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': ($wire.newPosPin || '').length >= i,
+                                            'border-gray-300 bg-gray-50/60 text-gray-400': ($wire.newPosPin || '').length < i - 1
+                                        }">
+                                        <template x-if="($wire.newPosPin || '').length >= i">
+                                            <span x-show="!showNew" class="w-2.5 h-2.5 rounded-full inline-block bg-emerald-600"></span>
+                                        </template>
+                                        <template x-if="($wire.newPosPin || '').length >= i">
+                                            <span x-show="showNew" class="font-bold text-base text-emerald-700" x-text="($wire.newPosPin || '')[i - 1]"></span>
+                                        </template>
+                                        <template x-if="($wire.newPosPin || '').length < i">
+                                            <span class="w-2 h-2 rounded-full inline-block bg-gray-300"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        @error('newPosPin') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
+                    <!-- Konfirmasi PIN Baru -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Konfirmasi PIN Baru</label>
-                        <input type="password" maxlength="6" pattern="[0-9]*" inputmode="numeric" wire:model="newPosPinConfirm" placeholder="Ulangi PIN Baru" class="w-full rounded-xl border-gray-300 focus:border-brand-500 focus:ring-brand-500 text-center text-lg font-bold tracking-[0.4em] py-3 px-4 shadow-sm">
-                        @error('newPosPinConfirm') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-gray-700">Konfirmasi PIN Baru <span class="text-red-500">*</span></label>
+                            <button type="button" @click="showConfirm = !showConfirm" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer" tabindex="-1">
+                                <span x-text="showConfirm ? 'Sembunyikan' : 'Lihat PIN'"></span>
+                            </button>
+                        </div>
+                        <div class="relative cursor-pointer" @click="$refs.confirmPinField.focus()">
+                            <input x-ref="confirmPinField" type="text" maxlength="6" pattern="[0-9]*" inputmode="numeric"
+                                   :value="$wire.newPosPinConfirm"
+                                   @input="$wire.set('newPosPinConfirm', $event.target.value.replace(/\D/g, '').slice(0, 6))"
+                                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10" />
+                            <div class="grid grid-cols-6 gap-2">
+                                <template x-for="i in 6" :key="i">
+                                    <div class="h-11 rounded-lg border text-center flex items-center justify-center text-lg font-bold transition-all duration-150"
+                                        :class="{
+                                            'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40': ($wire.newPosPinConfirm || '').length === i - 1,
+                                            'border-emerald-600 bg-white text-emerald-700 shadow-xs': ($wire.newPosPinConfirm || '').length >= i,
+                                            'border-gray-300 bg-gray-50/60 text-gray-400': ($wire.newPosPinConfirm || '').length < i - 1
+                                        }">
+                                        <template x-if="($wire.newPosPinConfirm || '').length >= i">
+                                            <span x-show="!showConfirm" class="w-2.5 h-2.5 rounded-full inline-block bg-emerald-600"></span>
+                                        </template>
+                                        <template x-if="($wire.newPosPinConfirm || '').length >= i">
+                                            <span x-show="showConfirm" class="font-bold text-base text-emerald-700" x-text="($wire.newPosPinConfirm || '')[i - 1]"></span>
+                                        </template>
+                                        <template x-if="($wire.newPosPinConfirm || '').length < i">
+                                            <span class="w-2 h-2 rounded-full inline-block bg-gray-300"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        @error('newPosPinConfirm') <span class="text-red-500 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="flex gap-3 pt-2">
@@ -2100,19 +2265,50 @@
                     </button>
                 </div>
 
-                <form wire:submit.prevent="recordPettyCash" class="space-y-0">
+                <form wire:submit.prevent="addPettyCash" class="space-y-0" x-data="{ activeType: @entangle('pettyCashType') }">
                     <div class="p-6 space-y-4">
+                        <!-- Hint Limit Mandiri Kasir -->
+                        <div x-show="activeType === 'out'"
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 scale-98"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             class="p-3 bg-amber-50/80 border border-amber-200/80 rounded-lg flex items-start gap-2 text-xs text-amber-900">
+                            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <div>
+                                <span class="font-semibold">
+                                    @if($this->pettyCashLimitMode === 'cumulative')
+                                        Limit Akumulasi Shift:
+                                    @elseif($this->pettyCashLimitMode === 'per_transaction')
+                                        Limit Per Transaksi:
+                                    @else
+                                        Limit Kas (Kombinasi):
+                                    @endif
+                                </span> Rp {{ number_format($this->pettyCashMaxLimit, 0, ',', '.') }}.
+                                <span class="text-amber-800 font-normal">
+                                    @if($this->pettyCashLimitMode === 'cumulative')
+                                        Pengeluaran yang menyebabkan akumulasi kas keluar shift ini melebihi limit butuh PIN Supervisor.
+                                    @else
+                                        Pengeluaran di atas nominal ini membutuhkan otorisasi PIN Supervisor.
+                                    @endif
+                                </span>
+                            </div>
+                        </div>
+
                         <!-- Segmented Switch: Kas Keluar vs Kas Masuk -->
                         <div>
                             <label class="block text-xs font-semibold text-gray-700 mb-1.5">Tipe Pencatatan Kas</label>
                             <div class="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 rounded-lg border border-gray-200/80">
-                                <button type="button" wire:click="$set('pettyCashType', 'out')"
-                                        class="py-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer {{ $pettyCashType === 'out' ? 'bg-white text-rose-700 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-gray-900' }}">
+                                <button type="button"
+                                        @click="activeType = 'out'; $wire.set('pettyCashType', 'out')"
+                                        class="py-2 rounded-md text-xs font-bold transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer"
+                                        :class="activeType === 'out' ? 'bg-white text-rose-700 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-gray-900'">
                                     <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/></svg>
                                     <span>Kas Keluar (Pengeluaran)</span>
                                 </button>
-                                <button type="button" wire:click="$set('pettyCashType', 'in')"
-                                        class="py-2 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer {{ $pettyCashType === 'in' ? 'bg-white text-emerald-700 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-gray-900' }}">
+                                <button type="button"
+                                        @click="activeType = 'in'; $wire.set('pettyCashType', 'in')"
+                                        class="py-2 rounded-md text-xs font-bold transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer"
+                                        :class="activeType === 'in' ? 'bg-white text-emerald-700 shadow-xs border border-gray-200' : 'text-gray-600 hover:text-gray-900'">
                                     <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/></svg>
                                     <span>Kas Masuk (Pemasukan)</span>
                                 </button>
@@ -2120,11 +2316,33 @@
                         </div>
 
                         <!-- Input Nominal -->
-                        <div>
+                        <div x-data="{
+                            rawVal: @entangle('pettyCashAmount'),
+                            displayVal: '',
+                            formatInput(val) {
+                                let clean = String(val || '').replace(/\D/g, '');
+                                clean = clean.replace(/^0+/, '');
+                                let num = clean ? parseInt(clean, 10) : 0;
+                                this.rawVal = num;
+                                this.displayVal = num > 0 ? num.toLocaleString('id-ID') : '';
+                            },
+                            init() {
+                                this.formatInput(this.rawVal);
+                                this.$watch('rawVal', (v) => {
+                                    let num = v ? parseInt(v, 10) : 0;
+                                    this.displayVal = num > 0 ? num.toLocaleString('id-ID') : '';
+                                });
+                            }
+                        }">
                             <label class="block text-xs font-semibold text-gray-700 mb-1">Nominal Uang (Rp)</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xs font-bold text-gray-500">Rp</div>
-                                <input type="number" wire:model="pettyCashAmount" class="w-full pl-9 pr-3.5 py-2 bg-white border border-gray-300 rounded-lg text-base font-bold text-gray-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs" placeholder="0">
+                                <input type="text"
+                                       inputmode="numeric"
+                                       :value="displayVal"
+                                       @input="formatInput($event.target.value)"
+                                       class="w-full pl-9 pr-3.5 py-2 bg-white border border-gray-300 rounded-lg text-base font-bold text-gray-950 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
+                                       placeholder="0">
                             </div>
                             @error('pettyCashAmount') <span class="text-rose-600 text-xs mt-1 block font-medium">{{ $message }}</span> @enderror
                         </div>
@@ -2142,12 +2360,66 @@
                         <button type="button" @click="showPettyCashModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                             Batal
                         </button>
-                        <button type="submit" class="px-4 py-2 {{ $pettyCashType === 'out' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700' }} text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1.5">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>Simpan Kas</span>
+                        <button type="submit" wire:loading.attr="disabled" wire:target="addPettyCash"
+                                class="px-4 py-2 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                :class="activeType === 'out' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'">
+                            <span wire:loading.remove wire:target="addPettyCash" class="flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span>Simpan Kas</span>
+                            </span>
+                            <span wire:loading wire:target="addPettyCash" class="flex items-center gap-1.5">
+                                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Menyimpan...</span>
+                            </span>
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- MODAL: Peringatan Limit Kas Kecil -> Minta Izin Supervisor -->
+        <div x-show="showPettyCashLimitConfirmModal"
+             x-cloak
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-[110] flex items-center justify-center bg-gray-950/50 backdrop-blur-xs p-4" style="display: none;">
+            <div @click.away="showPettyCashLimitConfirmModal = false"
+                 x-show="showPettyCashLimitConfirmModal"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white w-full max-w-md rounded-xl border border-gray-200 shadow-2xl p-6 space-y-5 text-center font-sans">
+                
+                <div class="mx-auto w-12 h-12 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+
+                <div class="space-y-1.5">
+                    <h3 class="text-lg font-bold text-gray-950">Melebihi Limit Kas Kecil</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed" x-text="pettyCashLimitMessage || 'Pengeluaran ini melebihi limit mandiri kasir dan memerlukan otorisasi Supervisor.'"></p>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" @click="showPettyCashLimitConfirmModal = false"
+                            class="flex-1 py-2 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" @click="proceedPettyCashSupervisorAuth()"
+                            class="flex-1 py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        <span>Minta Izin Supervisor</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -2271,10 +2543,10 @@
                 </div>
 
                 <!-- UNIFIED TABLE CARD (Filament Native Card with Toolbar Header) -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-xs relative">
                     
                     <!-- Filament Table Header Toolbar (Search FAR LEFT + Filter Button FAR RIGHT) -->
-                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
+                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white rounded-t-xl">
                         <!-- SISI KIRI: Search Input -->
                         <div class="relative min-w-[220px] max-w-xs flex-1">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
@@ -2286,7 +2558,7 @@
 
                         <!-- SISI KANAN: Filter Action Button & Popover Modal -->
                         <!-- SISI KANAN: Filter Action Button & Popover Modal -->
-                        <div class="relative flex-shrink-0" x-data="{ showFilterPopover: false }" wire:key="history-filter-container">
+                        <div class="relative flex-shrink-0" x-data="{ showFilterPopover: false }" wire:ignore.self wire:key="history-filter-container">
                             @php
                                 $activeFilterCount = ($historyDateFilter !== 'shift' ? 1 : 0) +
                                                      ($historyPaymentFilter !== 'all' ? 1 : 0) +
@@ -2352,8 +2624,9 @@
                                         <select wire:key="filter-payment-select" wire:model.live="historyPaymentFilter"
                                                 class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
                                             <option value="all">Semua Metode</option>
-                                            <option value="cash">Tunai (Cash)</option>
-                                            <option value="non_cash">Non-Tunai (QRIS / Transfer / EDC)</option>
+                                            @foreach($this->availableHistoryPaymentMethods as $key => $label)
+                                                <option value="{{ $key }}">{{ $label }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
 
@@ -2363,8 +2636,9 @@
                                         <select wire:key="filter-status-select" wire:model.live="historyStatusFilter"
                                                 class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
                                             <option value="all">Semua Status</option>
-                                            <option value="completed">Selesai</option>
-                                            <option value="cancelled">VOID / Batal</option>
+                                            @foreach($this->availableHistoryStatuses as $key => $label)
+                                                <option value="{{ $key }}">{{ $label }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -2389,7 +2663,7 @@
                         <p class="text-xs text-gray-500 mt-1">Coba sesuaikan kata kunci pencarian atau filter di atas.</p>
                     </div>
                     @else
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-b-xl">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="bg-gray-50/80 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
@@ -2465,7 +2739,7 @@
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
                                         @if($order->status === 'cancelled')
                                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20">
-                                                VOID
+                                                Dibatalkan
                                             </span>
                                         @else
                                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
@@ -2586,10 +2860,94 @@
                 </div>
 
                 <!-- UNIFIED TABLE CARD (Filament Native Card with Table) -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
-                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
-                        <div class="text-sm font-bold text-gray-900">Daftar Retur & Penukaran Shift Ini</div>
-                        <div class="text-xs font-medium text-gray-500">Total {{ count($sessionReturns ?? []) }} Data</div>
+                <div class="bg-white rounded-xl border border-gray-200 shadow-xs relative">
+                    <!-- Table Header Toolbar (Search + Filter Popover) -->
+                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white rounded-t-xl">
+                        <!-- SISI KIRI: Search Input -->
+                        <div class="relative min-w-[220px] max-w-xs flex-1">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <input type="text" wire:model.live.debounce.300ms="returnSearch" wire:key="return-search-input" placeholder="Cari no. retur, nota, kasir..."
+                                   class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs">
+                        </div>
+
+                        <!-- SISI KANAN: Filter Action Button & Popover Modal -->
+                        <div class="relative flex-shrink-0" x-data="{ showFilterPopover: false }" wire:ignore.self wire:key="return-filter-container">
+                            @php
+                                $activeReturnFilterCount = ($returnDateFilter !== 'shift' ? 1 : 0) +
+                                                           ($returnTypeFilter !== 'all' ? 1 : 0);
+                            @endphp
+
+                            <!-- Filter Action Trigger Button -->
+                            <button type="button" @click="showFilterPopover = !showFilterPopover"
+                                    class="px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg shadow-xs transition duration-150 flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Filter Tabel Retur">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                <span>Filter</span>
+                                @if($activeReturnFilterCount > 0)
+                                <span class="w-4 h-4 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ $activeReturnFilterCount }}</span>
+                                @endif
+                            </button>
+
+                            <!-- Filter Popover Card -->
+                            <div x-show="showFilterPopover"
+                                 x-cloak
+                                 @click.away="showFilterPopover = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4 space-y-4">
+
+                                <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                                    <span class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                        Filter Retur
+                                    </span>
+                                    @if($activeReturnFilterCount > 0)
+                                    <button type="button"
+                                            wire:click="resetReturnFilters"
+                                            class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer">
+                                        Reset filter
+                                    </button>
+                                    @endif
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Periode Retur</label>
+                                        <select wire:key="filter-return-date-select" wire:model.live="returnDateFilter"
+                                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="shift">Shift Hari Ini</option>
+                                            <option value="today">Hari Ini</option>
+                                            <option value="yesterday">Kemarin</option>
+                                            <option value="7days">7 Hari Terakhir</option>
+                                            <option value="30days">30 Hari Terakhir</option>
+                                            <option value="all">Semua Riwayat</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Tipe Retur</label>
+                                        <select wire:key="filter-return-type-select" wire:model.live="returnTypeFilter"
+                                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="all">Semua Tipe</option>
+                                            @foreach($this->availableReturnTypes as $key => $label)
+                                                <option value="{{ $key }}">{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="pt-2 border-t border-gray-100 flex justify-end">
+                                    <button type="button" @click="showFilterPopover = false" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-lg transition cursor-pointer">
+                                        Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     @if(count($sessionReturns ?? []) === 0)
@@ -2601,7 +2959,7 @@
                         <p class="text-xs text-gray-500 mt-1">Retur dan penukaran barang yang diproses akan muncul di sini.</p>
                     </div>
                     @else
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-b-xl">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                                 <tr>
@@ -2702,7 +3060,6 @@
         <!-- ============================================ -->
         <div x-show="activePage === 'customers'"
              x-cloak
-             x-data="{ customerSearch: '' }"
              wire:key="pos-page-customers"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
@@ -2740,19 +3097,85 @@
                 </div>
 
                 <!-- UNIFIED TABLE CARD (Filament Native Card with Search Toolbar) -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
-                    <!-- Filament Table Header Toolbar -->
-                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-xs relative">
+                    <!-- Table Header Toolbar -->
+                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white rounded-t-xl">
+                        <!-- SISI KIRI: Search Input -->
                         <div class="relative min-w-[220px] max-w-xs flex-1">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             </div>
                             <input type="text"
-                                   x-model="customerSearch"
+                                   wire:model.live.debounce.300ms="customerSearch"
+                                   wire:key="customer-search-input"
                                    placeholder="Cari nama atau No. HP pelanggan..."
                                    class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs">
                         </div>
-                        <div class="text-xs font-medium text-gray-500">Total {{ count($sessionCustomers) }} Pelanggan</div>
+
+                        <!-- SISI KANAN: Filter Action Button & Popover Modal -->
+                        <div class="relative flex-shrink-0" x-data="{ showFilterPopover: false }" wire:ignore.self wire:key="customer-filter-container">
+                            @php
+                                $activeCustomerFilterCount = ($customerDateFilter !== 'shift' ? 1 : 0);
+                            @endphp
+
+                            <!-- Filter Action Trigger Button -->
+                            <button type="button" @click="showFilterPopover = !showFilterPopover"
+                                    class="px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg shadow-xs transition duration-150 flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Filter Tabel Pelanggan">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                <span>Filter</span>
+                                @if($activeCustomerFilterCount > 0)
+                                <span class="w-4 h-4 bg-emerald-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ $activeCustomerFilterCount }}</span>
+                                @endif
+                            </button>
+
+                            <!-- Filter Popover Card -->
+                            <div x-show="showFilterPopover"
+                                 x-cloak
+                                 @click.away="showFilterPopover = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4 space-y-4">
+
+                                <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                                    <span class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                                        Filter Pelanggan
+                                    </span>
+                                    @if($activeCustomerFilterCount > 0)
+                                    <button type="button"
+                                            wire:click="resetCustomerFilters"
+                                            class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer">
+                                        Reset filter
+                                    </button>
+                                    @endif
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Periode Kunjungan</label>
+                                        <select wire:key="filter-customer-date-select" wire:model.live="customerDateFilter"
+                                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="shift">Shift Hari Ini</option>
+                                            <option value="today">Hari Ini</option>
+                                            <option value="yesterday">Kemarin</option>
+                                            <option value="7days">7 Hari Terakhir</option>
+                                            <option value="30days">30 Hari Terakhir</option>
+                                            <option value="all">Semua Pelanggan</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="pt-2 border-t border-gray-100 flex justify-end">
+                                    <button type="button" @click="showFilterPopover = false" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-lg transition cursor-pointer">
+                                        Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     @if(count($sessionCustomers) === 0)
@@ -2764,7 +3187,7 @@
                         <p class="text-xs text-gray-500 mt-1">Pilih atau daftarkan pelanggan saat checkout kasir.</p>
                     </div>
                     @else
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-b-xl">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                                 <tr>
@@ -2853,14 +3276,11 @@
                     </button>
                     <div>
                         <h1 class="text-xl font-bold tracking-tight text-gray-950">Rekap Kas Shift</h1>
-                                        @if(!empty($sessionStats))
-                        <p class="text-xs text-gray-500 font-medium">Shift dibuka sejak {{ $sessionStats['opened_at'] }}</p>
-                        @endif
+                        <p class="text-xs text-gray-500 font-medium">Shift dibuka sejak {{ $sessionStats['opened_at'] ?? '-' }}</p>
                     </div>
                 </div>
             </div>
 
-            @if(!empty($sessionStats))
             <!-- Content Area -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
                 <!-- Ringkasan KPI - 3 Stat Cards -->
@@ -2868,21 +3288,21 @@
                     <!-- Stat 1: Estimasi Kas di Laci (Featured) -->
                     <div class="bg-emerald-50 rounded-xl border border-emerald-200 p-4 shadow-xs">
                         <p class="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider">Estimasi Kas di Laci</p>
-                        <p class="text-2xl font-bold text-emerald-950 mt-1">Rp {{ number_format($sessionStats['expected_cash'], 0, ',', '.') }}</p>
+                        <p class="text-2xl font-bold text-emerald-950 mt-1">Rp {{ number_format($sessionStats['expected_cash'] ?? 0, 0, ',', '.') }}</p>
                         <p class="text-[11px] text-emerald-600 mt-0.5">Modal + Tunai + Kas Masuk - Keluar</p>
                     </div>
 
                     <!-- Stat 2: Total Omzet -->
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
                         <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Omzet Penjualan</p>
-                        <p class="text-2xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionStats['total_sales'] ?? 0, 0, ',', '.') }}</p>
                         <p class="text-[11px] text-gray-400 mt-0.5">Tunai + Non-Tunai shift ini</p>
                     </div>
 
                     <!-- Stat 3: Total Nota -->
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
                         <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Nota Selesai</p>
-                        <p class="text-2xl font-bold text-gray-950 mt-1">{{ $sessionStats['total_trx'] }} <span class="text-sm font-normal text-gray-400">nota</span></p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">{{ $sessionStats['total_trx'] ?? 0 }} <span class="text-sm font-normal text-gray-400">nota</span></p>
                         <p class="text-[11px] text-gray-400 mt-0.5">Berhasil diproses</p>
                     </div>
                 </div>
@@ -2900,32 +3320,55 @@
                             <div class="divide-y divide-gray-100">
                                 <div class="flex justify-between items-center px-5 py-3 text-xs">
                                     <span class="text-gray-600">Modal Awal Shift</span>
-                                    <span class="font-semibold text-gray-900">Rp {{ number_format($sessionStats['opening_cash'], 0, ',', '.') }}</span>
+                                    <span class="font-semibold text-gray-900">Rp {{ number_format($sessionStats['opening_cash'] ?? 0, 0, ',', '.') }}</span>
                                 </div>
 
                                 <div class="flex justify-between items-center px-5 py-3 text-xs">
-                                    <span class="text-gray-600">Penjualan Tunai (Cash)</span>
-                                    <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sessionStats['cash_sales'], 0, ',', '.') }}</span>
+                                    <span class="text-gray-600">Penjualan Tunai</span>
+                                    <span class="font-semibold text-gray-900">+ Rp {{ number_format($sessionStats['cash_sales'] ?? 0, 0, ',', '.') }}</span>
                                 </div>
+
+                                @if(!empty($sessionStats['non_cash_breakdown']))
+                                    @foreach($sessionStats['non_cash_breakdown'] as $ncItem)
+                                    <div class="flex justify-between items-center px-5 py-3 text-xs pl-8 bg-gray-50/50">
+                                        <span class="text-gray-500">&bull; Non-Tunai: {{ $ncItem['short_label'] }}</span>
+                                        <span class="font-medium text-gray-700">+ Rp {{ number_format($ncItem['amount'], 0, ',', '.') }}</span>
+                                    </div>
+                                    @endforeach
+                                @else
+                                <div class="flex justify-between items-center px-5 py-3 text-xs pl-8 bg-gray-50/50">
+                                    <span class="text-gray-500">&bull; Penjualan Non-Tunai</span>
+                                    <span class="font-medium text-gray-700">+ Rp {{ number_format($sessionStats['non_cash_sales'] ?? 0, 0, ',', '.') }}</span>
+                                </div>
+                                @endif
 
                                 <div class="flex justify-between items-center px-5 py-3 text-xs">
-                                    <span class="text-gray-600">Non-Tunai (QRIS / Transfer / EDC)</span>
-                                    <span class="font-semibold text-gray-700">+ Rp {{ number_format($sessionStats['non_cash_sales'], 0, ',', '.') }}</span>
+                                    <span class="text-gray-600">Kas Masuk Operasional (In)</span>
+                                    <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sessionStats['petty_cash_in'] ?? 0, 0, ',', '.') }}</span>
                                 </div>
+
+                                @if(($sessionStats['exchange_in'] ?? 0) > 0)
+                                <div class="flex justify-between items-center px-5 py-3 text-xs">
+                                    <span class="text-gray-600">Tambah Bayar Tukar Barang</span>
+                                    <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sessionStats['exchange_in'], 0, ',', '.') }}</span>
+                                </div>
+                                @endif
 
                                 <div class="flex justify-between items-center px-5 py-3 text-xs">
-                                    <span class="text-gray-600">Kas Masuk Petty Cash</span>
-                                    <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sessionStats['petty_cash_in'], 0, ',', '.') }}</span>
+                                    <span class="text-gray-600">Kas Keluar Operasional (Out)</span>
+                                    <span class="font-semibold text-rose-600">- Rp {{ number_format($sessionStats['petty_cash_out'] ?? 0, 0, ',', '.') }}</span>
                                 </div>
 
+                                @if(($sessionStats['void_refund_out'] ?? 0) > 0)
                                 <div class="flex justify-between items-center px-5 py-3 text-xs">
-                                    <span class="text-gray-600">Kas Keluar Petty Cash</span>
-                                    <span class="font-semibold text-rose-600">- Rp {{ number_format($sessionStats['petty_cash_out'], 0, ',', '.') }}</span>
+                                    <span class="text-gray-600">Pengembalian Uang Void/Retur Tunai</span>
+                                    <span class="font-semibold text-rose-600">- Rp {{ number_format($sessionStats['void_refund_out'], 0, ',', '.') }}</span>
                                 </div>
+                                @endif
 
-                                <div class="flex justify-between items-center px-5 py-3.5 text-xs bg-gray-50">
-                                    <span class="font-bold text-gray-900">Total Omzet Penjualan</span>
-                                    <span class="font-bold text-sm text-gray-950">Rp {{ number_format($sessionStats['total_sales'], 0, ',', '.') }}</span>
+                                <div class="flex justify-between items-center px-5 py-3.5 text-xs bg-emerald-50/60 font-bold">
+                                    <span class="text-emerald-900">Total Estimasi Kas Laci</span>
+                                    <span class="text-emerald-900 text-sm">Rp {{ number_format($sessionStats['expected_cash'] ?? 0, 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -2938,23 +3381,23 @@
                         </button>
                     </div>
 
-                    <!-- KOLOM KANAN: Tabel Riwayat Petty Cash -->
+                    <!-- KOLOM KANAN: Tabel Log Kas / Petty Cash -->
                     <div class="lg:col-span-7">
-                        <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden h-full flex flex-col">
-                            <!-- Toolbar -->
-                            <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between gap-4 bg-white">
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden flex flex-col h-full">
+                            <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white">
                                 <div>
-                                    <div class="text-sm font-bold text-gray-900">Riwayat Kas Masuk / Keluar</div>
-                                    <div class="text-xs text-gray-500">Pencatatan uang masuk/keluar shift ini</div>
+                                    <div class="text-sm font-bold text-gray-900">Riwayat Arus Kas Masuk / Keluar</div>
+                                    <div class="text-xs text-gray-500">Catatan transaksi kasir & petty cash operasional</div>
                                 </div>
-                                <button @click="showPettyCashModal = true"
-                                        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                                    <span>Catat Kas</span>
-                                </button>
+                                <div>
+                                    <button type="button" @click="showPettyCashModal = true" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        <span>Catat Kas</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            @if(count($sessionPettyCash) === 0)
+                            @if(count($sessionPettyCash ?? []) === 0)
                             <div class="flex-1 flex flex-col items-center justify-center text-gray-400 py-12">
                                 <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                                     <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -3004,7 +3447,6 @@
                     </div>
                 </div>
             </div>
-            @endif
         </div>
 
     <!-- Modal Preview Struk & Sukses Pembayaran - Filament Native Style -->
@@ -3148,9 +3590,9 @@
                 },
                 
                 // Voucher State
-                vouchers: @json($vouchers ?? []),
-                paymentMethods: @json($paymentMethods ?? []),
-                allProducts: @json($allProductsJson ?? []),
+                vouchers: {{ \Illuminate\Support\Js::from($vouchers ?? []) }},
+                paymentMethods: {{ \Illuminate\Support\Js::from($paymentMethods ?? []) }},
+                allProducts: {{ \Illuminate\Support\Js::from($allProductsJson ?? []) }},
                 exchangeSearchQuery: '',
                 showVoucherModal: false,
                 activeVoucher: null,
@@ -3212,7 +3654,7 @@
                 },
 
                 // Void Order Modal State
-                supervisors: @json($supervisorsList ?? []),
+                supervisors: {{ \Illuminate\Support\Js::from($supervisorsList ?? []) }},
                 selectedSupervisorId: '',
                 voidSupervisorIdInput: '',
                 showVoidModal: false,
@@ -3355,23 +3797,34 @@
                 // Input Modal State
                 showInputModal: false,
                 showPettyCashModal: false,
+                showPettyCashLimitConfirmModal: false,
+                pettyCashLimitMessage: '',
                 showChangePinModal: false,
                 showSupervisorPinModal: false,
+                showSupervisorPinText: false,
+                showVoidPinText: false,
                 supervisorPinInput: '',
                 supervisorErrorMessage: '',
                 supervisorReasonMessage: '',
                 pendingSupervisorCallback: null,
 
+                proceedPettyCashSupervisorAuth() {
+                    this.showPettyCashLimitConfirmModal = false;
+                    this.requestSupervisorAuth(this.pettyCashLimitMessage || 'Otorisasi Pengeluaran Kas di Atas Limit', () => {
+                        $wire.addPettyCash(this.selectedSupervisorId, this.supervisorPinInput);
+                    });
+                },
+
                 requestSupervisorAuth(reason, callback) {
                     this.supervisorReasonMessage = reason;
                     this.selectedSupervisorId = this.supervisors.length === 1 ? this.supervisors[0].id : '';
                     this.supervisorPinInput = '';
+                    this.showSupervisorPinText = false;
                     this.supervisorErrorMessage = '';
                     this.pendingSupervisorCallback = callback;
                     this.showSupervisorPinModal = true;
                     setTimeout(() => {
-                        const el = document.getElementById('posSupervisorPinField');
-                        if (el) el.focus();
+                        if (this.$refs.supervisorPinField) this.$refs.supervisorPinField.focus();
                     }, 100);
                 },
 
@@ -3497,12 +3950,40 @@
                         this.showToast('Layar kasir berhasil dibuka', 'success');
                     });
                     window.addEventListener('screen-unlock-failed', (e) => {
-                        this.lockErrorMessage = e.detail[0].message || 'Password salah!';
+                        this.lockErrorMessage = (e.detail && e.detail[0] && e.detail[0].message) ? e.detail[0].message : (e.detail && e.detail.message ? e.detail.message : 'Password salah!');
                         this.showToast(this.lockErrorMessage, 'error');
                     });
-                    window.addEventListener('session-opened', () => { this.showToast('Sesi kasir berhasil dibuka', 'success'); });
-                    window.addEventListener('session-closed', () => { this.showCloseSession = false; this.showToast('Sesi kasir berhasil ditutup', 'success'); });
+                    window.addEventListener('session-opened', () => { 
+                        this.activePage = 'kasir'; 
+                        this.clearCart(true); 
+                        localStorage.removeItem('pos_active_cart'); 
+                        this.showToast('Sesi kasir berhasil dibuka', 'success'); 
+                    });
+                    window.addEventListener('session-closed', () => { 
+                        this.showCloseSession = false; 
+                        this.activePage = 'kasir'; 
+                        this.clearCart(true); 
+                        localStorage.removeItem('pos_active_cart'); 
+                        this.showToast('Sesi kasir berhasil ditutup', 'success'); 
+                    });
                     window.addEventListener('petty-cash-saved', () => { this.showPettyCashModal = false; });
+                    window.addEventListener('require-supervisor-pin', (e) => {
+                        const data = e.detail[0] || e.detail;
+                        if (data.actionType === 'petty_cash_limit') {
+                            this.pettyCashLimitMessage = data.message || 'Pengeluaran kas melebihi limit mandiri kasir.';
+                            this.showPettyCashLimitConfirmModal = true;
+                        } else {
+                            this.requestSupervisorAuth(data.message || 'Verifikasi PIN Supervisor Dibutuhkan', () => {
+                                if (data.actionType === 'manual_drawer') {
+                                    $wire.openManualDrawer(this.selectedSupervisorId, this.supervisorPinInput, 'Buka Laci Manual (Authorized)');
+                                }
+                            });
+                        }
+                    });
+                    window.addEventListener('trigger-cash-drawer', (e) => {
+                        const reason = (e.detail && e.detail[0] && e.detail[0].reason) ? e.detail[0].reason : 'Buka Laci Kasir';
+                        this.kickEscPosDrawer(reason);
+                    });
                     window.addEventListener('pin-created', () => { this.showToast('PIN POS 6-digit berhasil dibuat!', 'success'); });
                     window.addEventListener('pin-changed', () => { this.showChangePinModal = false; this.showToast('PIN POS berhasil diperbarui', 'success'); });
                     window.addEventListener('supervisor-authorized', () => {

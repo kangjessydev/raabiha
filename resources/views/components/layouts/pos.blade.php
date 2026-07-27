@@ -40,7 +40,8 @@
                 @apply bg-gray-900/80 backdrop-blur-md border border-gray-700/50 shadow-2xl;
             }
         }
-        
+    </style>
+    <style>
         /* Hide Alpine elements before initialization */
         [x-cloak] { display: none !important; }
 

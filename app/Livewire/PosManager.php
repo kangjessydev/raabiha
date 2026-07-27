@@ -35,11 +35,21 @@ class PosManager extends Component
     public $posPinConfirm = '';
     public $oldPosPin = '';
     public $newPosPin = '';
+    public $newPosPinConfirm = '';
     // State Filter & Search Riwayat Transaksi
     public string $historySearch = '';
     public string $historyPaymentFilter = 'all';
     public string $historyStatusFilter = 'all';
     public string $historyDateFilter = 'shift';
+
+    // State Filter & Search Riwayat Retur
+    public string $returnSearch = '';
+    public string $returnTypeFilter = 'all';
+    public string $returnDateFilter = 'shift';
+
+    // State Filter & Search Pelanggan POS
+    public string $customerSearch = '';
+    public string $customerDateFilter = 'shift';
 
     public function resetHistoryFilters()
     {
@@ -49,7 +59,20 @@ class PosManager extends Component
         $this->historyDateFilter = 'shift';
     }
 
-    public function recordPettyCash()
+    public function resetReturnFilters()
+    {
+        $this->returnSearch = '';
+        $this->returnTypeFilter = 'all';
+        $this->returnDateFilter = 'shift';
+    }
+
+    public function resetCustomerFilters()
+    {
+        $this->customerSearch = '';
+        $this->customerDateFilter = 'shift';
+    }
+
+    public function addPettyCash($supervisorId = null, $supervisorPin = null)
     {
         if (!$this->activeSession) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Sesi shift kasir belum dibuka!']);
@@ -65,6 +88,55 @@ class PosManager extends Component
             'pettyCashNotes.required' => 'Keterangan pengeluaran/pemasukan kas wajib diisi.',
         ]);
 
+        $limitMode = \App\Models\SiteSetting::where('key', 'pos_petty_cash_limit_mode')->value('value') ?? 'cumulative';
+        $maxLimit  = (int) (\App\Models\SiteSetting::where('key', 'pos_petty_cash_max_limit')->value('value') ?? 50000);
+
+        if ($this->pettyCashType === 'out') {
+            $exceeds = false;
+            $exceedMessage = '';
+
+            // Hitung total akumulasi pengeluaran kasir pada shift ini
+            $currentTotalOut = 0;
+            if ($this->activeSession) {
+                $currentTotalOut = \App\Models\Cashflow::where('source', 'pos')
+                    ->where('category', 'pos_petty_cash')
+                    ->where('type', 'out')
+                    ->where('created_at', '>=', $this->activeSession->opened_at)
+                    ->sum('amount');
+            }
+            $projectedTotal = $currentTotalOut + $this->pettyCashAmount;
+
+            if ($limitMode === 'cumulative' || $limitMode === 'both') {
+                if ($projectedTotal > $maxLimit) {
+                    $exceeds = true;
+                    $exceedMessage = 'Total akumulasi kas keluar shift ini (Rp ' . number_format($currentTotalOut, 0, ',', '.') . ' + Rp ' . number_format($this->pettyCashAmount, 0, ',', '.') . ' = Rp ' . number_format($projectedTotal, 0, ',', '.') . ') melebihi limit shift (Rp ' . number_format($maxLimit, 0, ',', '.') . '). Membutuhkan PIN Supervisor.';
+                }
+            }
+
+            if (!$exceeds && ($limitMode === 'per_transaction' || $limitMode === 'both')) {
+                if ($this->pettyCashAmount > $maxLimit) {
+                    $exceeds = true;
+                    $exceedMessage = 'Pengeluaran Rp ' . number_format($this->pettyCashAmount, 0, ',', '.') . ' melebihi limit per transaksi (Rp ' . number_format($maxLimit, 0, ',', '.') . '). Membutuhkan PIN Supervisor.';
+                }
+            }
+
+            if ($exceeds) {
+                if (empty($supervisorId) || empty($supervisorPin)) {
+                    $this->dispatch('require-supervisor-pin', [
+                        'actionType' => 'petty_cash_limit',
+                        'title'      => 'Verifikasi PIN Supervisor',
+                        'message'    => $exceedMessage,
+                    ]);
+                    return;
+                }
+
+                $supervisor = $this->validateSupervisorPin($supervisorId, $supervisorPin);
+                if (!$supervisor) {
+                    return;
+                }
+            }
+        }
+
         \App\Models\Cashflow::create([
             'transaction_date' => now()->toDateString(),
             'type'             => $this->pettyCashType,
@@ -76,6 +148,13 @@ class PosManager extends Component
             'is_reversed'      => false,
         ]);
 
+        $autoOpen = \App\Models\SiteSetting::where('key', 'pos_auto_open_drawer_on_petty_cash')->value('value');
+        if ($autoOpen === null || $autoOpen === '1' || $autoOpen === true || $autoOpen === 'true') {
+            $this->dispatch('trigger-cash-drawer', [
+                'reason' => 'Catat Kas (' . ($this->pettyCashType === 'out' ? 'Keluar' : 'Masuk') . ')'
+            ]);
+        }
+
         $label = $this->pettyCashType === 'out' ? 'Kas Keluar' : 'Kas Masuk';
         $this->dispatch('notify', [
             'type' => 'success',
@@ -86,6 +165,74 @@ class PosManager extends Component
         $this->pettyCashAmount = 0;
         $this->pettyCashNotes = '';
         $this->pettyCashType = 'out';
+    }
+
+    public function recordPettyCash($supervisorId = null, $supervisorPin = null)
+    {
+        return $this->addPettyCash($supervisorId, $supervisorPin);
+    }
+
+    public function openManualDrawer($supervisorId = null, $supervisorPin = null, $reason = 'Buka Laci Manual (No Sale)')
+    {
+        if (!$this->activeSession) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Sesi shift kasir belum dibuka!']);
+            return;
+        }
+
+        $requirePinSetting = \App\Models\SiteSetting::where('key', 'pos_require_pin_for_manual_drawer')->value('value');
+        $requirePin = ($requirePinSetting === null || $requirePinSetting === '1' || $requirePinSetting === true || $requirePinSetting === 'true');
+
+        $supervisorName = '';
+        if ($requirePin) {
+            if (empty($supervisorId) || empty($supervisorPin)) {
+                $this->dispatch('require-supervisor-pin', [
+                    'actionType' => 'manual_drawer',
+                    'title'      => 'PIN Supervisor Dibutuhkan',
+                    'message'    => 'Membuka laci kasir secara manual memerlukan otorisasi Supervisor.',
+                ]);
+                return;
+            }
+
+            $supervisor = $this->validateSupervisorPin($supervisorId, $supervisorPin);
+            if (!$supervisor) {
+                return;
+            }
+            $supervisorName = $supervisor->name;
+        }
+
+        // Catat di Riwayat Kas (Audit Trail) agar tercatat jam & supervisor pengizin
+        \App\Models\Cashflow::create([
+            'transaction_date' => now()->toDateString(),
+            'type'             => 'info',
+            'category'         => 'pos_drawer_open',
+            'amount'           => 0,
+            'description'      => 'Buka Laci Manual (No Sale)' . ($supervisorName ? ' — Supervisor: ' . $supervisorName : ''),
+            'order_id'         => null,
+            'source'           => 'pos',
+            'is_reversed'      => false,
+        ]);
+
+        // Pemicu sinyal elektrik ke printer thermal
+        $this->dispatch('trigger-cash-drawer', [
+            'reason' => $reason
+        ]);
+
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => 'Sinyal perintah buka laci kasir berhasil dikirim.'
+        ]);
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function pettyCashLimitMode()
+    {
+        return \App\Models\SiteSetting::where('key', 'pos_petty_cash_limit_mode')->value('value') ?? 'cumulative';
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function pettyCashMaxLimit()
+    {
+        return (int) (\App\Models\SiteSetting::where('key', 'pos_petty_cash_max_limit')->value('value') ?? 50000);
     }
 
     public function mount()
@@ -202,6 +349,15 @@ class PosManager extends Component
 
         $this->dispatch('session-closed');
         $this->dispatch('print-z-report', ['base64' => $zReportBase64]);
+
+        // Otomatis logout akun kasir saat tutup shift
+        \Illuminate\Support\Facades\Auth::logout();
+        if (request()->hasSession()) {
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+        }
+
+        return $this->redirect(route('pos.login'), navigate: true);
     }
 
     /**
@@ -608,10 +764,26 @@ class PosManager extends Component
 
     public function render()
     {
-        $products         = [];
-        $sessionOrders    = collect();
-        $sessionCustomers = collect();
-        $sessionStats     = [];
+        $products          = [];
+        $sessionOrders     = collect();
+        $sessionCustomers  = collect();
+        $sessionPettyCash  = collect();
+        $sessionReturns    = collect();
+        $allProductsJson   = [];
+        $sessionStats = [
+            'total_trx'          => 0,
+            'cash_sales'         => 0,
+            'non_cash_sales'     => 0,
+            'non_cash_breakdown' => [],
+            'total_sales'        => 0,
+            'opening_cash'       => 0,
+            'petty_cash_in'      => 0,
+            'petty_cash_out'     => 0,
+            'void_refund_out'    => 0,
+            'exchange_in'        => 0,
+            'expected_cash'      => 0,
+            'opened_at'          => '-',
+        ];
 
         if ($this->activeSession) {
             /* ---------- Product list ---------- */
@@ -682,23 +854,45 @@ class PosManager extends Component
 
             if ($this->historyPaymentFilter === 'cash') {
                 $ordersQuery->whereIn('payment_method', ['cash', 'tunai']);
-            } elseif ($this->historyPaymentFilter === 'non_cash') {
-                $ordersQuery->whereNotIn('payment_method', ['cash', 'tunai']);
+            } elseif ($this->historyPaymentFilter !== 'all') {
+                $filterVal = strtolower($this->historyPaymentFilter);
+                $ordersQuery->where(function($q) use ($filterVal) {
+                    $q->whereRaw('LOWER(payment_method) = ?', [$filterVal]);
+                });
             }
 
-            if ($this->historyStatusFilter === 'completed') {
-                $ordersQuery->where('status', 'completed');
-            } elseif ($this->historyStatusFilter === 'cancelled') {
-                $ordersQuery->where('status', 'cancelled');
+            if ($this->historyStatusFilter !== 'all') {
+                $ordersQuery->where('status', $this->historyStatusFilter);
             }
 
             $sessionOrders = $ordersQuery->latest()->limit(100)->get();
 
-            /* ---------- Pelanggan (shift ini, unik by nama) ---------- */
-            $sessionCustomers = Order::where('pos_session_id', $this->activeSession->id)
+            /* ---------- Pelanggan POS (dinamis filter & search) ---------- */
+            $custQuery = Order::query()
                 ->whereNotNull('customer_name')
-                ->where('customer_name', '!=', '')
-                ->select(
+                ->where('customer_name', '!=', '');
+
+            if ($this->customerDateFilter === 'shift' && $this->activeSession) {
+                $custQuery->where('pos_session_id', $this->activeSession->id);
+            } elseif ($this->customerDateFilter === 'today') {
+                $custQuery->whereDate('created_at', now()->toDateString());
+            } elseif ($this->customerDateFilter === 'yesterday') {
+                $custQuery->whereDate('created_at', now()->subDay()->toDateString());
+            } elseif ($this->customerDateFilter === '7days') {
+                $custQuery->where('created_at', '>=', now()->subDays(7)->startOfDay());
+            } elseif ($this->customerDateFilter === '30days') {
+                $custQuery->where('created_at', '>=', now()->subDays(30)->startOfDay());
+            }
+
+            if (!empty(trim($this->customerSearch))) {
+                $term = '%' . trim($this->customerSearch) . '%';
+                $custQuery->where(function ($q) use ($term) {
+                    $q->where('customer_name', 'like', $term)
+                      ->orWhere('customer_phone', 'like', $term);
+                });
+            }
+
+            $sessionCustomers = $custQuery->select(
                     'customer_name',
                     'customer_phone',
                     DB::raw('COUNT(*) as total_orders'),
@@ -721,11 +915,28 @@ class PosManager extends Component
 
             /* ---------- Rekap Kas ---------- */
             $validOrders  = $sessionOrders->where('status', '!=', 'cancelled');
-            $cashSales    = $validOrders->filter(fn($o) => in_array($o->payment_method, ['cash', 'tunai']))->sum('grand_total');
-            $nonCashSales = $validOrders->filter(fn($o) => !in_array($o->payment_method, ['cash', 'tunai']))->sum('grand_total');
+            $cashSales    = $validOrders->filter(fn($o) => in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
+            $nonCashSales = $validOrders->filter(fn($o) => !in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
+
+            // Breakdown dinamis per metode non-tunai yang ada di shift ini
+            $nonCashOrders = $validOrders->filter(fn($o) => !in_array(strtolower($o->payment_method), ['cash', 'tunai']));
+            $nonCashBreakdown = [];
+            foreach ($nonCashOrders->groupBy(fn($o) => strtolower(trim($o->payment_method))) as $method => $orders) {
+                $methodName = match($method) {
+                    'qris'     => 'QRIS',
+                    'transfer' => 'Transfer Bank',
+                    'edc'      => 'Kartu Debit / EDC',
+                    default    => strtoupper($method)
+                };
+                $nonCashBreakdown[] = [
+                    'method'      => $method,
+                    'short_label' => $methodName,
+                    'amount'      => $orders->sum('grand_total'),
+                ];
+            }
 
             $sessionPettyCash = \App\Models\Cashflow::where('source', 'pos')
-                ->where('category', 'pos_petty_cash')
+                ->whereIn('category', ['pos_petty_cash', 'pos_drawer_open'])
                 ->where('created_at', '>=', $this->activeSession->opened_at)
                 ->latest()
                 ->get();
@@ -754,25 +965,27 @@ class PosManager extends Component
                 ->sum('amount');
 
             $sessionStats = [
-                'total_trx'       => $validOrders->count(),
-                'cash_sales'      => $cashSales,
-                'non_cash_sales'  => $nonCashSales,
-                'total_sales'     => $cashSales + $nonCashSales,
-                'opening_cash'    => $this->activeSession->opening_cash,
-                'petty_cash_in'   => $pettyCashIn,
-                'petty_cash_out'  => $pettyCashOut,
-                'void_refund_out' => $voidRefundOut,
-                'exchange_in'     => $exchangeIn,
-                'expected_cash'   => $this->activeSession->opening_cash
+                'total_trx'          => $validOrders->count(),
+                'cash_sales'         => $cashSales,
+                'non_cash_sales'     => $nonCashSales,
+                'non_cash_breakdown' => $nonCashBreakdown,
+                'total_sales'        => $cashSales + $nonCashSales,
+                'opening_cash'       => $this->activeSession->opening_cash,
+                'petty_cash_in'      => $pettyCashIn,
+                'petty_cash_out'     => $pettyCashOut,
+                'void_refund_out'    => $voidRefundOut,
+                'exchange_in'        => $exchangeIn,
+                'expected_cash'      => $this->activeSession->opening_cash
                     + $cashSales
                     + $pettyCashIn
                     + $exchangeIn
                     - $pettyCashOut
                     - $voidRefundOut,
-                'opened_at'       => $this->activeSession->opened_at->format('d M Y, H:i'),
+                'opened_at'          => $this->activeSession->opened_at->format('d M Y, H:i'),
             ];
-            /* ---------- Riwayat Retur (shift ini) ---------- */
-            $sessionReturns = \App\Models\PosReturn::with([
+
+            /* ---------- Riwayat Retur (dinamis filter & search) ---------- */
+            $returnsQuery = \App\Models\PosReturn::with([
                 'order',
                 'cashier',
                 'supervisor',
@@ -780,13 +993,35 @@ class PosManager extends Component
                 'returnedItems.variant',
                 'exchangedItems.product',
                 'exchangedItems.variant'
-            ])
-            ->where('pos_session_id', $this->activeSession->id)
-            ->latest()
-            ->get();
-        } else {
-            $sessionPettyCash = collect();
-            $sessionReturns   = collect();
+            ]);
+
+            if ($this->returnDateFilter === 'shift' && $this->activeSession) {
+                $returnsQuery->where('pos_session_id', $this->activeSession->id);
+            } elseif ($this->returnDateFilter === 'today') {
+                $returnsQuery->whereDate('created_at', now()->toDateString());
+            } elseif ($this->returnDateFilter === 'yesterday') {
+                $returnsQuery->whereDate('created_at', now()->subDay()->toDateString());
+            } elseif ($this->returnDateFilter === '7days') {
+                $returnsQuery->where('created_at', '>=', now()->subDays(7)->startOfDay());
+            } elseif ($this->returnDateFilter === '30days') {
+                $returnsQuery->where('created_at', '>=', now()->subDays(30)->startOfDay());
+            }
+
+            if (!empty(trim($this->returnSearch))) {
+                $term = '%' . trim($this->returnSearch) . '%';
+                $returnsQuery->where(function ($q) use ($term) {
+                    $q->where('return_number', 'like', $term)
+                      ->orWhereHas('order', fn($o) => $o->where('order_number', 'like', $term))
+                      ->orWhereHas('cashier', fn($c) => $c->where('name', 'like', $term));
+                });
+            }
+
+            if ($this->returnTypeFilter !== 'all') {
+                $returnsQuery->where('type', $this->returnTypeFilter);
+            }
+
+
+            $sessionReturns = $returnsQuery->latest()->get();
         }
 
         $allProductsJson = collect($products)->map(fn($p) => [
@@ -874,5 +1109,142 @@ class PosManager extends Component
                 'role' => strtoupper($u->roles->pluck('name')->first() ?? $u->role ?? 'SUPERVISOR'),
             ];
         })->values();
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function availableHistoryPaymentMethods()
+    {
+        $query = Order::where('source', 'pos');
+
+        if ($this->historyDateFilter === 'shift' && $this->activeSession) {
+            $query->where('pos_session_id', $this->activeSession->id);
+        } elseif ($this->historyDateFilter === 'today') {
+            $query->whereDate('created_at', now()->toDateString());
+        } elseif ($this->historyDateFilter === 'yesterday') {
+            $query->whereDate('created_at', now()->subDay()->toDateString());
+        } elseif ($this->historyDateFilter === '7days') {
+            $query->where('created_at', '>=', now()->subDays(7)->startOfDay());
+        } elseif ($this->historyDateFilter === '30days') {
+            $query->where('created_at', '>=', now()->subDays(30)->startOfDay());
+        }
+
+        if ($this->historyStatusFilter === 'completed') {
+            $query->where('status', 'completed');
+        } elseif ($this->historyStatusFilter === 'cancelled') {
+            $query->where('status', 'cancelled');
+        }
+
+        $rawMethods = $query->whereNotNull('payment_method')
+            ->distinct()
+            ->pluck('payment_method')
+            ->map(fn($m) => strtolower(trim($m)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $formatted = [];
+        $hasCash = false;
+
+        foreach ($rawMethods as $m) {
+            if (in_array($m, ['cash', 'tunai'])) {
+                if (!$hasCash) {
+                    $formatted['cash'] = 'Tunai';
+                    $hasCash = true;
+                }
+            } elseif ($m === 'qris') {
+                $formatted['qris'] = 'QRIS';
+            } elseif ($m === 'transfer') {
+                $formatted['transfer'] = 'Transfer';
+            } elseif ($m === 'edc') {
+                $formatted['edc'] = 'EDC';
+            } else {
+                $formatted[$m] = strtoupper($m);
+            }
+        }
+
+        return $formatted;
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function availableHistoryStatuses()
+    {
+        $query = Order::where('source', 'pos');
+
+        if ($this->historyDateFilter === 'shift' && $this->activeSession) {
+            $query->where('pos_session_id', $this->activeSession->id);
+        } elseif ($this->historyDateFilter === 'today') {
+            $query->whereDate('created_at', now()->toDateString());
+        } elseif ($this->historyDateFilter === 'yesterday') {
+            $query->whereDate('created_at', now()->subDay()->toDateString());
+        } elseif ($this->historyDateFilter === '7days') {
+            $query->where('created_at', '>=', now()->subDays(7)->startOfDay());
+        } elseif ($this->historyDateFilter === '30days') {
+            $query->where('created_at', '>=', now()->subDays(30)->startOfDay());
+        }
+
+        $rawStatuses = $query->whereNotNull('status')
+            ->distinct()
+            ->pluck('status')
+            ->map(fn($s) => strtolower(trim($s)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $labels = [
+            'completed'  => 'Selesai',
+            'cancelled'  => 'Dibatalkan',
+            'pending'    => 'Menunggu',
+            'processing' => 'Diproses',
+            'refunded'   => 'Pengembalian Dana',
+            'returned'   => 'Diretur',
+        ];
+
+        $formatted = [];
+        foreach ($rawStatuses as $s) {
+            $formatted[$s] = $labels[$s] ?? ucwords($s);
+        }
+
+        return $formatted;
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function availableReturnTypes()
+    {
+        $query = \App\Models\PosReturn::query();
+
+        if ($this->returnDateFilter === 'shift' && $this->activeSession) {
+            $query->where('pos_session_id', $this->activeSession->id);
+        } elseif ($this->returnDateFilter === 'today') {
+            $query->whereDate('created_at', now()->toDateString());
+        } elseif ($this->returnDateFilter === 'yesterday') {
+            $query->whereDate('created_at', now()->subDay()->toDateString());
+        } elseif ($this->returnDateFilter === '7days') {
+            $query->where('created_at', '>=', now()->subDays(7)->startOfDay());
+        } elseif ($this->returnDateFilter === '30days') {
+            $query->where('created_at', '>=', now()->subDays(30)->startOfDay());
+        }
+
+        $rawTypes = $query->whereNotNull('type')
+            ->distinct()
+            ->pluck('type')
+            ->map(fn($t) => strtolower(trim($t)))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $labels = [
+            'exchange' => 'Tukar Barang',
+            'refund'   => 'Pengembalian Dana (Refund)',
+        ];
+
+        $formatted = [];
+        foreach ($rawTypes as $t) {
+            $formatted[$t] = $labels[$t] ?? ucwords($t);
+        }
+
+        return $formatted;
     }
 }

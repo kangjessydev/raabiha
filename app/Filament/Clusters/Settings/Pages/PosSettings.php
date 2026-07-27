@@ -124,6 +124,34 @@ class PosSettings extends Page implements HasForms
                                     ->helperText('Jika diaktifkan, belanja Rp 200.000 otomatis mendapatkan 2 stempel (kelipatan nominal). Jika dimatikan, 1 transaksi hanya dapat max 1 stempel.')
                                     ->default(false),
                             ]),
+                        \Filament\Schemas\Components\Tabs\Tab::make('Keamanan & Kas Kecil')
+                            ->icon('heroicon-o-shield-check')
+                            ->components([
+                                Forms\Components\Select::make('pos_petty_cash_limit_mode')
+                                    ->label('Mode Penghitungan Batas Limit')
+                                    ->options([
+                                        'cumulative'      => 'Kalkulasi Akumulasi Total Shift (Default)',
+                                        'per_transaction' => 'Batas Per Transaksi Tunggal',
+                                        'both'            => 'Kombinasi (Per Transaksi & Akumulasi Shift)',
+                                    ])
+                                    ->default('cumulative')
+                                    ->required()
+                                    ->helperText('Mode "Kalkulasi Akumulasi" menghitung total seluruh kas keluar shift ini. Jika total melebihi limit, pengeluaran berikutnya wajib PIN Supervisor.'),
+                                Forms\Components\TextInput::make('pos_petty_cash_max_limit')
+                                    ->label('Batas Maksimal Kas Keluar Mandiri (Rp)')
+                                    ->helperText('Pengeluaran kasir yang melebihi limit ini WAJIB membutuhkan verifikasi PIN Supervisor (Default: Rp 50.000).')
+                                    ->numeric()
+                                    ->default(50000)
+                                    ->required(),
+                                Forms\Components\Toggle::make('pos_auto_open_drawer_on_petty_cash')
+                                    ->label('Otomatis Buka Laci Kasir saat Catat Kas')
+                                    ->helperText('Mengirim sinyal elektrik untuk membuka laci kasir secara otomatis begitu kasir menyimpan Kas Masuk / Kas Keluar.')
+                                    ->default(true),
+                                Forms\Components\Toggle::make('pos_require_pin_for_manual_drawer')
+                                    ->label('Wajib PIN Supervisor untuk Buka Laci Manual (No Sale)')
+                                    ->helperText('Jika diaktifkan, tombol Buka Laci Manual di POS wajib memasukkan PIN Supervisor demi keamanan laci kasir.')
+                                    ->default(true),
+                            ]),
                     ])
             ])
             ->statePath('data');
