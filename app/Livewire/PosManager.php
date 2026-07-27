@@ -250,10 +250,17 @@ class PosManager extends Component
 
     public function openSession()
     {
-        if ($this->activeSession) {
+        // Single Active Session check per Kasir
+        $existingSession = PosSession::where('cashier_id', Auth::id())
+            ->where('status', 'open')
+            ->first();
+
+        if ($existingSession) {
+            $this->activeSession = $existingSession;
+            $this->dispatch('session-opened');
             $this->dispatch('notify', [
-                'type'    => 'error',
-                'message' => 'Anda masih memiliki sesi kasir yang aktif. Tutup shift terlebih dahulu.',
+                'type'    => 'info',
+                'message' => 'Sesi aktif Anda ditemui dan otomatis dimuat kembali.',
             ]);
             return;
         }
@@ -263,10 +270,10 @@ class PosManager extends Component
         ]);
 
         PosSession::create([
-            'cashier_id' => Auth::id(),
-            'opened_at'  => now(),
+            'cashier_id'   => Auth::id(),
+            'opened_at'    => now(),
             'opening_cash' => $this->openingCash,
-            'status'     => 'open',
+            'status'       => 'open',
         ]);
 
         $this->loadActiveSession();
