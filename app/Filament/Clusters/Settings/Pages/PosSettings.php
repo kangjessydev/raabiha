@@ -29,6 +29,12 @@ class PosSettings extends Page implements HasForms
     public function mount(): void
     {
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
+        if (isset($settings['pos_loyalty_tiers'])) {
+            $val = $settings['pos_loyalty_tiers'];
+            $settings['pos_loyalty_tiers'] = is_string($val) ? (json_decode($val, true) ?: []) : (is_array($val) ? $val : []);
+        } else {
+            $settings['pos_loyalty_tiers'] = [];
+        }
         $this->form->fill($settings);
     }
 
