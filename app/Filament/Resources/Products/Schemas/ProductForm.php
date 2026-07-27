@@ -151,11 +151,10 @@ class ProductForm
                     ->description('Atur apakah produk ini tampil di Mesin Kasir fisik dan harganya.')
                     ->schema([
                         Select::make('channel_visibility')
-                            ->label('Tampil di')
+                            ->label('Tampil di Kanal')
                             ->options([
-                                'both' => 'Web & POS Kasir',
-                                'online_only' => 'Web Toko Online Saja',
-                                'pos_only' => 'POS Kasir Saja',
+                                'pos_only'    => 'POS Kasir Saja (Toko Fisik)',
+                                'online_only' => 'E-Commerce Saja (Website Online)',
                             ])
                             ->default('online_only')
                             ->required(),

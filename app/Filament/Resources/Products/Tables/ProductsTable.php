@@ -74,6 +74,20 @@ class ProductsTable
                     ->counts('variants')
                     ->label('Jumlah Varian')
                     ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
+                TextColumn::make('channel_visibility')
+                    ->label('Kanal Penjualan')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'pos_only'    => 'POS Kasir',
+                        'online_only' => 'E-Commerce',
+                        default       => ucwords($state ?? '-'),
+                    })
+                    ->color(fn ($state) => match ($state) {
+                        'pos_only'    => 'warning',
+                        'online_only' => 'info',
+                        default       => 'secondary',
+                    })
+                    ->sortable(),
                 \Filament\Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Aktif?')
                     ->disabled(fn () => ! auth()->user()->can('Update:Product')),
@@ -87,6 +101,13 @@ class ProductsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                \Filament\Tables\Filters\SelectFilter::make('channel_visibility')
+                    ->label('Kanal Penjualan')
+                    ->native(false)
+                    ->options([
+                        'pos_only'    => 'POS Kasir Saja (Toko Fisik)',
+                        'online_only' => 'E-Commerce Saja (Website Online)',
+                    ]),
                 \Filament\Tables\Filters\SelectFilter::make('category_id')
                     ->relationship('category', 'name')
                     ->label('Kategori')
