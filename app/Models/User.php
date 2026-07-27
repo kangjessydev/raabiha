@@ -15,7 +15,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'email', 'password', 'role', 'reseller_status', 'avatar_url', 'pos_pin'])]
+#[Fillable(['name', 'email', 'password', 'role', 'reseller_status', 'avatar_url', 'pos_pin', 'pos_shift_start', 'pos_shift_end'])]
 #[Hidden(['password', 'remember_token', 'pos_pin'])]
 class User extends Authenticatable implements HasAvatar, MustVerifyEmail, FilamentUser
 {

@@ -132,6 +132,44 @@ class PosSessionResource extends Resource
             ])
             ->actions([
                 \Filament\Actions\ViewAction::make(),
+                \Filament\Actions\Action::make('forceClose')
+                    ->label('Tutup Paksa Shift')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Konfirmasi Force Close Shift Kasir')
+                    ->modalDescription('Apakah Anda yakin ingin menutup sesi kasir ini secara paksa dari Admin Panel? Gunakan fitur ini jika kasir lupa tutup shift atau berhalangan hadir.')
+                    ->form([
+                        \Filament\Forms\Components\TextInput::make('actual_ending_cash')
+                            ->label('Jumlah Kas Setoran Aktual (Rp)')
+                            ->helperText('Masukkan nominal uang fisik di laci kasir (Default: Hitungan Sistem)')
+                            ->numeric()
+                            ->required()
+                            ->default(fn ($record) => $record->expected_ending_cash ?? 0),
+                        \Filament\Forms\Components\Textarea::make('notes')
+                            ->label('Catatan Penutupan Paksa')
+                            ->default('Ditutup paksa oleh Admin/Owner dari Admin Panel Filament')
+                            ->required(),
+                    ])
+                    ->visible(fn ($record) => $record->status === 'open')
+                    ->action(function ($record, array $data) {
+                        $expected = (float) ($record->expected_ending_cash ?? 0);
+                        $actual   = (float) ($data['actual_ending_cash'] ?? 0);
+                        $diff     = $actual - $expected;
+
+                        $record->update([
+                            'status'               => 'closed',
+                            'closed_at'            => now(),
+                            'actual_ending_cash'   => $actual,
+                            'difference_cash'      => $diff,
+                            'notes'                => $data['notes'] ?: 'Ditutup paksa oleh Admin/Owner',
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Shift Kasir Berhasil Ditutup Paksa')
+                            ->success()
+                            ->send();
+                    }),
             ]);
     }
 

@@ -243,6 +243,9 @@ class PosManager extends Component
 
     public function loadActiveSession()
     {
+        // Pemicu Safety Net: Otomatis selesaikan sesi gantung dari hari kemarin jika ada
+        PosSession::autoCloseStaleSessions(Auth::id());
+
         $this->activeSession = PosSession::where('cashier_id', Auth::id())
             ->where('status', 'open')
             ->first();

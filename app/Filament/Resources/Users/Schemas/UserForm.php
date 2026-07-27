@@ -57,6 +57,19 @@ class UserForm
                             ->default('none'),
                     ])->columns(2)->collapsed(),
 
+                \Filament\Schemas\Components\Section::make('Jadwal Shift POS Kasir')
+                    ->description('Jadwal jam kerja shift kasir (Jam Masuk & Jam Pulang).')
+                    ->schema([
+                        \Filament\Forms\Components\TimePicker::make('pos_shift_start')
+                            ->label('Jam Shift Awal (Jam Masuk)')
+                            ->seconds(false)
+                            ->placeholder('08:00'),
+                        \Filament\Forms\Components\TimePicker::make('pos_shift_end')
+                            ->label('Jam Shift Akhir (Jam Pulang)')
+                            ->seconds(false)
+                            ->placeholder('16:00'),
+                    ])->columns(2),
+
                 \Filament\Schemas\Components\Section::make('Alamat & Kontak')
                     ->description('Daftar alamat pengiriman dan nomor telepon pelanggan.')
                     ->collapsed()
