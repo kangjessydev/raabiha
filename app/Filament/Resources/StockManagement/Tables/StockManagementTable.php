@@ -90,13 +90,9 @@ class StockManagementTable
                         Select::make('reason')
                             ->label('Alasan Perubahan')
                             ->required()
-                            ->options([
-                                'Restock' => 'Restock / Barang Masuk',
-                                'Retur' => 'Retur dari Pembeli',
-                                'Koreksi' => 'Koreksi / Inventarisasi Fisik',
-                                'Rusak' => 'Barang Rusak / Cacat',
-                                'Lainnya' => 'Lainnya',
-                            ]),
+                            ->searchable()
+                            ->native(false)
+                            ->options(fn () => \App\Models\StockLog::getReasonOptions()),
                         Textarea::make('notes')
                             ->label('Catatan (Opsional)'),
                     ])
@@ -152,14 +148,9 @@ class StockManagementTable
                         $schema[] = Select::make('reason')
                             ->label('Alasan Perubahan (Berlaku untuk semua varian yang diubah)')
                             ->required()
-                            ->options([
-                                'Restock' => 'Restock / Barang Masuk',
-                                'Retur' => 'Retur dari Pembeli',
-                                'Koreksi' => 'Koreksi / Inventarisasi Fisik',
-                                'Rusak' => 'Barang Rusak / Cacat',
-                                'Lainnya' => 'Lainnya',
-                            ])
-                            ->native(false);
+                            ->searchable()
+                            ->native(false)
+                            ->options(fn () => \App\Models\StockLog::getReasonOptions());
 
                         $schema[] = Textarea::make('notes')
                             ->label('Catatan (Opsional)');
