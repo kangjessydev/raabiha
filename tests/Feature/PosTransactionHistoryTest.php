@@ -64,11 +64,15 @@ class PosTransactionHistoryTest extends TestCase
 
         Livewire::actingAs($this->cashier)
             ->test(PosManager::class)
-            ->assertSee('POS-20260725-0001')
-            ->assertSee('POS-20260725-0002')
+            ->assertViewHas('sessionOrders', function ($orders) {
+                return $orders->pluck('order_number')->contains('POS-20260725-0001')
+                    && $orders->pluck('order_number')->contains('POS-20260725-0002');
+            })
             ->set('historySearch', 'Sudi')
-            ->assertSee('POS-20260725-0001')
-            ->assertDontSee('POS-20260725-0002');
+            ->assertViewHas('sessionOrders', function ($orders) {
+                return $orders->pluck('order_number')->contains('POS-20260725-0001')
+                    && !$orders->pluck('order_number')->contains('POS-20260725-0002');
+            });
     }
 
     public function test_history_filters_by_payment_method_and_status(): void
@@ -98,14 +102,20 @@ class PosTransactionHistoryTest extends TestCase
         Livewire::actingAs($this->cashier)
             ->test(PosManager::class)
             ->set('historyPaymentFilter', 'cash')
-            ->assertSee('POS-20260725-0003')
-            ->assertDontSee('POS-20260725-0004')
+            ->assertViewHas('sessionOrders', function ($orders) {
+                return $orders->pluck('order_number')->contains('POS-20260725-0003')
+                    && !$orders->pluck('order_number')->contains('POS-20260725-0004');
+            })
             ->set('historyPaymentFilter', 'non_cash')
-            ->assertSee('POS-20260725-0004')
-            ->assertDontSee('POS-20260725-0003')
+            ->assertViewHas('sessionOrders', function ($orders) {
+                return $orders->pluck('order_number')->contains('POS-20260725-0004')
+                    && !$orders->pluck('order_number')->contains('POS-20260725-0003');
+            })
             ->set('historyPaymentFilter', 'all')
             ->set('historyStatusFilter', 'cancelled')
-            ->assertSee('POS-20260725-0004')
-            ->assertDontSee('POS-20260725-0003');
+            ->assertViewHas('sessionOrders', function ($orders) {
+                return $orders->pluck('order_number')->contains('POS-20260725-0004')
+                    && !$orders->pluck('order_number')->contains('POS-20260725-0003');
+            });
     }
 }

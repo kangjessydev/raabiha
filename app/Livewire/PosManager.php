@@ -864,6 +864,8 @@ class PosManager extends Component
 
             if ($this->historyPaymentFilter === 'cash') {
                 $ordersQuery->whereIn('payment_method', ['cash', 'tunai']);
+            } elseif ($this->historyPaymentFilter === 'non_cash') {
+                $ordersQuery->whereNotIn('payment_method', ['cash', 'tunai']);
             } elseif ($this->historyPaymentFilter !== 'all') {
                 $filterVal = strtolower($this->historyPaymentFilter);
                 $ordersQuery->where(function($q) use ($filterVal) {
