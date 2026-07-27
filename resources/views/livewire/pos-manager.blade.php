@@ -3763,9 +3763,18 @@
                 },
                 
                 // Voucher & Loyalty State
+                posTabId: Math.random().toString(36).substring(2, 10),
                 vouchers: {{ \Illuminate\Support\Js::from($vouchers ?? []) }},
                 posLoyaltyTiers: {{ \Illuminate\Support\Js::from(json_decode(\App\Models\SiteSetting::where('key', 'pos_loyalty_tiers')->value('value') ?? '[]', true) ?: []) }},
                 paymentMethods: {{ \Illuminate\Support\Js::from($paymentMethods ?? []) }},
+
+                broadcastCrossTabSync(reason = 'sync') {
+                    localStorage.setItem('pos_cross_tab_sync', JSON.stringify({
+                        timestamp: Date.now(),
+                        reason: reason,
+                        tabId: this.posTabId
+                    }));
+                },
                 allProducts: {{ \Illuminate\Support\Js::from($allProductsJson ?? []) }},
                 exchangeSearchQuery: '',
                 showVoucherModal: false,
@@ -4174,6 +4183,22 @@
                     this.$watch('customerName', () => this.saveActiveCart());
                     this.$watch('customerPhone', () => this.saveActiveCart());
 
+                    // Listener Sinkronisasi Multi-Tab Browser Realtime
+                    window.addEventListener('storage', (e) => {
+                        if (e.key === 'pos_cross_tab_sync' && e.newValue) {
+                            try {
+                                const data = JSON.parse(e.newValue);
+                                if (data && data.tabId !== this.posTabId) {
+                                    this.$wire.$refresh();
+                                    const storedHold = localStorage.getItem('pos_held_carts');
+                                    if (storedHold) {
+                                        try { this.heldCarts = JSON.parse(storedHold); } catch(err) {}
+                                    }
+                                }
+                            } catch(err) {}
+                        }
+                    });
+
                     // Menerima event dari Livewire
                     if (sessionStorage.getItem('pos_locked') === 'true') {
                         this.isLocked = true;
@@ -4193,6 +4218,7 @@
                         this.activePage = 'kasir'; 
                         this.clearCart(true); 
                         localStorage.removeItem('pos_active_cart'); 
+                        this.broadcastCrossTabSync('session-opened');
                         this.showToast('Sesi kasir berhasil dibuka', 'success'); 
                     });
                     window.addEventListener('session-closed', () => { 
@@ -4200,9 +4226,13 @@
                         this.activePage = 'kasir'; 
                         this.clearCart(true); 
                         localStorage.removeItem('pos_active_cart'); 
+                        this.broadcastCrossTabSync('session-closed');
                         this.showToast('Sesi kasir berhasil ditutup', 'success'); 
                     });
-                    window.addEventListener('petty-cash-saved', () => { this.showPettyCashModal = false; });
+                    window.addEventListener('petty-cash-saved', () => { 
+                        this.showPettyCashModal = false; 
+                        this.broadcastCrossTabSync('petty-cash-saved');
+                    });
                     window.addEventListener('require-supervisor-pin', (e) => {
                         const data = e.detail[0] || e.detail;
                         if (data.actionType === 'petty_cash_limit') {
@@ -4237,6 +4267,10 @@
                     });
                     window.addEventListener('order-voided', () => {
                         this.showVoidModal = false;
+                        this.broadcastCrossTabSync('order-voided');
+                    });
+                    window.addEventListener('return-success', () => {
+                        this.broadcastCrossTabSync('return-success');
                     });
                     this.startAutoLockChecker();
                     window.addEventListener('checkout-success', (e) => {
@@ -4250,6 +4284,7 @@
                         };
                         this.showReceiptPreviewModal = true;
                         this.clearCart(true);
+                        this.broadcastCrossTabSync('checkout-success');
                         this.showToast('Pembayaran Berhasil! Kembalian: Rp ' + this.formatMoney(e.detail[0].cash_change), 'success');
                     });
                     window.addEventListener('print-receipt', (e) => {
