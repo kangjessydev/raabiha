@@ -92,7 +92,42 @@ class StockManagementTable
                             ->required()
                             ->searchable()
                             ->native(false)
-                            ->options(fn () => \App\Models\StockLog::getReasonOptions()),
+                            ->options(fn () => \App\Models\StockLog::getReasonOptions())
+                            ->suffixAction(
+                                \Filament\Forms\Components\Actions\Action::make('add_custom_reason_inline')
+                                    ->icon('heroicon-m-plus')
+                                    ->color('primary')
+                                    ->tooltip('Tambah Alasan Custom Baru')
+                                    ->modalHeading('Tambah Alasan Custom Baru')
+                                    ->modalDescription('Masukkan nama alasan perubahan baru untuk disimpan ke daftar pilihan')
+                                    ->modalWidth('sm')
+                                    ->form([
+                                        TextInput::make('new_reason_name')
+                                            ->label('Nama Alasan Custom Baru')
+                                            ->placeholder('Contoh: Giveaway Event, Transfer Cabang')
+                                            ->required(),
+                                    ])
+                                    ->action(function (array $data, \Filament\Forms\Set $set) {
+                                        $newName = trim($data['new_reason_name'] ?? '');
+                                        if (!empty($newName)) {
+                                            $raw = \App\Models\SiteSetting::where('key', 'stock_custom_reasons')->value('value');
+                                            $arr = is_string($raw) ? (json_decode($raw, true) ?: []) : (is_array($raw) ? $raw : []);
+                                            $arr[] = ['reason_name' => $newName];
+
+                                            \App\Models\SiteSetting::updateOrCreate(
+                                                ['key' => 'stock_custom_reasons'],
+                                                ['value' => json_encode($arr)]
+                                            );
+
+                                            $set('reason', $newName);
+
+                                            \Filament\Notifications\Notification::make()
+                                                ->title("Alasan '{$newName}' berhasil ditambahkan dan dipilih")
+                                                ->success()
+                                                ->send();
+                                        }
+                                    })
+                            ),
                         Textarea::make('notes')
                             ->label('Catatan (Opsional)'),
                     ])
@@ -150,7 +185,42 @@ class StockManagementTable
                             ->required()
                             ->searchable()
                             ->native(false)
-                            ->options(fn () => \App\Models\StockLog::getReasonOptions());
+                            ->options(fn () => \App\Models\StockLog::getReasonOptions())
+                            ->suffixAction(
+                                \Filament\Forms\Components\Actions\Action::make('add_custom_reason_inline_variant')
+                                    ->icon('heroicon-m-plus')
+                                    ->color('primary')
+                                    ->tooltip('Tambah Alasan Custom Baru')
+                                    ->modalHeading('Tambah Alasan Custom Baru')
+                                    ->modalDescription('Masukkan nama alasan perubahan baru untuk disimpan ke daftar pilihan')
+                                    ->modalWidth('sm')
+                                    ->form([
+                                        TextInput::make('new_reason_name')
+                                            ->label('Nama Alasan Custom Baru')
+                                            ->placeholder('Contoh: Giveaway Event, Transfer Cabang')
+                                            ->required(),
+                                    ])
+                                    ->action(function (array $data, \Filament\Forms\Set $set) {
+                                        $newName = trim($data['new_reason_name'] ?? '');
+                                        if (!empty($newName)) {
+                                            $raw = \App\Models\SiteSetting::where('key', 'stock_custom_reasons')->value('value');
+                                            $arr = is_string($raw) ? (json_decode($raw, true) ?: []) : (is_array($raw) ? $raw : []);
+                                            $arr[] = ['reason_name' => $newName];
+
+                                            \App\Models\SiteSetting::updateOrCreate(
+                                                ['key' => 'stock_custom_reasons'],
+                                                ['value' => json_encode($arr)]
+                                            );
+
+                                            $set('reason', $newName);
+
+                                            \Filament\Notifications\Notification::make()
+                                                ->title("Alasan '{$newName}' berhasil ditambahkan dan dipilih")
+                                                ->success()
+                                                ->send();
+                                        }
+                                    })
+                            );
 
                         $schema[] = Textarea::make('notes')
                             ->label('Catatan (Opsional)');
