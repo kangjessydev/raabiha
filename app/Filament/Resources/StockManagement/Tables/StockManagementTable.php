@@ -94,7 +94,7 @@ class StockManagementTable
                             ->native(false)
                             ->options(fn () => \App\Models\StockLog::getReasonOptions())
                             ->suffixAction(
-                                \Filament\Forms\Components\Actions\Action::make('add_custom_reason_inline')
+                                \Filament\Actions\Action::make('add_custom_reason_inline')
                                     ->icon('heroicon-m-plus')
                                     ->color('primary')
                                     ->tooltip('Tambah Alasan Custom Baru')
@@ -187,7 +187,7 @@ class StockManagementTable
                             ->native(false)
                             ->options(fn () => \App\Models\StockLog::getReasonOptions())
                             ->suffixAction(
-                                \Filament\Forms\Components\Actions\Action::make('add_custom_reason_inline_variant')
+                                \Filament\Actions\Action::make('add_custom_reason_inline_variant')
                                     ->icon('heroicon-m-plus')
                                     ->color('primary')
                                     ->tooltip('Tambah Alasan Custom Baru')
