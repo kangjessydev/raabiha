@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\PaymentMethods;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 use App\Filament\Resources\PaymentMethods\Pages\CreatePaymentMethod;
 use App\Filament\Resources\PaymentMethods\Pages\EditPaymentMethod;
 use App\Filament\Resources\PaymentMethods\Pages\ListPaymentMethods;
@@ -17,10 +16,10 @@ use Filament\Tables\Table;
 
 class PaymentMethodResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 52;
+    protected static ?int $navigationSort = 2;
 
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::PengaturanToko;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan Toko & Sistem';
+    protected static ?string $navigationLabel = 'Metode Pembayaran';
     
     protected static ?string $model = PaymentMethod::class;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\Settings\Pages;
+namespace App\Filament\Pages\Settings;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
@@ -19,10 +19,10 @@ class GlobalSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-globe-alt';
-    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan';
-    protected static ?string $navigationLabel = 'Pengaturan Global';
-    protected static ?string $title = 'Pengaturan Global';
-    protected static ?string $cluster = \App\Filament\Clusters\Settings\SettingsCluster::class;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan Toko & Sistem';
+    protected static ?string $navigationLabel = 'Pengaturan Toko';
+    protected static ?string $title = 'Pengaturan Toko';
+    protected static ?int $navigationSort = 1;
     
     protected string $view = 'filament.clusters.settings.pages.global-settings';
 

@@ -15,13 +15,12 @@ class InquiryResource extends Resource
 {
     protected static ?string $model = Inquiry::class;
 
-    protected static ?string $cluster = \App\Filament\Clusters\MediaFiles::class;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-envelope';
-    protected static \UnitEnum|string|null $navigationGroup = 'Content';
-    protected static ?string $navigationLabel = 'Pesan Masuk (Inquiries)';
-    protected static ?string $modelLabel = 'Pesan';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
+    protected static ?string $navigationLabel = 'Pesan Masuk';
+    protected static ?string $modelLabel = 'Pesan Masuk';
     protected static ?string $pluralModelLabel = 'Pesan Masuk';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 7;
 
     public static function getNavigationBadge(): ?string
     {

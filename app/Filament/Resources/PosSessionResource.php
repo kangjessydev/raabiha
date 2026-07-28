@@ -18,12 +18,13 @@ class PosSessionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clock';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'POS';
+    protected static \UnitEnum|string|null $navigationGroup = 'Kasir & Toko Fisik (POS)';
 
-    protected static ?string $modelLabel = 'Shift & Jam Kerja POS';
-    protected static ?string $pluralModelLabel = 'Shift & Jam Kerja POS';
+    protected static ?string $navigationLabel = 'Shift Kasir';
+    protected static ?string $modelLabel = 'Shift Kasir';
+    protected static ?string $pluralModelLabel = 'Shift Kasir';
 
-    protected static ?int $navigationSort = 12;
+    protected static ?int $navigationSort = 1;
 
     public static function canCreate(): bool
     {
@@ -70,7 +71,7 @@ class PosSessionResource extends Resource
                 TextColumn::make('closed_at')
                     ->label('Jam Keluar (Tutup)')
                     ->dateTime('d M Y, H:i')
-                    ->default('-')
+                    ->placeholder('-')
                     ->sortable(),
                 TextColumn::make('duration')
                     ->label('Durasi Kerja')
@@ -187,7 +188,7 @@ class PosSessionResource extends Resource
                             default  => ucwords($state ?? '-'),
                         }),
                         TextEntry::make('opened_at')->label('Waktu Buka (Jam Masuk)')->dateTime('d M Y H:i:s'),
-                        TextEntry::make('closed_at')->label('Waktu Tutup (Jam Keluar)')->dateTime('d M Y H:i:s')->default('Shift Masih Berlangsung'),
+                        TextEntry::make('closed_at')->label('Waktu Tutup (Jam Keluar)')->dateTime('d M Y H:i:s')->placeholder('Shift Masih Berlangsung'),
                         TextEntry::make('duration')
                             ->label('Total Durasi Jam Kerja Shift')
                             ->state(function ($record) {

@@ -7,6 +7,7 @@ use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -49,7 +50,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->font('Poppins')
+            ->font('Inter')
             ->darkMode(false)
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->userMenuItems([
@@ -73,14 +74,7 @@ class AdminPanelProvider extends PanelProvider
                     ->icon('heroicon-m-shopping-bag')
                     ->openUrlInNewTab(),
             ])
-            ->navigationItems([
-                \Filament\Navigation\NavigationItem::make('Terminal POS Kasir')
-                    ->url('/pos')
-                    ->icon('heroicon-o-computer-desktop')
-                    ->group('Transaksi')
-                    ->sort(0)
-                    ->openUrlInNewTab(),
-            ])
+
             ->colors([
                 'primary' => \Filament\Support\Colors\Color::Emerald,
                 'gray' => \Filament\Support\Colors\Color::Stone,
@@ -97,18 +91,20 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(fn () => $resolveMediaUrl('site_favicon'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
-            ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\Filament\Clusters')
-            ->topNavigation()
+            ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth('full')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->navigationGroups([
-                'Transaksi',
-                'Katalog',
-                'Promosi',
-                'Reseller',
-                'Pengaturan Toko',
+                'Penjualan & Transaksi',
+                'Katalog & Stok Barang',
+                'Pelanggan & Reseller',
+                'Kasir & Toko Fisik (POS)',
+                'Pemasaran & Website',
+                'Laporan & Keuangan',
+                'Pengaturan Toko & Sistem',
+                'Pengguna & Hak Akses',
             ])
             ->pages([
                 \App\Filament\Pages\Dashboard::class,
@@ -127,14 +123,20 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            ->navigationItems([
+                NavigationItem::make('Terminal POS Kasir')
+                    ->url('/pos', shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-computer-desktop')
+                    ->sort(3),
+            ])
             ->plugins([
                 FilamentShieldPlugin::make(),
                 \Awcodes\Curator\CuratorPlugin::make()
-                    ->label('Media')
-                    ->pluralLabel('Media')
+                    ->label('Galeri Media')
+                    ->pluralLabel('Galeri Media')
                     ->navigationIcon('heroicon-o-photo')
-                    ->navigationGroup('Content')
-                    ->navigationSort(3)
+                    ->navigationGroup(null)
+                    ->navigationSort(2)
                     ->registerNavigation(true),
             ])
             ->authMiddleware([

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\ProductReviews;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 
 use App\Filament\Resources\ProductReviews\Pages\EditProductReview;
 use App\Filament\Resources\ProductReviews\Pages\ListProductReviews;
@@ -17,10 +16,10 @@ use Filament\Tables\Table;
 
 class ProductReviewResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 24;
+    protected static ?int $navigationSort = 6;
 
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Katalog;
+    protected static \UnitEnum|string|null $navigationGroup = 'Katalog & Stok Barang';
+    protected static ?string $navigationLabel = 'Ulasan Produk';
     
     protected static ?string $model = ProductReview::class;
 

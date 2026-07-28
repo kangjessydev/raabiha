@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\Settings\Pages;
+namespace App\Filament\Pages\Settings;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
@@ -19,10 +19,10 @@ class AppearanceSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-paint-brush';
-    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan';
-    protected static ?string $navigationLabel = 'Tampilan & Media';
-    protected static ?string $title = 'Pengaturan Tampilan & Media';
-    protected static ?string $cluster = \App\Filament\Clusters\Settings\SettingsCluster::class;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan Toko & Sistem';
+    protected static ?string $navigationLabel = 'Tampilan & Tema';
+    protected static ?string $title = 'Pengaturan Tampilan & Tema';
+    protected static ?int $navigationSort = 4;
     
     protected string $view = 'filament.clusters.settings.pages.global-settings';
 

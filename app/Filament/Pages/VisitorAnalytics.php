@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Filament\Clusters\Dashboard\Pages;
+namespace App\Filament\Pages;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
-use App\Filament\Clusters\Dashboard\DashboardCluster;
 use App\Models\Pageview;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -13,13 +12,13 @@ class VisitorAnalytics extends Page
 {
     use HasPageShield;
 
-    protected static ?string $cluster = DashboardCluster::class;
+    protected static \UnitEnum|string|null $navigationGroup = 'Laporan & Keuangan';
+    protected static ?int $navigationSort = 3;
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationLabel = 'Laporan Pengunjung';
+    protected static ?string $title = 'Laporan Pengunjung';
 
-    protected static ?int $navigationSort = 2;
-
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chart-bar';
-    
-    protected string $view = 'filament.clusters.dashboard.pages.visitor-analytics';
+    protected string $view = 'filament.pages.visitor-analytics';
 
     public string $period = 'today';
     public ?string $startDate = null;
@@ -27,12 +26,12 @@ class VisitorAnalytics extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Analitik Pengunjung';
+        return 'Laporan Pengunjung';
     }
 
     public function getTitle(): string
     {
-        return 'Analitik Pengunjung';
+        return 'Laporan Pengunjung';
     }
 
     public function mount(): void
@@ -71,7 +70,7 @@ class VisitorAnalytics extends Page
         // 2. Hitung Pertumbuhan Hari Ini vs Kemarin (Unique Visitors)
         $todayUnique = Pageview::whereDate('created_at', now()->toDateString())->distinct('session_id')->count('session_id');
         $yesterdayUnique = Pageview::whereDate('created_at', now()->subDay()->toDateString())->distinct('session_id')->count('session_id');
-        
+
         $todayGrowth = 0;
         if ($yesterdayUnique > 0) {
             $todayGrowth = (($todayUnique - $yesterdayUnique) / $yesterdayUnique) * 100;

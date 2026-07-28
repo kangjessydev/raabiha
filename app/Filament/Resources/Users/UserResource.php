@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Users;
 
-use App\Filament\Clusters\Settings\SettingsCluster;
 
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
@@ -18,16 +17,31 @@ use Filament\Tables\Table;
 
 class UserResource extends Resource
 {
-    protected static ?string $cluster = SettingsCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Manajemen Pengguna';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengguna & Hak Akses';
     protected static ?string $model = User::class;
 
+    protected static ?string $navigationLabel = 'Manajemen Pengguna';
     protected static ?string $modelLabel = 'Pengguna';
-    protected static ?string $pluralModelLabel = 'Pengguna';
+    protected static ?string $pluralModelLabel = 'Manajemen Pengguna';
 
 
     protected static ?int $navigationSort = 1;
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-users';
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'email'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        /** @var \App\Models\User $record */
+        return [
+            'Email' => $record->email ?? '-',
+        ];
+    }
 
     public static function form(Schema $schema): Schema
     {

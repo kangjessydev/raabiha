@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Roles;
 
-use App\Filament\Clusters\Settings\SettingsCluster;
 
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use App\Filament\Resources\Roles\Pages\CreateRole;
@@ -34,8 +33,9 @@ use Override;
 
 class RoleResource extends Resource
 {
-    protected static ?string $cluster = SettingsCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Keamanan';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengguna & Hak Akses';
+    protected static ?string $navigationLabel = 'Peran & Hak Akses';
+    protected static ?int $navigationSort = 2;
     use Essentials\BelongsToParent;
     use Essentials\BelongsToTenant;
     use Essentials\HasGlobalSearch;
@@ -164,8 +164,8 @@ class RoleResource extends Resource
         return Utils::getResourceSlug();
     }
 
-    public static function getNavigationGroup(): ?string { return 'Manajemen Pengguna'; }
-    public static function getNavigationSort(): ?int { return 3; }
+    public static function getNavigationGroup(): ?string { return 'Pengguna & Hak Akses'; }
+    public static function getNavigationSort(): ?int { return 2; }
 
     public static function getCluster(): ?string
     {

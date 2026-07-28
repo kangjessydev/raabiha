@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Categories;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 
 use App\Filament\Resources\Categories\Pages\CreateCategory;
 use App\Filament\Resources\Categories\Pages\EditCategory;
@@ -18,14 +17,13 @@ use Filament\Tables\Table;
 
 class CategoryResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 22;
-
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Katalog;
+    protected static ?int $navigationSort = 2;
+    protected static \UnitEnum|string|null $navigationGroup = 'Katalog & Stok Barang';
     protected static ?string $model = Category::class;
 
+    protected static ?string $navigationLabel = 'Kategori Produk';
     protected static ?string $modelLabel = 'Kategori';
-    protected static ?string $pluralModelLabel = 'Kategori';
+    protected static ?string $pluralModelLabel = 'Kategori Produk';
 
 
     

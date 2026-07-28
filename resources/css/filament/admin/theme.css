@@ -145,5 +145,280 @@ body:has(.fi-simple-layout) .fi-simple-main,
     border-color: #d1d5db !important;
 }
 
+/* ==========================================================================
+   Sidebar & Topbar — Selaras Desain POS (Emerald + Clean White)
+   Referensi: resources/views/livewire/pos-manager.blade.php
+   ========================================================================== */
 
+/* Custom Scrollbar — identik dengan POS */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+/* Sidebar Width — sama persis dengan POS:
+   Expanded: w-64 = 16rem (256px)
+   Collapsed icon-only: w-20 = 5rem (80px) */
+:root {
+    --sidebar-width: 16rem;
+    --collapsed-sidebar-width: 5rem;
+}
+
+/* 1. Sidebar Container */
+.fi-sidebar {
+    background-color: #ffffff !important;
+    border-right: 1px solid #e5e7eb !important;
+}
+
+/* 2. Sidebar Header — tinggi h-16, border bawah bersih (sama persis POS) */
+.fi-sidebar-header {
+    height: 4rem !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* 3. Group Label — 10px uppercase tracking-wider (sama persis POS) */
+.fi-sidebar-group-label {
+    font-size: 0.625rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.07em !important;
+    color: #6b7280 !important;
+    padding-top: 1rem !important;
+    padding-bottom: 0.375rem !important;
+    padding-left: 0.5rem !important;
+}
+
+/* 4. Sidebar Item Button — rounded-lg, transition-colors (sama persis POS) */
+.fi-sidebar-item-btn {
+    border-radius: 0.5rem !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    font-weight: 500 !important;
+    color: #4b5563 !important;
+}
+
+/* Hover: bg-gray-100 text-gray-900 (sama persis POS) */
+.fi-sidebar-item-btn:hover {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+    transform: none !important;
+}
+
+.fi-sidebar-item-btn:hover .fi-sidebar-item-icon {
+    transform: none !important;
+    color: #111827 !important;
+}
+
+/* 5. Active Item — bg-emerald-50 text-emerald-700 font-semibold (sama persis POS) */
+.fi-sidebar-item.fi-active > a,
+.fi-sidebar-item.fi-active > button,
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn,
+.fi-sidebar-item-active > a,
+.fi-sidebar-item-active > button,
+.fi-sidebar-item-active .fi-sidebar-item-btn {
+    background-color: #f0fdf4 !important;
+    color: #15803d !important;
+    font-weight: 600 !important;
+    border-left: none !important;
+    box-shadow: none !important;
+}
+
+.fi-sidebar-item.fi-active .fi-sidebar-item-label,
+.fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+.fi-sidebar-item-active .fi-sidebar-item-label,
+.fi-sidebar-item-active .fi-sidebar-item-icon {
+    color: #16a34a !important;
+}
+
+/* 6. Topbar — Solid white, bersih, shadow-xs (sama persis POS header) */
+.fi-topbar {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04) !important;
+    backdrop-filter: none !important;
+}
+
+/* 7. Sidebar Toggle Buttons — border bordered rounded-lg (persis toggle POS) */
+.fi-icon-btn.fi-topbar-open-sidebar-btn,
+.fi-icon-btn.fi-topbar-close-sidebar-btn,
+.fi-icon-btn.fi-topbar-open-collapse-sidebar-btn,
+.fi-icon-btn.fi-topbar-close-collapse-sidebar-btn {
+    background-color: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem !important;
+    color: #4b5563 !important;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+    box-shadow: none !important;
+}
+
+.fi-icon-btn.fi-topbar-open-sidebar-btn:hover,
+.fi-icon-btn.fi-topbar-close-sidebar-btn:hover,
+.fi-icon-btn.fi-topbar-open-collapse-sidebar-btn:hover,
+.fi-icon-btn.fi-topbar-close-collapse-sidebar-btn:hover {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+    border-color: #9ca3af !important;
+}
+
+.fi-icon-btn.fi-topbar-open-sidebar-btn:focus-visible,
+.fi-icon-btn.fi-topbar-close-sidebar-btn:focus-visible,
+.fi-icon-btn.fi-topbar-open-collapse-sidebar-btn:focus-visible,
+.fi-icon-btn.fi-topbar-close-collapse-sidebar-btn:focus-visible {
+    outline: 2px solid #10b981 !important;
+    outline-offset: 2px !important;
+}
+
+/* 8. Global Search Input — bg-gray-50 border-gray-300 rounded-lg focus:ring-emerald (persis search POS) */
+.fi-global-search-field .fi-input-wrp,
+.fi-global-search-field input {
+    background-color: #f9fafb !important;
+    border-color: #d1d5db !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.875rem !important;
+    color: #111827 !important;
+}
+
+.fi-global-search-field input:focus {
+    background-color: #ffffff !important;
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+    outline: none !important;
+}
+
+.fi-global-search-field input::placeholder {
+    color: #9ca3af !important;
+}
+
+/* 9. Notification Button — pill badge style selaras POS */
+.fi-topbar-database-notifications-btn {
+    background-color: transparent !important;
+    border-radius: 0.5rem !important;
+    color: #4b5563 !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+.fi-topbar-database-notifications-btn:hover {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+}
+
+/* 10. User Menu Trigger — clean avatar button */
+.fi-user-menu-trigger {
+    border-radius: 9999px !important;
+    transition: box-shadow 0.15s ease !important;
+}
+
+.fi-user-menu-trigger:hover {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+}
+
+/* ==========================================================================
+   11. Database Notifications Slide-Over & Item Cards (SaaS POS Styling)
+   ========================================================================== */
+
+/* Slide-Over Modal Window Container */
+.fi-modal-window.fi-width-md,
+.fi-modal-window {
+    background-color: #ffffff !important;
+    border-left: 1px solid #e5e7eb !important;
+    box-shadow: -10px 0 25px -5px rgba(0, 0, 0, 0.05), -4px 0 10px -5px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Slide-Over Header Area */
+.fi-modal-header {
+    border-bottom: 1px solid #f3f4f6 !important;
+    padding: 1.25rem 1.5rem !important;
+    background-color: #ffffff !important;
+}
+
+.fi-modal-heading {
+    font-size: 1.125rem !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    letter-spacing: -0.02em !important;
+}
+
+/* Notification Close Button */
+.fi-modal-close-btn {
+    border-radius: 0.5rem !important;
+    color: #9ca3af !important;
+    transition: all 0.15s ease !important;
+}
+.fi-modal-close-btn:hover {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+}
+
+/* Individual Notification Items */
+.fi-no-notification {
+    border-bottom: 1px solid #f3f4f6 !important;
+    padding: 1rem 1.25rem !important;
+    transition: background-color 0.15s ease !important;
+    background-color: #ffffff !important;
+}
+
+.fi-no-notification:hover {
+    background-color: rgba(249, 250, 251, 0.9) !important;
+}
+
+/* Notification Item Title */
+.fi-no-notification-title {
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+}
+
+/* Notification Item Date / Time */
+.fi-no-notification-date {
+    font-size: 0.75rem !important;
+    color: #6b7280 !important;
+    font-weight: 500 !important;
+}
+
+/* Notification Item Message Body */
+.fi-no-notification-body {
+    font-size: 0.8125rem !important;
+    color: #4b5563 !important;
+    margin-top: 0.25rem !important;
+    line-height: 1.4 !important;
+}
+
+/* Notification Action Buttons (e.g. "Lihat Pesanan") - Clean Emerald POS Pill Button */
+.fi-no-notification-actions a,
+.fi-no-notification-actions button,
+.fi-no-notification-actions .fi-btn {
+    border-radius: 0.5rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.375rem 0.875rem !important;
+    transition: all 0.15s ease !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Primary Action Button (Emerald) */
+.fi-no-notification-actions a.fi-color-primary,
+.fi-no-notification-actions button.fi-color-primary,
+.fi-no-notification-actions .fi-btn-color-primary,
+.fi-no-notification .fi-btn {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.fi-no-notification-actions a.fi-color-primary:hover,
+.fi-no-notification-actions button.fi-color-primary:hover,
+.fi-no-notification-actions .fi-btn-color-primary:hover,
+.fi-no-notification .fi-btn:hover {
+    background-color: #059669 !important;
+    box-shadow: 0 2px 6px 0 rgba(16, 185, 129, 0.25) !important;
+}
+
+/* Clear / Mark as Read Action Links */
+.fi-database-notifications-mark-all-as-read-btn,
+.fi-database-notifications-clear-all-btn {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    transition: color 0.15s ease !important;
+}

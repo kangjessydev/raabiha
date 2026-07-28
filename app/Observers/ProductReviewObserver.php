@@ -30,7 +30,7 @@ class ProductReviewObserver
                     \Filament\Actions\Action::make('view')
                         ->label('Lihat Ulasan')
                         ->button()
-                        ->url(route('filament.admin.e-commerce.resources.product-reviews.index')),
+                        ->url(route('filament.admin.resources.product-reviews.index')),
                 ])
                 ->sendToDatabase($admin);
         }

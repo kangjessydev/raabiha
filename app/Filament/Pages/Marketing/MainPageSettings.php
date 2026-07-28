@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\Marketing\Pages;
+namespace App\Filament\Pages\Marketing;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
@@ -18,7 +18,6 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Pages\Page;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
-use App\Filament\Clusters\Marketing\MarketingCluster;
 
 class MainPageSettings extends Page implements HasForms
 {
@@ -26,14 +25,15 @@ class MainPageSettings extends Page implements HasForms
 
     use InteractsWithForms;
 
-    protected static ?string $cluster = MarketingCluster::class;
-    protected static string | \UnitEnum | null $navigationGroup = 'CMS';
+    protected static string | \UnitEnum | null $navigationGroup = 'Pemasaran & Website';
+    protected static ?string $navigationLabel = 'Halaman Utama';
+    protected static ?string $title = 'Pengaturan Halaman Utama';
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     public static function getNavigationLabel(): string 
     { 
-        return 'CMS Halaman Utama'; 
+        return 'Halaman Utama'; 
     }
 
     public function getTitle(): string 

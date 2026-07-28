@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\PostTags;
 
-use App\Filament\Clusters\Marketing\MarketingCluster;
 use App\Filament\Resources\PostTags\Pages\CreatePostTag;
 use App\Filament\Resources\PostTags\Pages\EditPostTag;
 use App\Filament\Resources\PostTags\Pages\ListPostTags;
@@ -17,15 +16,16 @@ use Filament\Tables\Table;
 
 class PostTagResource extends Resource
 {
-    protected static ?string $cluster = MarketingCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Blog';
-    protected static ?int $navigationSort = 3;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
+    protected static ?string $navigationParentItem = 'Artikel & Berita';
+    protected static ?int $navigationSort = 2;
     protected static ?string $model = PostTag::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-hashtag';
 
-    protected static ?string $modelLabel = 'Tag Blog';
-    protected static ?string $pluralModelLabel = 'Tag Blog';
+    protected static ?string $navigationLabel = 'Tag Artikel';
+    protected static ?string $modelLabel = 'Tag Artikel';
+    protected static ?string $pluralModelLabel = 'Tag Artikel';
 
     protected static ?string $recordTitleAttribute = 'name';
 

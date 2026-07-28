@@ -4,7 +4,6 @@ namespace App\Filament\Pages\Resellers;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 use App\Models\SiteSetting;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\RichEditor;
@@ -22,12 +21,11 @@ class ResellerSettings extends Page implements HasForms
 
     use InteractsWithForms;
 
-    protected static ?string $cluster = ECommerceCluster::class;
     protected static ?int $navigationSort = 42;
 
-    
     public static function getNavigationIcon(): ?string { return 'heroicon-o-cog-6-tooth'; }
-    public static function getNavigationGroup(): string|\BackedEnum|null { return \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Reseller; }
+    public static function getNavigationGroup(): string|\BackedEnum|null { return 'Pelanggan & Reseller'; }
+    public static function getNavigationSort(): ?int { return 3; }
     public static function getNavigationLabel(): string { return 'Pengaturan Reseller'; }
     public function getTitle(): string { return 'Pengaturan Reseller'; }
 

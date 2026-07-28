@@ -22,8 +22,8 @@ return [
     'shield_resource' => [
         'slug' => 'shield/roles',
         'show_model_path' => true,
-        'cluster' => \App\Filament\Clusters\Settings\SettingsCluster::class,
-        'navigation_group' => 'Manajemen Pengguna',
+        'cluster' => null,
+        'navigation_group' => 'Pengguna & Hak Akses',
         'tabs' => [
             'pages' => true,
             'widgets' => true,

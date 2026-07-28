@@ -372,7 +372,7 @@ class OrderObserver
                     \Filament\Actions\Action::make('view')
                         ->label('Lihat Pesan' === $title ? 'Lihat Pesan' : 'Lihat Pesanan')
                         ->button()
-                        ->url(route('filament.admin.e-commerce.resources.orders.index')),
+                        ->url(route('filament.admin.resources.orders.index')),
                 ])
                 ->sendToDatabase($admin);
         }

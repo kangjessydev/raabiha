@@ -4,7 +4,6 @@ namespace App\Filament\Pages;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 use App\Models\TopbarAnnouncement as AnnouncementModel;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\TextInput;
@@ -23,11 +22,10 @@ class TopbarAnnouncement extends Page implements HasForms
 
     use InteractsWithForms;
 
-    protected static ?string $cluster = ECommerceCluster::class;
-                    
     public static function getNavigationIcon(): ?string { return 'heroicon-o-megaphone'; }
-    public static function getNavigationGroup(): string|\BackedEnum|null { return \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Promosi; }
-    public static function getNavigationLabel(): string { return 'Pengumuman (Topbar)'; }
+    public static function getNavigationGroup(): string|\BackedEnum|null { return 'Pemasaran & Website'; }
+    public static function getNavigationSort(): ?int { return 8; }
+    public static function getNavigationLabel(): string { return 'Pengumuman Bilah Atas'; }
     public function getTitle(): string { return 'Pengumuman Topbar'; }
 
     protected string $view = 'filament.pages.topbar-announcement';

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\Settings\Pages;
+namespace App\Filament\Pages\Settings;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
@@ -19,10 +19,10 @@ class IntegrationSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-cpu-chip';
-    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan';
-    protected static ?string $navigationLabel = 'Integrasi & API';
-    protected static ?string $title = 'Pengaturan Integrasi & API';
-    protected static ?string $cluster = \App\Filament\Clusters\Settings\SettingsCluster::class;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan Toko & Sistem';
+    protected static ?string $navigationLabel = 'Integrasi API';
+    protected static ?string $title = 'Pengaturan Integrasi API';
+    protected static ?int $navigationSort = 5;
     
     protected string $view = 'filament.clusters.settings.pages.global-settings';
 

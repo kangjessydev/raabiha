@@ -10,18 +10,10 @@ use App\Filament\Widgets\TopProductsWidget;
 
 class Dashboard extends \Filament\Pages\Dashboard
 {
-    protected static ?string $cluster = \App\Filament\Clusters\Dashboard\DashboardCluster::class;
-    
-    protected static string $routePath = 'ringkasan';
-    
-    protected static ?string $navigationLabel = 'Ringkasan';
-    
-    protected static ?string $title = 'Ringkasan Dasbor';
-    
-    public static function getRouteName(?\Filament\Panel $panel = null): string
-    {
-        return 'filament.' . ($panel ? $panel->getId() : filament()->getCurrentPanel()->getId()) . '.dashboard.pages.dashboard';
-    }
+    protected static \UnitEnum|string|null $navigationGroup = null;
+    protected static ?int $navigationSort = 1;
+    protected static ?string $navigationLabel = 'Dasbor Utama';
+    protected static ?string $title = 'Dasbor Utama';
 
     public function getWidgets(): array
     {

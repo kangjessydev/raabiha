@@ -16,12 +16,11 @@ class MyProfile extends Page implements HasForms
     use InteractsWithForms;
 
     public static function getNavigationIcon(): ?string { return 'heroicon-o-user-circle'; }
-    public static function getNavigationGroup(): string|\BackedEnum|null { return 'Manajemen Pengguna'; }
+    public static function getNavigationGroup(): string|\BackedEnum|null { return 'Pengguna & Hak Akses'; }
     public static function getNavigationLabel(): string { return 'Profil Saya'; }
     public function getTitle(): string|\Illuminate\Contracts\Support\Htmlable { return 'Profil Saya'; }
-    public static function getNavigationSort(): ?int { return 2; }
+    public static function getNavigationSort(): ?int { return 3; }
 
-    protected static ?string $cluster = \App\Filament\Clusters\Settings\SettingsCluster::class;
 
     protected string $view = 'filament.pages.my-profile';
 

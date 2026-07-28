@@ -15,12 +15,13 @@ class StockLogResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-magnifying-glass';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Katalog';
+    protected static \UnitEnum|string|null $navigationGroup = 'Katalog & Stok Barang';
 
-    protected static ?string $modelLabel = 'Log & Audit Stok';
-    protected static ?string $pluralModelLabel = 'Log & Audit Stok';
+    protected static ?string $navigationLabel = 'Riwayat Mutasi Stok';
+    protected static ?string $modelLabel = 'Riwayat Mutasi Stok';
+    protected static ?string $pluralModelLabel = 'Riwayat Mutasi Stok';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
 
     public static function canCreate(): bool
     {

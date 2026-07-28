@@ -20,14 +20,14 @@ class SalesPageResource extends Resource
 {
     protected static ?string $model = SalesPage::class;
 
-    protected static ?string $cluster = \App\Filament\Clusters\Marketing\MarketingCluster::class;
-    protected static string|\UnitEnum|null $navigationGroup = 'CMS';
-    protected static ?int $navigationSort = 5;
+    protected static string|\UnitEnum|null $navigationGroup = 'Pemasaran & Website';
+    protected static ?int $navigationSort = 4;
     
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?string $modelLabel = 'Sales Page';
-    protected static ?string $pluralModelLabel = 'Sales Page';
+    protected static ?string $navigationLabel = 'Halaman Iklan';
+    protected static ?string $modelLabel = 'Halaman Iklan';
+    protected static ?string $pluralModelLabel = 'Halaman Iklan';
     public static function form(Schema $schema): Schema
     {
         return SalesPageForm::configure($schema);

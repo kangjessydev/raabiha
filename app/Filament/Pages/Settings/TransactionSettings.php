@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\Settings\Pages;
+namespace App\Filament\Pages\Settings;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 
@@ -19,10 +19,10 @@ class TransactionSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-shopping-bag';
-    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan';
-    protected static ?string $navigationLabel = 'Transaksi & Refund';
-    protected static ?string $title = 'Pengaturan Transaksi & Refund';
-    protected static ?string $cluster = \App\Filament\Clusters\Settings\SettingsCluster::class;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan Toko & Sistem';
+    protected static ?string $navigationLabel = 'Pengaturan Transaksi';
+    protected static ?string $title = 'Pengaturan Ketentuan Transaksi';
+    protected static ?int $navigationSort = 7;
     
     protected string $view = 'filament.clusters.settings.pages.global-settings';
 

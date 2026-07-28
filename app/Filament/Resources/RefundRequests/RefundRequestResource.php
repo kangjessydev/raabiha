@@ -24,7 +24,6 @@ use Filament\Tables\Table;
 class RefundRequestResource extends Resource
 {
     protected static ?string $model = RefundRequest::class;
-    protected static ?string $cluster = \App\Filament\Clusters\ECommerce\ECommerceCluster::class;
 
     public static function canCreate(): bool
     {
@@ -32,8 +31,8 @@ class RefundRequestResource extends Resource
     }
 
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Transaksi;
-    protected static ?string $navigationLabel = 'Refund Pelanggan';
+    protected static \UnitEnum|string|null $navigationGroup = 'Penjualan & Transaksi';
+    protected static ?string $navigationLabel = 'Pengajuan Refund';
     protected static ?string $modelLabel = 'Pengajuan Refund';
     protected static ?string $pluralModelLabel = 'Pengajuan Refund';
     protected static ?int $navigationSort = 2;

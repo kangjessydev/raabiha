@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\Settings\Pages;
+namespace App\Filament\Pages\Settings;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
@@ -17,10 +17,10 @@ class PosSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-printer';
-    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan';
-    protected static ?string $navigationLabel = 'Pengaturan POS & Printer';
-    protected static ?string $title = 'Pengaturan POS & Printer Thermal';
-    protected static ?string $cluster = \App\Filament\Clusters\Settings\SettingsCluster::class;
+    protected static \UnitEnum|string|null $navigationGroup = 'Kasir & Toko Fisik (POS)';
+    protected static ?string $navigationLabel = 'Pengaturan Kasir (POS)';
+    protected static ?string $title = 'Pengaturan Kasir (POS)';
+    protected static ?int $navigationSort = 4;
     
     protected string $view = 'filament.clusters.settings.pages.pos-settings';
 

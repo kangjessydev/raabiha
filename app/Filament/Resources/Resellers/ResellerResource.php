@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Resellers;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 use App\Filament\Resources\Resellers\Pages\CreateReseller;
 use App\Filament\Resources\Resellers\Pages\EditReseller;
 use App\Filament\Resources\Resellers\Pages\ListResellers;
@@ -18,10 +17,10 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ResellerResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 41;
+    protected static ?int $navigationSort = 2;
 
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Reseller;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pelanggan & Reseller';
+    protected static ?string $navigationLabel = 'Daftar Reseller';
     
     protected static ?string $model = User::class;
 
@@ -31,6 +30,19 @@ class ResellerResource extends Resource
     protected static ?string $pluralModelLabel = 'Daftar Reseller';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'email'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        /** @var \App\Models\User $record */
+        return [
+            'Status' => strtoupper($record->reseller_status ?? '-'),
+        ];
+    }
 
     public static function getEloquentQuery(): Builder
     {

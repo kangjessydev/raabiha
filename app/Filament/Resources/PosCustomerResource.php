@@ -17,12 +17,30 @@ class PosCustomerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-identification';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'POS';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pelanggan & Reseller';
 
-    protected static ?string $modelLabel = 'Pelanggan Loyalti POS';
-    protected static ?string $pluralModelLabel = 'Pelanggan Loyalti POS';
+    protected static ?string $navigationLabel = 'Daftar Pelanggan';
+    protected static ?string $modelLabel = 'Pelanggan';
+    protected static ?string $pluralModelLabel = 'Daftar Pelanggan';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $recordTitleAttribute = 'phone';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'phone'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        /** @var \App\Models\PosCustomer $record */
+        return [
+            'Nama' => $record->name ?? 'Pelanggan POS',
+            'Stempel' => $record->stamp_count . ' cap',
+            'Saldo Poin' => number_format($record->points_balance, 0, ',', '.') . ' poin',
+        ];
+    }
 
     public static function form(Schema $schema): Schema
     {

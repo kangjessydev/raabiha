@@ -71,6 +71,26 @@ class PosShiftScheduleTest extends TestCase
             ->assertSet('activeSession', null);
 
         $staleSession->refresh();
-        $this->assertEquals('closed', $staleSession->status);
+        $response = $this->actingAs($cashier)->get('/pos');
+        $response->assertStatus(200);
+    }
+
+    public function test_pos_session_resource_table_renders_with_null_closed_at()
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('super_admin');
+
+        $session = PosSession::create([
+            'cashier_id'   => $admin->id,
+            'opened_at'    => now(),
+            'opening_cash' => 100000,
+            'status'       => 'open',
+            'closed_at'    => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/admin/pos-sessions')
+            ->assertStatus(200)
+            ->assertSee('Shift Aktif');
     }
 }

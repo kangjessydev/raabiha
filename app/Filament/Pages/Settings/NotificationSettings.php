@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Clusters\Settings\Pages;
+namespace App\Filament\Pages\Settings;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Pages\Page;
@@ -19,10 +19,10 @@ class NotificationSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-envelope';
-    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan';
-    protected static ?string $navigationLabel = 'Notifikasi';
-    protected static ?string $title = 'Pengaturan Notifikasi & SMTP';
-    protected static ?string $cluster = \App\Filament\Clusters\Settings\SettingsCluster::class;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan Toko & Sistem';
+    protected static ?string $navigationLabel = 'Notifikasi & Email';
+    protected static ?string $title = 'Pengaturan Notifikasi & Email';
+    protected static ?int $navigationSort = 6;
     
     protected string $view = 'filament.clusters.settings.pages.global-settings';
 

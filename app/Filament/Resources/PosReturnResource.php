@@ -19,12 +19,30 @@ class PosReturnResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'POS';
+    protected static \UnitEnum|string|null $navigationGroup = 'Kasir & Toko Fisik (POS)';
 
-    protected static ?string $modelLabel = 'Riwayat Retur POS';
-    protected static ?string $pluralModelLabel = 'Riwayat Retur POS';
+    protected static ?string $navigationLabel = 'Retur Barang POS';
+    protected static ?string $modelLabel = 'Retur Barang POS';
+    protected static ?string $pluralModelLabel = 'Retur Barang POS';
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 3;
+
+    protected static ?string $recordTitleAttribute = 'return_number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['return_number', 'reason', 'order.customer_name'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        /** @var \App\Models\PosReturn $record */
+        return [
+            'Nota Asli' => $record->order?->order_number ?? '-',
+            'Nilai Retur' => 'Rp ' . number_format($record->refund_amount, 0, ',', '.'),
+            'Kasir' => $record->cashier?->name ?? 'Kasir',
+        ];
+    }
 
     public static function canCreate(): bool
     {
