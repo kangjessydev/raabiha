@@ -241,6 +241,8 @@ class PosManager extends Component
         $this->hasPosPin = !empty(Auth::user()->pos_pin);
     }
 
+    public $deviceBlocked = false;
+
     public function loadActiveSession()
     {
         // Pemicu Safety Net: Otomatis selesaikan sesi gantung dari hari kemarin jika ada
@@ -249,6 +251,154 @@ class PosManager extends Component
         $this->activeSession = PosSession::where('cashier_id', Auth::id())
             ->where('status', 'open')
             ->first();
+
+        if ($this->activeSession) {
+            $lockedDevice = \Illuminate\Support\Facades\Cache::get('pos_session_device_' . $this->activeSession->id);
+            if (!$lockedDevice) {
+                \Illuminate\Support\Facades\Cache::forever('pos_session_device_' . $this->activeSession->id, \Illuminate\Support\Facades\Session::getId());
+            } elseif ($lockedDevice !== \Illuminate\Support\Facades\Session::getId()) {
+                $this->activeSession = null;
+                $this->deviceBlocked = true;
+                return;
+            }
+        }
+    }
+
+    public $takeoverRequestedByOther = false;
+    public $generatedTakeoverCode = null;
+
+    public function requestTakeover()
+    {
+        $existingSession = PosSession::where('cashier_id', Auth::id())
+            ->where('status', 'open')
+            ->first();
+            
+        if ($existingSession) {
+            \Illuminate\Support\Facades\Cache::put('pos_takeover_request_' . $existingSession->id, true, now()->addMinutes(5));
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Permintaan dikirim. Tunggu persetujuan dari perangkat aktif.']);
+            $this->dispatch('takeover-requested');
+        }
+    }
+
+    public function submitTakeoverCode($code)
+    {
+        $existingSession = PosSession::where('cashier_id', Auth::id())
+            ->where('status', 'open')
+            ->first();
+
+        if ($existingSession) {
+            $savedCode = \Illuminate\Support\Facades\Cache::get('pos_takeover_code_' . $existingSession->id);
+            if ($savedCode && $savedCode == $code) {
+                \Illuminate\Support\Facades\Cache::forever('pos_session_device_' . $existingSession->id, \Illuminate\Support\Facades\Session::getId());
+                \Illuminate\Support\Facades\Cache::forget('pos_takeover_code_' . $existingSession->id);
+                $this->deviceBlocked = false;
+                $this->loadActiveSession();
+                $this->dispatch('notify', ['type' => 'success', 'message' => 'Sesi berhasil diambil alih!']);
+                $this->dispatch('takeover-success');
+            } else {
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'Kode tidak valid atau kadaluarsa.']);
+            }
+        }
+    }
+
+    public function forceTakeoverWithSupervisor($supervisorId, $pin)
+    {
+        $supervisor = \App\Models\User::find($supervisorId);
+        $isSup = $supervisor && (
+            $supervisor->is_pos_supervisor ||
+            in_array($supervisor->role, ['super_admin', 'owner', 'admin', 'manager', 'supervisor']) ||
+            $supervisor->hasAnyRole(['super_admin', 'owner', 'admin', 'manager', 'supervisor'])
+        );
+
+        if (!$supervisor || !$isSup || empty($supervisor->pos_pin) || !\Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin)) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'PIN Supervisor tidak valid.']);
+            return false;
+        }
+
+        $existingSession = PosSession::where('cashier_id', Auth::id())
+            ->where('status', 'open')
+            ->first();
+
+        if ($existingSession) {
+            \Illuminate\Support\Facades\Cache::forever('pos_session_device_' . $existingSession->id, \Illuminate\Support\Facades\Session::getId());
+            
+            \App\Models\Cashflow::create([
+                'transaction_date' => now()->toDateString(),
+                'type'             => 'info',
+                'category'         => 'pos_takeover_force',
+                'amount'           => 0,
+                'description'      => 'Sesi diambil alih paksa dari perangkat lain oleh Supervisor: ' . $supervisor->name,
+                'order_id'         => null,
+                'source'           => 'pos',
+                'is_reversed'      => false,
+            ]);
+
+            $this->deviceBlocked = false;
+            $this->loadActiveSession();
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Sesi berhasil diambil alih paksa.']);
+            $this->dispatch('takeover-success');
+            return true;
+        }
+        return false;
+    }
+
+    public function checkTakeoverRequest()
+    {
+        if ($this->activeSession) {
+            if (\Illuminate\Support\Facades\Cache::has('pos_takeover_request_' . $this->activeSession->id)) {
+                $this->takeoverRequestedByOther = true;
+                $this->dispatch('show-takeover-alert');
+            } else {
+                $this->takeoverRequestedByOther = false;
+            }
+
+            $lockedDevice = \Illuminate\Support\Facades\Cache::get('pos_session_device_' . $this->activeSession->id);
+            if ($lockedDevice && $lockedDevice !== \Illuminate\Support\Facades\Session::getId()) {
+                $this->activeSession = null;
+                $this->deviceBlocked = true;
+                $this->takeoverRequestedByOther = false;
+                $this->generatedTakeoverCode = null;
+            }
+        }
+    }
+
+    public function approveTakeoverRequest()
+    {
+        if ($this->activeSession) {
+            $code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            \Illuminate\Support\Facades\Cache::put('pos_takeover_code_' . $this->activeSession->id, $code, now()->addMinutes(5));
+            \Illuminate\Support\Facades\Cache::forget('pos_takeover_request_' . $this->activeSession->id);
+            
+            $this->generatedTakeoverCode = $code;
+            $this->takeoverRequestedByOther = false;
+        }
+    }
+
+    public function rejectTakeoverRequest()
+    {
+        if ($this->activeSession) {
+            \Illuminate\Support\Facades\Cache::forget('pos_takeover_request_' . $this->activeSession->id);
+            $this->takeoverRequestedByOther = false;
+        }
+    }
+
+    public function checkTakeoverStatus()
+    {
+        $existingSession = PosSession::where('cashier_id', Auth::id())
+            ->where('status', 'open')
+            ->first();
+
+        if ($existingSession) {
+            if (\Illuminate\Support\Facades\Cache::has('pos_takeover_code_' . $existingSession->id)) {
+                return; // Code generated, waiting for input
+            }
+            if (!\Illuminate\Support\Facades\Cache::has('pos_takeover_request_' . $existingSession->id)) {
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'Permintaan ditolak oleh perangkat utama.']);
+                $this->dispatch('takeover-rejected'); // To reset UI mode in Alpine if needed
+                // Optionally reset takeoverMode in Livewire if we had it, but it's purely Alpine. 
+                // We'll let the user click back or reset via alpine listener.
+            }
+        }
     }
 
     public function openSession()
@@ -384,9 +534,35 @@ class PosManager extends Component
         $data['cashier_id']    = Auth::id();
         $data['pos_session_id'] = $this->activeSession->id;
 
+        $idempotencyKey = $data['payment_details']['idempotency_key'] ?? null;
+        $lock = null;
+        $lockKey = null;
+
+        if ($idempotencyKey) {
+            $lockKey = 'pos_checkout_' . $idempotencyKey;
+            
+            // Atomic lock to prevent concurrent double-click race conditions
+            $lock = \Illuminate\Support\Facades\Cache::lock($lockKey . '_mutex', 10);
+            if (!$lock->get()) {
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'Harap tunggu, transaksi sedang diproses...']);
+                return;
+            }
+
+            if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
+                $lock->release();
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi ini sudah berhasil diproses (Duplicate).']);
+                return;
+            }
+        }
+
         try {
             $service = new PosTransactionService();
             $order   = $service->completePosTransaction($data);
+
+            if ($idempotencyKey) {
+                // Tandai bahwa transaksi dengan key ini sudah selesai
+                \Illuminate\Support\Facades\Cache::put($lockKey, true, now()->addDay());
+            }
 
             $receiptBase64 = $this->escPos()->generateReceipt($order);
             $receiptText   = $this->escPos()->generateReceiptText($order);
@@ -399,9 +575,25 @@ class PosManager extends Component
                 'receipt_text' => $receiptText,
                 'base64'       => $receiptBase64,
             ]);
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Pembayaran berhasil diproses.']);
 
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);
+        } finally {
+            if ($lock) {
+                $lock->release();
+            }
+        }
+    }
+
+    /**
+     * Mencatat bahwa struk telah dicetak
+     */
+    public function logPrint($orderId)
+    {
+        $order = \App\Models\Order::find($orderId);
+        if ($order) {
+            $order->increment('print_count');
         }
     }
 
@@ -416,7 +608,7 @@ class PosManager extends Component
         try {
             $receiptBase64 = $this->escPos()->generateReceipt($order, isReprint: true);
 
-            $this->dispatch('print-receipt', ['base64' => $receiptBase64]);
+            $this->dispatch('print-receipt', ['base64' => $receiptBase64, 'order_id' => $orderId]);
             $this->dispatch('notify', ['type' => 'success', 'message' => 'Cetak ulang struk #' . $order->order_number . ' dikirim ke printer.']);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal mencetak ulang struk: ' . $e->getMessage()]);
@@ -615,7 +807,11 @@ class PosManager extends Component
         }
 
         $supervisor = User::find($supervisorId);
-        $isSupRole = $supervisor && ($supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']));
+        $isSupRole = $supervisor && (
+            $supervisor->is_pos_supervisor ||
+            in_array($supervisor->role, ['super_admin', 'owner', 'admin', 'manager', 'supervisor']) ||
+            $supervisor->hasAnyRole(['super_admin', 'owner', 'admin', 'manager', 'supervisor'])
+        );
         $isValidPin = $supervisor && $isSupRole && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($pin, $supervisor->pos_pin);
 
         if ($isValidPin) {
@@ -1067,7 +1263,16 @@ class PosManager extends Component
             'sessionReturns'   => $sessionReturns,
             'sessionStats'     => $sessionStats,
             'supervisorsList'  => $this->supervisorsList,
+            'allPosCustomers'  => $this->allPosCustomers,
         ]);
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function allPosCustomers()
+    {
+        return \App\Models\PosCustomer::orderBy('name')
+            ->get(['id', 'name', 'phone', 'stamp_count', 'points_balance', 'completed_cards_count'])
+            ->toArray();
     }
 
     #[\Livewire\Attributes\Computed]

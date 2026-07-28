@@ -94,6 +94,9 @@ class PosSettings extends Page implements HasForms
                         \Filament\Schemas\Components\Tabs\Tab::make('Metadata Struk')
                             ->icon('heroicon-o-information-circle')
                             ->components([
+                                \Awcodes\Curator\Components\Forms\CuratorPicker::make('pos_ui_logo')
+                                    ->label('Logo Aplikasi POS (Tampil di Layar Kasir)')
+                                    ->helperText('Logo yang muncul di sudut kiri atas layar POS. Kosongkan untuk menggunakan ikon default.'),
                                 Forms\Components\Toggle::make('pos_show_cashier_name')
                                     ->label('Tampilkan Nama Kasir')
                                     ->default(true),

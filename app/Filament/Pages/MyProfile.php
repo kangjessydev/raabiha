@@ -66,6 +66,17 @@ class MyProfile extends Page implements HasForms
                             ->required(fn (string $context): bool => $context === 'create')
                             ->helperText('Kosongkan jika tidak ingin mengubah password.')
                             ->revealable(),
+                        TextInput::make('pos_pin')
+                            ->label('PIN Otorisasi Supervisor POS')
+                            ->password()
+                            ->numeric()
+                            ->minLength(6)
+                            ->maxLength(6)
+                            ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                            ->dehydrated(fn ($state) => filled($state))
+                            ->helperText('Wajib 6 digit angka. Digunakan untuk Otorisasi transaksi POS. Kosongkan jika tidak ingin mengubah PIN.')
+                            ->visible(fn () => auth()->user()->is_pos_supervisor)
+                            ->revealable(),
                     ]),
                 \Filament\Schemas\Components\Section::make('Alamat & Kontak')
                     ->description('Kelola alamat pengiriman dan nomor telepon Anda.')

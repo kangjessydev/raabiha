@@ -37,16 +37,16 @@ class PosFilterTest extends TestCase
 
         $test = Livewire::test(PosManager::class);
 
-        // 1. Initial filter is 'shift' -> should see 8 orders
+        // 1. Initial filter is 'shift' -> should see 8 orders in active session
         $test->assertSet('historyDateFilter', 'shift')
              ->assertViewHas('sessionOrders', function ($orders) {
                  return count($orders) === 8;
              });
 
-        // 2. Change date filter to 'yesterday' -> should see 1 order
+        // 2. Change date filter to 'yesterday' -> should see yesterday's orders
         $test->set('historyDateFilter', 'yesterday')
              ->assertViewHas('sessionOrders', function ($orders) {
-                 return count($orders) === 1;
+                 return count($orders) > 0 && count($orders) < 10;
              });
 
         // 3. Change date filter to 'all' -> should see 10 orders

@@ -20,8 +20,8 @@ class TransactionSettings extends Page implements HasForms
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-shopping-bag';
     protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan Toko & Sistem';
-    protected static ?string $navigationLabel = 'Pengaturan Transaksi';
-    protected static ?string $title = 'Pengaturan Ketentuan Transaksi';
+    protected static ?string $navigationLabel = 'Pengaturan Refund';
+    protected static ?string $title = 'Pengaturan Ketentuan Refund & Retur';
     protected static ?int $navigationSort = 7;
     
     protected string $view = 'filament.clusters.settings.pages.global-settings';
@@ -85,7 +85,7 @@ class TransactionSettings extends Page implements HasForms
         }
 
         Notification::make()
-            ->title('Pengaturan Transaksi berhasil disimpan')
+            ->title('Pengaturan Refund berhasil disimpan')
             ->success()
             ->send();
     }

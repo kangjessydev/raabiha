@@ -1,5 +1,14 @@
-<div x-data="posSystem()" class="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-gray-50/50 relative">
-
+<div x-data="posSystem()" wire:poll.5s="checkTakeoverRequest" class="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-gray-50/50 relative">
+    @php
+        $posLogoSetting = \App\Models\SiteSetting::where('key', 'pos_ui_logo')->first();
+        $posLogoUrl = asset('assets/images/pos-logo-icon.png');
+        if ($posLogoSetting && $posLogoSetting->value) {
+            $media = \Awcodes\Curator\Models\Media::find($posLogoSetting->value);
+            if ($media) {
+                $posLogoUrl = $media->url;
+            }
+        }
+    @endphp
     <!-- Sleek POS Fullscreen Splash Loading Screen -->
     <div x-data="{ isInitializing: true }" 
          x-init="setTimeout(() => isInitializing = false, 300)"
@@ -12,7 +21,7 @@
         <div class="flex flex-col items-center space-y-4 text-center">
             <!-- Brand Logo Icon (Gambar 1) -->
             <div class="w-16 h-16 flex items-center justify-center">
-                <img src="{{ asset('assets/images/pos-logo-icon.png') }}" alt="Raabiha Logo" class="w-16 h-16 object-contain animate-pulse">
+                <img src="{{ $posLogoUrl }}" alt="Raabiha Logo" class="w-16 h-16 object-contain animate-pulse">
             </div>
             <!-- Title & Status Text -->
             <div>
@@ -25,6 +34,139 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Device Blocked Overlay -->
+    @if($deviceBlocked)
+    <div x-data="{ takeoverMode: null, codeInput: '', supervisorId: '', supervisorPin: '' }" 
+         @takeover-rejected.window="takeoverMode = null; codeInput = '';"
+         class="fixed inset-0 z-[110] bg-gray-900/95 flex flex-col items-center justify-center font-sans text-white p-6">
+        <div class="bg-white text-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
+            
+            <!-- Default View -->
+            <div x-show="!takeoverMode" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+                <h2 class="text-xl font-bold mb-2">Perangkat Lain Sedang Aktif</h2>
+                <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                    Akun kasir Anda terdeteksi sedang digunakan pada perangkat lain. Untuk mengambil alih sesi ini, silakan pilih metode otorisasi.
+                </p>
+                <div class="flex flex-col gap-3">
+                    <button type="button" @click="takeoverMode = 'code'; $wire.requestTakeover()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-xs transition duration-150 flex items-center justify-center cursor-pointer">
+                        Minta Kode Ambil Alih
+                    </button>
+                    <button type="button" @click="takeoverMode = 'supervisor'" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl shadow-xs transition duration-150 flex items-center justify-center cursor-pointer">
+                        Bypass (PIN Supervisor)
+                    </button>
+                    <a href="{{ route('filament.admin.pages.dashboard') }}" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition duration-150 text-center mt-2">
+                        Kembali ke Admin
+                    </a>
+                </div>
+            </div>
+
+            <!-- Code Mode -->
+            <div x-show="takeoverMode === 'code'" style="display:none;" wire:poll.3s="checkTakeoverStatus" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                <button type="button" @click="takeoverMode = null" class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                </button>
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                </div>
+                <h2 class="text-xl font-bold mb-2">Masukkan Kode</h2>
+                <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                    Persetujuan telah dikirim ke perangkat aktif. Jika disetujui, masukkan 6 digit kode yang muncul di layar perangkat tersebut.
+                </p>
+                <input type="text" x-model="codeInput" maxlength="6" class="w-full text-center text-2xl tracking-[0.5em] font-bold py-3 border-2 border-gray-300 rounded-xl mb-4 focus:border-emerald-500 focus:ring-emerald-500 transition outline-none" placeholder="------" />
+                <button type="button" @click="$wire.submitTakeoverCode(codeInput)" :disabled="codeInput.length !== 6" class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl shadow-xs transition duration-150 flex items-center justify-center gap-2 cursor-pointer">
+                    <span wire:loading.remove wire:target="submitTakeoverCode">Verifikasi Kode</span>
+                    <span wire:loading.flex wire:target="submitTakeoverCode" class="items-center gap-2">
+                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        Memeriksa...
+                    </span>
+                </button>
+            </div>
+
+            <!-- Supervisor Mode -->
+            <div x-show="takeoverMode === 'supervisor'" style="display:none;" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                <button type="button" @click="takeoverMode = null" class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                </button>
+                <div class="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+                <h2 class="text-xl font-bold mb-2">Otorisasi Supervisor</h2>
+                <p class="text-gray-500 text-sm mb-4 leading-relaxed">
+                    Masukkan PIN Supervisor untuk mengambil alih sesi secara paksa. Aksi ini akan dicatat ke dalam audit.
+                </p>
+                
+                <div class="text-left mb-4">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Supervisor</label>
+                    <select x-model="supervisorId" class="w-full rounded-lg border border-gray-300 bg-white py-2.5 px-3 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                        <option value="">-- Pilih Supervisor --</option>
+                        @foreach(\App\Models\User::where('is_pos_supervisor', true)->get() as $sup)
+                            <option value="{{ $sup->id }}">{{ $sup->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <div class="text-left mb-6">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">PIN Supervisor (6 Digit)</label>
+                    <input type="password" x-model="supervisorPin" maxlength="6" class="w-full text-center text-xl tracking-[0.5em] font-bold py-2.5 border-2 border-gray-300 rounded-xl focus:border-emerald-500 focus:ring-emerald-500 transition outline-none" placeholder="------" />
+                </div>
+
+                <button type="button" @click="$wire.forceTakeoverWithSupervisor(supervisorId, supervisorPin)" :disabled="!supervisorId || supervisorPin.length !== 6" class="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl shadow-xs transition duration-150 flex items-center justify-center gap-2 cursor-pointer">
+                    <span wire:loading.remove wire:target="forceTakeoverWithSupervisor">Bypass Sesi</span>
+                    <span wire:loading.flex wire:target="forceTakeoverWithSupervisor" class="items-center gap-2">
+                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        Memeriksa...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Takeover Request / Code Notification Modal (Device A) -->
+    @if($takeoverRequestedByOther || $generatedTakeoverCode)
+    <div class="fixed inset-0 z-[110] bg-gray-900/90 flex flex-col items-center justify-center font-sans text-white p-6">
+        <div class="bg-white text-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
+            
+            @if($takeoverRequestedByOther)
+            <div class="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h2 class="text-xl font-bold mb-2">Permintaan Ambil Alih Sesi</h2>
+            <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                Terdapat perangkat lain yang mencoba mengambil alih sesi kasir ini. Jika Anda menyetujuinya, sesi di perangkat ini akan diputus.
+            </p>
+            <div class="flex gap-3">
+                <button type="button" wire:click="rejectTakeoverRequest" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition cursor-pointer">
+                    Tolak
+                </button>
+                <button type="button" wire:click="approveTakeoverRequest" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition cursor-pointer flex items-center justify-center gap-2">
+                    <span wire:loading.remove wire:target="approveTakeoverRequest">Izinkan</span>
+                    <span wire:loading.flex wire:target="approveTakeoverRequest" class="items-center">
+                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </span>
+                </button>
+            </div>
+            @elseif($generatedTakeoverCode)
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h2 class="text-xl font-bold mb-2">Kode Otorisasi</h2>
+            <p class="text-gray-500 text-sm mb-4 leading-relaxed">
+                Berikan 6 digit angka ini ke perangkat baru untuk menyelesaikan proses ambil alih sesi.
+            </p>
+            <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl py-6 mb-6">
+                <span class="text-4xl tracking-[0.2em] font-black text-gray-900">{{ $generatedTakeoverCode }}</span>
+            </div>
+            <p class="text-xs text-red-500 font-medium">Sesi ini akan otomatis diblokir saat perangkat baru berhasil memasukkan kode.</p>
+            @endif
+        </div>
+    </div>
+    @endif
 
     <style>
     @keyframes pinShake {
@@ -295,8 +437,10 @@
             <div class="overflow-y-auto overflow-x-hidden no-scrollbar">
                 <!-- Logo -->
                 <div class="h-16 flex items-center border-b border-gray-200 px-4 transition-all duration-300" :class="isSidebarOpen ? 'justify-start' : 'justify-center'">
-                    <img src="{{ asset('assets/images/pos-logo-icon.png') }}" alt="Raabiha Logo" class="w-8 h-8 object-contain flex-shrink-0">
-                    <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="ml-3 font-bold text-gray-900 text-lg tracking-tight whitespace-nowrap">Raabiha</span>
+                    <div class="flex items-center gap-3">
+                        <img src="{{ $posLogoUrl }}" alt="Raabiha Logo" class="w-8 h-8 object-contain flex-shrink-0">
+                        <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="ml-3 font-bold text-gray-900 text-lg tracking-tight whitespace-nowrap">Raabiha</span>
+                    </div>
                 </div>
                 
                 <!-- Menus -->
@@ -342,6 +486,10 @@
                                     </span>
                                     <span x-show="isSidebarOpen" x-text="printerConnected ? 'Tersambung' : 'Belum Terhubung'" class="whitespace-nowrap"></span>
                                 </button>
+                                <label x-show="isSidebarOpen" class="flex items-center gap-2 mt-2 px-1 cursor-pointer">
+                                    <input type="checkbox" x-model="autoPrintReceipt" @change="saveAutoPrintSettings" class="rounded border-gray-300 text-emerald-600 shadow-sm focus:border-emerald-300 focus:ring focus:ring-emerald-200 focus:ring-opacity-50">
+                                    <span class="text-xs text-gray-700">Auto Print Struk</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -1190,12 +1338,61 @@
                                 Metode pembayaran non-tunai (<strong x-text="paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod"></strong>) dipilih. Transaksi akan dicatat di laporan kasir.
                             </div>
 
-                            <!-- Identitas Pembeli (Opsional) -->
+                            <!-- Identitas Pembeli (Live Search Autocomplete) -->
                             <div class="pt-2 border-t border-gray-200">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Pelanggan (Opsional)</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="text" x-model="customerName" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" placeholder="Nama Pembeli">
-                                    <input type="text" x-model="customerPhone" class="w-full px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" placeholder="No WhatsApp">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="block text-xs font-semibold text-gray-700">Pelanggan (Live Search / Autocomplete)</label>
+                                    <button type="button" x-show="customerName || customerPhone || customerSearchInput" @click="clearCustomer()" class="text-[11px] font-bold text-rose-600 hover:text-rose-700 cursor-pointer flex items-center gap-0.5">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        Hapus Pelanggan
+                                    </button>
+                                </div>
+
+                                <div class="relative" @click.away="showCustomerDropdown = false">
+                                    <div class="relative">
+                                        <input type="text" 
+                                               x-model="customerSearchInput" 
+                                               @input="onCustomerInput()"
+                                               @focus="showCustomerDropdown = true"
+                                               class="w-full pl-8 pr-8 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" 
+                                               placeholder="Cari nama atau No. WhatsApp (contoh: Siti / 0812...)">
+                                        
+                                        <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                        </svg>
+
+                                        <button x-show="customerSearchInput" type="button" @click="clearCustomer()" class="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Dropdown List Autocomplete -->
+                                    <div x-show="showCustomerDropdown && filteredCustomers.length > 0" 
+                                         x-cloak
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 scale-95"
+                                         x-transition:enter-end="opacity-100 scale-100"
+                                         class="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-gray-100">
+                                        <template x-for="c in filteredCustomers" :key="c.id || c.phone || c.name">
+                                            <div @click="selectCustomer(c)" class="p-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between transition-colors">
+                                                <div>
+                                                    <div class="font-bold text-xs text-gray-900" x-text="c.name || 'Tanpa Nama'"></div>
+                                                    <div class="text-[10px] text-gray-500 font-mono" x-text="c.phone || '-'"></div>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                        🎁 <span x-text="c.stamp_count || 0"></span>/9 Cap
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Detail Nama & Phone jika kasir mengetik manual / memilih -->
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <input type="text" x-model="customerName" @input="saveActiveCart()" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded text-[11px] font-medium text-gray-800 focus:bg-white focus:outline-none focus:border-emerald-500" placeholder="Nama Pelanggan">
+                                    <input type="text" x-model="customerPhone" @input="saveActiveCart()" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded text-[11px] font-medium text-gray-800 focus:bg-white focus:outline-none focus:border-emerald-500" placeholder="No WhatsApp">
                                 </div>
                             </div>
                         </div>
@@ -1571,16 +1768,7 @@
 
         <!-- OVERLAY: Lock Screen Kasir (Clean Filament Native Style without calculator numpad) -->
         <div x-show="isLocked"
-             @screen-unlock-failed.window="
-                 isLockError = true;
-                 lockErrorMessage = $event.detail[0]?.message || $event.detail?.message || 'PIN POS 6-digit salah!';
-                 setTimeout(() => {
-                     lockPasswordInput = '';
-                     isLockError = false;
-                     const el = document.getElementById('posLockPasswordField');
-                     if (el) el.focus();
-                 }, 600);
-             "
+             @screen-unlock-failed.window="handleUnlockFailed($event.detail[0]?.message || $event.detail?.message)"
              @screen-unlocked.window="isLocked = false; lockPasswordInput = ''; isLockError = false; lockErrorMessage = '';"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 scale-95"
@@ -1636,12 +1824,8 @@
                                         'border-gray-300 bg-gray-50/60 text-gray-400': !isLockError && (lockPasswordInput || '').length < i - 1
                                     }"
                                 >
-                                    <template x-if="(lockPasswordInput || '').length >= i">
-                                        <span class="w-3 h-3 rounded-full inline-block" :class="isLockError ? 'bg-red-500 animate-pulse' : 'bg-emerald-600'"></span>
-                                    </template>
-                                    <template x-if="(lockPasswordInput || '').length < i">
-                                        <span class="w-2 h-2 rounded-full inline-block" :class="isLockError ? 'bg-red-300' : 'bg-gray-300'"></span>
-                                    </template>
+                                    <span x-show="String(lockPasswordInput || '').length >= i" class="w-3 h-3 rounded-full inline-block" :class="isLockError ? 'bg-red-500 animate-pulse' : 'bg-emerald-600'"></span>
+                                    <span x-show="String(lockPasswordInput || '').length < i" class="w-2 h-2 rounded-full inline-block" :class="isLockError ? 'bg-red-300' : 'bg-gray-300'"></span>
                                 </div>
                             </template>
                         </div>
@@ -1652,9 +1836,15 @@
                     <button 
                         type="submit" 
                         :disabled="!lockPasswordInput || String(lockPasswordInput).trim().length !== 6" 
+                        wire:loading.attr="disabled"
+                        wire:target="unlockScreenWithPin"
                         class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2 mt-2"
                     >
-                        <span>Buka Kunci Layar</span>
+                        <span wire:loading.remove wire:target="unlockScreenWithPin">Buka Kunci Layar</span>
+                        <span wire:loading.flex wire:target="unlockScreenWithPin" class="items-center gap-2">
+                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Memeriksa PIN...
+                        </span>
                     </button>
                 </form>
             </div>
@@ -1723,15 +1913,9 @@
                                             'border-emerald-600 bg-white text-emerald-700 shadow-xs': !supervisorErrorMessage && (supervisorPinInput || '').length >= i,
                                             'border-gray-300 bg-gray-50/60 text-gray-400': !supervisorErrorMessage && (supervisorPinInput || '').length < i - 1
                                         }">
-                                        <template x-if="(supervisorPinInput || '').length >= i">
-                                            <span x-show="!showSupervisorPinText" class="w-2.5 h-2.5 rounded-full inline-block" :class="supervisorErrorMessage ? 'bg-red-500 animate-pulse' : 'bg-emerald-600'"></span>
-                                        </template>
-                                        <template x-if="(supervisorPinInput || '').length >= i">
-                                            <span x-show="showSupervisorPinText" class="font-bold text-base" :class="supervisorErrorMessage ? 'text-red-600' : 'text-emerald-700'" x-text="(supervisorPinInput || '')[i - 1]"></span>
-                                        </template>
-                                        <template x-if="(supervisorPinInput || '').length < i">
-                                            <span class="w-2 h-2 rounded-full inline-block" :class="supervisorErrorMessage ? 'bg-red-300' : 'bg-gray-300'"></span>
-                                        </template>
+                                        <span x-show="!showSupervisorPinText && String(supervisorPinInput || '').length >= i" class="w-2.5 h-2.5 rounded-full inline-block" :class="supervisorErrorMessage ? 'bg-red-500 animate-pulse' : 'bg-emerald-600'"></span>
+                                        <span x-show="showSupervisorPinText && String(supervisorPinInput || '').length >= i" class="font-bold text-base" :class="supervisorErrorMessage ? 'text-red-600' : 'text-emerald-700'" x-text="String(supervisorPinInput || '')[i - 1]"></span>
+                                        <span x-show="String(supervisorPinInput || '').length < i" class="w-2 h-2 rounded-full inline-block" :class="supervisorErrorMessage ? 'bg-red-300' : 'bg-gray-300'"></span>
                                     </div>
                                 </template>
                             </div>
@@ -1742,7 +1926,15 @@
                     <div class="flex gap-3 pt-2">
                         <button type="button" @click="showSupervisorPinModal = false" class="flex-1 py-2 px-4 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium text-sm rounded-lg shadow-sm transition duration-150 cursor-pointer">Batal</button>
                         <button type="submit" :disabled="!selectedSupervisorId || !supervisorPinInput || String(supervisorPinInput).trim().length !== 6"
-                                class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 cursor-pointer">Verifikasi PIN</button>
+                                wire:loading.attr="disabled"
+                                wire:target="verifySupervisorPin"
+                                class="flex-1 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 cursor-pointer flex items-center justify-center gap-2">
+                            <span wire:loading.remove wire:target="verifySupervisorPin">Verifikasi PIN</span>
+                            <span wire:loading.flex wire:target="verifySupervisorPin" class="items-center gap-2">
+                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Memeriksa...
+                            </span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -2645,7 +2837,7 @@
                                 </div>
                                 
                                 <span x-show="isVoucherLoyaltyLocked(v)" class="text-[11px] font-bold text-rose-600 flex items-center gap-1">
-                                    🔒 Wajib <span x-text="getVoucherLoyaltyTier(v.id).min_stamps"></span> Cap (Anda: <span x-text="activeCustomerLoyalty ? activeCustomerLoyalty.stamp_count : 0"></span> Cap)
+                                    🔒 Wajib <span x-text="getVoucherLoyaltyTier(v.id)?.min_stamps"></span> Cap (Anda: <span x-text="activeCustomerLoyalty ? activeCustomerLoyalty.stamp_count : 0"></span> Cap)
                                 </span>
                                 <span x-show="!isVoucherLoyaltyLocked(v) && !isVoucherEligible(v)" class="text-[11px] font-semibold text-rose-600">Syarat belum terpenuhi</span>
                                 <span x-show="activeVoucher && activeVoucher.id === v.id" class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
@@ -3649,11 +3841,13 @@
                 <!-- Receipt Thermal Text Paper Preview -->
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-700">Pratinjau Struk Thermal (ESC/POS)</span>
-                        <span class="text-[11px] text-gray-400">32 Kolom</span>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-700">Pratinjau Struk</span>
+                        <span class="text-[11px] text-gray-400">Kertas Thermal</span>
                     </div>
-                    <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 shadow-inner">
-                        <pre class="font-mono text-xs leading-relaxed text-emerald-400 whitespace-pre overflow-x-auto select-all" x-text="previewReceiptData.text"></pre>
+                    <div class="bg-gray-200 p-4 rounded-xl border border-gray-300 shadow-inner flex justify-center max-h-[400px] overflow-y-auto">
+                        <div class="bg-white p-4 shadow-sm w-full max-w-[300px]" style="font-family: 'Courier New', Courier, monospace;">
+                            <pre class="text-[11px] leading-tight text-black whitespace-pre-wrap word-break-all" x-text="previewReceiptData.text"></pre>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3663,7 +3857,7 @@
                 <button @click="showReceiptPreviewModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                     Selesai
                 </button>
-                <button @click="printBase64(previewReceiptData.base64)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
+                <button @click="printBase64(previewReceiptData.base64, previewReceiptData.order_id)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"></path></svg>
                     <span>Cetak Struk</span>
                 </button>
@@ -3794,6 +3988,10 @@
                 paymentMethod: 'cash',
                 customerName: '',
                 customerPhone: '',
+                activeCustomerLoyalty: null,
+                allPosCustomers: @js($allPosCustomers),
+                customerSearchInput: '',
+                showCustomerDropdown: false,
                 isProcessing: false,
                 
                 // Toasts
@@ -3809,10 +4007,13 @@
                 
                 // Printer State
                 printerConnected: false,
+                autoPrintReceipt: localStorage.getItem('pos_auto_print') === 'true',
                 printerDevice: null,
                 printerType: 'bluetooth',
                 printerCharacteristic: null,
                 printerPort: null,
+                bridgeSocket: null,
+                printerConnectionMethod: null, // 'ble', 'serial', 'bridge'
                 heldCarts: [],
                 showHoldModal: false,
                 showReceiptPreviewModal: false,
@@ -4087,6 +4288,7 @@
                     @this.call('verifySupervisorPin', this.selectedSupervisorId, pin, 'general');
                 },
                 isLocked: false,
+                isLockError: false,
                 lockPasswordInput: '',
                 lockErrorMessage: '',
                 lastActivityTime: Date.now(),
@@ -4122,6 +4324,17 @@
                     }
                     this.lockErrorMessage = '';
                     @this.call('unlockScreenWithPin', pin);
+                },
+
+                handleUnlockFailed(message) {
+                    this.isLockError = true;
+                    this.lockErrorMessage = message || 'PIN POS 6-digit salah!';
+                    setTimeout(() => {
+                        this.lockPasswordInput = '';
+                        this.isLockError = false;
+                        const el = document.getElementById('posLockPasswordField');
+                        if (el) el.focus();
+                    }, 600);
                 },
 
                 resetAutoLockTimer() {
@@ -4277,6 +4490,7 @@
                         this.isProcessing = false;
                         this.showCheckoutModal = false;
                         this.previewReceiptData = {
+                            order_id: e.detail[0].order_id,
                             orderNumber: e.detail[0].order_number,
                             cashChange: e.detail[0].cash_change,
                             text: e.detail[0].receipt_text,
@@ -4286,10 +4500,17 @@
                         this.clearCart(true);
                         this.broadcastCrossTabSync('checkout-success');
                         this.showToast('Pembayaran Berhasil! Kembalian: Rp ' + this.formatMoney(e.detail[0].cash_change), 'success');
+                        
+                        if (this.autoPrintReceipt) {
+                            setTimeout(() => {
+                                this.printBase64(this.previewReceiptData.base64, this.previewReceiptData.order_id);
+                            }, 500);
+                        }
                     });
                     window.addEventListener('print-receipt', (e) => {
                         const b64 = e.detail?.base64 || e.detail?.[0]?.base64;
-                        if (b64) this.printBase64(b64);
+                        const orderId = e.detail?.order_id || e.detail?.[0]?.order_id || null;
+                        if (b64) this.printBase64(b64, orderId);
                     });
                     window.addEventListener('print-z-report', (e) => {
                         const b64 = e.detail?.base64 || e.detail?.[0]?.base64;
@@ -4554,40 +4775,81 @@
                     this.showVariantModal = false;
                 },
 
+                saveAutoPrintSettings() {
+                    localStorage.setItem('pos_auto_print', this.autoPrintReceipt);
+                },
+
                 async connectPrinter() {
                     if (this.printerType === 'bluetooth') {
-                        // Cek apakah browser mendukung Bluetooth
+                        this.showToast('Mencoba koneksi printer...', 'info');
+                        
+                        // 1. Coba sambung via WebSocket Bridge dulu (Prioritas Utama)
+                        try {
+                            await this.connectToBridge();
+                            return;
+                        } catch (bridgeError) {
+                            console.log('Print Agent tidak terdeteksi, mencoba Web Bluetooth...', bridgeError);
+                        }
+
+                        // 2. Fallback ke Web Bluetooth API (BLE)
                         if (!navigator.bluetooth) {
-                            this.showToast('Browser Anda tidak mendukung koneksi Bluetooth. Gunakan Google Chrome atau Microsoft Edge, dan pastikan halaman dibuka lewat HTTPS.', 'error');
+                            this.showToast('Browser Anda tidak mendukung koneksi Bluetooth langsung. Pastikan Raabiha Print Agent berjalan.', 'error');
                             return;
                         }
                         try {
+                            const knownServices = [
+                                '000018f0-0000-1000-8000-00805f9b34fb',
+                                '0000e025-0000-1000-8000-00805f9b34fb',
+                                '0000ff00-0000-1000-8000-00805f9b34fb',
+                                '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+                                '00001101-0000-1000-8000-00805f9b34fb',
+                            ];
                             const device = await navigator.bluetooth.requestDevice({
-                                filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
-                                optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+                                acceptAllDevices: true,
+                                optionalServices: knownServices
                             });
                             const server = await device.gatt.connect();
-                            const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-                            const characteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+                            
+                            let characteristic = null;
+                            const services = await server.getPrimaryServices();
+                            for (const service of services) {
+                                try {
+                                    const characteristics = await service.getCharacteristics();
+                                    for (const c of characteristics) {
+                                        if (c.properties.write || c.properties.writeWithoutResponse) {
+                                            characteristic = c;
+                                            break;
+                                        }
+                                    }
+                                    if (characteristic) break;
+                                } catch (e) {
+                                    console.warn('Skipping service:', service.uuid, e);
+                                }
+                            }
+                            
+                            if (!characteristic) {
+                                throw new Error('Tidak ditemukan saluran penulisan data (writable characteristic) pada printer ini.');
+                            }
                             
                             this.printerDevice = device;
                             this.printerCharacteristic = characteristic;
                             this.printerConnected = true;
+                            this.printerConnectionMethod = 'ble';
                             this.showToast('Printer Bluetooth berhasil terhubung!', 'success');
                             
                             device.addEventListener('gattserverdisconnected', () => {
                                 this.printerConnected = false;
+                                this.printerConnectionMethod = null;
                                 this.showToast('Koneksi printer terputus. Klik "Printer Offline" untuk menyambung kembali.', 'error');
                             });
                         } catch (error) {
                             console.error(error);
-                            // Pesan error yang ramah pengguna
                             if (error.name === 'NotFoundError' || error.message.includes('cancelled')) {
                                 this.showToast('Pencarian printer dibatalkan.', 'error');
                             } else if (error.name === 'SecurityError') {
-                                this.showToast('Akses Bluetooth ditolak. Pastikan halaman dibuka lewat HTTPS dan izin Bluetooth diaktifkan di browser.', 'error');
+                                this.showToast('Akses Bluetooth ditolak. Pastikan halaman dibuka lewat HTTPS dan izin Bluetooth diaktifkan.', 'error');
                             } else {
-                                this.showToast('Tidak bisa terhubung ke printer. Pastikan printer sudah dinyalakan dan dalam jangkauan Bluetooth.', 'error');
+                                this.showToast('Gagal terhubung ke printer. Pastikan Raabiha Print Agent berjalan atau printer dinyalakan.', 'error');
                             }
                         }
                     } else if (this.printerType === 'serial') {
@@ -4601,6 +4863,7 @@
                             await port.open({ baudRate: 9600 });
                             this.printerPort = port;
                             this.printerConnected = true;
+                            this.printerConnectionMethod = 'serial';
                             this.showToast('Printer USB/Serial berhasil terhubung!', 'success');
                         } catch (error) {
                             console.error(error);
@@ -4613,28 +4876,76 @@
                     }
                 },
 
-                async printBase64(base64Data) {
+                async connectToBridge() {
+                    return new Promise((resolve, reject) => {
+                        const ws = new WebSocket('ws://localhost:8765');
+                        ws.onopen = () => {
+                            this.bridgeSocket = ws;
+                            this.printerConnectionMethod = 'bridge';
+                            
+                            ws.onmessage = (event) => {
+                                try {
+                                    const msg = JSON.parse(event.data);
+                                    if (msg.type === 'status') {
+                                        this.printerConnected = msg.connected;
+                                        if (msg.connected) {
+                                            this.showToast('Terhubung via Raabiha Print Agent!', 'success');
+                                            resolve();
+                                        } else {
+                                            this.showToast('Print Agent berjalan, tetapi printer belum terhubung. Nyalakan printer.', 'warning');
+                                            resolve();
+                                        }
+                                    } else if (msg.type === 'error') {
+                                        this.showToast('Error Printer: ' + msg.message, 'error');
+                                    } else if (msg.type === 'print_ok') {
+                                        console.log('Print success via bridge');
+                                    }
+                                } catch (e) {}
+                            };
+                            
+                            ws.onclose = () => {
+                                this.printerConnected = false;
+                                this.bridgeSocket = null;
+                                this.printerConnectionMethod = null;
+                                this.showToast('Koneksi ke Print Agent terputus.', 'error');
+                            };
+                        };
+                        ws.onerror = (e) => {
+                            reject(e);
+                        };
+                    });
+                },
+
+                async printBase64(base64Data, orderId = null) {
                     if (!this.printerConnected) {
                         this.showToast('Gagal mencetak: Printer belum dihubungkan!', 'error');
                         return;
                     }
                     try {
-                        const binaryString = window.atob(base64Data);
-                        const bytes = new Uint8Array(binaryString.length);
-                        for (let i = 0; i < binaryString.length; i++) {
-                            bytes[i] = binaryString.charCodeAt(i);
+                        if (this.printerConnectionMethod === 'bridge' && this.bridgeSocket) {
+                            this.bridgeSocket.send(JSON.stringify({ type: 'print', data: base64Data }));
+                        } else {
+                            const binaryString = window.atob(base64Data);
+                            const bytes = new Uint8Array(binaryString.length);
+                            for (let i = 0; i < binaryString.length; i++) {
+                                bytes[i] = binaryString.charCodeAt(i);
+                            }
+                            
+                            if (this.printerType === 'bluetooth' && this.printerCharacteristic) {
+                                const chunkSize = 100;
+                                for (let i = 0; i < bytes.length; i += chunkSize) {
+                                    const chunk = bytes.slice(i, i + chunkSize);
+                                    await this.printerCharacteristic.writeValue(chunk);
+                                }
+                            } else if (this.printerType === 'serial' && this.printerPort) {
+                                const writer = this.printerPort.writable.getWriter();
+                                await writer.write(bytes);
+                                writer.releaseLock();
+                            }
                         }
                         
-                        if (this.printerType === 'bluetooth' && this.printerCharacteristic) {
-                            const chunkSize = 100;
-                            for (let i = 0; i < bytes.length; i += chunkSize) {
-                                const chunk = bytes.slice(i, i + chunkSize);
-                                await this.printerCharacteristic.writeValue(chunk);
-                            }
-                        } else if (this.printerType === 'serial' && this.printerPort) {
-                            const writer = this.printerPort.writable.getWriter();
-                            await writer.write(bytes);
-                            writer.releaseLock();
+                        if (orderId) {
+                            @this.call('logPrint', orderId);
                         }
                     } catch (error) {
                         console.error(error);
@@ -4750,6 +5061,57 @@
                         eligible = false;
                     }
                     return eligible;
+                },
+                
+                // Customer Live Search Methods
+                get filteredCustomers() {
+                    if (!this.allPosCustomers || !Array.isArray(this.allPosCustomers)) return [];
+                    const q = (this.customerSearchInput || '').toLowerCase().trim();
+                    if (!q) {
+                        return this.allPosCustomers.slice(0, 5);
+                    }
+                    return this.allPosCustomers.filter(c => 
+                        (c.name && c.name.toLowerCase().includes(q)) || 
+                        (c.phone && c.phone.includes(q))
+                    ).slice(0, 8);
+                },
+
+                selectCustomer(cust) {
+                    if (!cust) return;
+                    this.customerName = cust.name || '';
+                    this.customerPhone = cust.phone || '';
+                    this.activeCustomerLoyalty = cust;
+                    this.customerSearchInput = (cust.name || '') + (cust.phone ? ' (' + cust.phone + ')' : '');
+                    this.showCustomerDropdown = false;
+                    this.saveActiveCart();
+                },
+
+                clearCustomer() {
+                    this.customerName = '';
+                    this.customerPhone = '';
+                    this.customerSearchInput = '';
+                    this.activeCustomerLoyalty = null;
+                    this.showCustomerDropdown = false;
+                    this.saveActiveCart();
+                },
+
+                onCustomerInput() {
+                    const val = (this.customerSearchInput || '').trim();
+                    this.customerName = val;
+                    if (/^[0-9+]+$/.test(val)) {
+                        this.customerPhone = val;
+                    }
+                    const match = (this.allPosCustomers || []).find(c => 
+                        (c.phone && c.phone === val) || 
+                        (c.name && c.name.toLowerCase() === val.toLowerCase())
+                    );
+                    if (match) {
+                        this.activeCustomerLoyalty = match;
+                        if (match.name) this.customerName = match.name;
+                        if (match.phone) this.customerPhone = match.phone;
+                    }
+                    this.showCustomerDropdown = true;
+                    this.saveActiveCart();
                 },
                 
                 // Diskon Manual State
@@ -4939,6 +5301,8 @@
                     const payload = {
                         items: this.cart,
                         discount: this.discount,
+                        voucher_discount: this.voucherDiscountAmount || 0,
+                        manual_discount: this.manualDiscountValue || 0,
                         voucher_id: this.activeVoucher ? this.activeVoucher.id : null,
                         loyalty_redeem_stamps: this.loyaltyRedeemStamps || 0,
                         payment_method: this.paymentMethod,

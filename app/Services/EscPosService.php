@@ -138,6 +138,9 @@ class EscPosService
         if ($order->customer_name) {
             $this->line("Plgn  : " . $order->customer_name);
         }
+        if ($order->customer_phone) {
+            $this->line("No.HP : " . $order->customer_phone);
+        }
         $this->divider();
 
         // Items
@@ -146,7 +149,11 @@ class EscPosService
             if (!empty($item->variant_name) && !str_contains($name, $item->variant_name)) {
                 $name .= ' - ' . $item->variant_name;
             }
-            $this->line((string) $name);
+            $name = (string) $name;
+            $wrappedName = wordwrap($name, $this->charWidth, "\n", true);
+            foreach(explode("\n", $wrappedName) as $nLine) {
+                $this->line($nLine);
+            }
             
             $qtyStr = $item->quantity . "x " . number_format($item->price, 0, ',', '.');
             $subtotalStr = number_format($item->total ?? $item->subtotal ?? 0, 0, ',', '.');
@@ -155,8 +162,29 @@ class EscPosService
         $this->divider();
 
         // Totals
+        // Totals
         $this->justify("Subtotal", number_format($order->subtotal, 0, ',', '.'));
-        if ($order->discount_total > 0) {
+        
+        $paymentDetails = is_string($order->payment_details) ? json_decode($order->payment_details, true) : ($order->payment_details ?? []);
+        $voucherDiscount = (float) ($paymentDetails['voucher_discount'] ?? 0);
+        $manualDiscount = (float) ($paymentDetails['manual_discount'] ?? 0);
+        
+        if ($voucherDiscount > 0) {
+            $voucherName = $order->voucher ? $order->voucher->name : 'Promo';
+            $discRight = "-" . number_format($voucherDiscount, 0, ',', '.');
+            $maxNameLen = $this->charWidth - strlen($discRight) - 7;
+            if ($maxNameLen > 0 && strlen($voucherName) > $maxNameLen) {
+                $voucherName = substr($voucherName, 0, $maxNameLen);
+            }
+            $this->justify("VCR (" . $voucherName . ")", $discRight);
+        }
+        
+        if ($manualDiscount > 0) {
+            $this->justify("Diskon", "-" . number_format($manualDiscount, 0, ',', '.'));
+        }
+        
+        if ($order->discount_total > 0 && $voucherDiscount == 0 && $manualDiscount == 0) {
+            // Fallback untuk transaksi lama
             $this->justify("Diskon", "-" . number_format($order->discount_total, 0, ',', '.'));
         }
         
@@ -175,12 +203,16 @@ class EscPosService
             $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
             $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->first() : null;
             if ($customer) {
+                $expiryMonths = (int) ($settings['pos_loyalty_stamp_expiry_months'] ?? 6);
+                if ($expiryMonths <= 0) $expiryMonths = 6;
+                $lastVisit = $customer->last_visit_at ?? $order->created_at ?? now();
+                $expiryDate = $lastVisit->copy()->addMonths($expiryMonths)->format('d/m/Y');
+
                 $this->divider();
                 $this->add(self::ALIGN_CENTER);
                 $this->add(self::BOLD_ON);
                 $this->line("KARTU CAP DIGITAL RAABIHA");
                 $this->add(self::BOLD_OFF);
-                $this->line("Pelanggan: " . ($customer->name ?: $customer->phone));
                 $this->line("Total Cap: " . $customer->stamp_count . " dari 9 Cap");
                 
                 // Visual Cap 3 baris x 3 kolom
@@ -189,9 +221,10 @@ class EscPosService
                 $row2 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [4,5,6]));
                 $row3 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [7,8,9]));
 
-                $this->line("Row 1 (15k): " . $row1);
-                $this->line("Row 2 (20k): " . $row2);
-                $this->line("Row 3 (25k): " . $row3);
+                $this->line("Voucher 1 (15k): " . $row1);
+                $this->line("Voucher 2 (20k): " . $row2);
+                $this->line("Voucher 3 (25k): " . $row3);
+                $this->line("Masa Berlaku: s/d " . $expiryDate);
             }
         }
 
@@ -268,7 +301,11 @@ class EscPosService
             if (!empty($item->variant_name) && !str_contains($name, $item->variant_name)) {
                 $name .= ' - ' . $item->variant_name;
             }
-            $lines[] = $name;
+            $name = (string) $name;
+            $wrappedName = wordwrap($name, $width, "\n", true);
+            foreach(explode("\n", $wrappedName) as $nLine) {
+                $lines[] = $nLine;
+            }
 
             $qtyStr = $item->quantity . "x " . number_format($item->price, 0, ',', '.');
             $subtotalStr = number_format($item->total ?? $item->subtotal ?? 0, 0, ',', '.');
@@ -282,8 +319,29 @@ class EscPosService
         $subLeft = "Subtotal";
         $subRight = number_format($order->subtotal, 0, ',', '.');
         $lines[] = $subLeft . str_repeat(' ', max(1, $width - strlen($subLeft) - strlen($subRight))) . $subRight;
-
-        if ($order->discount_total > 0) {
+        
+        $paymentDetails = is_string($order->payment_details) ? json_decode($order->payment_details, true) : ($order->payment_details ?? []);
+        $voucherDiscount = (float) ($paymentDetails['voucher_discount'] ?? 0);
+        $manualDiscount = (float) ($paymentDetails['manual_discount'] ?? 0);
+        
+        if ($voucherDiscount > 0) {
+            $voucherName = $order->voucher ? $order->voucher->name : 'Promo';
+            $discRight = "-" . number_format($voucherDiscount, 0, ',', '.');
+            $maxNameLen = $width - strlen($discRight) - 7;
+            if ($maxNameLen > 0 && strlen($voucherName) > $maxNameLen) {
+                $voucherName = substr($voucherName, 0, $maxNameLen);
+            }
+            $discLeft = "VCR (" . $voucherName . ")";
+            $lines[] = $discLeft . str_repeat(' ', max(1, $width - strlen($discLeft) - strlen($discRight))) . $discRight;
+        }
+        
+        if ($manualDiscount > 0) {
+            $discLeft = "Diskon";
+            $discRight = "-" . number_format($manualDiscount, 0, ',', '.');
+            $lines[] = $discLeft . str_repeat(' ', max(1, $width - strlen($discLeft) - strlen($discRight))) . $discRight;
+        }
+        
+        if ($order->discount_total > 0 && $voucherDiscount == 0 && $manualDiscount == 0) {
             $discLeft = "Diskon";
             $discRight = "-" . number_format($order->discount_total, 0, ',', '.');
             $lines[] = $discLeft . str_repeat(' ', max(1, $width - strlen($discLeft) - strlen($discRight))) . $discRight;
@@ -308,6 +366,11 @@ class EscPosService
             $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
             $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->first() : null;
             if ($customer) {
+                $expiryMonths = (int) ($settings['pos_loyalty_stamp_expiry_months'] ?? 6);
+                if ($expiryMonths <= 0) $expiryMonths = 6;
+                $lastVisit = $customer->last_visit_at ?? $order->created_at ?? now();
+                $expiryDate = $lastVisit->copy()->addMonths($expiryMonths)->format('d/m/Y');
+
                 $lines[] = str_repeat('-', $width);
                 $lines[] = str_pad("KARTU CAP DIGITAL RAABIHA", $width, ' ', STR_PAD_BOTH);
                 $lines[] = "Pelanggan: " . ($customer->name ?: $customer->phone);
@@ -318,9 +381,10 @@ class EscPosService
                 $row2 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [4,5,6]));
                 $row3 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [7,8,9]));
 
-                $lines[] = "Row 1 (15k): " . $row1;
-                $lines[] = "Row 2 (20k): " . $row2;
-                $lines[] = "Row 3 (25k): " . $row3;
+                $lines[] = "Voucher 1 (15k): " . $row1;
+                $lines[] = "Voucher 2 (20k): " . $row2;
+                $lines[] = "Voucher 3 (25k): " . $row3;
+                $lines[] = "Masa Berlaku: s/d " . $expiryDate;
             }
         }
 

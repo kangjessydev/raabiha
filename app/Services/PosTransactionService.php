@@ -120,6 +120,10 @@ class PosTransactionService
 
             $normalizedPhone = \App\Models\PosCustomer::normalizePhone($customerPhone) ?: $customerPhone;
 
+            $paymentDetails = is_array($paymentDetails) ? $paymentDetails : (is_string($paymentDetails) ? json_decode($paymentDetails, true) : []);
+            $paymentDetails['manual_discount'] = (float) ($data['manual_discount'] ?? 0);
+            $paymentDetails['voucher_discount'] = (float) ($data['voucher_discount'] ?? 0);
+            
             // 2. Buat Order (Gunakan placeholder sementara untuk menjamin keunikan ID)
             $order = Order::create([
                 'order_number' => 'POS-TEMP-' . uniqid(),
@@ -138,7 +142,7 @@ class PosTransactionService
                 'payment_method' => $data['payment_method'] ?? 'cash',
                 'cash_paid' => $cashPaid,
                 'cash_change' => $cashChange,
-                'payment_details' => is_array($paymentDetails) ? json_encode($paymentDetails) : $paymentDetails,
+                'payment_details' => json_encode($paymentDetails),
                 'total_purchase_price' => $totalPurchasePrice,
                 'is_dropship' => false,
             ]);
@@ -469,7 +473,11 @@ class PosTransactionService
                 }
 
                 $supervisor = User::find($supervisorId);
-                $isSupRole = $supervisor && ($supervisor->hasAnyRole(['super_admin', 'owner', 'manager', 'finance']) || in_array($supervisor->role, ['super_admin', 'owner', 'manager', 'finance']));
+                $isSupRole = $supervisor && (
+                    $supervisor->is_pos_supervisor ||
+                    in_array($supervisor->role, ['super_admin', 'owner', 'admin', 'manager', 'supervisor']) ||
+                    $supervisor->hasAnyRole(['super_admin', 'owner', 'admin', 'manager', 'supervisor'])
+                );
                 $isValidPin = $supervisor && $supervisor->pos_pin && \Illuminate\Support\Facades\Hash::check($supervisorPin, $supervisor->pos_pin);
 
                 if (!$supervisor || !$isSupRole || !$isValidPin) {

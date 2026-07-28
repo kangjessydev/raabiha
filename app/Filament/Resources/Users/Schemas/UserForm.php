@@ -55,6 +55,10 @@ class UserForm
                                 'approved' => 'Reseller Aktif',
                             ])
                             ->default('none'),
+                        \Filament\Forms\Components\Toggle::make('is_pos_supervisor')
+                            ->label('Jadikan Supervisor POS (Akses Bypass)')
+                            ->helperText('Berikan hak akses untuk mengambil alih sesi kasir secara paksa atau validasi aksi darurat.')
+                            ->default(false),
                     ])->columns(2)->collapsed(),
 
                 \Filament\Schemas\Components\Section::make('Jadwal Shift POS Kasir')

@@ -57,6 +57,13 @@ class OrdersTable
                 TextColumn::make('grand_total')
                     ->money('IDR')
                     ->sortable(),
+                TextColumn::make('print_count')
+                    ->label('Print')
+                    ->badge()
+                    ->color(fn ($state): string => $state > 0 ? 'success' : 'gray')
+                    ->formatStateUsing(fn ($state) => $state > 0 ? $state . 'x' : 'Belum')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')
