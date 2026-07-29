@@ -4484,6 +4484,7 @@
                     // Listener Event Notify (Reset Loading & Tampilkan Toast)
                     window.addEventListener('notify', (e) => {
                         this.isProcessing = false;
+                        this.showCheckoutModal = false;
                         const data = (e.detail && e.detail[0]) ? e.detail[0] : (e.detail || {});
                         if (data && data.message) {
                             this.showToast(data.message, data.type || 'info');
@@ -5463,6 +5464,7 @@
                     }
 
                     this.isProcessing = true;
+                    this.showCheckoutModal = false;
                     
                     const payload = {
                         items: this.cart,
