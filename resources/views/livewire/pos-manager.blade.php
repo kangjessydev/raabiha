@@ -1412,31 +1412,40 @@
                                 </div>
 
                                 <!-- Banner Pemberitahuan Voucher Hadiah Stempel di Modal Checkout -->
-                                <div x-show="activeCustomerLoyalty && availableLoyaltyVouchersForCustomer.length > 0" x-transition class="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-xs">
+                                <div x-show="activeCustomerLoyalty" x-transition class="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-xs">
                                     <div class="font-bold text-amber-900 flex items-center justify-between">
-                                        <span>Pemberitahuan Hadiah Stempel:</span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300" x-text="(activeCustomerLoyalty.stamp_count || 0) + ' Cap Stempel'"></span>
+                                        <span>Informasi Stempel Pelanggan:</span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300" x-text="(activeCustomerLoyalty.stamp_count || 0) + ' / 9 Cap'"></span>
                                     </div>
-                                    <div class="text-[11px] text-amber-800 mt-1">
-                                        Pelanggan ini memiliki Voucher Hadiah Stempel yang terbuka dan dapat dipasang!
-                                    </div>
-                                    <div class="mt-2 space-y-1.5">
-                                        <template x-for="v in availableLoyaltyVouchersForCustomer" :key="v.id">
-                                            <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-amber-200 shadow-xs">
-                                                <div>
-                                                    <div class="font-bold text-gray-900 text-xs" x-text="v.name"></div>
-                                                    <div class="text-[10px] text-emerald-700 font-semibold" x-text="getVoucherDiscountLabel(v)"></div>
-                                                </div>
-                                                <button type="button" 
-                                                        @click="applyVoucher(v); showToast('Voucher hadiah berhasil dipasang!', 'success');"
-                                                        :disabled="activeVoucher && activeVoucher.id === v.id"
-                                                        class="px-2.5 py-1 text-[11px] font-bold rounded shadow-xs cursor-pointer transition"
-                                                        :class="activeVoucher && activeVoucher.id === v.id ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-600 hover:bg-amber-700 text-white'">
-                                                    <span x-text="activeVoucher && activeVoucher.id === v.id ? 'Terpasang' : 'Pasang Voucher'"></span>
-                                                </button>
+                                    <template x-if="availableLoyaltyVouchersForCustomer.length > 0">
+                                        <div class="mt-2">
+                                            <div class="text-[11px] font-semibold text-amber-800 mb-1.5">
+                                                Pelanggan ini berhak memasang Voucher Hadiah Stempel:
                                             </div>
-                                        </template>
-                                    </div>
+                                            <div class="space-y-1.5">
+                                                <template x-for="v in availableLoyaltyVouchersForCustomer" :key="v.id">
+                                                    <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-amber-200 shadow-xs">
+                                                        <div>
+                                                            <div class="font-bold text-gray-900 text-xs" x-text="v.name"></div>
+                                                            <div class="text-[10px] text-emerald-700 font-semibold" x-text="getVoucherDiscountLabel(v)"></div>
+                                                        </div>
+                                                        <button type="button" 
+                                                                @click="applyVoucher(v); showToast('Voucher hadiah berhasil dipasang!', 'success');"
+                                                                :disabled="activeVoucher && activeVoucher.id === v.id"
+                                                                class="px-2.5 py-1 text-[11px] font-bold rounded shadow-xs cursor-pointer transition"
+                                                                :class="activeVoucher && activeVoucher.id === v.id ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-600 hover:bg-amber-700 text-white'">
+                                                            <span x-text="activeVoucher && activeVoucher.id === v.id ? 'Terpasang' : 'Pasang Voucher'"></span>
+                                                        </button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="availableLoyaltyVouchersForCustomer.length === 0">
+                                        <div class="text-[11px] text-amber-800 mt-1">
+                                            Saldo stempel pelanggan saat ini: <strong x-text="(activeCustomerLoyalty.stamp_count || 0)"></strong> Cap. Stempel baru akan ditambahkan otomatis setelah pembayaran selesai.
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -5141,8 +5150,8 @@
                 },
 
                 get availableLoyaltyVouchersForCustomer() {
-                    if (!this.activeCustomerLoyalty || !this.availableVouchers) return [];
-                    return this.availableVouchers.filter(v => {
+                    if (!this.activeCustomerLoyalty || !this.vouchers) return [];
+                    return this.vouchers.filter(v => {
                         const tier = this.getVoucherLoyaltyTier(v.id);
                         return tier && !this.isVoucherLoyaltyLocked(v);
                     });
