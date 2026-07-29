@@ -662,16 +662,51 @@ class PosManager extends Component
         if ($idempotencyKey) {
             $lockKey = 'pos_checkout_' . $idempotencyKey;
             
-            // Atomic lock to prevent concurrent double-click race conditions
-            $lock = \Illuminate\Support\Facades\Cache::lock($lockKey . '_mutex', 10);
-            if (!$lock->get()) {
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'Harap tunggu, transaksi sedang diproses...']);
-                return;
+            // Jika transaksi dengan idempotency key ini sudah pernah sukses diproses, return transaksi tersebut!
+            if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
+                $existingOrderId = \Illuminate\Support\Facades\Cache::get($lockKey);
+                $existingOrder = \App\Models\Order::find($existingOrderId);
+                if ($existingOrder) {
+                    $receiptBase64 = $this->escPos()->generateReceipt($existingOrder);
+                    $receiptText   = $this->escPos()->generateReceiptText($existingOrder);
+
+                    $this->dispatch('checkout-success', [
+                        'order_id'     => $existingOrder->id,
+                        'order_number' => $existingOrder->order_number,
+                        'grand_total'  => $existingOrder->grand_total,
+                        'cash_change'  => $existingOrder->cash_change,
+                        'receipt_text' => $receiptText,
+                        'base64'       => $receiptBase64,
+                    ]);
+                    return;
+                }
             }
 
-            if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
-                $lock->release();
-                $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi ini sudah berhasil diproses (Duplicate).']);
+            // Atomic lock dengan block wait 5 detik jika request pertama masih berjalan di background
+            $lock = \Illuminate\Support\Facades\Cache::lock($lockKey . '_mutex', 15);
+            try {
+                $lock->block(5);
+            } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+                // Jika timeout menunggu lock, cek apakah transaksi sudah selesai dibuat
+                if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
+                    $existingOrderId = \Illuminate\Support\Facades\Cache::get($lockKey);
+                    $existingOrder = \App\Models\Order::find($existingOrderId);
+                    if ($existingOrder) {
+                        $receiptBase64 = $this->escPos()->generateReceipt($existingOrder);
+                        $receiptText   = $this->escPos()->generateReceiptText($existingOrder);
+
+                        $this->dispatch('checkout-success', [
+                            'order_id'     => $existingOrder->id,
+                            'order_number' => $existingOrder->order_number,
+                            'grand_total'  => $existingOrder->grand_total,
+                            'cash_change'  => $existingOrder->cash_change,
+                            'receipt_text' => $receiptText,
+                            'base64'       => $receiptBase64,
+                        ]);
+                        return;
+                    }
+                }
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi sedang diproses. Harap tunggu sebentar...']);
                 return;
             }
         }
@@ -681,8 +716,8 @@ class PosManager extends Component
             $order   = $service->completePosTransaction($data);
 
             if ($idempotencyKey) {
-                // Tandai bahwa transaksi dengan key ini sudah selesai
-                \Illuminate\Support\Facades\Cache::put($lockKey, true, now()->addDay());
+                // Simpan ID Order yang berhasil dibuat dengan key ini
+                \Illuminate\Support\Facades\Cache::put($lockKey, $order->id, now()->addDay());
             }
 
             $receiptBase64 = $this->escPos()->generateReceipt($order);

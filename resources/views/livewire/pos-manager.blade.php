@@ -5042,6 +5042,7 @@
                         this.loyaltyRedeemStamps = 0;
                         this.activeCustomerLoyalty = null;
                         this.showCustomerDropdown = false;
+                        this.currentCheckoutToken = null;
                         this.saveActiveCart();
                     };
 
@@ -5370,6 +5371,12 @@
                         return;
                     }
 
+                    if (!this.currentCheckoutToken) {
+                        this.currentCheckoutToken = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+                            ? crypto.randomUUID() 
+                            : ('pos_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+                    }
+
                     this.isProcessing = true;
                     
                     const payload = {
@@ -5386,8 +5393,7 @@
                         customer_phone: this.customerPhone,
                         payment_details: {
                             type: this.paymentMethod,
-                            // UUID/Idempotency key dapat digenerate di sini
-                            idempotency_key: crypto.randomUUID()
+                            idempotency_key: this.currentCheckoutToken
                         }
                     };
 
