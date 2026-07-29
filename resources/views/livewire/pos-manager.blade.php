@@ -3630,7 +3630,7 @@
                             <tbody class="divide-y divide-gray-100 text-xs">
                                 @foreach($sessionCustomers as $idx => $customer)
                                 <tr wire:key="cust-row-{{ $idx }}"
-                                    x-show="!customerSearch || '{{ strtolower($customer->customer_name) }}'.includes(customerSearch.toLowerCase()) || '{{ $customer->customer_phone }}'.includes(customerSearch)"
+                                    x-show="!$wire.customerSearch || '{{ strtolower($customer->customer_name) }}'.includes(($wire.customerSearch || '').toLowerCase()) || '{{ $customer->customer_phone }}'.includes($wire.customerSearch || '')"
                                     class="hover:bg-gray-50/80 transition-colors">
 
                                     <!-- Nama Pelanggan -->
