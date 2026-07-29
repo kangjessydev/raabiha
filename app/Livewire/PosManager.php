@@ -622,16 +622,26 @@ class PosManager extends Component
 
         $escPosService = $this->escPos();
         $zReportBase64 = $escPosService->generateZReport($this->activeSession);
+        $zReportText   = $escPosService->generateZReportText($this->activeSession);
+
+        $cashierName = $this->activeSession->cashier->name ?? 'Kasir';
+
+        $this->dispatch('session-closed');
+        $this->dispatch('print-z-report', [
+            'title'        => 'Laporan Laci Kasir (Z-Report)',
+            'order_number' => 'Tutup Shift (' . $cashierName . ')',
+            'base64'       => $zReportBase64,
+            'text'         => $zReportText,
+        ]);
 
         $this->activeSession    = null;
         $this->openingCash      = 0;
         $this->actualEndingCash = 0;
         $this->sessionNotes     = '';
+    }
 
-        $this->dispatch('session-closed');
-        $this->dispatch('print-z-report', ['base64' => $zReportBase64]);
-
-        // Otomatis logout akun kasir saat tutup shift
+    public function logoutCashier()
+    {
         \Illuminate\Support\Facades\Auth::logout();
         if (request()->hasSession()) {
             request()->session()->invalidate();

@@ -3910,9 +3910,16 @@
 
             <!-- Footer Actions -->
             <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
-                <button @click="showReceiptPreviewModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
-                    Selesai
-                </button>
+                <template x-if="previewReceiptData && previewReceiptData.isCloseSession">
+                    <button @click="$wire.logoutCashier()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                        Selesai & Keluar (Logout)
+                    </button>
+                </template>
+                <template x-if="!previewReceiptData || !previewReceiptData.isCloseSession">
+                    <button @click="showReceiptPreviewModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                        Selesai
+                    </button>
+                </template>
                 <button @click="printBase64(previewReceiptData.base64, previewReceiptData.order_id)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"></path></svg>
                     <span>Cetak Struk</span>
@@ -4621,8 +4628,27 @@
                         }
                     });
                     window.addEventListener('print-z-report', (e) => {
-                        const b64 = e.detail?.base64 || e.detail?.[0]?.base64;
-                        if (b64) this.printBase64(b64);
+                        const detail = (e.detail && e.detail[0]) ? e.detail[0] : (e.detail || {});
+                        const b64 = detail.base64;
+                        const text = detail.text || '';
+                        const title = detail.title || 'Laporan Laci Kasir (Z-Report)';
+                        const orderNumber = detail.order_number || 'Tutup Shift';
+
+                        if (b64) {
+                            this.previewReceiptData = {
+                                title: title,
+                                order_id: null,
+                                orderNumber: orderNumber,
+                                cashChange: 0,
+                                text: text,
+                                base64: b64,
+                                isCloseSession: true
+                            };
+                            this.showCloseSessionModal = false;
+                            this.showReceiptPreviewModal = true;
+                            this.showToast('Mengirim Laporan Z-Report ke printer...', 'info');
+                            this.printBase64(b64);
+                        }
                     });
                 },
 

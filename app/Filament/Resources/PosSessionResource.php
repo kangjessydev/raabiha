@@ -133,6 +133,18 @@ class PosSessionResource extends Resource
             ])
             ->actions([
                 \Filament\Actions\ViewAction::make(),
+                \Filament\Actions\Action::make('printZReport')
+                    ->label('Pratinjau / Cetak Z-Report')
+                    ->icon('heroicon-o-printer')
+                    ->color('info')
+                    ->modalHeading(fn ($record) => 'Laporan Shift (Z-Report) - ' . ($record->cashier->name ?? 'Kasir'))
+                    ->modalContent(function ($record) {
+                        $escPosService = new \App\Services\EscPosService();
+                        $text = $escPosService->generateZReportText($record);
+                        return view('filament.components.z-report-preview', ['text' => $text, 'record' => $record]);
+                    })
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup'),
                 \Filament\Actions\Action::make('forceClose')
                     ->label('Tutup Paksa Shift')
                     ->icon('heroicon-o-lock-closed')

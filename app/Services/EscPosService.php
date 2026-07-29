@@ -497,12 +497,108 @@ class EscPosService
         $this->justify("Selisih ($diffLabel)", number_format(abs($diff), 0, ',', '.'));
         $this->add(self::BOLD_OFF);
 
+        if (!empty($session->notes)) {
+            $this->divider();
+            $this->line("Catatan Shift:");
+            $this->line(trim($session->notes));
+        }
+
         $this->feed(4);
         if ($autoCut) {
             $this->cut();
         }
 
         return base64_encode($this->buffer);
+    }
+
+    /**
+     * Generate Plaintext Z-Report for a closed Shift
+     */
+    public function generateZReportText(PosSession $session): string
+    {
+        $settings = $this->getSettings(['pos_receipt_header']);
+        $header   = $settings['pos_receipt_header'] ?? "TOKO RAABIHA";
+
+        $orders       = $session->orders()->get();
+        $validOrders  = $orders->where('status', '!=', 'cancelled');
+        $voidedOrders = $orders->where('status', 'cancelled');
+
+        $totalTrxCount = $validOrders->count();
+        $cashSales     = $validOrders->filter(fn($o) => in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
+        $nonCashSales  = $validOrders->filter(fn($o) => !in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
+        $totalSales    = $cashSales + $nonCashSales;
+
+        $voidTotal = $voidedOrders->sum('grand_total');
+
+        $pettyIn = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_petty_cash')
+            ->where('type', 'in')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $pettyOut = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_petty_cash')
+            ->where('type', 'out')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $refundOut = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_return_refund')
+            ->where('type', 'out')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $exchangeIn = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_exchange_pay')
+            ->where('type', 'in')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $lines = [];
+        $lines[] = $this->centerAlign($header);
+        $lines[] = $this->centerAlign("Z-REPORT (SHIFT)");
+        $lines[] = "";
+        $lines[] = "Kasir : " . ($session->cashier->name ?? 'Unknown');
+        $lines[] = "Buka  : " . ($session->opened_at ? $session->opened_at->format('d/m/Y H:i') : '-');
+        $lines[] = "Tutup : " . ($session->closed_at ? $session->closed_at->format('d/m/Y H:i') : 'Belum');
+        $lines[] = str_repeat('-', 32);
+
+        $lines[] = $this->justifyText("Total Transaksi", $totalTrxCount . " nota");
+        $lines[] = $this->justifyText("Penjualan Tunai", number_format($cashSales, 0, ',', '.'));
+        $lines[] = $this->justifyText("Penjualan Non-Tunai", number_format($nonCashSales, 0, ',', '.'));
+        $lines[] = $this->justifyText("Total Penjualan", number_format($totalSales, 0, ',', '.'));
+        $lines[] = str_repeat('-', 32);
+
+        if ($pettyIn > 0)    $lines[] = $this->justifyText("Kas Masuk (Petty)", number_format($pettyIn, 0, ',', '.'));
+        if ($pettyOut > 0)   $lines[] = $this->justifyText("Kas Keluar (Petty)", "-" . number_format($pettyOut, 0, ',', '.'));
+        if ($exchangeIn > 0) $lines[] = $this->justifyText("Tambah Bayar Tukar", number_format($exchangeIn, 0, ',', '.'));
+        if ($refundOut > 0)  $lines[] = $this->justifyText("Refund Retur Kas", "-" . number_format($refundOut, 0, ',', '.'));
+        if ($voidTotal > 0)  $lines[] = $this->justifyText("Void Order (" . $voidedOrders->count() . ")", "-" . number_format($voidTotal, 0, ',', '.'));
+
+        if ($pettyIn > 0 || $pettyOut > 0 || $exchangeIn > 0 || $refundOut > 0 || $voidTotal > 0) {
+            $lines[] = str_repeat('-', 32);
+        }
+
+        $lines[] = $this->justifyText("Modal Awal", number_format($session->opening_cash, 0, ',', '.'));
+        if ($session->expected_ending_cash !== null) {
+            $lines[] = $this->justifyText("Harapan Kas Akhir", number_format($session->expected_ending_cash, 0, ',', '.'));
+        }
+        if ($session->actual_ending_cash !== null) {
+            $lines[] = $this->justifyText("Kas Aktual", number_format($session->actual_ending_cash, 0, ',', '.'));
+        }
+        $lines[] = str_repeat('-', 32);
+
+        $diff = $session->difference_cash ?? 0;
+        $diffLabel = $diff < 0 ? "Kurang" : ($diff > 0 ? "Lebih" : "Pas");
+        $lines[] = $this->justifyText("Selisih ($diffLabel)", number_format(abs($diff), 0, ',', '.'));
+
+        if (!empty($session->notes)) {
+            $lines[] = str_repeat('-', 32);
+            $lines[] = "Catatan Shift:";
+            $lines[] = trim($session->notes);
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
