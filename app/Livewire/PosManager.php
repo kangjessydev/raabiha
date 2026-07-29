@@ -1432,9 +1432,11 @@ class PosManager extends Component
 
         return $customers->map(function ($c) {
             $usedVoucherIds = \App\Models\Order::where(function ($q) use ($c) {
-                    $q->where('pos_customer_id', $c->id);
                     if ($c->phone) {
-                        $q->orWhere('customer_phone', $c->phone);
+                        $q->where('customer_phone', $c->phone);
+                    }
+                    if ($c->name) {
+                        $q->orWhere('customer_name', $c->name);
                     }
                 })
                 ->whereNotNull('voucher_id')
