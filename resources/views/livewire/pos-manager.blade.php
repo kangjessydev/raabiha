@@ -3202,9 +3202,17 @@
                                             @if($order->status !== 'cancelled')
                                             <!-- Reprint Thermal Receipt Button -->
                                             <button type="button" wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
-                                                    class="p-1.5 bg-white border border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 text-gray-700 rounded-lg transition-colors cursor-pointer" title="Cetak Ulang Struk Thermal">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                                    class="p-1.5 bg-white border border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 text-gray-700 rounded-lg transition-colors cursor-pointer" title="{{ $order->posReturns && $order->posReturns->count() > 0 ? 'Pratinjau / Cetak Struk Penjualan & Retur' : 'Cetak Ulang Struk Thermal' }}">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"/></svg>
                                             </button>
+
+                                            @if($order->posReturns && $order->posReturns->count() > 0)
+                                            <!-- Dedicated Return Receipt Print Button -->
+                                            <button type="button" wire:click="reprintReturnReceipt({{ $order->posReturns->last()->id }})" wire:loading.attr="disabled"
+                                                    class="p-1.5 bg-amber-50 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 text-amber-800 rounded-lg transition-colors cursor-pointer" title="Pratinjau / Cetak Struk Retur (#{{ $order->posReturns->last()->return_number }})">
+                                                <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                            </button>
+                                            @endif
 
                                             <!-- Void Order Button (Supervisor Authorization required) -->
                                             <button type="button" @click="openVoidModal({{ $order->id }}, '{{ $order->order_number }}', {{ (float)$order->grand_total }})"
@@ -3886,23 +3894,37 @@
 
             <!-- Content Area -->
             <div class="p-6 space-y-4 overflow-y-auto flex-1 bg-gray-50/50">
-                <!-- High Contrast Change Display -->
-                <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Uang Kembalian Pelanggan</div>
-                    <div class="text-2xl font-black text-emerald-800 mt-0.5">
-                        Rp <span x-text="formatMoney(previewReceiptData.cashChange)"></span>
+                <!-- High Contrast Change Display (If Cash Change > 0) -->
+                <template x-if="previewReceiptData && previewReceiptData.cashChange > 0">
+                    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Uang Kembalian Pelanggan</div>
+                        <div class="text-2xl font-black text-emerald-800 mt-0.5">
+                            Rp <span x-text="formatMoney(previewReceiptData.cashChange)"></span>
+                        </div>
                     </div>
-                </div>
+                </template>
+
+                <!-- Tab Switcher for Orders with Returns -->
+                <template x-if="previewReceiptData && previewReceiptData.has_returns">
+                    <div class="flex items-center gap-1.5 p-1 bg-gray-200/80 rounded-lg border border-gray-300">
+                        <button type="button" @click="previewReceiptData.activeTab = 'sales'" :class="previewReceiptData.activeTab === 'sales' ? 'bg-white text-gray-950 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'" class="flex-1 py-1.5 px-3 text-xs rounded-md transition text-center cursor-pointer">
+                            Struk Penjualan Asli
+                        </button>
+                        <button type="button" @click="previewReceiptData.activeTab = 'return'" :class="previewReceiptData.activeTab === 'return' ? 'bg-white text-amber-900 shadow-xs font-bold ring-1 ring-amber-500/30' : 'text-amber-800 hover:text-amber-950 font-medium'" class="flex-1 py-1.5 px-3 text-xs rounded-md transition text-center cursor-pointer">
+                            Struk Retur (<span x-text="previewReceiptData.return_number"></span>)
+                        </button>
+                    </div>
+                </template>
 
                 <!-- Receipt Thermal Text Paper Preview -->
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-700">Pratinjau Struk</span>
-                        <span class="text-[11px] text-gray-400">Kertas Thermal</span>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-700" x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? 'Pratinjau Struk Retur' : 'Pratinjau Struk Penjualan'"></span>
+                        <span class="text-[11px] text-gray-400">Kertas Thermal 80mm/58mm</span>
                     </div>
-                    <div class="bg-gray-200 p-4 rounded-xl border border-gray-300 shadow-inner flex justify-center max-h-[400px] overflow-y-auto">
+                    <div class="bg-gray-200 p-4 rounded-xl border border-gray-300 shadow-inner flex justify-center max-h-[380px] overflow-y-auto">
                         <div class="bg-white p-4 shadow-sm w-full max-w-[300px]" style="font-family: 'Courier New', Courier, monospace;">
-                            <pre class="text-[11px] leading-tight text-black whitespace-pre-wrap word-break-all" x-text="previewReceiptData.text"></pre>
+                            <pre class="text-[11px] leading-tight text-black whitespace-pre-wrap word-break-all" x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? previewReceiptData.return_text : (previewReceiptData ? previewReceiptData.text : '')"></pre>
                         </div>
                     </div>
                 </div>
@@ -3920,9 +3942,9 @@
                         Selesai
                     </button>
                 </template>
-                <button @click="printBase64(previewReceiptData.base64, previewReceiptData.order_id)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
+                <button @click="printBase64(previewReceiptData.activeTab === 'return' ? previewReceiptData.return_base64 : previewReceiptData.base64, previewReceiptData.order_id); showToast('Mengirim perintah cetak ke printer...', 'info')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span>Cetak Struk</span>
+                    <span x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? 'Cetak Struk Retur' : 'Cetak Struk'"></span>
                 </button>
             </div>
         </div>
@@ -4620,11 +4642,15 @@
                                 orderNumber: orderNumber,
                                 cashChange: cashChange,
                                 text: text,
-                                base64: b64
+                                base64: b64,
+                                has_returns: detail.has_returns || false,
+                                return_id: detail.return_id || null,
+                                return_number: detail.return_number || null,
+                                return_text: detail.return_text || '',
+                                return_base64: detail.return_base64 || '',
+                                activeTab: 'sales'
                             };
                             this.showReceiptPreviewModal = true;
-                            this.showToast('Mengirim perintah cetak struk ke printer...', 'info');
-                            this.printBase64(b64, orderId);
                         }
                     });
                     window.addEventListener('print-z-report', (e) => {
@@ -4642,12 +4668,11 @@
                                 cashChange: 0,
                                 text: text,
                                 base64: b64,
-                                isCloseSession: true
+                                isCloseSession: true,
+                                activeTab: 'sales'
                             };
                             this.showCloseSessionModal = false;
                             this.showReceiptPreviewModal = true;
-                            this.showToast('Mengirim Laporan Z-Report ke printer...', 'info');
-                            this.printBase64(b64);
                         }
                     });
                 },

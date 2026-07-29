@@ -766,7 +766,7 @@ class PosManager extends Component
 
     public function reprintReceipt($orderId)
     {
-        $order = Order::with(['items', 'cashier'])->find($orderId);
+        $order = Order::with(['items', 'cashier', 'posReturns'])->find($orderId);
         if (!$order) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi tidak ditemukan.']);
             return;
@@ -776,17 +776,36 @@ class PosManager extends Component
             $receiptBase64 = $this->escPos()->generateReceipt($order, isReprint: true);
             $receiptText   = $this->escPos()->generateReceiptText($order, isReprint: true);
 
-            $this->dispatch('print-receipt', [
+            $payload = [
                 'title'        => 'Cetak Ulang Struk',
                 'order_id'     => $orderId,
                 'order_number' => $order->order_number,
                 'cash_change'  => $order->cash_change,
                 'text'         => $receiptText,
                 'base64'       => $receiptBase64,
-            ]);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Cetak ulang struk #' . $order->order_number . ' dikirim ke printer.']);
+                'has_returns'  => false,
+            ];
+
+            if ($order->posReturns && $order->posReturns->count() > 0) {
+                $latestReturn = \App\Models\PosReturn::with([
+                    'order', 'cashier', 'supervisor',
+                    'returnedItems.product', 'returnedItems.variant',
+                    'exchangedItems.product', 'exchangedItems.variant'
+                ])->where('order_id', $orderId)->latest()->first();
+
+                if ($latestReturn) {
+                    $payload['has_returns']   = true;
+                    $payload['return_id']      = $latestReturn->id;
+                    $payload['return_number']  = $latestReturn->return_number;
+                    $payload['return_text']    = $this->escPos()->generateReturnReceiptText($latestReturn);
+                    $payload['return_base64']  = $this->escPos()->generateReturnReceipt($latestReturn);
+                }
+            }
+
+            $this->dispatch('print-receipt', $payload);
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Pratinjau struk #' . $order->order_number . ' ditampilkan.']);
         } catch (\Exception $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal mencetak ulang struk: ' . $e->getMessage()]);
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal menyiapkan struk: ' . $e->getMessage()]);
         }
     }
 
@@ -815,7 +834,7 @@ class PosManager extends Component
                 'text'         => $receiptText,
                 'base64'       => $receiptBase64,
             ]);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Cetak ulang struk retur #' . $posReturn->return_number . ' dikirim ke printer.']);
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Pratinjau struk retur #' . $posReturn->return_number . ' ditampilkan.']);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal mencetak ulang struk retur: ' . $e->getMessage()]);
         }
