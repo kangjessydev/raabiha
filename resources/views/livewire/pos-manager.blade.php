@@ -1397,7 +1397,7 @@
                                                 </div>
                                                 <div class="text-right">
                                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                                        🎁 <span x-text="c.stamp_count || 0"></span>/9 Cap
+                                                        <span x-text="c.stamp_count || 0"></span>/9 Cap
                                                     </span>
                                                 </div>
                                             </div>
@@ -1410,6 +1410,35 @@
                                     <input type="text" x-model="customerName" @input="saveActiveCart()" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded text-[11px] font-medium text-gray-800 focus:bg-white focus:outline-none focus:border-emerald-500" placeholder="Nama Pelanggan">
                                     <input type="text" x-model="customerPhone" @input="saveActiveCart()" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded text-[11px] font-medium text-gray-800 focus:bg-white focus:outline-none focus:border-emerald-500" placeholder="No WhatsApp">
                                 </div>
+
+                                <!-- Banner Pemberitahuan Voucher Hadiah Stempel di Modal Checkout -->
+                                <div x-show="activeCustomerLoyalty && availableLoyaltyVouchersForCustomer.length > 0" x-transition class="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-xs">
+                                    <div class="font-bold text-amber-900 flex items-center justify-between">
+                                        <span>Pemberitahuan Hadiah Stempel:</span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300" x-text="(activeCustomerLoyalty.stamp_count || 0) + ' Cap Stempel'"></span>
+                                    </div>
+                                    <div class="text-[11px] text-amber-800 mt-1">
+                                        Pelanggan ini memiliki Voucher Hadiah Stempel yang terbuka dan dapat dipasang!
+                                    </div>
+                                    <div class="mt-2 space-y-1.5">
+                                        <template x-for="v in availableLoyaltyVouchersForCustomer" :key="v.id">
+                                            <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-amber-200 shadow-xs">
+                                                <div>
+                                                    <div class="font-bold text-gray-900 text-xs" x-text="v.name"></div>
+                                                    <div class="text-[10px] text-emerald-700 font-semibold" x-text="getVoucherDiscountLabel(v)"></div>
+                                                </div>
+                                                <button type="button" 
+                                                        @click="applyVoucher(v); showToast('Voucher hadiah berhasil dipasang!', 'success');"
+                                                        :disabled="activeVoucher && activeVoucher.id === v.id"
+                                                        class="px-2.5 py-1 text-[11px] font-bold rounded shadow-xs cursor-pointer transition"
+                                                        :class="activeVoucher && activeVoucher.id === v.id ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-600 hover:bg-amber-700 text-white'">
+                                                    <span x-text="activeVoucher && activeVoucher.id === v.id ? 'Terpasang' : 'Pasang Voucher'"></span>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -5102,6 +5131,22 @@
                         eligible = false;
                     }
                     return eligible;
+                },
+
+                getVoucherDiscountLabel(v) {
+                    if (!v) return '';
+                    if (v.type === 'fixed') {
+                        return 'Potongan Rp ' + this.formatMoney(v.value);
+                    }
+                    return 'Diskon ' + v.value + '%';
+                },
+
+                get availableLoyaltyVouchersForCustomer() {
+                    if (!this.activeCustomerLoyalty || !this.availableVouchers) return [];
+                    return this.availableVouchers.filter(v => {
+                        const tier = this.getVoucherLoyaltyTier(v.id);
+                        return tier && !this.isVoucherLoyaltyLocked(v);
+                    });
                 },
                 
                 // Customer Live Search Methods
