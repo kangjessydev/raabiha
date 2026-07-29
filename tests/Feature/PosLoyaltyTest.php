@@ -174,16 +174,15 @@ class PosLoyaltyTest extends TestCase
         ]);
 
         $customer->refresh();
-        // 4 - 3 + 1 (earned from 200k purchase) = 2 stamps
-        $this->assertEquals(2, $customer->stamp_count);
-        // 40 - 30 + 10 = 20 points
-        $this->assertEquals(20, $customer->points_balance);
+        // Milestone rules: stamp_count is NOT decremented on voucher claim. 4 + 1 earned = 5 stamps.
+        $this->assertEquals(5, $customer->stamp_count);
+        $this->assertEquals(50, $customer->points_balance);
 
         $this->assertDatabaseHas('pos_stamp_logs', [
             'pos_customer_id' => $customer->id,
             'type'            => 'redeemed',
-            'stamps'          => -3,
-            'points'          => -30,
+            'stamps'          => 0,
+            'points'          => 0,
         ]);
     }
 
@@ -394,15 +393,15 @@ class PosLoyaltyTest extends TestCase
         ]);
 
         $customer->refresh();
-        // 5 stamps - 3 stamps redeemed + 1 stamp earned (since 100k grand total >= 100k min spend) = 3 stamps
-        $this->assertEquals(3, $customer->stamp_count);
-        $this->assertEquals(30, $customer->points_balance);
+        // Milestone rules: stamp_count is NOT decremented on voucher claim. Initial 5 stamps + 1 earned (100k price) = 6 stamps.
+        $this->assertEquals(6, $customer->stamp_count);
+        $this->assertEquals(60, $customer->points_balance);
 
         $this->assertDatabaseHas('pos_stamp_logs', [
             'pos_customer_id' => $customer->id,
             'order_id'        => $order->id,
             'type'            => 'redeemed',
-            'stamps'          => -3,
+            'stamps'          => 0,
         ]);
     }
 }
