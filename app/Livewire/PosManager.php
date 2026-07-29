@@ -493,6 +493,35 @@ class PosManager extends Component
             'openingCash' => 'required|numeric|min:0',
         ]);
 
+        // Single Store Active Session Check: Prevent multiple open cashier shifts
+        $otherActiveSession = PosSession::where('status', 'open')
+            ->where('cashier_id', '!=', Auth::id())
+            ->with('cashier')
+            ->first();
+
+        if ($otherActiveSession) {
+            if (!$supervisorId || !$supervisorPin) {
+                $otherName = $otherActiveSession->cashier ? $otherActiveSession->cashier->name : 'Kasir Lain';
+                $this->dispatch('require-supervisor-pin', [
+                    'actionType' => 'takeover_other_shift',
+                    'message'    => 'Sesi kasir ' . $otherName . ' masih aktif sejak ' . $otherActiveSession->opened_at->format('H:i') . '. Membutuhkan Otorisasi Supervisor untuk Tutup Paksa & Buka Sesi Baru.',
+                ]);
+                return;
+            }
+
+            $supervisor = $this->validateSupervisorPin($supervisorId, $supervisorPin, 'notify');
+            if (!$supervisor) {
+                return;
+            }
+
+            // Force close previous cashier session
+            $otherActiveSession->update([
+                'closed_at' => now(),
+                'status'    => 'closed',
+                'notes'     => 'Sesi ditutup paksa saat pembukaan shift baru oleh ' . Auth::user()->name . ' (Otorisasi Supervisor: ' . $supervisor->name . ')',
+            ]);
+        }
+
         // Check Shift Schedule restriction
         $shiftCheck = $this->isCurrentShiftAllowed();
         if (!$shiftCheck['allowed']) {
