@@ -4476,6 +4476,8 @@
                             this.requestSupervisorAuth(data.message || 'Verifikasi PIN Supervisor Dibutuhkan', () => {
                                 if (data.actionType === 'manual_drawer') {
                                     $wire.openManualDrawer(this.selectedSupervisorId, this.supervisorPinInput, 'Buka Laci Manual (Authorized)');
+                                } else if (data.actionType === 'out_of_hours_shift') {
+                                    $wire.openSession(this.selectedSupervisorId, this.supervisorPinInput);
                                 }
                             });
                         }

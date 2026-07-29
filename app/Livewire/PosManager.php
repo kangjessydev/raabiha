@@ -401,7 +401,78 @@ class PosManager extends Component
         }
     }
 
-    public function openSession()
+    public function isCurrentShiftAllowed(?int $cashierId = null): array
+    {
+        $cashierId = $cashierId ?? Auth::id();
+        $restrictionEnabled = \App\Models\SiteSetting::where('key', 'pos_shift_restriction_enabled')->value('value');
+        
+        if ($restrictionEnabled === '0' || $restrictionEnabled === 'false') {
+            return ['allowed' => true, 'reason' => 'Restriction Disabled'];
+        }
+
+        $graceMinutes = (int) (\App\Models\SiteSetting::where('key', 'pos_shift_early_grace_minutes')->value('value') ?? 60);
+        $overtimeHours = (int) (\App\Models\SiteSetting::where('key', 'pos_shift_overtime_max_hours')->value('value') ?? 4);
+
+        $rawShifts = \App\Models\SiteSetting::where('key', 'pos_master_shifts')->value('value');
+        $masterShifts = is_string($rawShifts) ? (json_decode($rawShifts, true) ?: []) : (is_array($rawShifts) ? $rawShifts : []);
+
+        $now = \Carbon\Carbon::now();
+        $currentTime = $now->format('H:i');
+
+        $userShifts = [];
+        foreach ($masterShifts as $shift) {
+            $assigned = $shift['assigned_cashiers'] ?? [];
+            if (is_array($assigned) && in_array($cashierId, $assigned)) {
+                $userShifts[] = $shift;
+            }
+        }
+
+        if (empty($userShifts)) {
+            $user = \App\Models\User::find($cashierId);
+            if ($user && $user->pos_shift_start && $user->pos_shift_end) {
+                $userShifts[] = [
+                    'shift_name' => 'Shift Khusus Kasir',
+                    'start_time' => $user->pos_shift_start,
+                    'end_time'   => $user->pos_shift_end,
+                ];
+            }
+        }
+
+        if (empty($userShifts) && empty($masterShifts)) {
+            return ['allowed' => true, 'reason' => 'No Shift Configured'];
+        }
+
+        $shiftsToValidate = !empty($userShifts) ? $userShifts : $masterShifts;
+
+        foreach ($shiftsToValidate as $shift) {
+            $startTimeStr = $shift['start_time'] ?? '08:00';
+            $endTimeStr = $shift['end_time'] ?? '16:00';
+
+            try {
+                $shiftStart = \Carbon\Carbon::createFromFormat('H:i', substr($startTimeStr, 0, 5))->subMinutes($graceMinutes);
+                $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', substr($endTimeStr, 0, 5))->addHours($overtimeHours);
+
+                if ($shiftStart->gt($shiftEnd)) {
+                    if ($now->gte($shiftStart) || $now->lte($shiftEnd)) {
+                        return ['allowed' => true, 'shift' => $shift['shift_name'] ?? 'Master Shift'];
+                    }
+                } else {
+                    if ($now->gte($shiftStart) && $now->lte($shiftEnd)) {
+                        return ['allowed' => true, 'shift' => $shift['shift_name'] ?? 'Master Shift'];
+                    }
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return [
+            'allowed' => false,
+            'message' => 'Waktu saat ini (' . $currentTime . ') di luar jam shift operasional resmi Anda. Membutuhkan Otorisasi Supervisor.',
+        ];
+    }
+
+    public function openSession($supervisorId = null, $supervisorPin = null)
     {
         // Single Active Session check per Kasir
         $existingSession = PosSession::where('cashier_id', Auth::id())
@@ -422,6 +493,23 @@ class PosManager extends Component
             'openingCash' => 'required|numeric|min:0',
         ]);
 
+        // Check Shift Schedule restriction
+        $shiftCheck = $this->isCurrentShiftAllowed();
+        if (!$shiftCheck['allowed']) {
+            if (!$supervisorId || !$supervisorPin) {
+                $this->dispatch('require-supervisor-pin', [
+                    'actionType' => 'out_of_hours_shift',
+                    'message'    => $shiftCheck['message'],
+                ]);
+                return;
+            }
+
+            $supervisor = $this->validateSupervisorPin($supervisorId, $supervisorPin, 'notify');
+            if (!$supervisor) {
+                return;
+            }
+        }
+
         PosSession::create([
             'cashier_id'   => Auth::id(),
             'opened_at'    => now(),
@@ -431,6 +519,10 @@ class PosManager extends Component
 
         $this->loadActiveSession();
         $this->dispatch('session-opened');
+        $this->dispatch('notify', [
+            'type'    => 'success',
+            'message' => 'Sesi kasir baru berhasil dibuka!',
+        ]);
     }
 
     public function closeSession()

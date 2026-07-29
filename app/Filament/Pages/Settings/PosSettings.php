@@ -35,6 +35,12 @@ class PosSettings extends Page implements HasForms
         } else {
             $settings['pos_loyalty_tiers'] = [];
         }
+        if (isset($settings['pos_master_shifts'])) {
+            $val = $settings['pos_master_shifts'];
+            $settings['pos_master_shifts'] = is_string($val) ? (json_decode($val, true) ?: []) : (is_array($val) ? $val : []);
+        } else {
+            $settings['pos_master_shifts'] = [];
+        }
         $this->form->fill($settings);
     }
 
@@ -207,6 +213,49 @@ class PosSettings extends Page implements HasForms
                                     ->label('Wajib PIN Supervisor untuk Buka Laci Manual (No Sale)')
                                     ->helperText('Jika diaktifkan, tombol Buka Laci Manual di POS wajib memasukkan PIN Supervisor demi keamanan laci kasir.')
                                     ->default(true),
+                            ]),
+                        \Filament\Schemas\Components\Tabs\Tab::make('Jadwal Shift & Operasional')
+                            ->icon('heroicon-o-clock')
+                            ->components([
+                                Forms\Components\Toggle::make('pos_shift_restriction_enabled')
+                                    ->label('Aktifkan Pembatasan Jam Operasional & Shift')
+                                    ->helperText('🟢 AKTIF: Buka shift di luar jam operasional / jadwal shift WAJIB memasukkan PIN Supervisor / Kode Izin Remote. 🔴 DIMATIKAN: Kasir dapat membuka shift kapan saja 24 jam tanpa batasan.')
+                                    ->default(true),
+                                Forms\Components\TextInput::make('pos_shift_early_grace_minutes')
+                                    ->label('Toleransi Buka Shift Lebih Awal (Menit)')
+                                    ->helperText('Kasir diperbolehkan Buka Shift tanpa PIN Supervisor X menit sebelum jam shift dimulai (Default: 60 Menit).')
+                                    ->numeric()
+                                    ->default(60)
+                                    ->required(),
+                                Forms\Components\TextInput::make('pos_shift_overtime_max_hours')
+                                    ->label('Batas Maksimal Lembur Shift (Jam)')
+                                    ->helperText('Toleransi maksimal keterlambatan Tutup Shift / Lembur sebelum sesi ditandai di luar jam (Default: 4 Jam).')
+                                    ->numeric()
+                                    ->default(4)
+                                    ->required(),
+                                \Filament\Forms\Components\Repeater::make('pos_master_shifts')
+                                    ->label('📋 Daftar Master Shift Operasional Toko')
+                                    ->helperText('Tambahkan daftar shift operasional toko dan tugaskan kasir ke masing-masing shift.')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('shift_name')
+                                            ->label('Nama Shift')
+                                            ->placeholder('Contoh: Shift 1 - Pagi')
+                                            ->required(),
+                                        Forms\Components\TimePicker::make('start_time')
+                                            ->label('Jam Masuk')
+                                            ->required(),
+                                        Forms\Components\TimePicker::make('end_time')
+                                            ->label('Jam Selesai')
+                                            ->required(),
+                                        Forms\Components\Select::make('assigned_cashiers')
+                                            ->label('Kasir Ditugaskan (Bisa Banyak Kasir)')
+                                            ->options(fn () => \App\Models\User::pluck('name', 'id'))
+                                            ->multiple()
+                                            ->searchable()
+                                            ->helperText('Pilih kasir yang bertugas di shift ini.'),
+                                    ])
+                                    ->columns(4)
+                                    ->default([]),
                             ]),
                     ])
             ])
