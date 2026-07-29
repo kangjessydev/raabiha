@@ -724,12 +724,13 @@ class PosManager extends Component
             $receiptText   = $this->escPos()->generateReceiptText($order);
 
             $this->dispatch('checkout-success', [
-                'order_id'     => $order->id,
-                'order_number' => $order->order_number,
-                'grand_total'  => $order->grand_total,
-                'cash_change'  => $order->cash_change,
-                'receipt_text' => $receiptText,
-                'base64'       => $receiptBase64,
+                'order_id'        => $order->id,
+                'order_number'    => $order->order_number,
+                'grand_total'     => $order->grand_total,
+                'cash_change'     => $order->cash_change,
+                'receipt_text'    => $receiptText,
+                'base64'          => $receiptBase64,
+                'allPosCustomers' => $this->allPosCustomers,
             ]);
             $this->dispatch('notify', ['type' => 'success', 'message' => 'Pembayaran berhasil diproses.']);
 
@@ -1426,9 +1427,32 @@ class PosManager extends Component
     #[\Livewire\Attributes\Computed]
     public function allPosCustomers()
     {
-        return \App\Models\PosCustomer::orderBy('name')
-            ->get(['id', 'name', 'phone', 'stamp_count', 'points_balance', 'completed_cards_count'])
-            ->toArray();
+        $customers = \App\Models\PosCustomer::orderBy('name')
+            ->get(['id', 'name', 'phone', 'stamp_count', 'points_balance', 'completed_cards_count']);
+
+        return $customers->map(function ($c) {
+            $usedVoucherIds = \App\Models\Order::where(function ($q) use ($c) {
+                    $q->where('pos_customer_id', $c->id);
+                    if ($c->phone) {
+                        $q->orWhere('customer_phone', $c->phone);
+                    }
+                })
+                ->whereNotNull('voucher_id')
+                ->pluck('voucher_id')
+                ->unique()
+                ->values()
+                ->toArray();
+
+            return [
+                'id'                    => $c->id,
+                'name'                  => $c->name,
+                'phone'                 => $c->phone,
+                'stamp_count'           => (int) $c->stamp_count,
+                'points_balance'        => (int) $c->points_balance,
+                'completed_cards_count' => (int) $c->completed_cards_count,
+                'used_voucher_ids'      => $usedVoucherIds,
+            ];
+        })->toArray();
     }
 
     #[\Livewire\Attributes\Computed]

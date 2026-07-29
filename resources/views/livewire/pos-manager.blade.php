@@ -4573,6 +4573,15 @@
                             text: e.detail[0].receipt_text,
                             base64: e.detail[0].base64
                         };
+                        if (e.detail[0].allPosCustomers) {
+                            this.allPosCustomers = e.detail[0].allPosCustomers;
+                            if (this.activeCustomerLoyalty) {
+                                const updatedCust = this.allPosCustomers.find(c => c.id === this.activeCustomerLoyalty.id || (c.phone && c.phone === this.activeCustomerLoyalty.phone));
+                                if (updatedCust) {
+                                    this.activeCustomerLoyalty = updatedCust;
+                                }
+                            }
+                        }
                         this.showReceiptPreviewModal = true;
                         this.clearCart(true);
                         this.broadcastCrossTabSync('checkout-success');
@@ -5152,11 +5161,21 @@
                     return 'Diskon ' + dVal + '%';
                 },
 
+                isVoucherUsedByActiveCustomer(v) {
+                    if (!this.activeCustomerLoyalty || !v) return false;
+                    const usedIds = this.activeCustomerLoyalty.used_voucher_ids || [];
+                    const timesUsed = usedIds.filter(id => id == v.id).length;
+                    const maxPerUser = v.max_uses_per_user || 1;
+                    return timesUsed >= maxPerUser;
+                },
+
                 get availableLoyaltyVouchersForCustomer() {
                     if (!this.activeCustomerLoyalty || !this.vouchers) return [];
                     return this.vouchers.filter(v => {
                         const tier = this.getVoucherLoyaltyTier(v.id);
-                        return tier && !this.isVoucherLoyaltyLocked(v);
+                        const isLocked = this.isVoucherLoyaltyLocked(v);
+                        const isUsed = this.isVoucherUsedByActiveCustomer(v);
+                        return tier && !isLocked && !isUsed;
                     });
                 },
                 
