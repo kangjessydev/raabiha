@@ -271,21 +271,17 @@ class PosTransactionService
 
         if ($redeemedStamps > 0) {
             if ($customer->stamp_count < $redeemedStamps) {
-                throw new \Exception("Stempel pelanggan tidak mencukupi untuk menukarkan voucher ini. Syarat: {$redeemedStamps} Cap, Saldo Pelanggan: {$customer->stamp_count} Cap.");
+                throw new \Exception("Stempel pelanggan tidak mencukupi untuk menggunakan voucher ini. Syarat: {$redeemedStamps} Cap, Saldo Pelanggan: {$customer->stamp_count} Cap.");
             }
 
-            $redeemedPoints = $redeemedStamps * $pointsRatio;
-            $customer->decrement('stamp_count', $redeemedStamps);
-            $customer->decrement('points_balance', min($customer->points_balance, $redeemedPoints));
-            $customer->refresh();
-
+            // Pemakaian voucher hadiah loyalti TIDAK memotong stamp_count (stempel tetap terakumulasi sampai 9 cap)
             \App\Models\PosStampLog::create([
                 'pos_customer_id' => $customer->id,
                 'order_id'        => $order->id,
                 'type'            => 'redeemed',
-                'stamps'          => -$redeemedStamps,
-                'points'          => -$redeemedPoints,
-                'description'     => "Penukaran {$redeemedStamps} Stempel untuk Voucher Reward POS.",
+                'stamps'          => 0,
+                'points'          => 0,
+                'description'     => "Klaim Voucher Hadiah Loyalti ({$redeemedStamps} Cap Milestone). Stempel tidak dipotong.",
             ]);
         }
 

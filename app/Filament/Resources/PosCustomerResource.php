@@ -100,7 +100,10 @@ class PosCustomerResource extends Resource
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('completed_cards_count')
-                    ->label('Kartu Selesai')
+                    ->label('Kartu Selesai (9 Cap)')
+                    ->badge()
+                    ->color(fn ($state) => $state > 0 ? 'warning' : 'gray')
+                    ->formatStateUsing(fn ($state) => $state > 0 ? "{$state} Kartu" : "0 Kartu")
                     ->sortable(),
                 TextColumn::make('total_spent')
                     ->label('Total Belanja')
