@@ -2889,10 +2889,13 @@
                                     <span x-show="v.min_purchase <= 0 && v.min_items <= 0">Tanpa min. belanja</span>
                                 </div>
                                 
-                                <span x-show="isVoucherLoyaltyLocked(v)" class="text-[11px] font-bold text-rose-600 flex items-center gap-1">
-                                    🔒 Wajib <span x-text="getVoucherLoyaltyTier(v.id)?.min_stamps"></span> Cap (Anda: <span x-text="activeCustomerLoyalty ? activeCustomerLoyalty.stamp_count : 0"></span> Cap)
+                                <span x-show="isVoucherUsedByActiveCustomer(v)" class="text-[11px] font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded">
+                                    Sudah Pernah Digunakan
                                 </span>
-                                <span x-show="!isVoucherLoyaltyLocked(v) && !isVoucherEligible(v)" class="text-[11px] font-semibold text-rose-600">Syarat belum terpenuhi</span>
+                                <span x-show="isVoucherLoyaltyLocked(v) && !isVoucherUsedByActiveCustomer(v)" class="text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                                    Wajib <span x-text="getVoucherLoyaltyTier(v.id)?.min_stamps"></span> Cap (Anda: <span x-text="activeCustomerLoyalty ? activeCustomerLoyalty.stamp_count : 0"></span> Cap)
+                                </span>
+                                <span x-show="!isVoucherLoyaltyLocked(v) && !isVoucherUsedByActiveCustomer(v) && !isVoucherEligible(v)" class="text-[11px] font-semibold text-rose-600">Syarat belum terpenuhi</span>
                                 <span x-show="activeVoucher && activeVoucher.id === v.id" class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
                                     <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Dipakai
                                 </span>
@@ -5137,10 +5140,14 @@
                 },
 
                 isVoucherEligible(voucher) {
-                    let eligible = true;
+                    if (!voucher) return false;
                     if (this.isVoucherLoyaltyLocked(voucher)) {
                         return false;
                     }
+                    if (this.isVoucherUsedByActiveCustomer(voucher)) {
+                        return false;
+                    }
+                    let eligible = true;
                     if (voucher.min_purchase > 0 && parseFloat(this.subtotal) < parseFloat(voucher.min_purchase)) {
                         eligible = false;
                     }
