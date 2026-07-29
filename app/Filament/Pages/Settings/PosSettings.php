@@ -219,7 +219,7 @@ class PosSettings extends Page implements HasForms
                             ->components([
                                 Forms\Components\Toggle::make('pos_shift_restriction_enabled')
                                     ->label('Aktifkan Pembatasan Jam Operasional & Shift')
-                                    ->helperText('🟢 AKTIF: Buka shift di luar jam operasional / jadwal shift WAJIB memasukkan PIN Supervisor / Kode Izin Remote. 🔴 DIMATIKAN: Kasir dapat membuka shift kapan saja 24 jam tanpa batasan.')
+                                    ->helperText('AKTIF: Buka shift di luar jam operasional / jadwal shift WAJIB memasukkan PIN Supervisor / Kode Izin Remote. DIMATIKAN: Kasir dapat membuka shift kapan saja 24 jam tanpa batasan.')
                                     ->default(true),
                                 Forms\Components\TextInput::make('pos_shift_early_grace_minutes')
                                     ->label('Toleransi Buka Shift Lebih Awal (Menit)')
@@ -234,7 +234,7 @@ class PosSettings extends Page implements HasForms
                                     ->default(4)
                                     ->required(),
                                 \Filament\Forms\Components\Repeater::make('pos_master_shifts')
-                                    ->label('📋 Daftar Master Shift Operasional Toko')
+                                    ->label('Daftar Master Shift Operasional Toko')
                                     ->helperText('Tambahkan daftar shift operasional toko dan tugaskan kasir ke masing-masing shift.')
                                     ->schema([
                                         Forms\Components\TextInput::make('shift_name')
