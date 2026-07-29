@@ -764,8 +764,16 @@ class PosManager extends Component
 
         try {
             $receiptBase64 = $this->escPos()->generateReceipt($order, isReprint: true);
+            $receiptText   = $this->escPos()->generateReceiptText($order, isReprint: true);
 
-            $this->dispatch('print-receipt', ['base64' => $receiptBase64, 'order_id' => $orderId]);
+            $this->dispatch('print-receipt', [
+                'title'        => 'Cetak Ulang Struk',
+                'order_id'     => $orderId,
+                'order_number' => $order->order_number,
+                'cash_change'  => $order->cash_change,
+                'text'         => $receiptText,
+                'base64'       => $receiptBase64,
+            ]);
             $this->dispatch('notify', ['type' => 'success', 'message' => 'Cetak ulang struk #' . $order->order_number . ' dikirim ke printer.']);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal mencetak ulang struk: ' . $e->getMessage()]);
@@ -787,7 +795,16 @@ class PosManager extends Component
 
         try {
             $receiptBase64 = $this->escPos()->generateReturnReceipt($posReturn);
-            $this->dispatch('print-receipt', ['base64' => $receiptBase64]);
+            $receiptText   = $this->escPos()->generateReturnReceiptText($posReturn);
+
+            $this->dispatch('print-receipt', [
+                'title'        => 'Struk Retur / Penukaran Barang',
+                'order_id'     => null,
+                'order_number' => $posReturn->return_number,
+                'cash_change'  => 0,
+                'text'         => $receiptText,
+                'base64'       => $receiptBase64,
+            ]);
             $this->dispatch('notify', ['type' => 'success', 'message' => 'Cetak ulang struk retur #' . $posReturn->return_number . ' dikirim ke printer.']);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal mencetak ulang struk retur: ' . $e->getMessage()]);
@@ -839,6 +856,7 @@ class PosManager extends Component
             $posReturn = $service->processPosReturn($data);
 
             $receiptBase64 = $this->escPos()->generateReturnReceipt($posReturn);
+            $receiptText   = $this->escPos()->generateReturnReceiptText($posReturn);
 
             $this->dispatch('return-success', [
                 'return_id'     => $posReturn->id,
@@ -849,7 +867,14 @@ class PosManager extends Component
                 'type'    => 'success',
                 'message' => 'Retur/Penukaran barang #' . $posReturn->return_number . ' berhasil diproses.'
             ]);
-            $this->dispatch('print-receipt', ['base64' => $receiptBase64]);
+            $this->dispatch('print-receipt', [
+                'title'        => 'Struk Retur / Penukaran Barang',
+                'order_id'     => null,
+                'order_number' => $posReturn->return_number,
+                'cash_change'  => 0,
+                'text'         => $receiptText,
+                'base64'       => $receiptBase64,
+            ]);
 
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);

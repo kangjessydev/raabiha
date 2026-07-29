@@ -3876,7 +3876,7 @@
             <!-- Header -->
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
                 <div>
-                    <h3 class="font-bold text-base text-gray-950">Pembayaran Berhasil</h3>
+                    <h3 class="font-bold text-base text-gray-950" x-text="previewReceiptData.title || 'Pratinjau Struk Cetak'"></h3>
                     <p class="text-xs text-gray-500 font-medium" x-text="previewReceiptData.orderNumber"></p>
                 </div>
                 <button @click="showReceiptPreviewModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
@@ -4598,9 +4598,27 @@
                         }
                     });
                     window.addEventListener('print-receipt', (e) => {
-                        const b64 = e.detail?.base64 || e.detail?.[0]?.base64;
-                        const orderId = e.detail?.order_id || e.detail?.[0]?.order_id || null;
-                        if (b64) this.printBase64(b64, orderId);
+                        const detail = (e.detail && e.detail[0]) ? e.detail[0] : (e.detail || {});
+                        const b64 = detail.base64;
+                        const orderId = detail.order_id || null;
+                        const orderNumber = detail.order_number || 'Struk Transaksi';
+                        const text = detail.text || '';
+                        const cashChange = detail.cash_change || 0;
+                        const title = detail.title || (cashChange > 0 ? 'Pembayaran Berhasil' : 'Pratinjau Struk Cetak');
+
+                        if (b64) {
+                            this.previewReceiptData = {
+                                title: title,
+                                order_id: orderId,
+                                orderNumber: orderNumber,
+                                cashChange: cashChange,
+                                text: text,
+                                base64: b64
+                            };
+                            this.showReceiptPreviewModal = true;
+                            this.showToast('Mengirim perintah cetak struk ke printer...', 'info');
+                            this.printBase64(b64, orderId);
+                        }
                     });
                     window.addEventListener('print-z-report', (e) => {
                         const b64 = e.detail?.base64 || e.detail?.[0]?.base64;
