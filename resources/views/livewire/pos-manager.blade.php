@@ -629,6 +629,27 @@
                     <span x-text="printerConnected ? 'Printer OK' : 'Printer Offline'" class="hidden sm:inline whitespace-nowrap"></span>
                 </button>
 
+                <!-- Tombol Mode Layar Penuh (Fullscreen) -->
+                <button type="button" @click="toggleFullscreen()"
+                    :title="isFullscreen ? 'Keluar Layar Penuh (ESC)' : 'Mode Layar Penuh (Fullscreen)'"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-semibold bg-white hover:bg-gray-50 text-gray-700 shadow-xs transition-all cursor-pointer">
+                    <template x-if="!isFullscreen">
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                    </template>
+                    <template x-if="isFullscreen">
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L4 20m0 0h4m-4 0v-4m16 4l-5-5m5 5v-4m0 4h-4M9 9L4 4m0 0h4m-4 0v4m16-4l-5 5m5-5v4m0-4h-4"/></svg>
+                    </template>
+                    <span class="hidden md:inline" x-text="isFullscreen ? 'Kecilkan' : 'Layar Penuh'"></span>
+                </button>
+
+                <!-- Tombol Install Aplikasi Desktop PC (PWA) -->
+                <button x-show="canInstallApp" type="button" @click="installApp()"
+                    title="Install Raabiha POS sebagai Aplikasi Desktop PC"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-emerald-300 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span class="hidden sm:inline">Install App Desktop</span>
+                </button>
+
                 <!-- Button Antrean (Khusus Layar Mobile & Tablet < lg) -->
                 <button type="button" @click="showHoldModal = true"
                         class="lg:hidden flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-md shadow-xs transition duration-150 cursor-pointer relative"
@@ -3993,6 +4014,9 @@
                 customerSearchInput: '',
                 showCustomerDropdown: false,
                 isProcessing: false,
+                isFullscreen: false,
+                deferredInstallPrompt: null,
+                canInstallApp: false,
                 
                 // Toasts
                 toasts: [],
@@ -4395,6 +4419,16 @@
                     this.$watch('manualDiscountValue', () => this.saveActiveCart());
                     this.$watch('customerName', () => this.saveActiveCart());
                     this.$watch('customerPhone', () => this.saveActiveCart());
+
+                    // Listener Fullscreen & PWA Desktop App
+                    document.addEventListener('fullscreenchange', () => {
+                        this.isFullscreen = !!document.fullscreenElement;
+                    });
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault();
+                        this.deferredInstallPrompt = e;
+                        this.canInstallApp = true;
+                    });
 
                     // Listener Sinkronisasi Multi-Tab Browser Realtime
                     window.addEventListener('storage', (e) => {
@@ -5112,6 +5146,35 @@
                     }
                     this.showCustomerDropdown = true;
                     this.saveActiveCart();
+                },
+
+                // Fullscreen & PWA Install Desktop App Methods
+                toggleFullscreen() {
+                    if (!document.fullscreenElement) {
+                        const docEl = document.documentElement;
+                        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
+                        if (req) {
+                            req.call(docEl).catch(err => {
+                                this.showToast('Gagal masuk mode Layar Penuh: ' + err.message, 'error');
+                            });
+                        }
+                    } else {
+                        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+                        if (exit) {
+                            exit.call(document);
+                        }
+                    }
+                },
+
+                async installApp() {
+                    if (!this.deferredInstallPrompt) return;
+                    this.deferredInstallPrompt.prompt();
+                    const { outcome } = await this.deferredInstallPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        this.showToast('Aplikasi Raabiha POS berhasil diinstal di PC!', 'success');
+                        this.canInstallApp = false;
+                    }
+                    this.deferredInstallPrompt = null;
                 },
                 
                 // Diskon Manual State

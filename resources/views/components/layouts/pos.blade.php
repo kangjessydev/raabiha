@@ -55,6 +55,12 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Raabiha POS">
+
     @livewireStyles
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased overflow-hidden selection:bg-brand-500 selection:text-white">
@@ -62,5 +68,12 @@
     {{ $slot }}
 
     @livewireScripts
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW Reg Failed:', err));
+            });
+        }
+    </script>
 </body>
 </html>
