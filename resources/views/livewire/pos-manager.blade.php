@@ -5143,10 +5143,12 @@
 
                 getVoucherDiscountLabel(v) {
                     if (!v) return '';
-                    if (v.type === 'fixed') {
-                        return 'Potongan Rp ' + this.formatMoney(v.value);
+                    const dType = v.discount_type || v.type || 'fixed';
+                    const dVal = parseFloat(v.discount_value !== undefined ? v.discount_value : (v.value || 0));
+                    if (dType === 'fixed') {
+                        return 'Potongan Rp ' + this.formatMoney(dVal);
                     }
-                    return 'Diskon ' + v.value + '%';
+                    return 'Diskon ' + dVal + '%';
                 },
 
                 get availableLoyaltyVouchersForCustomer() {
@@ -5299,14 +5301,17 @@
                     if (!this.activeVoucher) return 0;
                     if (!this.isVoucherEligible(this.activeVoucher)) return 0;
 
-                    if (this.activeVoucher.discount_type === 'percent') {
-                        let disc = (this.subtotal * parseFloat(this.activeVoucher.discount_amount)) / 100;
+                    const dType = this.activeVoucher.discount_type || this.activeVoucher.type || 'fixed';
+                    const dVal = parseFloat(this.activeVoucher.discount_value !== undefined ? this.activeVoucher.discount_value : (this.activeVoucher.discount_amount !== undefined ? this.activeVoucher.discount_amount : (this.activeVoucher.value || 0)));
+
+                    if (dType === 'percent') {
+                        let disc = (this.subtotal * dVal) / 100;
                         if (this.activeVoucher.max_discount && disc > parseFloat(this.activeVoucher.max_discount)) {
                             disc = parseFloat(this.activeVoucher.max_discount);
                         }
                         return disc;
                     } else {
-                        return parseFloat(this.activeVoucher.discount_amount);
+                        return dVal;
                     }
                 },
 
