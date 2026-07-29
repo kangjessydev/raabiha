@@ -601,6 +601,11 @@ class EscPosService
         return implode("\n", $lines);
     }
 
+    protected function justifyText(string $left, string $right, int $width = 32): string
+    {
+        return $left . str_repeat(' ', max(1, $width - strlen($left) - strlen($right))) . $right;
+    }
+
     /**
      * Generate Base64 receipt for a PosReturn (Return / Exchange)
      */
