@@ -25,7 +25,7 @@ class OrdersTable
                 TextColumn::make('customer_name')
                     ->label('Nama Pelanggan')
                     ->state(function ($record) {
-                        return $record->user_id ? $record->user->name : ($record->shipping_address['name'] ?? 'Guest User');
+                        return $record->customer_name ?: ($record->user_id ? $record->user->name : ($record->shipping_address['name'] ?? 'Guest User'));
                     })
                     ->description(function ($record) {
                         $isGuest = !$record->user_id;
@@ -37,7 +37,14 @@ class OrdersTable
                             "<span class='inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {$classes}'>{$label}</span>"
                         );
                     })
-                    ->searchable(['user.name'])
+                    ->searchable(query: function ($query, string $search) {
+                        return $query->where(function ($q) use ($search) {
+                            $q->where('customer_name', 'like', "%{$search}%")
+                              ->orWhereHas('user', function ($q2) use ($search) {
+                                  $q2->where('name', 'like', "%{$search}%");
+                              });
+                        });
+                    })
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
