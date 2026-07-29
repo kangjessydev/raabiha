@@ -7,6 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -37,10 +38,10 @@ class OrdersTable
                             "<span class='inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {$classes}'>{$label}</span>"
                         );
                     })
-                    ->searchable(query: function ($query, string $search) {
-                        return $query->where(function ($q) use ($search) {
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where(function (Builder $q) use ($search) {
                             $q->where('customer_name', 'like', "%{$search}%")
-                              ->orWhereHas('user', function ($q2) use ($search) {
+                              ->orWhereHas('user', function (Builder $q2) use ($search) {
                                   $q2->where('name', 'like', "%{$search}%");
                               });
                         });
