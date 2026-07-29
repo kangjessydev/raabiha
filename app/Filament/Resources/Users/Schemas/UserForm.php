@@ -62,14 +62,16 @@ class UserForm
                     ])->columns(2)->collapsed(),
 
                 \Filament\Schemas\Components\Section::make('Jadwal Shift POS Kasir')
-                    ->description('Jadwal jam kerja shift kasir (Jam Masuk & Jam Pulang).')
+                    ->description('Opsional. Kosongkan untuk menggunakan penugasan Master Shift dari menu Pengaturan Kasir (POS).')
                     ->schema([
                         \Filament\Forms\Components\TimePicker::make('pos_shift_start')
                             ->label('Jam Shift Awal (Jam Masuk)')
+                            ->helperText('Diisi jika pengguna memiliki jam shift khusus di luar Master Shift.')
                             ->seconds(false)
                             ->placeholder('08:00'),
                         \Filament\Forms\Components\TimePicker::make('pos_shift_end')
                             ->label('Jam Shift Akhir (Jam Pulang)')
+                            ->helperText('Diisi jika pengguna memiliki jam shift khusus di luar Master Shift.')
                             ->seconds(false)
                             ->placeholder('16:00'),
                     ])->columns(2),

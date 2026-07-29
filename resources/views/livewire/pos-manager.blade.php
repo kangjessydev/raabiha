@@ -5031,15 +5031,22 @@
                 },
 
                 clearCart(force = false) {
-                    if (force) {
+                    const doClear = () => {
                         this.cart = [];
                         this.activeVoucher = null;
                         this.manualDiscountValue = 0;
                         this.cashPaid = 0;
                         this.customerName = '';
                         this.customerPhone = '';
+                        this.customerSearchInput = '';
                         this.loyaltyRedeemStamps = 0;
                         this.activeCustomerLoyalty = null;
+                        this.showCustomerDropdown = false;
+                        this.saveActiveCart();
+                    };
+
+                    if (force) {
+                        doClear();
                         return;
                     }
 
@@ -5047,14 +5054,7 @@
                         'Kosongkan Keranjang?',
                         'Semua barang di keranjang akan dihapus. Lanjutkan?',
                         () => {
-                            this.cart = [];
-                            this.activeVoucher = null;
-                            this.manualDiscountValue = 0;
-                            this.cashPaid = 0;
-                            this.customerName = '';
-                            this.customerPhone = '';
-                            this.loyaltyRedeemStamps = 0;
-                            this.activeCustomerLoyalty = null;
+                            doClear();
                         }
                     );
                 },
