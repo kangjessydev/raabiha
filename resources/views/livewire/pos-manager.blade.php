@@ -5144,7 +5144,8 @@
                 getVoucherDiscountLabel(v) {
                     if (!v) return '';
                     const dType = v.discount_type || v.type || 'fixed';
-                    const dVal = parseFloat(v.discount_value !== undefined ? v.discount_value : (v.value || 0));
+                    const rawVal = v.discount_amount !== undefined && v.discount_amount !== null ? v.discount_amount : (v.discount_value !== undefined && v.discount_value !== null ? v.discount_value : (v.value || 0));
+                    const dVal = parseFloat(rawVal);
                     if (dType === 'fixed') {
                         return 'Potongan Rp ' + this.formatMoney(dVal);
                     }
