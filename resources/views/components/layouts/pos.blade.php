@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'POS System - Raabiha' }}</title>
     
+    @php
+        $faviconId = \App\Models\SiteSetting::where('key', 'site_favicon')->value('value');
+        $faviconMedia = $faviconId ? \Awcodes\Curator\Models\Media::find($faviconId) : null;
+        $faviconUrl = $faviconMedia ? \Illuminate\Support\Facades\Storage::url($faviconMedia->path) : asset('favicon.ico');
+
+        $faviconMime = 'image/x-icon';
+        if (\Illuminate\Support\Str::endsWith(strtolower($faviconUrl), '.png')) $faviconMime = 'image/png';
+        elseif (\Illuminate\Support\Str::endsWith(strtolower($faviconUrl), '.jpg') || \Illuminate\Support\Str::endsWith(strtolower($faviconUrl), '.jpeg')) $faviconMime = 'image/jpeg';
+        elseif (\Illuminate\Support\Str::endsWith(strtolower($faviconUrl), '.svg')) $faviconMime = 'image/svg+xml';
+    @endphp
+
+    <link rel="icon" type="{{ $faviconMime }}" href="{{ $faviconUrl }}" />
+    <link rel="shortcut icon" type="{{ $faviconMime }}" href="{{ $faviconUrl }}" />
+    <link rel="apple-touch-icon" href="{{ $faviconUrl }}" />
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
