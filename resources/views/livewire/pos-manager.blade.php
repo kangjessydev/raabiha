@@ -629,19 +629,6 @@
                     <span x-text="printerConnected ? 'Printer OK' : 'Printer Offline'" class="hidden sm:inline whitespace-nowrap"></span>
                 </button>
 
-                <!-- Tombol Mode Layar Penuh (Fullscreen) -->
-                <button type="button" @click="toggleFullscreen()"
-                    :title="isFullscreen ? 'Keluar Layar Penuh (ESC)' : 'Mode Layar Penuh (Fullscreen)'"
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-semibold bg-white hover:bg-gray-50 text-gray-700 shadow-xs transition-all cursor-pointer">
-                    <template x-if="!isFullscreen">
-                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                    </template>
-                    <template x-if="isFullscreen">
-                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L4 20m0 0h4m-4 0v-4m16 4l-5-5m5 5v-4m0 4h-4M9 9L4 4m0 0h4m-4 0v4m16-4l-5 5m5-5v4m0-4h-4"/></svg>
-                    </template>
-                    <span class="hidden md:inline" x-text="isFullscreen ? 'Kecilkan' : 'Layar Penuh'"></span>
-                </button>
-
                 <!-- Tombol Install Aplikasi Desktop PC (PWA) -->
                 <button x-show="canInstallApp" type="button" @click="installApp()"
                     title="Install Raabiha POS sebagai Aplikasi Desktop PC"
