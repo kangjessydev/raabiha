@@ -555,8 +555,8 @@ class EscPosService
             ->sum('amount');
 
         $lines = [];
-        $lines[] = $this->centerAlign($header);
-        $lines[] = $this->centerAlign("Z-REPORT (SHIFT)");
+        $lines[] = str_pad(trim($header), 32, ' ', STR_PAD_BOTH);
+        $lines[] = str_pad("Z-REPORT (SHIFT)", 32, ' ', STR_PAD_BOTH);
         $lines[] = "";
         $lines[] = "Kasir : " . ($session->cashier->name ?? 'Unknown');
         $lines[] = "Buka  : " . ($session->opened_at ? $session->opened_at->format('d/m/Y H:i') : '-');
