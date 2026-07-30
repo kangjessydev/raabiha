@@ -48,15 +48,15 @@ async function main() {
     });
 
     // Handle graceful shutdown
-    process.on('SIGINT', () => {
+    process.on('SIGINT', async () => {
         console.log('\n[INFO] Mematikan agent...');
-        printer.disconnect();
+        try { await printer.disconnect(); } catch (e) {}
         server.close();
         process.exit(0);
     });
 
-    process.on('SIGTERM', () => {
-        printer.disconnect();
+    process.on('SIGTERM', async () => {
+        try { await printer.disconnect(); } catch (e) {}
         server.close();
         process.exit(0);
     });

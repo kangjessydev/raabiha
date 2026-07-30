@@ -9,7 +9,9 @@
  */
 
 const EventEmitter = require('events');
-const { execSync, exec } = require('child_process');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
 const { SerialPort } = require('serialport');
 const os = require('os');
 
@@ -59,19 +61,27 @@ class BluetoothPrinter extends EventEmitter {
 
         console.log(`[BT] Binding ${mac} ke ${device}...`);
         try {
-            // Coba release dulu jika sudah ada
-            execSync(`sudo rfcomm release ${devNum} 2>/dev/null || true`, { stdio: 'pipe' });
-            // Tunggu sebentar agar release selesai
-            await new Promise(r => setTimeout(r, 500));
-            // Bind
-            execSync(`sudo rfcomm bind ${devNum} ${mac} 1`, { stdio: 'pipe' });
-            // Beri izin baca/tulis ke port agar nodejs bisa akses tanpa sudo
-            execSync(`sudo chmod 666 ${device}`, { stdio: 'pipe' });
-            console.log(`[BT] ✅ rfcomm bind berhasil: ${device}`);
-            // Set port ke mode raw agar kernel tidak merusak byte ESC/POS
-            // Jalankan dengan sudo, dan jadikan non-fatal (tidak semua driver butuh ini)
+            // Release & kill semak-semak file descriptor yang menggantung
             try {
-                execSync(`sudo stty -F ${device} raw -echo -echoe -echok`, { stdio: 'pipe' });
+                await execAsync(`sudo fuser -k ${device} 2>/dev/null || true`);
+            } catch (e) {}
+            try {
+                await execAsync(`sudo rfcomm release ${devNum} 2>/dev/null || true`);
+            } catch (e) {}
+
+            // Tunggu 800ms agar kernel selesai melepaskan socket
+            await new Promise(r => setTimeout(r, 800));
+
+            // Bind
+            await execAsync(`sudo rfcomm bind ${devNum} ${mac} 1`);
+
+            // Beri izin baca/tulis ke port agar nodejs bisa akses tanpa sudo
+            await execAsync(`sudo chmod 666 ${device}`);
+            console.log(`[BT] ✅ rfcomm bind berhasil: ${device}`);
+
+            // Set port ke mode raw agar kernel tidak merusak byte ESC/POS
+            try {
+                await execAsync(`sudo stty -F ${device} raw -echo -echoe -echok`);
             } catch (sttyErr) {
                 console.warn(`[BT] stty warning (non-fatal): ${sttyErr.message.split('\n')[0]}`);
             }
@@ -192,20 +202,23 @@ class BluetoothPrinter extends EventEmitter {
         await currentTask;
     }
 
-    disconnect() {
+    async disconnect() {
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
         }
         if (this.port && this.port.isOpen) {
-            this.port.close();
+            try {
+                await new Promise((resolve) => this.port.close(() => resolve()));
+            } catch (e) {}
         }
         // Release rfcomm (Linux)
         if (this.platform === 'linux' && this.config.printer_mac) {
             const device = this._getSerialPath();
             const devNum = device.replace('/dev/rfcomm', '') || '0';
             try {
-                execSync(`sudo rfcomm release ${devNum} 2>/dev/null || true`, { stdio: 'pipe' });
+                await execAsync(`sudo fuser -k ${device} 2>/dev/null || true`);
+                await execAsync(`sudo rfcomm release ${devNum} 2>/dev/null || true`);
             } catch (e) {}
         }
         this.connected = false;

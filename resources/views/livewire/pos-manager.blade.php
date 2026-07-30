@@ -479,7 +479,7 @@
                                     <option value="bluetooth">Bluetooth</option>
                                     <option value="serial">USB/Serial</option>
                                 </select>
-                                <button @click="connectPrinter()" :class="[printerConnected ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white hover:border-red-300 hover:text-red-600 text-red-600 border-gray-200', isSidebarOpen ? 'justify-center px-3 py-1.5 border shadow-xs' : 'justify-center p-2.5']" class="w-full rounded-md text-xs font-semibold transition-all flex items-center gap-2 relative cursor-pointer" title="Koneksi Printer">
+                                <button @click="showPrinterModal = true" :class="[printerConnected ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white hover:border-red-300 hover:text-red-600 text-red-600 border-gray-200', isSidebarOpen ? 'justify-center px-3 py-1.5 border shadow-xs' : 'justify-center p-2.5']" class="w-full rounded-md text-xs font-semibold transition-all flex items-center gap-2 relative cursor-pointer" title="Pengaturan Printer POS">
                                     <span class="relative flex-shrink-0">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                                         <span x-show="!isSidebarOpen" class="absolute -top-1 -right-1 h-2 w-2 rounded-full border-2 border-white" :class="printerConnected ? 'bg-emerald-500' : 'bg-red-500 animate-ping'" style="display:none;"></span>
@@ -616,8 +616,8 @@
                     <input wire:model.live.debounce.300ms="search" type="text" class="block w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition duration-150" placeholder="Cari Produk atau Barcode / SKU...">
                 </div>
                 <!-- Printer Status Indicator (Filament Native Badge) -->
-                <button @click="connectPrinter()"
-                    :title="printerConnected ? 'Printer: Tersambung (klik untuk ganti)' : 'Printer: Belum Terhubung — Klik untuk Sambungkan'"
+                <button @click="showPrinterModal = true"
+                    :title="printerConnected ? 'Printer: Tersambung (klik untuk pengaturan)' : 'Printer: Belum Terhubung — Klik untuk Pengaturan'"
                     class="flex items-center gap-2 px-3 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer"
                     :class="printerConnected
                         ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
@@ -1532,7 +1532,7 @@
                                     $q->where('payment_method', 'cash')
                                       ->orWhere('payment_method', 'tunai');
                                 });
-                            $totalCashSales = $cashOrders->sum('cash_paid') - $cashOrders->sum('cash_change');
+                            $totalCashSales = $cashOrders->sum('grand_total');
 
                             $pettyCashIn = \App\Models\Cashflow::where('source', 'pos')
                                 ->where('category', 'pos_petty_cash')
@@ -4014,6 +4014,131 @@
         </div>
     </div>
 
+    <!-- Modal Pengaturan Printer POS Hybrid - Filament Native Style -->
+    <div x-show="showPrinterModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+        <div class="bg-white w-full max-w-lg rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showPrinterModal = false">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600 border border-emerald-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-gray-950 leading-tight">Pengaturan Printer Thermal POS</h3>
+                        <p class="text-xs text-gray-500 font-medium">Hubungkan printer Bluetooth, USB Kabel, atau Agent Lokal</p>
+                    </div>
+                </div>
+                <button @click="showPrinterModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-6 space-y-5 overflow-y-auto flex-1 text-xs bg-gray-50/50">
+                <!-- Status Bar Printer Aktif -->
+                <div class="p-4 rounded-xl border flex items-center justify-between shadow-xs"
+                    :class="printerConnected ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'">
+                    <div class="flex items-center gap-3">
+                        <div class="h-3 w-3 rounded-full flex-shrink-0"
+                            :class="printerConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"></div>
+                        <div>
+                            <div class="font-bold text-xs" :class="printerConnected ? 'text-emerald-900' : 'text-rose-900'"
+                                x-text="printerConnected ? 'Terhubung: ' + (printerDeviceName || 'Printer Thermal') : 'Printer Belum Terhubung'"></div>
+                            <div class="text-[11px] mt-0.5" :class="printerConnected ? 'text-emerald-700' : 'text-rose-700'">
+                                <span x-text="printerConnected ? ('Metode: ' + (printerConnectionMethod === 'ble' ? 'Web Bluetooth (Wireless)' : (printerConnectionMethod === 'serial' ? 'USB / Serial Cable' : 'Print Agent Bridge'))) : 'Pilih salah satu metode di bawah untuk menyambungkan printer.'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <template x-if="printerConnected">
+                        <button type="button" @click="disconnectPrinter()" class="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg shadow-xs transition text-[11px] cursor-pointer">
+                            Putuskan
+                        </button>
+                    </template>
+                </div>
+
+                <!-- Opsi Metode Koneksi (Card Radio Group) -->
+                <div>
+                    <label class="block font-bold text-gray-900 text-xs uppercase tracking-wider mb-2.5">Pilih Metode & Cari Perangkat</label>
+                    <div class="space-y-2.5">
+                        <!-- Mode 1: Web Bluetooth (Wireless Scan) -->
+                        <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-xs hover:border-emerald-300 transition duration-150">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-start gap-3">
+                                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 mt-0.5">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18l6-6-6-6m-6 12l6-6-6-6"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-gray-900 text-xs">Web Bluetooth API (Pindai Sekitar)</div>
+                                        <p class="text-[11px] text-gray-500 mt-0.5">Memindai & memilih printer Bluetooth langsung dari browser (Kassen, RPP02N, Panda, dll).</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" @click="scanAndConnectWebBluetooth()" class="mt-3 w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <span>Pindai & Sambung Bluetooth</span>
+                            </button>
+                        </div>
+
+                        <!-- Mode 2: Web Serial (Kabel USB) -->
+                        <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-xs hover:border-emerald-300 transition duration-150">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-start gap-3">
+                                    <div class="p-2 bg-purple-50 text-purple-600 rounded-lg border border-purple-100 mt-0.5">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-gray-900 text-xs">Web Serial USB / Kabel Serial</div>
+                                        <p class="text-[11px] text-gray-500 mt-0.5">Memilih port kabel USB printer di komputer kasir (`/dev/ttyUSB0` / `COMx`).</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" @click="scanAndConnectWebSerial()" class="mt-3 w-full py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span>Pilih Port Kabel USB</span>
+                            </button>
+                        </div>
+
+                        <!-- Mode 3: Print Agent Bridge (Local Service) -->
+                        <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-xs hover:border-emerald-300 transition duration-150">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-start gap-3">
+                                    <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 mt-0.5">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-gray-900 text-xs">Raabiha Print Agent (Background Bridge)</div>
+                                        <p class="text-[11px] text-gray-500 mt-0.5">Menghubungkan via layanan agen lokal Node.js (`ws://localhost:8765`).</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" @click="connectToBridge(true)" class="mt-3 w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                <span>Sambung ke Print Agent</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pengaturan Cetak Otomatis (Auto Print Toggle) -->
+                <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-gray-900 text-xs">Cetak Struk Otomatis</div>
+                        <div class="text-[11px] text-gray-500">Otomatis kirim cetakan ke printer setiap pembayaran selesai.</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" x-model="autoPrintReceipt" @change="saveAutoPrintSettings" class="sr-only peer">
+                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
+                <button type="button" @click="showPrinterModal = false" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                    Selesai & Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Detail Rincian Nota Transaksi - Filament Native Style -->
     <div x-show="showDetailOrderModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
         <div class="bg-white w-full max-w-lg rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showDetailOrderModal = false">
@@ -4664,11 +4789,18 @@
                         this.isProcessing = false;
                         this.showCheckoutModal = false;
                         this.previewReceiptData = {
+                            title: (e.detail[0].cash_change > 0 ? 'Pembayaran Berhasil' : 'Struk Transaksi'),
                             order_id: e.detail[0].order_id,
                             orderNumber: e.detail[0].order_number,
                             cashChange: e.detail[0].cash_change,
                             text: e.detail[0].receipt_text,
-                            base64: e.detail[0].base64
+                            base64: e.detail[0].base64,
+                            has_returns: false,
+                            return_id: null,
+                            return_number: null,
+                            return_text: '',
+                            return_base64: '',
+                            activeTab: 'sales'
                         };
                         if (e.detail[0].allPosCustomers) {
                             this.allPosCustomers = e.detail[0].allPosCustomers;
@@ -4735,14 +4867,16 @@
                                 isCloseSession: true,
                                 activeTab: 'sales'
                             };
-                            this.showCloseSessionModal = false;
+                            this.showCloseSession = false;
                             this.showReceiptPreviewModal = true;
 
-                            // Auto-print Z-Report saat tutup shift
-                            setTimeout(() => {
-                                this.printBase64(b64, null);
-                                this.showToast('Mencetak struk tutup shift...', 'info');
-                            }, 500);
+                            // Auto-print Z-Report saat tutup shift (jika opsi auto-print aktif)
+                            if (this.autoPrintReceipt) {
+                                setTimeout(() => {
+                                    this.printBase64(b64, null);
+                                    this.showToast('Mencetak struk tutup shift...', 'info');
+                                }, 500);
+                            }
                         }
                     });
                 },
@@ -5008,109 +5142,119 @@
                     localStorage.setItem('pos_auto_print', this.autoPrintReceipt);
                 },
 
-                async connectPrinter() {
-                    if (this.printerType === 'bluetooth') {
-                        this.showToast('Mencoba koneksi printer...', 'info');
+                async scanAndConnectWebBluetooth() {
+                    if (!navigator.bluetooth) {
+                        this.showToast('Browser Anda tidak mendukung koneksi Bluetooth langsung. Gunakan Chrome atau Edge.', 'error');
+                        return;
+                    }
+                    this.showToast('Memindai printer Bluetooth di sekitar...', 'info');
+                    try {
+                        const knownServices = [
+                            '000018f0-0000-1000-8000-00805f9b34fb',
+                            '0000e025-0000-1000-8000-00805f9b34fb',
+                            '0000ff00-0000-1000-8000-00805f9b34fb',
+                            '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+                            '00001101-0000-1000-8000-00805f9b34fb',
+                        ];
+                        const device = await navigator.bluetooth.requestDevice({
+                            acceptAllDevices: true,
+                            optionalServices: knownServices
+                        });
                         
-                        // 1. Coba sambung via WebSocket Bridge dulu (Prioritas Utama)
-                        try {
-                            await this.connectToBridge();
-                            return;
-                        } catch (bridgeError) {
-                            console.log('Print Agent tidak terdeteksi, mencoba Web Bluetooth...', bridgeError);
-                        }
-
-                        // 2. Fallback ke Web Bluetooth API (BLE)
-                        if (!navigator.bluetooth) {
-                            this.showToast('Browser Anda tidak mendukung koneksi Bluetooth langsung. Pastikan Raabiha Print Agent berjalan.', 'error');
-                            return;
-                        }
-                        try {
-                            const knownServices = [
-                                '000018f0-0000-1000-8000-00805f9b34fb',
-                                '0000e025-0000-1000-8000-00805f9b34fb',
-                                '0000ff00-0000-1000-8000-00805f9b34fb',
-                                '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-                                '00001101-0000-1000-8000-00805f9b34fb',
-                            ];
-                            const device = await navigator.bluetooth.requestDevice({
-                                acceptAllDevices: true,
-                                optionalServices: knownServices
-                            });
-                            const server = await device.gatt.connect();
-                            
-                            let characteristic = null;
-                            const services = await server.getPrimaryServices();
-                            for (const service of services) {
-                                try {
-                                    const characteristics = await service.getCharacteristics();
-                                    for (const c of characteristics) {
-                                        if (c.properties.write || c.properties.writeWithoutResponse) {
-                                            characteristic = c;
-                                            break;
-                                        }
+                        this.showToast('Menghubungkan ke ' + (device.name || 'Printer') + '...', 'info');
+                        const server = await device.gatt.connect();
+                        
+                        let characteristic = null;
+                        const services = await server.getPrimaryServices();
+                        for (const service of services) {
+                            try {
+                                const characteristics = await service.getCharacteristics();
+                                for (const c of characteristics) {
+                                    if (c.properties.write || c.properties.writeWithoutResponse) {
+                                        characteristic = c;
+                                        break;
                                     }
-                                    if (characteristic) break;
-                                } catch (e) {
-                                    console.warn('Skipping service:', service.uuid, e);
                                 }
-                            }
-                            
-                            if (!characteristic) {
-                                throw new Error('Tidak ditemukan saluran penulisan data (writable characteristic) pada printer ini.');
-                            }
-                            
-                            this.printerDevice = device;
-                            this.printerCharacteristic = characteristic;
-                            this.printerConnected = true;
-                            this.printerConnectionMethod = 'ble';
-                            this.showToast('Printer Bluetooth berhasil terhubung!', 'success');
-                            
-                            device.addEventListener('gattserverdisconnected', () => {
-                                this.printerConnected = false;
-                                this.printerConnectionMethod = null;
-                                this.showToast('Koneksi printer terputus. Klik "Printer Offline" untuk menyambung kembali.', 'error');
-                            });
-                        } catch (error) {
-                            console.error(error);
-                            if (error.name === 'NotFoundError' || error.message.includes('cancelled')) {
-                                this.showToast('Pencarian printer dibatalkan.', 'error');
-                            } else if (error.name === 'SecurityError') {
-                                this.showToast('Akses Bluetooth ditolak. Pastikan halaman dibuka lewat HTTPS dan izin Bluetooth diaktifkan.', 'error');
-                            } else {
-                                this.showToast('Gagal terhubung ke printer. Pastikan Raabiha Print Agent berjalan atau printer dinyalakan.', 'error');
+                                if (characteristic) break;
+                            } catch (e) {
+                                console.warn('Skipping service:', service.uuid, e);
                             }
                         }
-                    } else if (this.printerType === 'serial') {
-                        // Cek apakah browser mendukung Serial/USB
-                        if (!navigator.serial) {
-                            this.showToast('Browser Anda tidak mendukung koneksi USB/Serial. Gunakan Google Chrome atau Microsoft Edge.', 'error');
-                            return;
+                        
+                        if (!characteristic) {
+                            throw new Error('Tidak ditemukan saluran penulisan data (writable characteristic) pada printer ini.');
                         }
-                        try {
-                            const port = await navigator.serial.requestPort();
-                            await port.open({ baudRate: 9600 });
-                            this.printerPort = port;
-                            this.printerConnected = true;
-                            this.printerConnectionMethod = 'serial';
-                            this.showToast('Printer USB/Serial berhasil terhubung!', 'success');
-                        } catch (error) {
-                            console.error(error);
-                            if (error.name === 'NotFoundError' || error.message.includes('No port selected')) {
-                                this.showToast('Tidak ada printer USB yang dipilih.', 'error');
-                            } else {
-                                this.showToast('Tidak bisa terhubung ke printer USB. Pastikan kabel terpasang dengan benar.', 'error');
-                            }
+                        
+                        this.printerDevice = device;
+                        this.printerCharacteristic = characteristic;
+                        this.printerConnected = true;
+                        this.printerConnectionMethod = 'ble';
+                        this.printerDeviceName = device.name || 'Printer Bluetooth';
+                        this.printerType = 'bluetooth';
+                        
+                        localStorage.setItem('pos_printer_name', this.printerDeviceName);
+                        localStorage.setItem('pos_printer_type', 'bluetooth');
+                        
+                        this.showToast('Printer Bluetooth ' + this.printerDeviceName + ' terhubung!', 'success');
+                        this.showPrinterModal = false;
+                        
+                        device.addEventListener('gattserverdisconnected', () => {
+                            this.printerConnected = false;
+                            this.printerConnectionMethod = null;
+                            this.showToast('Koneksi printer terputus.', 'error');
+                        });
+                    } catch (error) {
+                        console.error(error);
+                        if (error.name === 'NotFoundError' || error.message.includes('cancelled')) {
+                            this.showToast('Pencarian printer dibatalkan.', 'error');
+                        } else if (error.name === 'SecurityError') {
+                            this.showToast('Akses Bluetooth ditolak. Pastikan halaman dibuka via HTTPS.', 'error');
+                        } else {
+                            this.showToast('Gagal terhubung: ' + error.message, 'error');
                         }
                     }
                 },
 
-                async connectToBridge() {
+                async scanAndConnectWebSerial() {
+                    if (!navigator.serial) {
+                        this.showToast('Browser Anda tidak mendukung koneksi USB/Serial. Gunakan Google Chrome atau Microsoft Edge.', 'error');
+                        return;
+                    }
+                    try {
+                        const port = await navigator.serial.requestPort();
+                        await port.open({ baudRate: 9600 });
+                        this.printerPort = port;
+                        this.printerConnected = true;
+                        this.printerConnectionMethod = 'serial';
+                        this.printerDeviceName = 'Printer USB / Serial Cable';
+                        this.printerType = 'serial';
+                        
+                        localStorage.setItem('pos_printer_name', this.printerDeviceName);
+                        localStorage.setItem('pos_printer_type', 'serial');
+                        
+                        this.showToast('Printer USB/Serial berhasil terhubung!', 'success');
+                        this.showPrinterModal = false;
+                    } catch (error) {
+                        console.error(error);
+                        if (error.name === 'NotFoundError' || error.message.includes('No port selected')) {
+                            this.showToast('Tidak ada port USB yang dipilih.', 'error');
+                        } else {
+                            this.showToast('Gagal terhubung ke USB: ' + error.message, 'error');
+                        }
+                    }
+                },
+
+                async connectToBridge(showNotify = false) {
                     return new Promise((resolve, reject) => {
-                        const ws = new WebSocket('ws://localhost:8765');
+                        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                        const wsUrl = wsProtocol + '//localhost:8765';
+                        const ws = new WebSocket(wsUrl);
+                        
                         ws.onopen = () => {
                             this.bridgeSocket = ws;
                             this.printerConnectionMethod = 'bridge';
+                            this.printerType = 'bridge';
+                            this.printerDeviceName = 'Raabiha Print Agent';
                             
                             ws.onmessage = (event) => {
                                 try {
@@ -5119,13 +5263,14 @@
                                         this.printerConnected = msg.connected;
                                         if (msg.connected) {
                                             this.showToast('Terhubung via Raabiha Print Agent!', 'success');
+                                            this.showPrinterModal = false;
                                             resolve();
                                         } else {
                                             this.showToast('Print Agent berjalan, tetapi printer belum terhubung. Nyalakan printer.', 'warning');
                                             resolve();
                                         }
                                     } else if (msg.type === 'error') {
-                                        this.showToast('Error Printer: ' + msg.message, 'error');
+                                        this.showToast('Error Printer Agent: ' + msg.message, 'error');
                                     } else if (msg.type === 'print_ok') {
                                         console.log('Print success via bridge');
                                     }
@@ -5136,13 +5281,38 @@
                                 this.printerConnected = false;
                                 this.bridgeSocket = null;
                                 this.printerConnectionMethod = null;
-                                this.showToast('Koneksi ke Print Agent terputus.', 'error');
+                                if (showNotify) {
+                                    this.showToast('Koneksi ke Print Agent terputus.', 'error');
+                                }
                             };
                         };
                         ws.onerror = (e) => {
+                            if (showNotify) {
+                                this.showToast('Tidak bisa terhubung ke Print Agent. Pastikan agent berjalan di port 8765.', 'error');
+                            }
                             reject(e);
                         };
                     });
+                },
+
+                disconnectPrinter() {
+                    if (this.printerDevice && this.printerDevice.gatt && this.printerDevice.gatt.connected) {
+                        try { this.printerDevice.gatt.disconnect(); } catch (e) {}
+                    }
+                    if (this.printerPort) {
+                        try { this.printerPort.close(); } catch (e) {}
+                    }
+                    if (this.bridgeSocket) {
+                        try { this.bridgeSocket.close(); } catch (e) {}
+                    }
+                    this.printerConnected = false;
+                    this.printerConnectionMethod = null;
+                    this.printerDevice = null;
+                    this.printerCharacteristic = null;
+                    this.printerPort = null;
+                    this.bridgeSocket = null;
+                    this.printerDeviceName = '';
+                    this.showToast('Koneksi printer berhasil diputuskan.', 'info');
                 },
 
                 async printBase64(base64Data, orderId = null) {
