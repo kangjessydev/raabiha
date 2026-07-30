@@ -77,6 +77,7 @@
     <meta name="apple-mobile-web-app-title" content="Raabiha POS">
 
     @livewireStyles
+    @livewireScriptConfig
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased overflow-hidden selection:bg-brand-500 selection:text-white">
     
