@@ -61,13 +61,20 @@ class BluetoothPrinter extends EventEmitter {
         try {
             // Coba release dulu jika sudah ada
             execSync(`sudo rfcomm release ${devNum} 2>/dev/null || true`, { stdio: 'pipe' });
+            // Tunggu sebentar agar release selesai
+            await new Promise(r => setTimeout(r, 500));
             // Bind
             execSync(`sudo rfcomm bind ${devNum} ${mac} 1`, { stdio: 'pipe' });
             // Beri izin baca/tulis ke port agar nodejs bisa akses tanpa sudo
             execSync(`sudo chmod 666 ${device}`, { stdio: 'pipe' });
-            // Set port ke mode raw agar kernel tidak merusak byte ESC/POS
-            execSync(`stty -F ${device} raw -echo -echoe -echok`, { stdio: 'pipe' });
             console.log(`[BT] ✅ rfcomm bind berhasil: ${device}`);
+            // Set port ke mode raw agar kernel tidak merusak byte ESC/POS
+            // Jalankan dengan sudo, dan jadikan non-fatal (tidak semua driver butuh ini)
+            try {
+                execSync(`sudo stty -F ${device} raw -echo -echoe -echok`, { stdio: 'pipe' });
+            } catch (sttyErr) {
+                console.warn(`[BT] stty warning (non-fatal): ${sttyErr.message.split('\n')[0]}`);
+            }
         } catch (err) {
             console.error('[BT] rfcomm bind gagal:', err.message);
             console.error('[BT] Pastikan bluez-utils terinstall: sudo apt install bluez');

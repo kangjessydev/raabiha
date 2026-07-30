@@ -1524,24 +1524,88 @@
                 }" x-init="displayEndingCash = formatRupiah($wire.actualEndingCash)">
                     <div class="p-6 space-y-4">
                         @if($activeSession)
+                        @php
+                            // Hanya hitung order tunai (cash/tunai), exclude QRIS, transfer, dll, dan cancelled
+                            $cashOrders = $activeSession->orders()
+                                ->whereNotIn('status', ['cancelled'])
+                                ->where(function ($q) {
+                                    $q->where('payment_method', 'cash')
+                                      ->orWhere('payment_method', 'tunai');
+                                });
+                            $totalCashSales = $cashOrders->sum('cash_paid') - $cashOrders->sum('cash_change');
+
+                            $pettyCashIn = \App\Models\Cashflow::where('source', 'pos')
+                                ->where('category', 'pos_petty_cash')
+                                ->where('type', 'in')
+                                ->where('created_at', '>=', $activeSession->opened_at)
+                                ->sum('amount');
+
+                            $pettyCashOut = \App\Models\Cashflow::where('source', 'pos')
+                                ->where('category', 'pos_petty_cash')
+                                ->where('type', 'out')
+                                ->where('created_at', '>=', $activeSession->opened_at)
+                                ->sum('amount');
+
+                            $exchangeExtraPayIn = \App\Models\Cashflow::where('source', 'pos')
+                                ->where('category', 'pos_exchange_pay')
+                                ->where('type', 'in')
+                                ->where('created_at', '>=', $activeSession->opened_at)
+                                ->sum('amount');
+
+                            $voidAndRefundCashOut = \App\Models\Cashflow::where('source', 'pos')
+                                ->where('type', 'out')
+                                ->where('created_at', '>=', $activeSession->opened_at)
+                                ->where(function ($q) {
+                                    $q->where('category', 'pos_return_refund')
+                                      ->orWhere(function ($q2) {
+                                          $q2->where('category', 'pos_void')
+                                             ->whereHas('order', function ($q3) {
+                                                 $q3->whereIn('payment_method', ['cash', 'tunai']);
+                                             });
+                                      });
+                                })
+                                ->sum('amount');
+
+                            $modalEstimasi = $activeSession->opening_cash
+                                + $totalCashSales
+                                + $pettyCashIn
+                                + $exchangeExtraPayIn
+                                - $pettyCashOut
+                                - $voidAndRefundCashOut;
+                        @endphp
                         <div class="bg-gray-50 p-3.5 rounded-lg border border-gray-200 space-y-2 text-xs">
                             <div class="flex justify-between">
                                 <span class="text-gray-600 font-medium">Modal Awal Shift:</span>
                                 <span class="font-semibold text-gray-900">Rp {{ number_format($activeSession->opening_cash, 0, ',', '.') }}</span>
                             </div>
-                            @php
-                                $sales = $activeSession->orders()->sum('cash_paid') - $activeSession->orders()->sum('cash_change');
-                                $expected = $activeSession->opening_cash + $sales;
-                            @endphp
                             <div class="flex justify-between">
                                 <span class="text-gray-600 font-medium">Penjualan Tunai:</span>
-                                <span class="font-semibold text-emerald-600">+ Rp {{ number_format($sales, 0, ',', '.') }}</span>
+                                <span class="font-semibold text-emerald-600">+ Rp {{ number_format($totalCashSales, 0, ',', '.') }}</span>
                             </div>
+                            @if($pettyCashIn > 0)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 font-medium">Kas Masuk (Petty Cash):</span>
+                                <span class="font-semibold text-emerald-600">+ Rp {{ number_format($pettyCashIn, 0, ',', '.') }}</span>
+                            </div>
+                            @endif
+                            @if($pettyCashOut > 0)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 font-medium">Kas Keluar (Petty Cash):</span>
+                                <span class="font-semibold text-rose-600">- Rp {{ number_format($pettyCashOut, 0, ',', '.') }}</span>
+                            </div>
+                            @endif
+                            @if($voidAndRefundCashOut > 0)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600 font-medium">Void / Refund Tunai:</span>
+                                <span class="font-semibold text-rose-600">- Rp {{ number_format($voidAndRefundCashOut, 0, ',', '.') }}</span>
+                            </div>
+                            @endif
                             <div class="border-t border-gray-200 pt-2 flex justify-between items-center">
                                 <span class="font-semibold text-gray-700">Estimasi Uang Fisik Laci:</span>
-                                <span class="font-bold text-emerald-700 text-xs">Rp {{ number_format($expected, 0, ',', '.') }}</span>
+                                <span class="font-bold text-emerald-700 text-xs">Rp {{ number_format($modalEstimasi, 0, ',', '.') }}</span>
                             </div>
                         </div>
+
                         @endif
 
                         <div>
@@ -1579,7 +1643,7 @@
                         <button type="button" @click="showCloseSession = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
                         <button 
                             type="submit" 
-                            wire:loading.attr="disabled"
+                            wire:loading.attr="disabled" wire:target="closeSession"
                             class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1.5"
                         >
                             <svg wire:loading wire:target="closeSession" class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
@@ -4673,6 +4737,12 @@
                             };
                             this.showCloseSessionModal = false;
                             this.showReceiptPreviewModal = true;
+
+                            // Auto-print Z-Report saat tutup shift
+                            setTimeout(() => {
+                                this.printBase64(b64, null);
+                                this.showToast('Mencetak struk tutup shift...', 'info');
+                            }, 500);
                         }
                     });
                 },
