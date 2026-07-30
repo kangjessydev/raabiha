@@ -634,7 +634,7 @@
                     title="Tambah Produk Kustom / Nego Impor"
                     class="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-300 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-all cursor-pointer">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                    <span class="hidden md:inline">+ Produk Kustom</span>
+                    <span class="hidden md:inline">Produk Kustom</span>
                 </button>
 
                 <!-- Tombol Muat Ulang POS (Refresh) -->
@@ -1423,7 +1423,7 @@
                                 <div x-show="activeCustomerLoyalty" x-transition class="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-xs">
                                     <div class="font-bold text-amber-900 flex items-center justify-between">
                                         <span>Informasi Stempel Pelanggan:</span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300" x-text="(activeCustomerLoyalty.stamp_count || 0) + ' / 9 Cap'"></span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300" x-text="(activeCustomerLoyalty?.stamp_count || 0) + ' / 9 Cap'"></span>
                                     </div>
                                     <template x-if="availableLoyaltyVouchersForCustomer.length > 0">
                                         <div class="mt-2">
@@ -1451,7 +1451,7 @@
                                     </template>
                                     <template x-if="availableLoyaltyVouchersForCustomer.length === 0">
                                         <div class="text-[11px] text-amber-800 mt-1">
-                                            Saldo stempel pelanggan saat ini: <strong x-text="(activeCustomerLoyalty.stamp_count || 0)"></strong> Cap. Stempel baru akan ditambahkan otomatis setelah pembayaran selesai.
+                                            Saldo stempel pelanggan saat ini: <strong x-text="(activeCustomerLoyalty?.stamp_count || 0)"></strong> Cap. Stempel baru akan ditambahkan otomatis setelah pembayaran selesai.
                                         </div>
                                     </template>
                                 </div>
@@ -4413,6 +4413,7 @@
                 variantAttributeGroups: [],
                 
                 // Printer State
+                showPrinterModal: false,
                 printerConnected: false,
                 autoPrintReceipt: localStorage.getItem('pos_auto_print') === 'true',
                 printerDevice: null,
