@@ -629,6 +629,14 @@
                     <span x-text="printerConnected ? 'Printer OK' : 'Printer Offline'" class="hidden sm:inline whitespace-nowrap"></span>
                 </button>
 
+                <!-- Tombol Input Produk Kustom Fast Entry -->
+                <button type="button" @click="showCustomProductModal = true"
+                    title="Tambah Produk Kustom / Nego Impor"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-300 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-all cursor-pointer">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    <span class="hidden md:inline">+ Produk Kustom</span>
+                </button>
+
                 <!-- Tombol Muat Ulang POS (Refresh) -->
                 <button type="button" @click="reloadPos()"
                     title="Muat Ulang POS / Refresh Halaman"
@@ -4139,6 +4147,128 @@
         </div>
     </div>
 
+    <!-- Modal Input Produk Kustom Fast Entry - Filament Native Style -->
+    <div x-show="showCustomProductModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+        <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showCustomProductModal = false">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 bg-amber-50 rounded-lg text-amber-600 border border-amber-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-gray-950 leading-tight">Tambah Produk Kustom / Impor</h3>
+                        <p class="text-xs text-gray-500 font-medium">Input cepat barang nego/impor on-the-fly</p>
+                    </div>
+                </div>
+                <button @click="showCustomProductModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
+            </div>
+
+            <!-- Form Content -->
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs bg-gray-50/50">
+                <div>
+                    <label class="block font-bold text-gray-900 mb-1">Nama Produk Kustom</label>
+                    <input type="text" x-model="customProductName" placeholder="misal: Baju Korea Impor Type A" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-medium">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-gray-900 mb-1">Harga Modal / HPP (Rp)</label>
+                        <input type="number" x-model.number="customPurchasePrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-900 mb-1">Harga Jual Nego (Rp)</label>
+                        <input type="number" x-model.number="customPrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-bold text-emerald-950">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-gray-900 mb-1">Jumlah (Qty)</label>
+                    <input type="number" x-model.number="customQty" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
+                </div>
+
+                <!-- Centangan ala Majoo POS -->
+                <div class="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-gray-900 text-xs">Simpan ke Katalog POS</div>
+                        <div class="text-[11px] text-gray-500">Tampilkan produk ini di grid POS untuk transaksi berikutnya.</div>
+                    </div>
+                    <input type="checkbox" x-model="customSaveToCatalog" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
+                <button type="button" @click="showCustomProductModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                    Batal
+                </button>
+                <button type="button" @click="addCustomProductToCart()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                    + Tambah ke Keranjang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pelunasan Kasbon / Piutang - Filament Native Style -->
+    <div x-show="showDebtPaymentModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+        <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showDebtPaymentModal = false">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600 border border-emerald-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-gray-950 leading-tight">Terima Pelunasan Kasbon</h3>
+                        <p class="text-xs text-gray-500 font-medium" x-text="selectedDebtOrder ? ('Nota #' + selectedDebtOrder.order_number) : 'Pelunasan Piutang Pelanggan'"></p>
+                    </div>
+                </div>
+                <button @click="showDebtPaymentModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs bg-gray-50/50" x-show="selectedDebtOrder">
+                <!-- Info Order & Total Piutang -->
+                <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-center">
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-amber-800" x-text="'Pelanggan: ' + (selectedDebtOrder ? selectedDebtOrder.customer_name : '')"></div>
+                    <div class="text-2xl font-black text-amber-950 mt-1">
+                        Rp <span x-text="formatMoney(selectedDebtOrder ? selectedDebtOrder.due_amount : 0)"></span>
+                    </div>
+                    <div class="text-[11px] text-amber-700 mt-0.5">Sisa Kasbon yang Harus Dilunasi</div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-gray-900 mb-1">Nominal Pembayaran (Rp)</label>
+                    <input type="number" x-model.number="debtPaymentAmount" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-base font-extrabold text-gray-950">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-gray-900 mb-1">Metode Pembayaran</label>
+                    <select x-model="debtPaymentMethod" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
+                        <option value="cash">Tunai Kasir</option>
+                        <option value="qris">QRIS</option>
+                        <option value="transfer">Transfer Bank</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-gray-900 mb-1">Catatan Pelunasan</label>
+                    <input type="text" x-model="debtPaymentNotes" placeholder="misal: Pelunasan tunai dari Pak Ahmad" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-medium">
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
+                <button type="button" @click="showDebtPaymentModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                    Batal
+                </button>
+                <button type="button" @click="submitDebtPayment()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                    Simpan Pelunasan Kasbon
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Detail Rincian Nota Transaksi - Filament Native Style -->
     <div x-show="showDetailOrderModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
         <div class="bg-white w-full max-w-lg rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showDetailOrderModal = false">
@@ -4291,6 +4421,21 @@
                 printerPort: null,
                 bridgeSocket: null,
                 printerConnectionMethod: null, // 'ble', 'serial', 'bridge'
+                // State Modal Produk Kustom Fast Entry
+                showCustomProductModal: false,
+                customProductName: '',
+                customPrice: '',
+                customPurchasePrice: '',
+                customQty: 1,
+                customSaveToCatalog: false,
+
+                // State Modal Pelunasan Kasbon
+                showDebtPaymentModal: false,
+                selectedDebtOrder: null,
+                debtPaymentAmount: 0,
+                debtPaymentMethod: 'cash',
+                debtPaymentNotes: '',
+
                 heldCarts: [],
                 showHoldModal: false,
                 showReceiptPreviewModal: false,
@@ -4931,64 +5076,69 @@
                         const otherItems = this.cart.length > 1 ? ` + ${this.cart.length - 1} item` : '';
                         defaultName = `${firstItem}${otherItems}`;
                     }
-
-                    this.askInput(
-                        'Simpan ke Antrean',
-                        'Berikan catatan, nomor meja, atau nama pelanggan untuk antrean ini:',
-                        'Contoh: Meja 4 / Budi',
-                        defaultName,
-                        (val) => {
-                            const holdId = Date.now();
-                            const now = new Date();
-                            const holdTime = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
-                            this.heldCarts.push({
+                    this.askConfirm(
+                        'Tahan Pesanan?', 
+                        'Pesanan saat ini akan disimpan ke antrean toko dan keranjang akan dikosongkan. Lanjutkan?', 
+                        () => {
+                            const holdId = 'HOLD-' + Date.now();
+                            const newHold = {
                                 id: holdId,
-                                time: holdTime,
-                                name: val || defaultName,
+                                time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                                customerName: this.customerName || 'Umum',
+                                customerPhone: this.customerPhone || '',
                                 cart: JSON.parse(JSON.stringify(this.cart)),
                                 activeVoucher: this.activeVoucher,
                                 manualDiscountType: this.manualDiscountType,
                                 manualDiscountValue: this.manualDiscountValue,
-                                customerName: this.customerName,
-                                customerPhone: this.customerPhone,
                                 total: this.subtotal
-                            });
-                            
+                            };
+
+                            this.heldCarts.unshift(newHold);
                             this.saveHeldCarts();
+
+                            // Sync ke database toko agar kasir lain & shift berikutnya bisa akses!
+                            @this.call('saveHeldCartToDb', JSON.stringify({
+                                hold_id: holdId,
+                                customer_name: this.customerName || 'Umum',
+                                customer_phone: this.customerPhone || '',
+                                cart_data: newHold,
+                                total: this.subtotal
+                            }));
+
                             this.clearCart(true);
-                            this.showToast('Pesanan berhasil dimasukkan ke antrean', 'success');
+                            this.showToast('Pesanan berhasil dimasukkan ke antrean toko', 'success');
                         }
                     );
                 },
 
-                resumeCart(id) {
-                    const index = this.heldCarts.findIndex(h => h.id === id);
-                    if (index !== -1) {
-                        const doResume = () => {
-                            const hold = this.heldCarts[index];
-                            this.cart = hold.cart;
-                            this.activeVoucher = hold.activeVoucher || null;
-                            this.manualDiscountType = hold.manualDiscountType || 'rp';
-                            this.manualDiscountValue = hold.manualDiscountValue || 0;
-                            this.customerName = hold.customerName || '';
-                            this.customerPhone = hold.customerPhone || '';
-                            
-                            this.heldCarts.splice(index, 1);
-                            this.saveHeldCarts();
-                            this.showHoldModal = false;
-                            this.showToast('Antrean berhasil dilanjutkan', 'success');
-                        };
+                resumeCart(id, holdItem = null) {
+                    const doResume = (holdData) => {
+                        this.cart = holdData.cart;
+                        this.activeVoucher = holdData.activeVoucher || null;
+                        this.manualDiscountType = holdData.manualDiscountType || 'rp';
+                        this.manualDiscountValue = holdData.manualDiscountValue || 0;
+                        this.customerName = holdData.customerName || '';
+                        this.customerPhone = holdData.customerPhone || '';
+                        
+                        this.heldCarts = this.heldCarts.filter(h => h.id !== id);
+                        this.saveHeldCarts();
+                        @this.call('deleteHeldCartFromDb', id);
 
-                        if (this.cart.length > 0) {
-                            this.askConfirm(
-                                'Tumpuk Keranjang?', 
-                                'Keranjang Anda saat ini tidak kosong. Jika dilanjutkan, belanjaan saat ini akan terganti oleh antrean yang dipanggil. Lanjutkan?', 
-                                doResume
-                            );
-                        } else {
-                            doResume();
-                        }
+                        this.showHoldModal = false;
+                        this.showToast('Antrean berhasil dilanjutkan', 'success');
+                    };
+
+                    const targetHold = holdItem || this.heldCarts.find(h => h.id === id);
+                    if (!targetHold) return;
+
+                    if (this.cart.length > 0) {
+                        this.askConfirm(
+                            'Tumpuk Keranjang?', 
+                            'Keranjang Anda saat ini tidak kosong. Jika dilanjutkan, belanjaan saat ini akan terganti oleh antrean yang dipanggil. Lanjutkan?', 
+                            () => doResume(targetHold)
+                        );
+                    } else {
+                        doResume(targetHold);
                     }
                 },
 
@@ -4999,8 +5149,86 @@
                         () => {
                             this.heldCarts = this.heldCarts.filter(h => h.id !== id);
                             this.saveHeldCarts();
+                            @this.call('deleteHeldCartFromDb', id);
                         }
                     );
+                },
+
+                addCustomProductToCart() {
+                    if (!this.customProductName.trim()) {
+                        this.showToast('Nama produk kustom wajib diisi.', 'error');
+                        return;
+                    }
+                    if (!this.customPrice || this.customPrice <= 0) {
+                        this.showToast('Harga jual nego harus lebih dari 0.', 'error');
+                        return;
+                    }
+                    if (!this.customQty || this.customQty <= 0) {
+                        this.showToast('Jumlah qty harus minimal 1.', 'error');
+                        return;
+                    }
+
+                    // Proteksi Margin: jika harga nego < harga modal (HPP), minta otorisasi PIN Supervisor
+                    if (this.customPurchasePrice > 0 && this.customPrice < this.customPurchasePrice) {
+                        this.askSupervisorPin(
+                            'Otorisasi Produk di Bawah Modal (HPP)',
+                            'Harga jual (Rp ' + this.formatMoney(this.customPrice) + ') berada di bawah harga modal (Rp ' + this.formatMoney(this.customPurchasePrice) + '). Wajib otorisasi Supervisor.',
+                            (supId) => {
+                                this.pushCustomItemToCart();
+                            }
+                        );
+                        return;
+                    }
+
+                    this.pushCustomItemToCart();
+                },
+
+                pushCustomItemToCart() {
+                    this.triggerCartBounce();
+                    this.cart.unshift({
+                        is_custom: true,
+                        product_id: null,
+                        product_variant_id: null,
+                        name: this.customProductName.trim(),
+                        price: parseFloat(this.customPrice),
+                        purchase_price: parseFloat(this.customPurchasePrice || 0),
+                        quantity: parseInt(this.customQty),
+                        save_to_catalog: this.customSaveToCatalog
+                    });
+
+                    this.customProductName = '';
+                    this.customPrice = '';
+                    this.customPurchasePrice = '';
+                    this.customQty = 1;
+                    this.customSaveToCatalog = false;
+                    this.showCustomProductModal = false;
+                    this.showToast('Produk kustom berhasil ditambahkan ke keranjang!', 'success');
+                    this.calculateVoucherDiscount();
+                },
+
+                openDebtPaymentModal(order) {
+                    this.selectedDebtOrder = order;
+                    this.debtPaymentAmount = order.due_amount || 0;
+                    this.debtPaymentMethod = 'cash';
+                    this.debtPaymentNotes = '';
+                    this.showDebtPaymentModal = true;
+                },
+
+                submitDebtPayment() {
+                    if (!this.selectedDebtOrder) return;
+                    if (!this.debtPaymentAmount || this.debtPaymentAmount <= 0) {
+                        this.showToast('Nominal pelunasan kasbon harus lebih dari 0.', 'error');
+                        return;
+                    }
+
+                    @this.call('processDebtPayment', JSON.stringify({
+                        order_id: this.selectedDebtOrder.id,
+                        amount_paid: this.debtPaymentAmount,
+                        payment_method: this.debtPaymentMethod,
+                        notes: this.debtPaymentNotes
+                    }));
+
+                    this.showDebtPaymentModal = false;
                 },
 
                 addProduct(id, name, price, hasVariants, variants = null, defaultImage = null) {

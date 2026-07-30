@@ -37,6 +37,46 @@ class PosTransactionService
             foreach ($items as $item) {
                 $qty = (int) $item['quantity'];
                 
+                // Cek jika produk KUSTOM (Fast Entry)
+                if (!empty($item['is_custom']) || empty($item['product_id'])) {
+                    $customName = $item['name'] ?? 'Produk Kustom';
+                    $customPrice = (float) ($item['price'] ?? 0);
+                    $customPurchasePrice = (float) ($item['purchase_price'] ?? 0);
+                    $saveToCatalog = !empty($item['save_to_catalog']);
+
+                    $productId = null;
+
+                    if ($saveToCatalog) {
+                        // Simpan ke katalog POS agar dapat dipakai lagi di masa depan (ala Majoo POS)
+                        $newProduct = Product::create([
+                            'name' => $customName,
+                            'slug' => \Illuminate\Support\Str::slug($customName) . '-' . time(),
+                            'price' => $customPrice,
+                            'pos_price' => $customPrice,
+                            'purchase_price' => $customPurchasePrice,
+                            'stock' => $qty,
+                            'is_active' => true,
+                            'channel_visibility' => 'pos_only',
+                        ]);
+                        $productId = $newProduct->id;
+                    }
+
+                    $subtotal += ($customPrice * $qty);
+                    $totalPurchasePrice += ($customPurchasePrice * $qty);
+
+                    $orderItemsData[] = [
+                        'type' => 'custom',
+                        'product_id' => $productId,
+                        'product_variant_id' => null,
+                        'name' => $customName,
+                        'price' => $customPrice,
+                        'quantity' => $qty,
+                        'purchase_price' => $customPurchasePrice,
+                        'locked_model' => null,
+                    ];
+                    continue;
+                }
+
                 if (isset($item['product_variant_id']) && $item['product_variant_id']) {
                     $lockedVariant = ProductVariant::where('id', $item['product_variant_id'])
                         ->lockForUpdate()
@@ -124,7 +164,17 @@ class PosTransactionService
             $paymentDetails['manual_discount'] = (float) ($data['manual_discount'] ?? 0);
             $paymentDetails['voucher_discount'] = (float) ($data['voucher_discount'] ?? 0);
             
-            // 2. Buat Order (Gunakan placeholder sementara untuk menjamin keunikan ID)
+            $isKasbon = ($data['payment_method'] ?? 'cash') === 'kasbon';
+            $paymentStatus = $isKasbon ? 'unpaid' : 'paid';
+            $dueAmount = $isKasbon ? $grandTotal : 0;
+            $orderCashPaid = $isKasbon ? 0 : $cashPaid;
+            $orderCashChange = $isKasbon ? 0 : $cashChange;
+
+            if ($isKasbon && (empty($normalizedPhone) && empty($customerName))) {
+                throw new Exception("Transaksi Kasbon wajib memilih/mengisi data Pelanggan.");
+            }
+
+            // 2. Buat Order
             $order = Order::create([
                 'order_number' => 'POS-TEMP-' . uniqid(),
                 'user_id' => null, // Pembeli di toko fisik
@@ -138,10 +188,12 @@ class PosTransactionService
                 'discount_total' => $discount,
                 'grand_total' => $grandTotal,
                 'status' => 'completed',
-                'payment_status' => 'paid',
+                'payment_status' => $paymentStatus,
                 'payment_method' => $data['payment_method'] ?? 'cash',
-                'cash_paid' => $cashPaid,
-                'cash_change' => $cashChange,
+                'cash_paid' => $orderCashPaid,
+                'cash_change' => $orderCashChange,
+                'due_amount' => $dueAmount,
+                'is_kasbon' => $isKasbon,
                 'payment_details' => json_encode($paymentDetails),
                 'total_purchase_price' => $totalPurchasePrice,
                 'is_dropship' => false,
@@ -156,22 +208,24 @@ class PosTransactionService
                 $qty = $itemData['quantity'];
                 $lockedModel = $itemData['locked_model'];
                 
-                $before = $lockedModel->stock;
-                $lockedModel->decrement('stock', $qty);
-                $after = $before - $qty;
+                if ($lockedModel) {
+                    $before = $lockedModel->stock;
+                    $lockedModel->decrement('stock', $qty);
+                    $after = $before - $qty;
 
-                // Catat Log Stok
-                StockLog::create([
-                    'product_id' => $itemData['product_id'],
-                    'product_variant_id' => $itemData['product_variant_id'],
-                    'type' => 'out',
-                    'quantity_before' => $before,
-                    'quantity_change' => -$qty,
-                    'quantity_after' => $after,
-                    'reason' => 'Sales',
-                    'notes' => 'Penjualan POS #' . $order->order_number,
-                    'user_id' => $cashierId,
-                ]);
+                    // Catat Log Stok
+                    StockLog::create([
+                        'product_id' => $itemData['product_id'],
+                        'product_variant_id' => $itemData['product_variant_id'],
+                        'type' => 'out',
+                        'quantity_before' => $before,
+                        'quantity_change' => -$qty,
+                        'quantity_after' => $after,
+                        'reason' => $isKasbon ? 'Sales (Kasbon)' : 'Sales',
+                        'notes' => 'Penjualan POS #' . $order->order_number,
+                        'user_id' => $cashierId,
+                    ]);
+                }
 
                 // Buat Order Item
                 OrderItem::create([
@@ -186,13 +240,13 @@ class PosTransactionService
                 ]);
             }
 
-            // 4. Catat Cashflow otomatis (Karena observer dilewati)
+            // 4. Catat Cashflow otomatis
             Cashflow::create([
                 'transaction_date' => now()->toDateString(),
                 'type' => 'in',
-                'category' => 'pos_sale',
-                'amount' => $grandTotal,
-                'description' => 'Penjualan POS #' . $order->order_number,
+                'category' => $isKasbon ? 'pos_sale_kasbon' : 'pos_sale',
+                'amount' => $isKasbon ? 0 : $grandTotal,
+                'description' => ($isKasbon ? 'Penjualan Kasbon POS #' : 'Penjualan POS #') . $order->order_number,
                 'order_id' => $order->id,
                 'source' => 'pos',
                 'is_reversed' => false,
@@ -614,6 +668,74 @@ class PosTransactionService
             }
 
             return $posReturn;
+        });
+    }
+
+    /**
+     * Memproses pelunasan piutang/kasbon pelanggan oleh kasir.
+     */
+    public function processDebtPayment(array $data)
+    {
+        return DB::transaction(function () use ($data) {
+            $orderId = $data['order_id'];
+            $amountPaid = (float) $data['amount_paid'];
+            $paymentMethod = $data['payment_method'] ?? 'cash';
+            $cashierId = $data['user_id'];
+            $posSessionId = $data['pos_session_id'] ?? null;
+            $notes = $data['notes'] ?? 'Pelunasan Kasbon';
+
+            $order = Order::where('id', $orderId)->lockForUpdate()->firstOrFail();
+
+            if (!$order->is_kasbon) {
+                throw new Exception("Nota transaksi ini bukan transaksi kasbon.");
+            }
+
+            if ($order->payment_status === 'paid' || $order->due_amount <= 0) {
+                throw new Exception("Kasbon pada nota transaksi ini sudah lunas.");
+            }
+
+            if ($amountPaid <= 0) {
+                throw new Exception("Nominal pembayaran harus lebih dari 0.");
+            }
+
+            $customer = \App\Models\PosCustomer::where('phone', $order->customer_phone)->first();
+            $customerId = $customer ? $customer->id : null;
+
+            // Catat transaksi pelunasan piutang
+            $debtPayment = \App\Models\PosDebtPayment::create([
+                'order_id' => $order->id,
+                'pos_customer_id' => $customerId,
+                'pos_session_id' => $posSessionId,
+                'user_id' => $cashierId,
+                'payment_method' => $paymentMethod,
+                'amount_paid' => $amountPaid,
+                'notes' => $notes,
+            ]);
+
+            // Update order due amount & payment status
+            $newDueAmount = max(0, $order->due_amount - $amountPaid);
+            $newPaidAmount = $order->cash_paid + $amountPaid;
+            $newStatus = ($newDueAmount == 0) ? 'paid' : 'partial';
+
+            $order->update([
+                'due_amount' => $newDueAmount,
+                'cash_paid' => $newPaidAmount,
+                'payment_status' => $newStatus,
+            ]);
+
+            // Catat Cashflow fisik di laci kasir penerima (Kasir B)
+            Cashflow::create([
+                'transaction_date' => now()->toDateString(),
+                'type' => 'in',
+                'category' => 'pos_debt_payment',
+                'amount' => $amountPaid,
+                'description' => 'Pelunasan Kasbon Nota #' . $order->order_number . ' a/n ' . ($order->customer_name ?: 'Pelanggan'),
+                'order_id' => null,
+                'source' => 'pos',
+                'is_reversed' => false,
+            ]);
+
+            return $debtPayment;
         });
     }
 }

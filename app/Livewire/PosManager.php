@@ -1700,4 +1700,58 @@ class PosManager extends Component
 
         return $formatted;
     }
+
+    public function saveHeldCartToDb($payload)
+    {
+        $data = is_string($payload) ? json_decode($payload, true) : $payload;
+        \App\Models\PosHeldCart::updateOrCreate(
+            ['hold_id' => $data['hold_id']],
+            [
+                'cashier_name' => Auth::user()->name ?? 'Kasir',
+                'user_id' => Auth::id(),
+                'customer_name' => $data['customer_name'] ?? null,
+                'customer_phone' => $data['customer_phone'] ?? null,
+                'cart_data' => $data['cart_data'] ?? [],
+                'total' => (float) ($data['total'] ?? 0),
+            ]
+        );
+        $this->dispatch('notify', ['type' => 'success', 'message' => 'Antrean keranjang berhasil disimpan ke server toko!']);
+    }
+
+    public function deleteHeldCartFromDb($holdId)
+    {
+        \App\Models\PosHeldCart::where('hold_id', $holdId)->delete();
+    }
+
+    public function processDebtPayment($payload)
+    {
+        if (!$this->activeSession) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Sesi kasir belum dibuka!']);
+            return;
+        }
+
+        $data = is_string($payload) ? json_decode($payload, true) : $payload;
+        $data['user_id'] = Auth::id();
+        $data['pos_session_id'] = $this->activeSession->id;
+
+        try {
+            $debtPayment = app(PosTransactionService::class)->processDebtPayment($data);
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Pelunasan Kasbon Rp ' . number_format($debtPayment->amount_paid, 0, ',', '.') . ' berhasil dicatat!']);
+            $this->dispatch('debt-payment-success');
+        } catch (\Exception $e) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal pelunasan kasbon: ' . $e->getMessage()]);
+        }
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function activeEventPromotions()
+    {
+        return \App\Models\PosEventPromotion::active()->get();
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function sharedHeldCarts()
+    {
+        return \App\Models\PosHeldCart::latest()->get();
+    }
 }

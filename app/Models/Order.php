@@ -46,6 +46,8 @@ class Order extends Model
         'customer_phone',
         'cash_paid',
         'cash_change',
+        'due_amount',
+        'is_kasbon',
         'payment_details',
         'void_by_id',
         'void_reason',
@@ -59,6 +61,8 @@ class Order extends Model
         'shipping_cost' => 'decimal:2',
         'discount_total' => 'decimal:2',
         'grand_total' => 'decimal:2',
+        'due_amount' => 'decimal:2',
+        'is_kasbon' => 'boolean',
         'void_at' => 'datetime',
     ];
 
@@ -95,6 +99,11 @@ class Order extends Model
     public function refundRequest(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(RefundRequest::class);
+    }
+
+    public function debtPayments(): HasMany
+    {
+        return $this->hasMany(PosDebtPayment::class);
     }
 
     public function orderRequests(): \Illuminate\Database\Eloquent\Relations\HasMany

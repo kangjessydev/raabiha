@@ -109,6 +109,11 @@ class PosCustomerResource extends Resource
                     ->label('Total Belanja')
                     ->money('IDR')
                     ->sortable(),
+                TextColumn::make('total_debt')
+                    ->label('Sisa Kasbon')
+                    ->formatStateUsing(fn ($record) => $record->total_debt > 0 ? 'Rp ' . number_format($record->total_debt, 0, ',', '.') : 'Lunas')
+                    ->badge()
+                    ->color(fn ($record) => $record->total_debt > 0 ? 'danger' : 'gray'),
                 TextColumn::make('last_visit_at')
                     ->label('Kunjungan Terakhir')
                     ->dateTime('d M Y H:i')
