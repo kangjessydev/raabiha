@@ -934,13 +934,23 @@
                             <input type="number" x-model.number="customQty" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-semibold text-gray-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                         </div>
 
-                        <!-- Centangan ala Majoo POS -->
-                        <div class="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between shadow-xs">
-                            <div>
-                                <div class="font-bold text-gray-900 text-xs">Simpan ke Katalog POS</div>
-                                <div class="text-[11px] text-gray-500">Tampilkan produk ini di grid POS untuk transaksi berikutnya.</div>
+                        <!-- Opsi Penyimpanan Katalog & Keranjang -->
+                        <div class="space-y-2">
+                            <div class="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between shadow-xs">
+                                <div>
+                                    <div class="font-bold text-gray-900 text-xs">Simpan ke Katalog POS</div>
+                                    <div class="text-[11px] text-gray-500">Buat master produk di katalog POS (Stok tersimpan: <span class="font-bold text-emerald-700" x-text="customQty || 1"></span> pcs).</div>
+                                </div>
+                                <input type="checkbox" x-model="customSaveToCatalog" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
                             </div>
-                            <input type="checkbox" x-model="customSaveToCatalog" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+
+                            <div class="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between shadow-xs">
+                                <div>
+                                    <div class="font-bold text-gray-900 text-xs">Sekalian Tambah 1 ke Keranjang Belanja</div>
+                                    <div class="text-[11px] text-gray-500">Opsional jika ada pembeli yang langsung membeli item ini sekarang.</div>
+                                </div>
+                                <input type="checkbox" x-model="customAddToCart" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                            </div>
                         </div>
                     </div>
 
@@ -949,8 +959,8 @@
                         <button type="button" @click="showCustomProductModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                             Batal
                         </button>
-                        <button type="button" @click="addCustomProductToCart()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
-                            + Tambah ke Keranjang
+                        <button type="button" @click="saveCustomProductModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                            Simpan ke Katalog POS
                         </button>
                     </div>
                 </div>
@@ -4451,7 +4461,8 @@
                 customNormalPrice: '',
                 customPurchasePrice: '',
                 customQty: 1,
-                customSaveToCatalog: false,
+                customSaveToCatalog: true,
+                customAddToCart: false,
 
                 // State Modal Pelunasan Kasbon
                 showDebtPaymentModal: false,
@@ -5178,7 +5189,7 @@
                     );
                 },
 
-                addCustomProductToCart() {
+                async saveCustomProductModal() {
                     if (!this.customProductName.trim()) {
                         this.showToast('Nama produk kustom wajib diisi.', 'error');
                         return;
@@ -5188,9 +5199,48 @@
                         return;
                     }
                     if (!this.customQty || this.customQty <= 0) {
-                        this.showToast('Jumlah qty harus minimal 1.', 'error');
+                        this.showToast('Jumlah qty stok harus minimal 1.', 'error');
                         return;
                     }
+
+                    const processSave = async () => {
+                        if (this.customSaveToCatalog) {
+                            // Simpan langsung ke database Katalog POS via Livewire!
+                            const res = await @this.call('saveCustomProduct', {
+                                name: this.customProductName.trim(),
+                                purchase_price: parseFloat(this.customPurchasePrice || 0),
+                                normal_price: parseFloat(this.customNormalPrice || 0),
+                                price: parseFloat(this.customPrice || 0),
+                                quantity: parseInt(this.customQty || 1)
+                            });
+
+                            if (res && this.customAddToCart) {
+                                this.triggerCartBounce();
+                                this.cart.unshift({
+                                    is_custom: false,
+                                    product_id: res.id,
+                                    product_variant_id: null,
+                                    name: res.name,
+                                    price: res.price,
+                                    purchase_price: res.purchase_price,
+                                    quantity: 1
+                                });
+                                this.calculateVoucherDiscount();
+                            }
+                        } else if (this.customAddToCart) {
+                            this.pushCustomItemToCart();
+                            return;
+                        }
+
+                        this.customProductName = '';
+                        this.customPrice = '';
+                        this.customNormalPrice = '';
+                        this.customPurchasePrice = '';
+                        this.customQty = 1;
+                        this.customSaveToCatalog = true;
+                        this.customAddToCart = false;
+                        this.showCustomProductModal = false;
+                    };
 
                     // Proteksi Margin: jika harga nego < harga modal (HPP), minta otorisasi PIN Supervisor
                     if (this.customPurchasePrice > 0 && this.customPrice < this.customPurchasePrice) {
@@ -5198,13 +5248,17 @@
                             'Otorisasi Produk di Bawah Modal (HPP)',
                             'Harga jual (Rp ' + this.formatMoney(this.customPrice) + ') berada di bawah harga modal (Rp ' + this.formatMoney(this.customPurchasePrice) + '). Wajib otorisasi Supervisor.',
                             (supId) => {
-                                this.pushCustomItemToCart();
+                                processSave();
                             }
                         );
                         return;
                     }
 
-                    this.pushCustomItemToCart();
+                    processSave();
+                },
+
+                addCustomProductToCart() {
+                    this.saveCustomProductModal();
                 },
 
                 pushCustomItemToCart() {

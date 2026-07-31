@@ -1201,6 +1201,50 @@ class PosManager extends Component
         }
     }
 
+    /**
+     * Simpan Produk Kustom Baru secara instan ke Katalog POS
+     */
+    public function saveCustomProduct($data)
+    {
+        $name = trim($data['name'] ?? '');
+        $purchasePrice = (float) ($data['purchase_price'] ?? 0);
+        $normalPrice = (float) ($data['normal_price'] ?? 0);
+        $price = (float) ($data['price'] ?? 0);
+        $qty = (int) ($data['quantity'] ?? 1);
+
+        if (empty($name)) {
+            $this->dispatch('pos-toast', message: 'Nama produk kustom wajib diisi.', type: 'error');
+            return null;
+        }
+
+        if ($price <= 0) {
+            $this->dispatch('pos-toast', message: 'Harga jual nego harus lebih dari 0.', type: 'error');
+            return null;
+        }
+
+        $newProduct = Product::create([
+            'name' => $name,
+            'slug' => \Illuminate\Support\Str::slug($name) . '-' . time(),
+            'price' => $normalPrice > 0 ? $normalPrice : $price,
+            'pos_price' => $price,
+            'purchase_price' => $purchasePrice,
+            'stock' => max(1, $qty),
+            'sold_count' => 0,
+            'is_active' => true,
+            'channel_visibility' => 'pos_only',
+        ]);
+
+        $this->dispatch('pos-toast', message: "Produk '{$name}' berhasil disimpan ke Katalog POS (Stok: " . max(1, $qty) . " pcs)!", type: 'success');
+
+        return [
+            'id' => $newProduct->id,
+            'name' => $newProduct->name,
+            'price' => (float) $newProduct->pos_price,
+            'purchase_price' => (float) $newProduct->purchase_price,
+            'stock' => (int) $newProduct->stock,
+        ];
+    }
+
     public function render()
     {
         $products          = [];
