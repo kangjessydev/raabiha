@@ -275,6 +275,7 @@ class PosManager extends Component
             
         if ($existingSession) {
             \Illuminate\Support\Facades\Cache::put('pos_takeover_request_' . $existingSession->id, true, now()->addMinutes(5));
+            \Illuminate\Support\Facades\Cache::put('pos_takeover_initiated_' . $existingSession->id . '_' . \Illuminate\Support\Facades\Session::getId(), true, now()->addMinutes(5));
             $this->dispatch('notify', ['type' => 'success', 'message' => 'Permintaan dikirim. Tunggu persetujuan dari perangkat aktif.']);
             $this->dispatch('takeover-requested');
         }
@@ -291,6 +292,7 @@ class PosManager extends Component
             if ($savedCode && $savedCode == $code) {
                 \Illuminate\Support\Facades\Cache::forever('pos_session_device_' . $existingSession->id, \Illuminate\Support\Facades\Session::getId());
                 \Illuminate\Support\Facades\Cache::forget('pos_takeover_code_' . $existingSession->id);
+                \Illuminate\Support\Facades\Cache::forget('pos_takeover_initiated_' . $existingSession->id . '_' . \Illuminate\Support\Facades\Session::getId());
                 $this->deviceBlocked = false;
                 $this->loadActiveSession();
                 $this->dispatch('notify', ['type' => 'success', 'message' => 'Sesi berhasil diambil alih!']);
@@ -321,6 +323,7 @@ class PosManager extends Component
 
         if ($existingSession) {
             \Illuminate\Support\Facades\Cache::forever('pos_session_device_' . $existingSession->id, \Illuminate\Support\Facades\Session::getId());
+            \Illuminate\Support\Facades\Cache::forget('pos_takeover_initiated_' . $existingSession->id . '_' . \Illuminate\Support\Facades\Session::getId());
             
             \App\Models\Cashflow::create([
                 'transaction_date' => now()->toDateString(),
@@ -389,14 +392,20 @@ class PosManager extends Component
             ->first();
 
         if ($existingSession) {
-            if (\Illuminate\Support\Facades\Cache::has('pos_takeover_code_' . $existingSession->id)) {
-                return; // Code generated, waiting for input
+            // Hanya cek status penolakan jika perangkat ini memang telah secara resmi mengajukan request kode
+            $hasInitiated = \Illuminate\Support\Facades\Cache::has('pos_takeover_initiated_' . $existingSession->id . '_' . \Illuminate\Support\Facades\Session::getId());
+            if (!$hasInitiated) {
+                return; // Jangan lakukan apa-apa jika user sedang di menu awal atau menu Bypass PIN Supervisor
             }
+
+            if (\Illuminate\Support\Facades\Cache::has('pos_takeover_code_' . $existingSession->id)) {
+                return; // Kode telah dibuat oleh perangkat A, menunggu input
+            }
+
             if (!\Illuminate\Support\Facades\Cache::has('pos_takeover_request_' . $existingSession->id)) {
+                \Illuminate\Support\Facades\Cache::forget('pos_takeover_initiated_' . $existingSession->id . '_' . \Illuminate\Support\Facades\Session::getId());
                 $this->dispatch('notify', ['type' => 'error', 'message' => 'Permintaan ditolak oleh perangkat utama.']);
-                $this->dispatch('takeover-rejected'); // To reset UI mode in Alpine if needed
-                // Optionally reset takeoverMode in Livewire if we had it, but it's purely Alpine. 
-                // We'll let the user click back or reset via alpine listener.
+                $this->dispatch('takeover-rejected'); 
             }
         }
     }

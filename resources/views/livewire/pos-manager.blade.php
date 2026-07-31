@@ -132,7 +132,7 @@
     <div x-data="{ takeoverMode: null, codeInput: '', supervisorId: '', supervisorPin: '' }" 
          @takeover-rejected.window="takeoverMode = null; codeInput = '';"
          class="fixed inset-0 z-[110] bg-gray-900/95 flex flex-col items-center justify-center font-sans text-white p-6">
-        <div class="bg-white text-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
+        <div wire:ignore class="bg-white text-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
             
             <!-- Default View -->
             <div x-show="!takeoverMode" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
@@ -459,26 +459,38 @@
 
     @elseif(!$activeSession)
         <!-- Overlay Buka Shift (Clean Filament Native Style) -->
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-xs p-4 font-sans"
+             x-data="{
+                 displayCash: '',
+                 isSubmitting: false,
+                 formatRupiah(val) {
+                     if (!val || val === 0 || val === '0') return '';
+                     let num = val.toString().replace(/\D/g, '');
+                     return num ? parseInt(num, 10).toLocaleString('id-ID') : '';
+                 },
+                 updateCash(val) {
+                     let clean = val.replace(/\D/g, '');
+                     this.displayCash = clean ? parseInt(clean, 10).toLocaleString('id-ID') : '';
+                     $wire.set('openingCash', clean ? parseInt(clean, 10) : 0);
+                 },
+                 async submitOpenSession() {
+                     if (this.isSubmitting) return;
+                     this.isSubmitting = true;
+                     try {
+                         await $wire.openSession();
+                     } finally {
+                         this.isSubmitting = false;
+                     }
+                 }
+             }"
+             x-init="displayCash = formatRupiah($wire.openingCash)">
             <div class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 shadow-lg w-full max-w-md space-y-6">
                 <div class="text-center space-y-1.5">
                     <h2 class="text-2xl font-bold tracking-tight text-gray-900">Buka Shift Kasir</h2>
                     <p class="text-xs font-medium text-gray-500">Masukkan modal awal (uang kas di laci) untuk memulai transaksi.</p>
                 </div>
                 
-                <form wire:submit.prevent="openSession" class="space-y-5" x-data="{
-                    displayCash: '',
-                    formatRupiah(val) {
-                        if (!val || val === 0 || val === '0') return '';
-                        let num = val.toString().replace(/\D/g, '');
-                        return num ? parseInt(num, 10).toLocaleString('id-ID') : '';
-                    },
-                    updateCash(val) {
-                        let clean = val.replace(/\D/g, '');
-                        this.displayCash = clean ? parseInt(clean, 10).toLocaleString('id-ID') : '';
-                        $wire.set('openingCash', clean ? parseInt(clean, 10) : 0);
-                    }
-                }" x-init="displayCash = formatRupiah($wire.openingCash)">
+                <div class="space-y-5">
                     <div>
                         <label for="openingCashInput" class="block text-xs font-medium text-gray-700 mb-1.5">
                             Modal Awal (Rp) <span class="text-red-500">*</span>
@@ -490,6 +502,7 @@
                                 id="openingCashInput"
                                 x-model="displayCash"
                                 @input="updateCash($event.target.value)"
+                                @keydown.enter.prevent="submitOpenSession()"
                                 class="w-full pl-10 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 text-base font-semibold placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150" 
                                 placeholder="0"
                                 autofocus
@@ -500,9 +513,12 @@
                         @enderror
                     </div>
                     <button 
-                        type="submit" 
+                        type="button"
+                        @click="submitOpenSession()"
+                        :disabled="isSubmitting"
                         wire:loading.attr="disabled"
-                        class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2"
+                        wire:target="openSession"
+                        class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-medium text-sm rounded-lg shadow-sm transition duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer flex items-center justify-center gap-2"
                     >
                         <svg wire:loading wire:target="openSession" class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -511,7 +527,7 @@
                         <span wire:loading.remove wire:target="openSession">Mulai Sesi Shift</span>
                         <span wire:loading wire:target="openSession">Memproses...</span>
                     </button>
-                </form>
+                </div>
             </div>
         </div>
     @else
