@@ -217,6 +217,12 @@ class PosSettings extends Page implements HasForms
                         \Filament\Schemas\Components\Tabs\Tab::make('Jadwal Shift & Operasional')
                             ->icon('heroicon-o-clock')
                             ->components([
+                                Forms\Components\Select::make('pos_allowed_user_ids')
+                                    ->label('Akun Pengecualian Akses POS (Whitelist POS)')
+                                    ->options(fn () => \App\Models\User::pluck('name', 'id'))
+                                    ->multiple()
+                                    ->searchable()
+                                    ->helperText('Secara default, rute POS hanya dapat dibuka oleh akun ber-role Kasir. Daftarkan akun pengguna non-kasir (misal Dev/Admin/Marketing) di sini jika ingin memberikan akses ke Terminal POS tanpa mengubah role mereka.'),
                                 Forms\Components\Toggle::make('pos_shift_restriction_enabled')
                                     ->label('Aktifkan Pembatasan Jam Operasional & Shift')
                                     ->helperText('AKTIF: Buka shift di luar jam operasional / jadwal shift WAJIB memasukkan PIN Supervisor / Kode Izin Remote. DIMATIKAN: Kasir dapat membuka shift kapan saja 24 jam tanpa batasan.')
@@ -249,7 +255,11 @@ class PosSettings extends Page implements HasForms
                                             ->required(),
                                         Forms\Components\Select::make('assigned_cashiers')
                                             ->label('Kasir Ditugaskan (Bisa Banyak Kasir)')
-                                            ->options(fn () => \App\Models\User::pluck('name', 'id'))
+                                            ->options(fn () => \App\Models\User::where(function ($q) {
+                                                $q->where('role', 'kasir')
+                                                  ->orWhere('is_pos_supervisor', true)
+                                                  ->orWhereIn('role', ['super_admin', 'owner', 'admin', 'manager']);
+                                            })->pluck('name', 'id'))
                                             ->multiple()
                                             ->searchable()
                                             ->helperText('Pilih kasir yang bertugas di shift ini.'),

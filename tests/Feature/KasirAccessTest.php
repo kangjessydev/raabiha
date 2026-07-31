@@ -106,4 +106,31 @@ class KasirAccessTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_non_kasir_user_without_whitelist_is_redirected_to_admin()
+    {
+        $marketing = User::factory()->create([
+            'email' => 'marketing@raabiha.com',
+            'role'  => 'marketing',
+        ]);
+
+        $response = $this->actingAs($marketing)->get('/pos');
+        $response->assertRedirect('/admin');
+    }
+
+    public function test_whitelisted_non_kasir_user_can_access_pos()
+    {
+        $marketing = User::factory()->create([
+            'email' => 'marketing_allowed@raabiha.com',
+            'role'  => 'marketing',
+        ]);
+
+        \App\Models\SiteSetting::create([
+            'key'   => 'pos_allowed_user_ids',
+            'value' => json_encode([$marketing->id]),
+        ]);
+
+        $response = $this->actingAs($marketing)->get('/pos');
+        $response->assertStatus(200);
+    }
 }

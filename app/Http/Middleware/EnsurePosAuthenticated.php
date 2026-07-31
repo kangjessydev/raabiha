@@ -16,16 +16,26 @@ class EnsurePosAuthenticated
         }
 
         $user = Auth::user();
-        $allowedRoles = ['kasir', 'super_admin', 'owner', 'manager', 'finance'];
 
-        if (!$user->hasAnyRole($allowedRoles) && !in_array($user->role, $allowedRoles)) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return redirect()->route('pos.login')->with('error', 'Akun Anda tidak memiliki hak akses ke Terminal POS Kasir.');
+        // 1. Role Kasir & Super Admin selalu diizinkan
+        if ($user->hasAnyRole(['kasir', 'super_admin']) || in_array($user->role, ['kasir', 'super_admin'])) {
+            return $next($request);
         }
 
-        return $next($request);
+        // 2. Cek apakah User ID terdaftar di Whitelist Akses POS
+        $rawWhitelist = \App\Models\SiteSetting::where('key', 'pos_allowed_user_ids')->value('value');
+        $allowedUserIds = is_string($rawWhitelist) ? (json_decode($rawWhitelist, true) ?: []) : (is_array($rawWhitelist) ? $rawWhitelist : []);
+        $allowedUserIds = array_map('strval', $allowedUserIds);
+
+        if (in_array((string)$user->id, $allowedUserIds, true)) {
+            return $next($request);
+        }
+
+        // Jika user tidak ber-role kasir dan tidak di-whitelist, alihkan ke Admin Panel / Login
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Akun Anda tidak memiliki hak akses ke Terminal POS Kasir.'], 403);
+        }
+
+        return redirect('/admin')->with('error', 'Akun Anda tidak memiliki hak akses ke Terminal POS Kasir. Minta Admin mendaftarkan akun Anda di Whitelist POS.');
     }
 }

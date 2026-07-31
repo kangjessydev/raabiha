@@ -404,8 +404,14 @@ class PosManager extends Component
     public function isCurrentShiftAllowed(?int $cashierId = null): array
     {
         $cashierId = $cashierId ?? Auth::id();
+        $user = \App\Models\User::find($cashierId);
+
+        // 1. Bypass untuk akun Manajemen/Pengawas/Owner/Admin (Testing & Supervisi)
+        if ($user && ($user->hasAnyRole(['super_admin', 'owner', 'admin', 'manager']) || in_array($user->role, ['super_admin', 'owner', 'admin', 'manager']))) {
+            return ['allowed' => true, 'reason' => 'Management Role Bypass'];
+        }
+
         $restrictionEnabled = \App\Models\SiteSetting::where('key', 'pos_shift_restriction_enabled')->value('value');
-        
         if ($restrictionEnabled === '0' || $restrictionEnabled === 'false') {
             return ['allowed' => true, 'reason' => 'Restriction Disabled'];
         }
@@ -420,15 +426,21 @@ class PosManager extends Component
         $currentTime = $now->format('H:i');
 
         $userShifts = [];
+        $hasSpecificAssignments = false;
         foreach ($masterShifts as $shift) {
             $assigned = $shift['assigned_cashiers'] ?? [];
-            if (is_array($assigned) && in_array($cashierId, $assigned)) {
+            if (is_array($assigned) && !empty($assigned)) {
+                $hasSpecificAssignments = true;
+                if (in_array((string)$cashierId, array_map('strval', $assigned), true)) {
+                    $userShifts[] = $shift;
+                }
+            } else {
+                // Shift umum tanpa batasan nama kasir
                 $userShifts[] = $shift;
             }
         }
 
         if (empty($userShifts)) {
-            $user = \App\Models\User::find($cashierId);
             if ($user && $user->pos_shift_start && $user->pos_shift_end) {
                 $userShifts[] = [
                     'shift_name' => 'Shift Khusus Kasir',
@@ -438,8 +450,14 @@ class PosManager extends Component
             }
         }
 
-        if (empty($userShifts) && empty($masterShifts)) {
-            return ['allowed' => true, 'reason' => 'No Shift Configured'];
+        // Jika master shift memiliki penugasan kasir spesifik dan kasir ini tidak terdaftar di mana pun
+        if (empty($userShifts)) {
+            if ($hasSpecificAssignments) {
+                return ['allowed' => true, 'reason' => 'No Shift Assigned to Cashier'];
+            }
+            if (empty($masterShifts)) {
+                return ['allowed' => true, 'reason' => 'No Shift Configured'];
+            }
         }
 
         $shiftsToValidate = !empty($userShifts) ? $userShifts : $masterShifts;
