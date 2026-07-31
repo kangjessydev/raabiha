@@ -911,27 +911,31 @@
                     <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs bg-gray-50/50">
                         <div>
                             <label class="block font-bold text-gray-900 mb-1">Nama Produk Kustom</label>
-                            <input type="text" x-model="customProductName" placeholder="misal: Baju Korea Impor Type A" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-medium">
+                            <input type="text" x-model="customProductName" placeholder="misal: Baju Korea Impor Type A" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-medium text-gray-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
-                                <label class="block font-bold text-gray-900 mb-1">Harga Modal / HPP (Rp)</label>
-                                <input type="number" x-model.number="customPurchasePrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
+                                <label class="block font-bold text-gray-900 mb-1">Harga Modal / HPP</label>
+                                <input type="number" x-model.number="customPurchasePrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-semibold text-gray-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                             </div>
                             <div>
-                                <label class="block font-bold text-gray-900 mb-1">Harga Jual Nego (Rp)</label>
-                                <input type="number" x-model.number="customPrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-bold text-emerald-950">
+                                <label class="block font-bold text-gray-900 mb-1" title="Harga pasaran/tag biasa sebelum nego">Harga Normal / Tag</label>
+                                <input type="number" x-model.number="customNormalPrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-semibold text-gray-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-gray-900 mb-1" title="Harga jual kesepakatan akhir">Harga Nego (Akhir)</label>
+                                <input type="number" x-model.number="customPrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-bold text-emerald-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                             </div>
                         </div>
 
                         <div>
                             <label class="block font-bold text-gray-900 mb-1">Jumlah (Qty)</label>
-                            <input type="number" x-model.number="customQty" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
+                            <input type="number" x-model.number="customQty" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-semibold text-gray-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                         </div>
 
                         <!-- Centangan ala Majoo POS -->
-                        <div class="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between">
+                        <div class="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between shadow-xs">
                             <div>
                                 <div class="font-bold text-gray-900 text-xs">Simpan ke Katalog POS</div>
                                 <div class="text-[11px] text-gray-500">Tampilkan produk ini di grid POS untuk transaksi berikutnya.</div>
@@ -4444,6 +4448,7 @@
                 showCustomProductModal: false,
                 customProductName: '',
                 customPrice: '',
+                customNormalPrice: '',
                 customPurchasePrice: '',
                 customQty: 1,
                 customSaveToCatalog: false,
@@ -5217,6 +5222,7 @@
 
                     this.customProductName = '';
                     this.customPrice = '';
+                    this.customNormalPrice = '';
                     this.customPurchasePrice = '';
                     this.customQty = 1;
                     this.customSaveToCatalog = false;
