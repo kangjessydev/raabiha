@@ -219,11 +219,18 @@ class PosSettings extends Page implements HasForms
                             ->components([
                                 Forms\Components\Select::make('pos_allowed_user_ids')
                                     ->label('Akun Pengecualian Akses POS (Whitelist POS)')
-                                    ->options(fn () => \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'kasir'))
-                                        ->where(function ($q) {
-                                            $q->whereNull('role')->orWhere('role', '!=', 'kasir');
-                                        })
-                                        ->pluck('name', 'id'))
+                                    ->options(function () {
+                                        return \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'kasir'))
+                                            ->where(function ($q) {
+                                                $q->whereNull('role')->orWhere('role', '!=', 'kasir');
+                                            })
+                                            ->get()
+                                            ->mapWithKeys(function ($user) {
+                                                $roleNames = $user->roles->pluck('name')->implode(', ');
+                                                $roleLabel = $roleNames ?: ($user->role ?: 'tanpa role');
+                                                return [$user->id => $user->name . ' (Role: ' . ucfirst($roleLabel) . ')'];
+                                            });
+                                    })
                                     ->multiple()
                                     ->searchable()
                                     ->helperText('Secara default, rute POS hanya dapat dibuka oleh akun ber-role Kasir. Daftarkan akun pengguna non-kasir (misal Dev/Admin/Marketing) di sini jika ingin memberikan akses ke Terminal POS tanpa mengubah role mereka.'),
@@ -259,7 +266,14 @@ class PosSettings extends Page implements HasForms
                                             ->required(),
                                         Forms\Components\Select::make('assigned_cashiers')
                                             ->label('Kasir Ditugaskan (Bisa Banyak Kasir)')
-                                            ->options(fn () => \App\Models\User::role('kasir')->orWhere('role', 'kasir')->pluck('name', 'id'))
+                                            ->options(function () {
+                                                return \App\Models\User::role('kasir')->orWhere('role', 'kasir')->get()
+                                                    ->mapWithKeys(function ($user) {
+                                                        $roleNames = $user->roles->pluck('name')->implode(', ');
+                                                        $roleLabel = $roleNames ?: ($user->role ?: 'kasir');
+                                                        return [$user->id => $user->name . ' (Role: ' . ucfirst($roleLabel) . ')'];
+                                                    });
+                                            })
                                             ->multiple()
                                             ->searchable()
                                             ->helperText('Pilih kasir yang bertugas di shift ini.'),
