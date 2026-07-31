@@ -406,11 +406,6 @@ class PosManager extends Component
         $cashierId = $cashierId ?? Auth::id();
         $user = \App\Models\User::find($cashierId);
 
-        // 1. Bypass untuk akun Manajemen/Pengawas/Owner/Admin (Testing & Supervisi)
-        if ($user && ($user->hasAnyRole(['super_admin', 'owner', 'admin', 'manager']) || in_array($user->role, ['super_admin', 'owner', 'admin', 'manager']))) {
-            return ['allowed' => true, 'reason' => 'Management Role Bypass'];
-        }
-
         $restrictionEnabled = \App\Models\SiteSetting::where('key', 'pos_shift_restriction_enabled')->value('value');
         if ($restrictionEnabled === '0' || $restrictionEnabled === 'false') {
             return ['allowed' => true, 'reason' => 'Restriction Disabled'];
