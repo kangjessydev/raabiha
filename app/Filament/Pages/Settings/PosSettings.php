@@ -219,7 +219,11 @@ class PosSettings extends Page implements HasForms
                             ->components([
                                 Forms\Components\Select::make('pos_allowed_user_ids')
                                     ->label('Akun Pengecualian Akses POS (Whitelist POS)')
-                                    ->options(fn () => \App\Models\User::pluck('name', 'id'))
+                                    ->options(fn () => \App\Models\User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'kasir'))
+                                        ->where(function ($q) {
+                                            $q->whereNull('role')->orWhere('role', '!=', 'kasir');
+                                        })
+                                        ->pluck('name', 'id'))
                                     ->multiple()
                                     ->searchable()
                                     ->helperText('Secara default, rute POS hanya dapat dibuka oleh akun ber-role Kasir. Daftarkan akun pengguna non-kasir (misal Dev/Admin/Marketing) di sini jika ingin memberikan akses ke Terminal POS tanpa mengubah role mereka.'),
