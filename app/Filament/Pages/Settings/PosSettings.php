@@ -255,11 +255,7 @@ class PosSettings extends Page implements HasForms
                                             ->required(),
                                         Forms\Components\Select::make('assigned_cashiers')
                                             ->label('Kasir Ditugaskan (Bisa Banyak Kasir)')
-                                            ->options(fn () => \App\Models\User::where(function ($q) {
-                                                $q->where('role', 'kasir')
-                                                  ->orWhere('is_pos_supervisor', true)
-                                                  ->orWhereIn('role', ['super_admin', 'owner', 'admin', 'manager']);
-                                            })->pluck('name', 'id'))
+                                            ->options(fn () => \App\Models\User::role('kasir')->orWhere('role', 'kasir')->pluck('name', 'id'))
                                             ->multiple()
                                             ->searchable()
                                             ->helperText('Pilih kasir yang bertugas di shift ini.'),
