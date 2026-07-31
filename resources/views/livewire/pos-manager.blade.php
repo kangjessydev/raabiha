@@ -889,6 +889,68 @@
                     @endforelse
                 </div>
             </div>
+
+            <!-- Modal Input Produk Kustom Fast Entry - Filament Native Style -->
+            <div x-show="showCustomProductModal" x-cloak wire:key="modal-custom-product" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+                <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showCustomProductModal = false">
+                    <!-- Header -->
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-2 bg-amber-50 rounded-lg text-amber-600 border border-amber-100">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-base text-gray-950 leading-tight">Tambah Produk Kustom / Impor</h3>
+                                <p class="text-xs text-gray-500 font-medium">Input cepat barang nego/impor on-the-fly</p>
+                            </div>
+                        </div>
+                        <button @click="showCustomProductModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
+                    </div>
+
+                    <!-- Form Content -->
+                    <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs bg-gray-50/50">
+                        <div>
+                            <label class="block font-bold text-gray-900 mb-1">Nama Produk Kustom</label>
+                            <input type="text" x-model="customProductName" placeholder="misal: Baju Korea Impor Type A" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-medium">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold text-gray-900 mb-1">Harga Modal / HPP (Rp)</label>
+                                <input type="number" x-model.number="customPurchasePrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-gray-900 mb-1">Harga Jual Nego (Rp)</label>
+                                <input type="number" x-model.number="customPrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-bold text-emerald-950">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-gray-900 mb-1">Jumlah (Qty)</label>
+                            <input type="number" x-model.number="customQty" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
+                        </div>
+
+                        <!-- Centangan ala Majoo POS -->
+                        <div class="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between">
+                            <div>
+                                <div class="font-bold text-gray-900 text-xs">Simpan ke Katalog POS</div>
+                                <div class="text-[11px] text-gray-500">Tampilkan produk ini di grid POS untuk transaksi berikutnya.</div>
+                            </div>
+                            <input type="checkbox" x-model="customSaveToCatalog" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+                        </div>
+                    </div>
+
+                    <!-- Footer Actions -->
+                    <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
+                        <button type="button" @click="showCustomProductModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="button" @click="addCustomProductToCart()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                            + Tambah ke Keranjang
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Right: Cart Sidebar (Clean Filament Native Style - Desktop / Large Screen) -->
@@ -4299,68 +4361,6 @@
         </div>
     </div>
     @endif
-
-    <!-- Modal Input Produk Kustom Fast Entry - Filament Native Style -->
-    <div x-show="showCustomProductModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
-        <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showCustomProductModal = false">
-            <!-- Header -->
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
-                <div class="flex items-center gap-2.5">
-                    <div class="p-2 bg-amber-50 rounded-lg text-amber-600 border border-amber-100">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-base text-gray-950 leading-tight">Tambah Produk Kustom / Impor</h3>
-                        <p class="text-xs text-gray-500 font-medium">Input cepat barang nego/impor on-the-fly</p>
-                    </div>
-                </div>
-                <button @click="showCustomProductModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
-            </div>
-
-            <!-- Form Content -->
-            <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs bg-gray-50/50">
-                <div>
-                    <label class="block font-bold text-gray-900 mb-1">Nama Produk Kustom</label>
-                    <input type="text" x-model="customProductName" placeholder="misal: Baju Korea Impor Type A" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-medium">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-bold text-gray-900 mb-1">Harga Modal / HPP (Rp)</label>
-                        <input type="number" x-model.number="customPurchasePrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-gray-900 mb-1">Harga Jual Nego (Rp)</label>
-                        <input type="number" x-model.number="customPrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-bold text-emerald-950">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-bold text-gray-900 mb-1">Jumlah (Qty)</label>
-                    <input type="number" x-model.number="customQty" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
-                </div>
-
-                <!-- Centangan ala Majoo POS -->
-                <div class="p-3 bg-white rounded-lg border border-gray-200 flex items-center justify-between">
-                    <div>
-                        <div class="font-bold text-gray-900 text-xs">Simpan ke Katalog POS</div>
-                        <div class="text-[11px] text-gray-500">Tampilkan produk ini di grid POS untuk transaksi berikutnya.</div>
-                    </div>
-                    <input type="checkbox" x-model="customSaveToCatalog" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
-                </div>
-            </div>
-
-            <!-- Footer Actions -->
-            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
-                <button type="button" @click="showCustomProductModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
-                    Batal
-                </button>
-                <button type="button" @click="addCustomProductToCart()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
-                    + Tambah ke Keranjang
-                </button>
-            </div>
-        </div>
-    </div>
 
     <script>
         document.addEventListener('alpine:init', () => {
