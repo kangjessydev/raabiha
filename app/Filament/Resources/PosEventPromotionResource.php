@@ -8,6 +8,7 @@ use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -116,11 +117,15 @@ class PosEventPromotionResource extends Resource
                     ->schema([
                         Grid::make(3)
                             ->schema([
-                                DateTimePicker::make('starts_at')
-                                    ->label('Tanggal & Jam Mulai'),
+                                DatePicker::make('starts_at')
+                                    ->label('Tanggal Mulai')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y'),
 
-                                DateTimePicker::make('expires_at')
-                                    ->label('Tanggal & Jam Berakhir'),
+                                DatePicker::make('expires_at')
+                                    ->label('Tanggal Berakhir')
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y'),
 
                                 Toggle::make('is_active')
                                     ->label('Status Aktif')
