@@ -3709,7 +3709,7 @@
             <!-- Content Area -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
                 <!-- Ringkasan KPI Pelanggan -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
                         <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Pelanggan Shift Ini</p>
                         <p class="text-2xl font-bold text-gray-950 mt-1">{{ count($sessionCustomers) }} <span class="text-sm font-normal text-gray-400">orang</span></p>
@@ -3718,9 +3718,13 @@
                         <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Belanja Pelanggan</p>
                         <p class="text-2xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionCustomers->sum('total_spent'), 0, ',', '.') }}</p>
                     </div>
+                    <div class="bg-amber-50/70 rounded-xl border border-amber-200/80 p-4 shadow-xs">
+                        <p class="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Piutang Kasbon Belum Lunas</p>
+                        <p class="text-2xl font-black text-amber-950 mt-1">Rp {{ number_format($sessionCustomers->sum('total_kasbon_due'), 0, ',', '.') }}</p>
+                    </div>
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
-                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Kartu Stempel Gratis Ready</p>
-                        <p class="text-2xl font-bold text-amber-600 mt-1">{{ $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= 10 || ($c->completed_cards_count ?? 0) > 0)->count() }} <span class="text-sm font-normal text-gray-400">voucher</span></p>
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Kartu Stempel Ready</p>
+                        <p class="text-2xl font-bold text-emerald-600 mt-1">{{ $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= 10 || ($c->completed_cards_count ?? 0) > 0)->count() }} <span class="text-sm font-normal text-gray-400">voucher</span></p>
                     </div>
                 </div>
 
@@ -3736,7 +3740,7 @@
                             <input type="text"
                                    wire:model.live.debounce.300ms="customerSearch"
                                    wire:key="customer-search-input"
-                                   placeholder="Cari nama atau No. HP pelanggan..."
+                                   placeholder="Cari nama, No. HP, atau kasbon..."
                                    class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs">
                         </div>
 
@@ -3823,7 +3827,9 @@
                                     <th class="py-3 px-4">No. Telepon / HP</th>
                                     <th class="py-3 px-4 text-center">Total Kunjungan</th>
                                     <th class="py-3 px-4 text-center">Loyalty & Stempel</th>
+                                    <th class="py-3 px-4 text-center">Piutang Kasbon</th>
                                     <th class="py-3 px-4 text-right">Total Belanja</th>
+                                    <th class="py-3 px-4 text-center">Aksi Pelunasan</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-xs">
@@ -3878,9 +3884,36 @@
                                         @endif
                                     </td>
 
+                                    <!-- Piutang Kasbon -->
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        @if(($customer->total_kasbon_due ?? 0) > 0)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-black bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20 shadow-2xs">
+                                                <span>Rp {{ number_format($customer->total_kasbon_due, 0, ',', '.') }}</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium text-gray-400 bg-gray-50">
+                                                Lunas / Rapi
+                                            </span>
+                                        @endif
+                                    </td>
+
                                     <!-- Total Belanja -->
                                     <td class="py-3 px-4 text-right whitespace-nowrap">
                                         <div class="font-bold text-xs text-gray-900">Rp {{ number_format($customer->total_spent, 0, ',', '.') }}</div>
+                                    </td>
+
+                                    <!-- Aksi Pelunasan -->
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        @if(($customer->total_kasbon_due ?? 0) > 0 && isset($customer->latest_kasbon_order))
+                                            <button type="button"
+                                                    @click="openDebtPaymentModal({{ \Illuminate\Support\Js::from($customer->latest_kasbon_order) }})"
+                                                    class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1 mx-auto">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                                <span>Bayar Kasbon</span>
+                                            </button>
+                                        @else
+                                            <span class="text-gray-300 text-[11px]">-</span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach
@@ -6097,6 +6130,11 @@
                 },
 
                 submitOrder() {
+                    if (this.paymentMethod === 'kasbon' && (!this.customerName || !this.customerName.trim())) {
+                        this.showToast('Untuk metode Kasbon / Piutang, Nama Pelanggan WAJIB diisi!', 'error');
+                        return;
+                    }
+
                     if (this.isCashSelected() && this.cashPaid < this.grandTotal) {
                         this.showToast('Uang yang dibayarkan kurang!', 'error');
                         return;

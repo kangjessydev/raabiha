@@ -1408,6 +1408,22 @@ class PosManager extends Component
                 $posCust = $posCustomerMap->get($key) ?? \App\Models\PosCustomer::where('name', $c->customer_name)->first();
                 $c->stamp_count = $posCust ? (int)$posCust->stamp_count : 0;
                 $c->completed_cards_count = $posCust ? (int)$posCust->completed_cards_count : 0;
+
+                // Hitung sisa kasbon/piutang pelanggan ini (nota is_kasbon dengan due_amount > 0)
+                $unpaidKasbonOrders = Order::where('status', '!=', 'cancelled')
+                    ->where('is_kasbon', true)
+                    ->where('due_amount', '>', 0)
+                    ->where(function($q) use ($c) {
+                        if ($c->customer_phone) {
+                            $q->where('customer_phone', $c->customer_phone);
+                        } else {
+                            $q->where('customer_name', $c->customer_name);
+                        }
+                    })
+                    ->get();
+
+                $c->total_kasbon_due = $unpaidKasbonOrders->sum('due_amount');
+                $c->latest_kasbon_order = $unpaidKasbonOrders->first();
                 return $c;
             });
 
@@ -1645,7 +1661,7 @@ class PosManager extends Component
     #[\Livewire\Attributes\Computed]
     public function paymentMethods()
     {
-        return \App\Models\PaymentMethod::where('is_active', true)
+        $methods = \App\Models\PaymentMethod::where('is_active', true)
             ->get()
             ->filter(function ($method) {
                 $config = is_array($method->config) ? $method->config : (json_decode($method->config ?? '[]', true) ?? []);
@@ -1654,14 +1670,27 @@ class PosManager extends Component
             })
             ->map(function ($method) {
                 return [
-                    'id'      => $method->id,
-                    'name'    => $method->name,
-                    'code'    => $method->code,
-                    'logo'    => $method->logo ? asset('storage/' . $method->logo) : null,
-                    'is_cash' => strtolower($method->code) === 'tunai' || strtolower($method->name) === 'tunai',
+                    'id'        => $method->id,
+                    'name'      => $method->name,
+                    'code'      => $method->code,
+                    'logo'      => $method->logo ? asset('storage/' . $method->logo) : null,
+                    'is_cash'   => strtolower($method->code) === 'tunai' || strtolower($method->name) === 'tunai',
+                    'is_kasbon' => false,
                 ];
             })
             ->values();
+
+        // Tambahkan opsi Kasbon / Piutang Pelanggan untuk POS
+        $methods->push([
+            'id'        => 'kasbon',
+            'name'      => 'Kasbon / Piutang Pelanggan',
+            'code'      => 'kasbon',
+            'logo'      => null,
+            'is_cash'   => false,
+            'is_kasbon' => true,
+        ]);
+
+        return $methods;
     }
 
     #[\Livewire\Attributes\Computed]
