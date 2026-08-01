@@ -3385,7 +3385,16 @@
                                                 'grand_total' => (float)$order->grand_total,
                                                 'cash_paid' => (float)$order->cash_paid,
                                                 'cash_change' => (float)$order->cash_change,
+                                                'is_kasbon' => (bool)$order->is_kasbon,
+                                                'due_amount' => (float)$order->due_amount,
                                                 'status' => $order->status,
+                                                'debt_payments' => $order->debtPayments->map(fn($dp) => [
+                                                    'amount_paid' => (float)$dp->amount_paid,
+                                                    'payment_method' => strtoupper($dp->payment_method),
+                                                    'cashier_name' => $dp->cashier->name ?? 'Kasir',
+                                                    'notes' => $dp->notes,
+                                                    'created_at' => $dp->created_at->format('d M Y, H:i')
+                                                ])->values()->all(),
                                                 'items' => $order->items->map(fn($i) => [
                                                     'name' => $i->product_name ?? $i->name,
                                                     'variant' => $i->variant_name,
@@ -4429,6 +4438,26 @@
                     <div x-show="selectedOrderDetail && selectedOrderDetail.cash_paid > 0" class="flex justify-between text-gray-500 pt-1 text-[11px]">
                         <span>Tunai Diterima / Kembalian</span>
                         <span x-text="'Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.cash_paid : 0) + ' / Rp ' + formatMoney(selectedOrderDetail ? selectedOrderDetail.cash_change : 0)"></span>
+                    </div>
+                </div>
+
+                <!-- Riwayat Audit Pelunasan Kasbon -->
+                <div x-show="selectedOrderDetail && selectedOrderDetail.debt_payments && selectedOrderDetail.debt_payments.length > 0" class="p-4 bg-amber-50/70 rounded-lg border border-amber-200/80 space-y-2 shadow-xs">
+                    <div class="font-bold text-amber-900 text-xs uppercase tracking-wider flex items-center justify-between border-b border-amber-200/60 pb-1.5">
+                        <span>Riwayat Audit Pelunasan Kasbon</span>
+                        <span class="text-[10px] font-black text-amber-800" x-text="selectedOrderDetail && selectedOrderDetail.due_amount > 0 ? 'Sisa Piutang: Rp ' + formatMoney(selectedOrderDetail.due_amount) : 'LUNAS'"></span>
+                    </div>
+                    <div class="space-y-2 pt-1">
+                        <template x-for="pay in (selectedOrderDetail ? selectedOrderDetail.debt_payments : [])">
+                            <div class="flex items-center justify-between text-[11px] bg-white p-2.5 rounded-md border border-amber-200/50">
+                                <div>
+                                    <div class="font-bold text-gray-900" x-text="'Rp ' + formatMoney(pay.amount_paid) + ' (' + pay.payment_method + ')'"></div>
+                                    <div class="text-gray-500 text-[10px]" x-text="'Dilayani Kasir: ' + pay.cashier_name"></div>
+                                    <div class="text-gray-400 italic text-[10px]" x-show="pay.notes" x-text="pay.notes"></div>
+                                </div>
+                                <div class="text-right font-mono text-[10px] text-gray-500" x-text="pay.created_at"></div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>

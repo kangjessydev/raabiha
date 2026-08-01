@@ -1324,11 +1324,16 @@ class PosManager extends Component
             }
 
             /* ---------- Riwayat Transaksi (dinamis filter & search) ---------- */
-            $ordersQuery = Order::with(['items', 'cashier', 'voidBy', 'posReturns'])
+            $ordersQuery = Order::with(['items', 'cashier', 'voidBy', 'posReturns', 'debtPayments.cashier'])
                 ->where('source', 'pos');
 
-            if ($this->historyDateFilter === 'shift') {
-                $ordersQuery->where('pos_session_id', $this->activeSession->id);
+            if ($this->historyDateFilter === 'shift' && $this->activeSession) {
+                $ordersQuery->where(function($q) {
+                    $q->where('pos_session_id', $this->activeSession->id)
+                      ->orWhere(function($sub) {
+                          $sub->where('is_kasbon', true)->where('due_amount', '>', 0);
+                      });
+                });
             } elseif ($this->historyDateFilter === 'today') {
                 $ordersQuery->whereDate('created_at', now()->toDateString());
             } elseif ($this->historyDateFilter === 'yesterday') {
@@ -1366,12 +1371,17 @@ class PosManager extends Component
             $sessionOrders = $ordersQuery->latest()->limit(100)->get();
 
             /* ---------- Pelanggan POS (dinamis filter & search) ---------- */
-            $custQuery = Order::query()
+            $custQuery = Order::where('status', '!=', 'cancelled')
                 ->whereNotNull('customer_name')
                 ->where('customer_name', '!=', '');
 
             if ($this->customerDateFilter === 'shift' && $this->activeSession) {
-                $custQuery->where('pos_session_id', $this->activeSession->id);
+                $custQuery->where(function($q) {
+                    $q->where('pos_session_id', $this->activeSession->id)
+                      ->orWhere(function($sub) {
+                          $sub->where('is_kasbon', true)->where('due_amount', '>', 0);
+                      });
+                });
             } elseif ($this->customerDateFilter === 'today') {
                 $custQuery->whereDate('created_at', now()->toDateString());
             } elseif ($this->customerDateFilter === 'yesterday') {
