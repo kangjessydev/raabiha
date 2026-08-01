@@ -5145,39 +5145,34 @@
                         const otherItems = this.cart.length > 1 ? ` + ${this.cart.length - 1} item` : '';
                         defaultName = `${firstItem}${otherItems}`;
                     }
-                    this.askConfirm(
-                        'Tahan Pesanan?', 
-                        'Pesanan saat ini akan disimpan ke antrean toko dan keranjang akan dikosongkan. Lanjutkan?', 
-                        () => {
-                            const holdId = 'HOLD-' + Date.now();
-                            const newHold = {
-                                id: holdId,
-                                time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-                                customerName: this.customerName || 'Umum',
-                                customerPhone: this.customerPhone || '',
-                                cart: JSON.parse(JSON.stringify(this.cart)),
-                                activeVoucher: this.activeVoucher,
-                                manualDiscountType: this.manualDiscountType,
-                                manualDiscountValue: this.manualDiscountValue,
-                                total: this.subtotal
-                            };
 
-                            this.heldCarts.unshift(newHold);
-                            this.saveHeldCarts();
+                    const holdId = 'HOLD-' + Date.now();
+                    const newHold = {
+                        id: holdId,
+                        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                        customerName: this.customerName || 'Umum',
+                        customerPhone: this.customerPhone || '',
+                        cart: JSON.parse(JSON.stringify(this.cart)),
+                        activeVoucher: this.activeVoucher,
+                        manualDiscountType: this.manualDiscountType,
+                        manualDiscountValue: this.manualDiscountValue,
+                        total: this.subtotal
+                    };
 
-                            // Sync ke database toko agar kasir lain & shift berikutnya bisa akses!
-                            @this.call('saveHeldCartToDb', JSON.stringify({
-                                hold_id: holdId,
-                                customer_name: this.customerName || 'Umum',
-                                customer_phone: this.customerPhone || '',
-                                cart_data: newHold,
-                                total: this.subtotal
-                            }));
+                    this.heldCarts.unshift(newHold);
+                    this.saveHeldCarts();
 
-                            this.clearCart(true);
-                            this.showToast('Pesanan berhasil dimasukkan ke antrean toko', 'success');
-                        }
-                    );
+                    // Sync ke database toko agar kasir lain & shift berikutnya bisa akses!
+                    @this.call('saveHeldCartToDb', JSON.stringify({
+                        hold_id: holdId,
+                        customer_name: this.customerName || 'Umum',
+                        customer_phone: this.customerPhone || '',
+                        cart_data: newHold,
+                        total: this.subtotal
+                    }));
+
+                    this.clearCart(true);
+                    this.showToast('Pesanan berhasil dimasukkan ke antrean toko', 'success');
                 },
 
                 resumeCart(id, holdItem = null) {
