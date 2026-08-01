@@ -867,6 +867,7 @@
                                      'id' => $v->id, 
                                      'name' => $v->name, 
                                      'price' => $vPrice, 
+                                     'original_price' => (float)$vBasePrice,
                                      'stock' => $v->stock,
                                      'image' => $v->media ? Storage::url($v->media->path) : $image,
                                      'attributes' => $v->attributeOptions->map(fn($opt) => [
@@ -1146,7 +1147,12 @@
                         </div>
                         
                         <div class="flex justify-between items-center mt-0.5">
-                            <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' / item'"></div>
+                            <div class="text-[11px] text-gray-500 flex items-center gap-1">
+                                <template x-if="item.original_price && item.original_price > item.price">
+                                    <span class="line-through text-gray-400" x-text="'Rp ' + formatMoney(item.original_price)"></span>
+                                </template>
+                                <span x-text="'Rp ' + formatMoney(item.price) + ' / item'"></span>
+                            </div>
                             <!-- Qty Controls -->
                             <div class="flex items-center border border-gray-200 rounded-md bg-gray-50">
                                 <button @click="updateQty(index, -1)" class="w-6 h-6 flex items-center justify-center bg-white rounded-l-md text-gray-700 hover:text-emerald-600 font-bold text-xs cursor-pointer">-</button>
@@ -1298,7 +1304,12 @@
                         <div class="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs">
                             <div class="flex-1 min-w-0">
                                 <div class="font-bold text-gray-900 truncate" x-text="item.name"></div>
-                                <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price)"></div>
+                                <div class="text-[11px] text-gray-500 flex items-center gap-1">
+                                    <template x-if="item.original_price && item.original_price > item.price">
+                                        <span class="line-through text-gray-400" x-text="'Rp ' + formatMoney(item.original_price)"></span>
+                                    </template>
+                                    <span x-text="'Rp ' + formatMoney(item.price)"></span>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button type="button" @click="updateQty(index, item.quantity - 1)" class="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">-</button>
@@ -1480,9 +1491,12 @@
                                   <div class="text-xs font-semibold text-gray-500 truncate" x-text="currentProductForVariant ? currentProductForVariant.name : ''"></div>
                                   <div class="text-sm font-bold text-gray-950 leading-tight">
                                       <span x-text="selectedMatchedVariant ? selectedMatchedVariant.name : 'Pilih kombinasi atribut'"></span>
-                                  </div>
-                                  <div class="text-base font-extrabold text-emerald-700 mt-1">
-                                      <span x-text="selectedMatchedVariant ? ('Rp ' + formatMoney(selectedMatchedVariant.price)) : (currentProductForVariant ? 'Rp ' + formatMoney(currentProductForVariant.price) : '')"></span>
+                                      <div class="mt-1 flex items-center justify-center flex-wrap gap-1.5">
+                                          <template x-if="selectedMatchedVariant ? (selectedMatchedVariant.original_price && selectedMatchedVariant.original_price > selectedMatchedVariant.price) : (currentProductForVariant && currentProductForVariant.originalPrice > currentProductForVariant.price)">
+                                              <span class="line-through text-gray-400 text-xs font-semibold" x-text="selectedMatchedVariant ? ('Rp ' + formatMoney(selectedMatchedVariant.original_price)) : ('Rp ' + formatMoney(currentProductForVariant.originalPrice))"></span>
+                                          </template>
+                                          <span class="text-base font-extrabold" :class="(selectedMatchedVariant ? (selectedMatchedVariant.original_price && selectedMatchedVariant.original_price > selectedMatchedVariant.price) : (currentProductForVariant && currentProductForVariant.originalPrice > currentProductForVariant.price)) ? 'text-rose-600' : 'text-emerald-700'" x-text="selectedMatchedVariant ? ('Rp ' + formatMoney(selectedMatchedVariant.price)) : (currentProductForVariant ? 'Rp ' + formatMoney(currentProductForVariant.price) : '')"></span>
+                                      </div>
                                   </div>
                               </div>
                           </div>
@@ -1584,7 +1598,12 @@
                                         <div class="flex justify-between items-center text-xs py-1 border-b border-gray-100 last:border-b-0">
                                             <div class="pr-2 truncate">
                                                 <div class="font-bold text-gray-900 truncate" x-text="item.name"></div>
-                                                <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' × ' + item.quantity + ' pcs'"></div>
+                                                <div class="text-[11px] text-gray-500 flex items-center gap-1">
+                                                    <template x-if="item.original_price && item.original_price > item.price">
+                                                        <span class="line-through text-gray-400" x-text="'Rp ' + formatMoney(item.original_price)"></span>
+                                                    </template>
+                                                    <span x-text="'Rp ' + formatMoney(item.price) + ' × ' + item.quantity + ' pcs'"></span>
+                                                </div>
                                             </div>
                                             <div class="font-bold text-gray-950 whitespace-nowrap" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></div>
                                         </div>
@@ -3970,11 +3989,12 @@
                                 <tr>
                                     <th class="py-3 px-4">Nama Pelanggan</th>
                                     <th class="py-3 px-4">No. Telepon / HP</th>
-                                    <th class="py-3 px-4 text-center">Total Kunjungan</th>
-                                    <th class="py-3 px-4 text-center">Loyalty & Stempel</th>
+                                    <th class="py-3 px-4 text-center">Stempel Aktif</th>
+                                    <th class="py-3 px-4 text-center">Saldo Poin</th>
+                                    <th class="py-3 px-4 text-center">Kartu Selesai (9 Cap)</th>
                                     <th class="py-3 px-4 text-center">Piutang Kasbon</th>
                                     <th class="py-3 px-4 text-right">Total Belanja</th>
-                                    <th class="py-3 px-4 text-center">Aksi Pelunasan</th>
+                                    <th class="py-3 px-4 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-xs">
@@ -3989,7 +4009,10 @@
                                             <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-emerald-200">
                                                 {{ strtoupper(substr($customer->customer_name, 0, 1)) }}
                                             </div>
-                                            <div class="font-bold text-gray-900 text-xs">{{ $customer->customer_name }}</div>
+                                            <div>
+                                                <div class="font-bold text-gray-900 text-xs hover:text-emerald-600 cursor-pointer" @click="openCustomerDetailModal({{ \Illuminate\Support\Js::from($customer) }})">{{ $customer->customer_name }}</div>
+                                                <div class="text-[10px] text-gray-400 font-medium">{{ $customer->total_orders ?? 1 }}x Transaksi</div>
+                                            </div>
                                         </div>
                                     </td>
 
@@ -4002,29 +4025,34 @@
                                         @endif
                                     </td>
 
-                                    <!-- Total Kunjungan -->
+                                    <!-- Stempel Aktif (5 / 9 Cap) -->
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-100 text-gray-700">
-                                            {{ $customer->total_orders ?? $customer->visit_count ?? 1 }}x Kunjungan
+                                        @php
+                                            $stamps = $customer->active_stamps ?? (($customer->stamp_count ?? 0) % 9);
+                                        @endphp
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                            <svg class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <span>{{ $stamps }} / 9 Cap</span>
                                         </span>
                                     </td>
 
-                                    <!-- Loyalty & Stempel -->
+                                    <!-- Saldo Poin -->
+                                    <td class="py-3 px-4 text-center whitespace-nowrap font-bold text-gray-800">
+                                        {{ number_format($customer->loyalty_points ?? 0, 0, ',', '.') }}
+                                    </td>
+
+                                    <!-- Kartu Selesai (9 Cap) -->
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
-                                        @if(($customer->stamp_count ?? 0) >= 10 || ($customer->completed_cards_count ?? 0) > 0)
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20" title="Pelanggan memiliki voucher kartu stempel gratis siap klaim!">
-                                                <svg class="w-3.5 h-3.5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5a2 2 0 10-2 2h2zm0 13C10.832 21 4 15.8 4 10a8 8 0 1116 0c0 5.8-6.832 11-8 11z"/></svg>
-                                                <span>{{ $customer->completed_cards_count ?: 1 }} Kartu Gratis Siap Klaim</span>
-                                            </span>
-                                        @elseif(($customer->stamp_count ?? 0) > 0)
-                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                                                <svg class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                                <span>{{ $customer->stamp_count }}/10 Stempel</span>
+                                        @php
+                                            $completed = $customer->completed_cards_count ?? floor(($customer->stamp_count ?? 0) / 9);
+                                        @endphp
+                                        @if($completed > 0)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                                                <span>{{ $completed }} Kartu</span>
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-gray-50 text-gray-400 ring-1 ring-inset ring-gray-200">
-                                                <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                                <span>0/10 Stempel</span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-normal text-gray-400 bg-gray-50">
+                                                0 Kartu
                                             </span>
                                         @endif
                                     </td>
@@ -4047,18 +4075,24 @@
                                         <div class="font-bold text-xs text-gray-900">Rp {{ number_format($customer->total_spent, 0, ',', '.') }}</div>
                                     </td>
 
-                                    <!-- Aksi Pelunasan -->
+                                    <!-- Aksi (Detail & Bayar Kasbon) -->
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
-                                        @if(($customer->total_kasbon_due ?? 0) > 0 && isset($customer->latest_kasbon_order))
+                                        <div class="flex items-center justify-center gap-1.5">
                                             <button type="button"
-                                                    @click="openDebtPaymentModal({{ \Illuminate\Support\Js::from($customer->latest_kasbon_order) }})"
-                                                    class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1 mx-auto">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                                <span>Bayar Kasbon</span>
+                                                    @click="openCustomerDetailModal({{ \Illuminate\Support\Js::from($customer) }})"
+                                                    class="px-2.5 py-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-[11px] rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1" title="Lihat Rincian Biodata & Log Transaksi">
+                                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                <span>Detail</span>
                                             </button>
-                                        @else
-                                            <span class="text-gray-300 text-[11px]">-</span>
-                                        @endif
+                                            @if(($customer->total_kasbon_due ?? 0) > 0 && isset($customer->latest_kasbon_order))
+                                                <button type="button"
+                                                        @click="openDebtPaymentModal({{ \Illuminate\Support\Js::from($customer->latest_kasbon_order) }})"
+                                                        class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                                    <span>Bayar Kasbon</span>
+                                                </button>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -4514,7 +4548,7 @@
     </div>
 
     <!-- Modal Detail Rincian Nota Transaksi - Filament Native Style -->
-    <div x-show="showDetailOrderModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+    <div x-show="showDetailOrderModal" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-950/60 backdrop-blur-xs font-sans" x-transition.opacity>
         <div class="bg-white w-full max-w-lg rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showDetailOrderModal = false">
             <!-- Header -->
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
@@ -4601,6 +4635,113 @@
             <!-- Footer Action -->
             <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end rounded-b-xl flex-shrink-0">
                 <button @click="showDetailOrderModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail Biodata & Log Transaksi Pelanggan -->
+    <div x-show="showCustomerDetailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+        <div class="bg-white w-full max-w-2xl rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showCustomerDetailModal = false">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold text-sm flex items-center justify-center border border-emerald-200">
+                        <span x-text="selectedCustomerDetail ? (selectedCustomerDetail.customer_name || 'P').substring(0,1).toUpperCase() : 'P'"></span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-gray-950 leading-tight" x-text="selectedCustomerDetail ? selectedCustomerDetail.customer_name : 'Pelanggan'"></h3>
+                        <p class="text-xs text-gray-500 font-medium" x-text="selectedCustomerDetail && selectedCustomerDetail.customer_phone ? selectedCustomerDetail.customer_phone : 'Tanpa No. HP'"></p>
+                    </div>
+                </div>
+                <button @click="showCustomerDetailModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-6 space-y-5 overflow-y-auto flex-1 text-xs bg-gray-50/50" x-show="selectedCustomerDetail">
+                <!-- Ringkasan Profil & Loyalty Status Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-xs">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Stempel Aktif</div>
+                        <div class="text-sm font-extrabold text-emerald-600 mt-1" x-text="(selectedCustomerDetail ? (selectedCustomerDetail.active_stamps ?? (selectedCustomerDetail.stamp_count % 9)) : 0) + ' / 9 Cap'"></div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-xs">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Saldo Poin</div>
+                        <div class="text-sm font-extrabold text-gray-900 mt-1" x-text="formatMoney(selectedCustomerDetail ? selectedCustomerDetail.loyalty_points : 0) + ' Poin'"></div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-xs">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kartu Selesai</div>
+                        <div class="text-sm font-extrabold text-amber-600 mt-1" x-text="(selectedCustomerDetail ? selectedCustomerDetail.completed_cards_count : 0) + ' Kartu'"></div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-xs">
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sisa Kasbon</div>
+                        <div class="text-sm font-extrabold text-rose-600 mt-1" x-text="selectedCustomerDetail && selectedCustomerDetail.total_kasbon_due > 0 ? 'Rp ' + formatMoney(selectedCustomerDetail.total_kasbon_due) : 'Lunas'"></div>
+                    </div>
+                </div>
+
+                <!-- Informasi Kontak Pelanggan -->
+                <div class="bg-white p-3.5 rounded-lg border border-gray-200 space-y-1 shadow-xs">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Biodata Lengkap</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                        <div><span class="text-gray-500">Nama:</span> <strong class="text-gray-900" x-text="selectedCustomerDetail ? selectedCustomerDetail.customer_name : '-'"></strong></div>
+                        <div><span class="text-gray-500">No. HP:</span> <strong class="text-gray-900 font-mono" x-text="selectedCustomerDetail && selectedCustomerDetail.customer_phone ? selectedCustomerDetail.customer_phone : '-'"></strong></div>
+                        <div><span class="text-gray-500">Email:</span> <span class="text-gray-900 font-medium" x-text="selectedCustomerDetail && selectedCustomerDetail.customer_email ? selectedCustomerDetail.customer_email : '-'"></span></div>
+                        <div><span class="text-gray-500">Alamat:</span> <span class="text-gray-900 font-medium" x-text="selectedCustomerDetail && selectedCustomerDetail.customer_address ? selectedCustomerDetail.customer_address : '-'"></span></div>
+                    </div>
+                </div>
+
+                <!-- Log / Riwayat Transaksi Per Baris -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-gray-900 text-xs uppercase tracking-wider">Log Riwayat Transaksi Per Baris</h4>
+                        <span class="text-[11px] font-semibold text-gray-500" x-text="(selectedCustomerDetail && selectedCustomerDetail.customer_orders ? selectedCustomerDetail.customer_orders.length : 0) + ' Transaksi Tercatat'"></span>
+                    </div>
+
+                    <div class="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-xs">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="py-2.5 px-3">No. Nota</th>
+                                        <th class="py-2.5 px-3">Tanggal & Jam</th>
+                                        <th class="py-2.5 px-3">Metode Bayar</th>
+                                        <th class="py-2.5 px-3 text-right">Total Belanja</th>
+                                        <th class="py-2.5 px-3 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 text-xs">
+                                    <template x-for="order in (selectedCustomerDetail ? selectedCustomerDetail.customer_orders : [])" :key="order.id">
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="py-2.5 px-3 font-mono font-bold text-gray-900" x-text="'#' + order.order_number"></td>
+                                            <td class="py-2.5 px-3 text-gray-600 whitespace-nowrap" x-text="order.created_at"></td>
+                                            <td class="py-2.5 px-3">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700" x-text="order.payment_method"></span>
+                                            </td>
+                                            <td class="py-2.5 px-3 text-right font-bold text-gray-950 whitespace-nowrap" x-text="'Rp ' + formatMoney(order.grand_total)"></td>
+                                            <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                                <template x-if="order.is_kasbon && order.due_amount > 0">
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20" x-text="'Kasbon: Rp ' + formatMoney(order.due_amount)"></span>
+                                                </template>
+                                                <template x-if="!order.is_kasbon || order.due_amount <= 0">
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Lunas</span>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="!selectedCustomerDetail || !selectedCustomerDetail.customer_orders || selectedCustomerDetail.customer_orders.length === 0">
+                                        <td colspan="5" class="py-6 text-center text-gray-400 italic">Belum ada log transaksi tercatat untuk pelanggan ini.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end rounded-b-xl flex-shrink-0">
+                <button @click="showCustomerDetailModal = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                     Tutup
                 </button>
             </div>
@@ -4715,6 +4856,15 @@
                 debtPaymentAmount: 0,
                 debtPaymentMethod: 'cash',
                 debtPaymentNotes: '',
+
+                // State Modal Detail Pelanggan & Log Transaksi
+                showCustomerDetailModal: false,
+                selectedCustomerDetail: null,
+
+                openCustomerDetailModal(customerData) {
+                    this.selectedCustomerDetail = customerData;
+                    this.showCustomerDetailModal = true;
+                },
 
                 heldCarts: [],
                 showHoldModal: false,
@@ -5585,7 +5735,7 @@
 
                 addProduct(id, name, price, hasVariants, variants = null, defaultImage = null, isCustom = false, purchasePrice = 0, originalPrice = null, promoPrice = null) {
                     if (hasVariants && variants) {
-                        this.initVariantSelector(id, name, price, variants, defaultImage);
+                        this.initVariantSelector(id, name, price, variants, defaultImage, originalPrice);
                         return;
                     }
 
@@ -5602,8 +5752,14 @@
                     this.showCustomNegoModal = true;
                 },
 
-                initVariantSelector(id, name, price, variants, defaultImage) {
-                    this.currentProductForVariant = { id, name, price, defaultImage: defaultImage || '' };
+                initVariantSelector(id, name, price, variants, defaultImage, originalPrice = null) {
+                    this.currentProductForVariant = { 
+                        id, 
+                        name, 
+                        price, 
+                        originalPrice: originalPrice !== null ? parseFloat(originalPrice) : price, 
+                        defaultImage: defaultImage || '' 
+                    };
                     this.currentVariants = variants || [];
                     this.variantShowOutOfStock = false;
                     this.selectedVariantAttributes = {};
@@ -5720,12 +5876,13 @@
                         this.showToast('Stok varian terpilih sedang habis.', 'error');
                         return;
                     }
-                    this.addVariantToCart(matched.id, matched.name, matched.price);
+                    this.addVariantToCart(matched.id, matched.name, matched.price, matched.original_price);
                 },
 
-                addVariantToCart(variantId, variantName, variantPrice) {
+                addVariantToCart(variantId, variantName, variantPrice, variantOriginalPrice = null) {
                     const fullName = this.currentProductForVariant.name + ' - ' + variantName;
-                    this.addToCart(this.currentProductForVariant.id, variantId, fullName, variantPrice);
+                    const finalOrigPrice = variantOriginalPrice !== null ? parseFloat(variantOriginalPrice) : (this.currentProductForVariant ? this.currentProductForVariant.originalPrice : variantPrice);
+                    this.addToCart(this.currentProductForVariant.id, variantId, fullName, variantPrice, 1, finalOrigPrice);
                     this.showVariantModal = false;
                 },
 

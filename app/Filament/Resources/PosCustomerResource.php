@@ -7,7 +7,7 @@ use BackedEnum;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -26,6 +26,16 @@ class PosCustomerResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'phone';
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
 
     public static function getGloballySearchableAttributes(): array
     {
@@ -121,7 +131,80 @@ class PosCustomerResource extends Resource
             ])
             ->defaultSort('last_visit_at', 'desc')
             ->actions([
-                EditAction::make(),
+                ViewAction::make()
+                    ->modalWidth('5xl')
+                    ->stickyModalHeader()
+                    ->stickyModalFooter(),
+            ]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->columns(1)
+            ->components([
+                \Filament\Schemas\Components\Section::make('Biodata Pelanggan & Status Loyalty')
+                    ->schema([
+                        \Filament\Infolists\Components\TextEntry::make('name')->label('Nama Pelanggan')->weight('bold')->default('Pelanggan POS'),
+                        \Filament\Infolists\Components\TextEntry::make('phone')->label('Nomor Telepon/HP')->weight('bold'),
+                        \Filament\Infolists\Components\TextEntry::make('stamp_count')
+                            ->label('Stempel Aktif')
+                            ->badge()
+                            ->color('success')
+                            ->formatStateUsing(fn ($state) => "{$state} / 9 Cap"),
+                        \Filament\Infolists\Components\TextEntry::make('points_balance')
+                            ->label('Saldo Poin')
+                            ->numeric()
+                            ->weight('bold'),
+                        \Filament\Infolists\Components\TextEntry::make('completed_cards_count')
+                            ->label('Kartu Selesai (9 Cap)')
+                            ->badge()
+                            ->color(fn ($state) => $state > 0 ? 'warning' : 'gray')
+                            ->formatStateUsing(fn ($state) => $state > 0 ? "{$state} Kartu" : "0 Kartu"),
+                        \Filament\Infolists\Components\TextEntry::make('total_spent')->label('Total Akumulasi Belanja')->money('IDR'),
+                        \Filament\Infolists\Components\TextEntry::make('total_debt')
+                            ->label('Sisa Piutang Kasbon')
+                            ->badge()
+                            ->color(fn ($state) => $state > 0 ? 'danger' : 'gray')
+                            ->formatStateUsing(fn ($state) => $state > 0 ? 'Rp ' . number_format($state, 0, ',', '.') : 'Lunas'),
+                        \Filament\Infolists\Components\TextEntry::make('last_visit_at')->label('Kunjungan Terakhir')->dateTime('d M Y H:i')->default('-'),
+                    ])->columns(4),
+
+                \Filament\Schemas\Components\Section::make('Riwayat Transaksi Pelanggan')
+                    ->schema([
+                        \Filament\Infolists\Components\RepeatableEntry::make('orders')
+                            ->label('')
+                            ->schema([
+                                \Filament\Infolists\Components\TextEntry::make('order_number')
+                                    ->label('No. Nota')
+                                    ->weight('bold')
+                                    ->fontFamily('mono'),
+                                \Filament\Infolists\Components\TextEntry::make('created_at')
+                                    ->label('Tanggal & Jam')
+                                    ->dateTime('d M Y, H:i'),
+                                \Filament\Infolists\Components\TextEntry::make('payment_method')
+                                    ->label('Metode Bayar')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state) => strtoupper($state ?? 'TUNAI')),
+                                \Filament\Infolists\Components\TextEntry::make('grand_total')
+                                    ->label('Total Belanja')
+                                    ->money('IDR')
+                                    ->weight('bold'),
+                                \Filament\Infolists\Components\TextEntry::make('payment_status')
+                                    ->label('Status Bayar')
+                                    ->badge()
+                                    ->color(fn ($record) => ($record->is_kasbon && $record->due_amount > 0) ? 'danger' : 'success')
+                                    ->state(fn ($record) => ($record->is_kasbon && $record->due_amount > 0)
+                                        ? 'Kasbon: Rp ' . number_format($record->due_amount, 0, ',', '.')
+                                        : 'Lunas'),
+                                \Filament\Infolists\Components\TextEntry::make('items_summary')
+                                    ->label('Rincian Barang')
+                                    ->state(fn ($record) => $record->items
+                                        ->map(fn ($i) => ($i->product_name ?? 'Produk') . ' (' . $i->quantity . 'x)')
+                                        ->join(', ')),
+                            ])
+                            ->columns(6),
+                    ]),
             ]);
     }
 

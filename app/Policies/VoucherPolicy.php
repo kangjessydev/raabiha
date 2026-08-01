@@ -72,4 +72,14 @@ class VoucherPolicy
         return $authUser->can('Reorder:Voucher');
     }
 
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('Create:Voucher') || $authUser->can('ViewAny:Voucher');
+    }
+
+    public function export(AuthUser $authUser): bool
+    {
+        return $authUser->can('ViewAny:Voucher');
+    }
+
 }

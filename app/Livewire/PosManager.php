@@ -1418,10 +1418,65 @@ class PosManager extends Component
                 $key = $c->customer_phone ?: strtolower($c->customer_name);
                 $posCust = $posCustomerMap->get($key) ?? \App\Models\PosCustomer::where('name', $c->customer_name)->first();
                 $c->stamp_count = $posCust ? (int)$posCust->stamp_count : 0;
-                $c->completed_cards_count = $posCust ? (int)$posCust->completed_cards_count : 0;
+                $c->active_stamps = $c->stamp_count % 9;
+                $c->completed_cards_count = $posCust ? (int)($posCust->completed_cards_count ?? floor($c->stamp_count / 9)) : (int)floor($c->stamp_count / 9);
+                $c->loyalty_points = $posCust ? (int)($posCust->points_balance ?? 0) : 0;
+                $c->customer_email = $posCust ? $posCust->email : null;
+                $c->customer_address = $posCust ? $posCust->address : null;
 
-                // Hitung sisa kasbon/piutang pelanggan ini (nota is_kasbon dengan due_amount > 0)
-                $unpaidKasbonOrders = Order::where('status', '!=', 'cancelled')
+                // Load all transaction orders for this customer for per-row log
+                $customerOrders = Order::with(['items', 'user'])
+                    ->where('status', '!=', 'cancelled')
+                    ->where(function($q) use ($c) {
+                        if ($c->customer_phone) {
+                            $q->where('customer_phone', $c->customer_phone);
+                        } else {
+                            $q->where('customer_name', $c->customer_name);
+                        }
+                    })
+                    ->orderByDesc('created_at')
+                    ->get();
+
+                $c->customer_orders = $customerOrders->map(function($o) use ($c) {
+                    return [
+                        'id' => $o->id,
+                        'order_number' => $o->order_number,
+                        'created_at' => $o->created_at ? $o->created_at->format('d M Y, H:i') : '-',
+                        'customer_name' => $o->customer_name ?: ($c->customer_name ?? 'Pelanggan'),
+                        'customer_phone' => $o->customer_phone ?: ($c->customer_phone ?? '-'),
+                        'payment_method' => $o->payment_method_label ?? strtoupper($o->payment_method ?? 'TUNAI'),
+                        'subtotal' => (float)($o->subtotal ?? $o->grand_total),
+                        'discount_total' => (float)($o->discount_amount ?? 0),
+                        'grand_total' => (float)$o->grand_total,
+                        'cash_paid' => (float)($o->cash_paid ?? 0),
+                        'cash_change' => (float)($o->cash_change ?? 0),
+                        'is_kasbon' => (bool)$o->is_kasbon,
+                        'due_amount' => (float)$o->due_amount,
+                        'status' => $o->status,
+                        'cashier_name' => $o->user?->name ?? 'Kasir System',
+                        'items' => $o->items->map(fn($item) => [
+                            'name' => $item->product_name ?? 'Produk',
+                            'variant' => $item->variant_name ?? '',
+                            'price' => (float)$item->price,
+                            'qty' => (int)$item->quantity,
+                            'quantity' => (int)$item->quantity,
+                            'subtotal' => (float)$item->total,
+                            'total' => (float)$item->total,
+                        ])->values()->all(),
+                        'debt_payments' => $o->debtPayments ? $o->debtPayments->map(fn($dp) => [
+                            'amount_paid' => (float)$dp->amount_paid,
+                            'payment_method' => strtoupper($dp->payment_method ?? 'CASH'),
+                            'cashier_name' => $dp->cashier?->name ?? 'Kasir',
+                            'notes' => $dp->notes,
+                            'created_at' => $dp->created_at ? $dp->created_at->format('d M Y, H:i') : '-',
+                        ])->values()->all() : [],
+                    ];
+                })->values()->all();
+
+                // Hitung sisa kasbon/piutang pelanggan ini
+                $unpaidKasbonOrders = $customerOrders->filter(fn($o) => $o['is_kasbon'] && $o['due_amount'] > 0);
+                $c->total_kasbon_due = $unpaidKasbonOrders->sum('due_amount');
+                $c->latest_kasbon_order = Order::where('status', '!=', 'cancelled')
                     ->where('is_kasbon', true)
                     ->where('due_amount', '>', 0)
                     ->where(function($q) use ($c) {
@@ -1431,10 +1486,7 @@ class PosManager extends Component
                             $q->where('customer_name', $c->customer_name);
                         }
                     })
-                    ->get();
-
-                $c->total_kasbon_due = $unpaidKasbonOrders->sum('due_amount');
-                $c->latest_kasbon_order = $unpaidKasbonOrders->first();
+                    ->first();
                 return $c;
             });
 
