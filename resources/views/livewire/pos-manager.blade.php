@@ -1054,10 +1054,10 @@
                             <!-- Jumlah (Qty) -->
                             <div>
                                 <label class="block text-[11px] font-bold uppercase text-gray-500 tracking-wider mb-1">Jumlah (Qty)</label>
-                                <div class="flex items-center border border-gray-300 rounded-xl bg-white overflow-hidden shadow-xs w-40">
-                                    <button type="button" @click="customNegoProduct.qty = Math.max(1, customNegoProduct.qty - 1)" class="w-11 h-10 flex items-center justify-center bg-gray-100 text-gray-700 font-black hover:bg-gray-200 cursor-pointer text-sm transition">-</button>
-                                    <input type="number" x-model.number="customNegoProduct.qty" class="w-18 text-center border-none focus:ring-0 text-sm font-black p-0" min="1">
-                                    <button type="button" @click="customNegoProduct.qty = customNegoProduct.qty + 1" class="w-11 h-10 flex items-center justify-center bg-gray-100 text-gray-700 font-black hover:bg-gray-200 cursor-pointer text-sm transition">+</button>
+                                <div class="inline-flex items-center border border-gray-300 rounded-xl bg-white overflow-hidden shadow-xs">
+                                    <button type="button" @click="customNegoProduct.qty = Math.max(1, customNegoProduct.qty - 1)" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-black cursor-pointer text-base transition select-none flex-shrink-0 border-r border-gray-200">-</button>
+                                    <input type="number" x-model.number="customNegoProduct.qty" min="1" class="w-16 text-center border-0 focus:ring-0 text-sm font-black p-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                    <button type="button" @click="customNegoProduct.qty = customNegoProduct.qty + 1" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-black cursor-pointer text-base transition select-none flex-shrink-0 border-l border-gray-200">+</button>
                                 </div>
                             </div>
 

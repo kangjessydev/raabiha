@@ -77,9 +77,9 @@ class ProductsTable
                 TextColumn::make('is_custom')
                     ->label('Asal Produk')
                     ->badge()
-                    ->formatStateUsing(fn ($state, $record) => ($state || $record->channel_visibility === 'pos_only') ? 'Dibuat via POS' : 'Admin Panel')
-                    ->color(fn ($state, $record) => ($state || $record->channel_visibility === 'pos_only') ? 'warning' : 'success')
-                    ->icon(fn ($state, $record) => ($state || $record->channel_visibility === 'pos_only') ? 'heroicon-m-shopping-bag' : 'heroicon-m-computer-desktop')
+                    ->formatStateUsing(fn ($state) => $state ? 'Dibuat via POS' : 'Admin Panel')
+                    ->color(fn ($state) => $state ? 'warning' : 'success')
+                    ->icon(fn ($state) => $state ? 'heroicon-m-shopping-bag' : 'heroicon-m-computer-desktop')
                     ->sortable(),
                 TextColumn::make('channel_visibility')
                     ->label('Kanal Penjualan')
