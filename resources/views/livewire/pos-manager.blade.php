@@ -935,7 +935,7 @@
                             </div>
                             <div>
                                 <h3 class="font-bold text-base text-gray-950 leading-tight">Tambah Produk Kustom / Impor</h3>
-                                <p class="text-xs text-gray-500 font-medium">Input cepat barang nego/impor on-the-fly</p>
+                                <p class="text-xs text-gray-500 font-medium">Input cepat barang kustom/impor ke katalog & keranjang</p>
                             </div>
                         </div>
                         <button @click="showCustomProductModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
@@ -948,17 +948,13 @@
                             <input type="text" x-model="customProductName" placeholder="misal: Baju Korea Impor Type A" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-medium text-gray-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150">
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block font-bold text-gray-900 mb-1">Harga Modal / HPP</label>
                                 <input type="number" x-model.number="customPurchasePrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-semibold text-gray-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                             </div>
                             <div>
-                                <label class="block font-bold text-gray-900 mb-1" title="Harga pasaran/tag biasa sebelum nego">Harga Normal / Tag</label>
-                                <input type="number" x-model.number="customNormalPrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-semibold text-gray-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                            </div>
-                            <div>
-                                <label class="block font-bold text-gray-900 mb-1" title="Harga jual kesepakatan akhir">Harga Nego (Akhir)</label>
+                                <label class="block font-bold text-gray-900 mb-1" title="Harga jual standar produk">Harga Jual / Normal</label>
                                 <input type="number" x-model.number="customPrice" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-bold text-emerald-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition duration-150 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                             </div>
                         </div>
@@ -995,6 +991,62 @@
                         </button>
                         <button type="button" @click="saveCustomProductModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                             Simpan ke Katalog POS
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Edit Harga Nego Item Keranjang -->
+            <div x-show="showEditItemPriceModal" x-cloak wire:key="modal-edit-item-price" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+                <div class="bg-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col" @click.away="showEditItemPriceModal = false">
+                    <!-- Header -->
+                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-100">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm text-gray-950 leading-tight">Harga Nego Item</h3>
+                                <p class="text-[11px] text-gray-500 font-medium truncate max-w-[200px]" x-text="editingItemName"></p>
+                            </div>
+                        </div>
+                        <button @click="showEditItemPriceModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-lg transition">&times;</button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-5 space-y-3 bg-gray-50/50 text-xs">
+                        <div class="p-2.5 bg-white border border-gray-200 rounded-lg flex items-center justify-between shadow-2xs">
+                            <span class="text-gray-500 font-medium">Harga Normal Item:</span>
+                            <span class="font-bold text-gray-900" x-text="'Rp ' + formatMoney(editingItemOriginalPrice)"></span>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-gray-900 mb-1">Set Harga Nego Baru (Per Item)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-xs font-bold text-gray-400">Rp</span>
+                                <input type="number" 
+                                       x-model.number="editingItemNegoPrice" 
+                                       @keydown.enter="saveEditItemPrice()"
+                                       placeholder="0" 
+                                       class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-bold text-emerald-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                            </div>
+                        </div>
+
+                        <template x-if="editingItemPurchasePrice > 0">
+                            <div class="text-[10px] text-gray-500 flex items-center justify-between pt-1">
+                                <span>Harga Modal (HPP): <strong x-text="'Rp ' + formatMoney(editingItemPurchasePrice)"></strong></span>
+                                <span class="text-rose-600 font-bold" x-show="editingItemNegoPrice < editingItemPurchasePrice">* Wajib PIN Supervisor</span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2 rounded-b-xl">
+                        <button type="button" @click="showEditItemPriceModal = false" class="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition">
+                            Batal
+                        </button>
+                        <button type="button" @click="saveEditItemPrice()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs transition cursor-pointer">
+                            Terapkan Nego
                         </button>
                     </div>
                 </div>
@@ -1041,7 +1093,13 @@
                         </div>
                         
                         <div class="flex justify-between items-center mt-0.5">
-                            <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' / item'"></div>
+                            <div class="flex items-center gap-1.5">
+                                <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' / item'"></div>
+                                <button type="button" @click="openEditItemPriceModal(index)" class="text-[10px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors flex items-center gap-0.5" title="Set Harga Nego">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    <span>Nego</span>
+                                </button>
+                            </div>
                             <!-- Qty Controls -->
                             <div class="flex items-center border border-gray-200 rounded-md bg-gray-50">
                                 <button @click="updateQty(index, -1)" class="w-6 h-6 flex items-center justify-center bg-white rounded-l-md text-gray-700 hover:text-emerald-600 font-bold text-xs cursor-pointer">-</button>
@@ -1193,7 +1251,13 @@
                         <div class="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs">
                             <div class="flex-1 min-w-0">
                                 <div class="font-bold text-gray-900 truncate" x-text="item.name"></div>
-                                <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price)"></div>
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    <span class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price)"></span>
+                                    <button type="button" @click="openEditItemPriceModal(index)" class="text-[10px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors flex items-center gap-0.5" title="Set Harga Nego">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                        <span>Nego</span>
+                                    </button>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button type="button" @click="updateQty(index, item.quantity - 1)" class="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">-</button>
@@ -4592,6 +4656,14 @@
                 customSaveToCatalog: true,
                 customAddToCart: false,
 
+                // State Modal Edit Harga Nego Item Keranjang
+                showEditItemPriceModal: false,
+                editingCartIndex: null,
+                editingItemName: '',
+                editingItemOriginalPrice: 0,
+                editingItemNegoPrice: 0,
+                editingItemPurchasePrice: 0,
+
                 // State Modal Pelunasan Kasbon
                 showDebtPaymentModal: false,
                 selectedDebtOrder: null,
@@ -5378,6 +5450,54 @@
                     }
 
                     processSave();
+                },
+
+                openEditItemPriceModal(index) {
+                    if (!this.cart[index]) return;
+                    const item = this.cart[index];
+                    this.editingCartIndex = index;
+                    this.editingItemName = item.name;
+                    this.editingItemOriginalPrice = item.original_price || item.price;
+                    this.editingItemNegoPrice = item.price;
+                    this.editingItemPurchasePrice = item.purchase_price || 0;
+                    this.showEditItemPriceModal = true;
+                },
+
+                async saveEditItemPrice() {
+                    if (this.editingCartIndex === null || !this.cart[this.editingCartIndex]) {
+                        this.showEditItemPriceModal = false;
+                        return;
+                    }
+
+                    const item = this.cart[this.editingCartIndex];
+                    const newPrice = parseFloat(this.editingItemNegoPrice || 0);
+
+                    if (isNaN(newPrice) || newPrice < 0) {
+                        this.showToast('Harga nego tidak valid.', 'error');
+                        return;
+                    }
+
+                    const purchasePrice = parseFloat(item.purchase_price || 0);
+                    const processPriceChange = () => {
+                        if (!item.original_price) {
+                            item.original_price = item.price;
+                        }
+                        item.price = newPrice;
+                        this.saveActiveCart();
+                        this.showEditItemPriceModal = false;
+                        this.showToast(`Harga nego untuk ${item.name} berhasil diperbarui!`, 'success');
+                    };
+
+                    if (purchasePrice > 0 && newPrice < purchasePrice) {
+                        this.showPinSupervisorModal(
+                            `Nego harga (${item.name}) Rp ${this.formatMoney(newPrice)} di bawah HPP Rp ${this.formatMoney(purchasePrice)}!`,
+                            () => {
+                                processPriceChange();
+                            }
+                        );
+                    } else {
+                        processPriceChange();
+                    }
                 },
 
                 addCustomProductToCart() {

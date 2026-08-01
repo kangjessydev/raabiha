@@ -1218,7 +1218,7 @@ class PosManager extends Component
         }
 
         if ($price <= 0) {
-            $this->dispatch('pos-toast', message: 'Harga jual nego harus lebih dari 0.', type: 'error');
+            $this->dispatch('pos-toast', message: 'Harga jual harus lebih dari 0.', type: 'error');
             return null;
         }
 
