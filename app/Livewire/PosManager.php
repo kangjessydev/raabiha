@@ -1234,6 +1234,19 @@ class PosManager extends Component
             'channel_visibility' => 'pos_only',
         ]);
 
+        // Catat Log Stok Masuk Awal ke Manajemen Stok
+        \App\Models\StockLog::create([
+            'product_id'         => $newProduct->id,
+            'product_variant_id' => null,
+            'user_id'            => Auth::id(),
+            'type'               => 'in',
+            'quantity_before'    => 0,
+            'quantity_change'    => max(1, $qty),
+            'quantity_after'     => max(1, $qty),
+            'reason'             => 'initial_stock',
+            'notes'              => 'Stok awal pendaftaran produk kustom/impor via POS',
+        ]);
+
         $this->dispatch('pos-toast', message: "Produk '{$name}' berhasil disimpan ke Katalog POS (Stok: " . max(1, $qty) . " pcs)!", type: 'success');
 
         return [
