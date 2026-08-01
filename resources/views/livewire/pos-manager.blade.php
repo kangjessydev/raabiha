@@ -877,7 +877,7 @@
                                      ])->values()->all()
                                  ];
                              })) : 'null' }} }"
-                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData, '{{ $image }}', {{ $product->is_custom ? 'true' : 'false' }}, {{ (float)($product->purchase_price ?? 0) }})"
+                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData, '{{ $image }}', {{ $product->is_custom ? 'true' : 'false' }}, {{ (float)($product->purchase_price ?? 0) }}, {{ (float)($originalPrice ?? $priceForJs) }}, {{ $hasPromo ? (float)$promoPrice : 'null' }})"
                              @endif
                              >
                              
@@ -997,65 +997,109 @@
             </div>
 
             <!-- Modal Nego Harga Produk Kustom (Saat Diklik dari Catalog Grid) -->
+            <!-- Modal Nego Harga & Detail Produk (Mirip Gambar 3) -->
             <div x-show="showCustomNegoModal" x-cloak wire:key="modal-custom-product-nego" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
-                <div class="bg-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col" @click.away="showCustomNegoModal = false">
-                    <!-- Header -->
-                    <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white">
-                        <div class="flex items-center gap-2 min-w-0">
-                            <div class="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-100 flex-shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </div>
-                            <div class="min-w-0">
-                                <h3 class="font-bold text-sm text-gray-950 leading-tight truncate">Detail & Nego Produk Kustom</h3>
-                                <p class="text-[11px] text-gray-500 font-medium truncate" x-text="customNegoProduct.name"></p>
-                            </div>
+                <div class="bg-white w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col" @click.away="showCustomNegoModal = false">
+                    <!-- Header (Mirip Gambar 3) -->
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-start justify-between bg-white">
+                        <div>
+                            <h3 class="font-black text-lg text-gray-950 leading-tight uppercase tracking-tight" x-text="customNegoProduct.name || 'Detail Produk Nego'"></h3>
+                            <p class="text-xs text-gray-500 font-medium mt-0.5">Atur harga nego dan jumlah produk yang akan dimasukkan ke keranjang</p>
                         </div>
-                        <button @click="showCustomNegoModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-lg transition">&times;</button>
+                        <button @click="showCustomNegoModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
                     </div>
 
-                    <!-- Body -->
-                    <div class="p-5 space-y-3.5 bg-gray-50/50 text-xs">
-                        <div class="p-2.5 bg-white border border-gray-200 rounded-lg flex items-center justify-between shadow-2xs">
-                            <span class="text-gray-500 font-medium">Harga Normal Produk:</span>
-                            <span class="font-bold text-gray-900" x-text="'Rp ' + formatMoney(customNegoProduct.originalPrice)"></span>
+                    <!-- Body 2 Kolom (Mirip Gambar 3) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 bg-white">
+                        <!-- Kolom Kiri: Form Harga & Qty -->
+                        <div class="p-6 space-y-4">
+                            <!-- Harga Normal (Readonly) -->
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-gray-500 tracking-wider mb-1">Harga Normal (Tidak Dapat Diubah)</label>
+                                <div class="p-2.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-gray-600">Harga Katalog</span>
+                                    <span class="font-extrabold text-sm text-gray-900" 
+                                          :class="{'line-through text-gray-400 font-normal': customNegoProduct.promoPrice && customNegoProduct.promoPrice < customNegoProduct.originalPrice}"
+                                          x-text="'Rp ' + formatMoney(customNegoProduct.originalPrice)"></span>
+                                </div>
+                            </div>
+
+                            <!-- Harga Promo (Readonly, jika ada promo) -->
+                            <template x-if="customNegoProduct.promoPrice && customNegoProduct.promoPrice < customNegoProduct.originalPrice">
+                                <div>
+                                    <div class="flex items-center gap-1.5 mb-1">
+                                        <span class="inline-flex items-center gap-1 bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-md">🔥 PROMO AKTIF</span>
+                                        <label class="text-[11px] font-bold uppercase text-gray-500 tracking-wider">Harga Promo</label>
+                                    </div>
+                                    <div class="p-2.5 bg-rose-50/60 border border-rose-100 rounded-xl flex items-center justify-between">
+                                        <span class="text-xs font-semibold text-rose-800">Harga Promo Event</span>
+                                        <span class="font-black text-sm text-rose-600" x-text="'Rp ' + formatMoney(customNegoProduct.promoPrice)"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Harga Nego (Editable) -->
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-emerald-800 tracking-wider mb-1">Harga Nego (Sesuaikan Harga)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3.5 top-2.5 text-xs font-bold text-gray-400">Rp</span>
+                                    <input type="number" 
+                                           x-model.number="customNegoProduct.negoPrice" 
+                                           @keydown.enter="confirmCustomNegoAddToCart()"
+                                           placeholder="0" 
+                                           class="w-full pl-10 pr-3 py-2.5 border-2 border-emerald-500 rounded-xl bg-white text-sm font-black text-emerald-950 shadow-xs focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                </div>
+                            </div>
+
+                            <!-- Jumlah (Qty) -->
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-gray-500 tracking-wider mb-1">Jumlah (Qty)</label>
+                                <div class="flex items-center border border-gray-300 rounded-xl bg-white overflow-hidden shadow-xs w-40">
+                                    <button type="button" @click="customNegoProduct.qty = Math.max(1, customNegoProduct.qty - 1)" class="w-11 h-10 flex items-center justify-center bg-gray-100 text-gray-700 font-black hover:bg-gray-200 cursor-pointer text-sm transition">-</button>
+                                    <input type="number" x-model.number="customNegoProduct.qty" class="w-18 text-center border-none focus:ring-0 text-sm font-black p-0" min="1">
+                                    <button type="button" @click="customNegoProduct.qty = customNegoProduct.qty + 1" class="w-11 h-10 flex items-center justify-center bg-gray-100 text-gray-700 font-black hover:bg-gray-200 cursor-pointer text-sm transition">+</button>
+                                </div>
+                            </div>
+
+                            <!-- HPP / PIN Supervisor Warning -->
+                            <template x-if="customNegoProduct.purchasePrice > 0">
+                                <div class="p-2.5 rounded-xl text-xs flex items-center justify-between border"
+                                     :class="customNegoProduct.negoPrice < customNegoProduct.purchasePrice ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-gray-50 border-gray-200 text-gray-600'">
+                                    <span>HPP / Modal: <strong x-text="'Rp ' + formatMoney(customNegoProduct.purchasePrice)"></strong></span>
+                                    <span x-show="customNegoProduct.negoPrice < customNegoProduct.purchasePrice" class="text-rose-600 font-black text-[11px] flex items-center gap-1">
+                                        ⚠️ Butuh PIN Supervisor
+                                    </span>
+                                </div>
+                            </template>
                         </div>
 
-                        <div>
-                            <label class="block font-bold text-gray-900 mb-1">Harga Nego Ditetapkan (Per Item)</label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-2.5 text-xs font-bold text-gray-400">Rp</span>
-                                <input type="number" 
-                                       x-model.number="customNegoProduct.negoPrice" 
-                                       @keydown.enter="confirmCustomNegoAddToCart()"
-                                       placeholder="0" 
-                                       class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-bold text-emerald-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                        <!-- Kolom Kanan: Preview Gambar & Total (Mirip Gambar 3) -->
+                        <div class="p-6 bg-gray-50/50 flex flex-col items-center justify-between space-y-4">
+                            <div class="w-full flex flex-col items-center text-center space-y-3">
+                                <div class="w-48 h-48 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs relative flex items-center justify-center">
+                                    <img :src="customNegoProduct.defaultImage || '{{ asset('assets/images/placeholder.webp') }}'" 
+                                         :alt="customNegoProduct.name" 
+                                         class="w-full h-full object-cover">
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-gray-900" x-text="customNegoProduct.name"></h4>
+                                    <p class="text-xs text-gray-500 font-semibold mt-0.5" x-text="customNegoProduct.qty + ' item × Rp ' + formatMoney(customNegoProduct.negoPrice)"></p>
+                                </div>
+                                <div class="p-3 bg-emerald-50 border border-emerald-200/80 rounded-2xl w-full text-center">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Total Subtotal Nego</span>
+                                    <span class="text-2xl font-black text-emerald-700 font-mono" x-text="'Rp ' + formatMoney(customNegoProduct.negoPrice * customNegoProduct.qty)"></span>
+                                </div>
                             </div>
                         </div>
-
-                        <div>
-                            <label class="block font-bold text-gray-900 mb-1">Jumlah (Qty)</label>
-                            <div class="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden shadow-2xs w-36">
-                                <button type="button" @click="customNegoProduct.qty = Math.max(1, customNegoProduct.qty - 1)" class="w-10 h-8 flex items-center justify-center bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 cursor-pointer">-</button>
-                                <input type="number" x-model.number="customNegoProduct.qty" class="w-16 text-center border-none focus:ring-0 text-xs font-bold p-0" min="1">
-                                <button type="button" @click="customNegoProduct.qty = customNegoProduct.qty + 1" class="w-10 h-8 flex items-center justify-center bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 cursor-pointer">+</button>
-                            </div>
-                        </div>
-
-                        <template x-if="customNegoProduct.purchasePrice > 0">
-                            <div class="text-[10px] text-gray-500 flex items-center justify-between pt-1">
-                                <span>Harga Modal (HPP): <strong x-text="'Rp ' + formatMoney(customNegoProduct.purchasePrice)"></strong></span>
-                                <span class="text-rose-600 font-bold" x-show="customNegoProduct.negoPrice < customNegoProduct.purchasePrice">* Wajib PIN Supervisor</span>
-                            </div>
-                        </template>
                     </div>
 
-                    <!-- Footer -->
-                    <div class="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2 rounded-b-xl">
-                        <button type="button" @click="showCustomNegoModal = false" class="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition">
+                    <!-- Footer (Mirip Gambar 3) -->
+                    <div class="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between rounded-b-2xl">
+                        <button type="button" @click="showCustomNegoModal = false" class="px-5 py-2.5 bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 font-bold text-xs rounded-xl shadow-xs transition">
                             Batal
                         </button>
-                        <button type="button" @click="confirmCustomNegoAddToCart()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs transition cursor-pointer">
-                            + Masukkan Keranjang
+                        <button type="button" @click="confirmCustomNegoAddToCart()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center gap-1.5">
+                            + TAMBAH KE KERANJANG
                         </button>
                     </div>
                 </div>
@@ -5539,27 +5583,23 @@
                     this.showDebtPaymentModal = false;
                 },
 
-                addProduct(id, name, price, hasVariants, variants = null, defaultImage = null, isCustom = false, purchasePrice = 0) {
+                addProduct(id, name, price, hasVariants, variants = null, defaultImage = null, isCustom = false, purchasePrice = 0, originalPrice = null, promoPrice = null) {
                     if (hasVariants && variants) {
                         this.initVariantSelector(id, name, price, variants, defaultImage);
                         return;
                     }
 
-                    if (isCustom) {
-                        this.customNegoProduct = {
-                            id: id,
-                            name: name,
-                            originalPrice: price,
-                            purchasePrice: purchasePrice,
-                            negoPrice: price,
-                            qty: 1,
-                            defaultImage: defaultImage || ''
-                        };
-                        this.showCustomNegoModal = true;
-                        return;
-                    }
-
-                    this.addToCart(id, null, name, price);
+                    this.customNegoProduct = {
+                        id: id,
+                        name: name,
+                        originalPrice: originalPrice !== null ? parseFloat(originalPrice) : price,
+                        promoPrice: (promoPrice !== null && !isNaN(promoPrice)) ? parseFloat(promoPrice) : null,
+                        purchasePrice: parseFloat(purchasePrice || 0),
+                        negoPrice: price,
+                        qty: 1,
+                        defaultImage: defaultImage || ''
+                    };
+                    this.showCustomNegoModal = true;
                 },
 
                 initVariantSelector(id, name, price, variants, defaultImage) {

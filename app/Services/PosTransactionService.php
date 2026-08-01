@@ -56,6 +56,7 @@ class PosTransactionService
                             'purchase_price' => $customPurchasePrice,
                             'stock' => $qty,
                             'is_active' => true,
+                            'is_custom' => true,
                             'channel_visibility' => 'pos_only',
                         ]);
                         $productId = $newProduct->id;
