@@ -1522,25 +1522,60 @@ class PosManager extends Component
             $sessionReturns = $returnsQuery->latest()->get();
         }
 
-        $allProductsJson = collect($products)->map(fn($p) => [
-            'id'           => $p->id,
-            'name'         => $p->name,
-            'price'        => (float)($p->pos_discount_price ?: ($p->pos_price ?: $p->price)),
-            'stock'        => (int)($p->computed_stock ?? $p->stock),
-            'has_variants' => (bool)$p->has_variants,
-            'variants'     => $p->has_variants ? ($p->relationLoaded('variants') ? $p->variants->map(fn($v) => [
-                'id'         => $v->id,
-                'name'       => $v->name,
-                'price'      => (float)($v->pos_discount_price ?: ($v->pos_price ?: ($v->price ?: $p->price))),
-                'stock'      => (int)$v->stock,
-                'attributes' => $v->attributeOptions ? $v->attributeOptions->map(fn($opt) => [
-                    'attr_id'   => $opt->attribute_id,
-                    'attr_name' => $opt->attribute->name ?? '',
-                    'attr_slug' => $opt->attribute->slug ?? '',
-                    'value'     => $opt->value,
-                ])->values()->all() : [],
-            ])->values()->all() : []) : [],
-        ])->values()->all();
+        $activeEventPromos = \App\Models\PosEventPromotion::active()->get();
+
+        $allProductsJson = collect($products)->map(function($p) use ($activeEventPromos) {
+            $basePrice = (float)($p->pos_price ?: $p->price);
+            $activePromo = $activeEventPromos->first(fn($ep) => $ep->isProductEligible($p->id, $p->category_id));
+            $finalPrice = $basePrice;
+
+            if ($activePromo) {
+                if ($activePromo->discount_type === 'percent') {
+                    $finalPrice = max(0, $basePrice * (1 - (((float)$activePromo->discount_amount) / 100)));
+                } else {
+                    $finalPrice = max(0, $basePrice - ((float)$activePromo->discount_amount));
+                }
+            } elseif ($p->pos_discount_price) {
+                $finalPrice = (float)$p->pos_discount_price;
+            }
+
+            return [
+                'id'           => $p->id,
+                'name'         => $p->name,
+                'price'        => $finalPrice,
+                'original_price' => $basePrice,
+                'stock'        => (int)($p->computed_stock ?? $p->stock),
+                'has_variants' => (bool)$p->has_variants,
+                'variants'     => $p->has_variants ? ($p->relationLoaded('variants') ? $p->variants->map(function($v) use ($p, $activePromo) {
+                    $vBasePrice = (float)($v->pos_price ?: ($v->price ?: $p->price));
+                    $vFinalPrice = $vBasePrice;
+
+                    if ($activePromo) {
+                        if ($activePromo->discount_type === 'percent') {
+                            $vFinalPrice = max(0, $vBasePrice * (1 - (((float)$activePromo->discount_amount) / 100)));
+                        } else {
+                            $vFinalPrice = max(0, $vBasePrice - ((float)$activePromo->discount_amount));
+                        }
+                    } elseif ($p->pos_discount_price) {
+                        $vFinalPrice = (float)$p->pos_discount_price;
+                    }
+
+                    return [
+                        'id'         => $v->id,
+                        'name'       => $v->name,
+                        'price'      => $vFinalPrice,
+                        'original_price' => $vBasePrice,
+                        'stock'      => (int)$v->stock,
+                        'attributes' => $v->attributeOptions ? $v->attributeOptions->map(fn($opt) => [
+                            'attr_id'   => $opt->attribute_id,
+                            'attr_name' => $opt->attribute->name ?? '',
+                            'attr_slug' => $opt->attribute->slug ?? '',
+                            'value'     => $opt->value,
+                        ])->values()->all() : [],
+                    ];
+                })->values()->all() : []) : [],
+            ];
+        })->values()->all();
 
         return view('livewire.pos-manager', [
             'products'         => $products,

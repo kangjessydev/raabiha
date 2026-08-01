@@ -782,16 +782,33 @@
                             $computedStock = $product->computed_stock ?? ($hasVariants ? $product->variants->sum('stock') : $product->stock);
                             $isOutOfStock = $computedStock <= 0;
                             
-                            // Harga display
+                            // Harga display & Cek Promo Event POS Aktif
                             $hasPromo = false;
                             $promoPrice = null;
                             $originalPrice = null;
                             $priceDisplay = '';
-                            
-                            if ($product->pos_discount_price) {
+                            $promoBadge = null;
+
+                            $activeEventPromo = $this->activeEventPromotions->first(fn($ep) => $ep->isProductEligible($product->id, $product->category_id));
+                            $basePrice = $product->pos_price ?: $product->price;
+
+                            if ($activeEventPromo) {
+                                $hasPromo = true;
+                                $originalPrice = $basePrice;
+                                if ($activeEventPromo->discount_type === 'percent') {
+                                    $discVal = (float) $activeEventPromo->discount_amount;
+                                    $promoPrice = max(0, $basePrice * (1 - ($discVal / 100)));
+                                    $promoBadge = $activeEventPromo->name . ' -' . round($discVal) . '%';
+                                } else {
+                                    $discVal = (float) $activeEventPromo->discount_amount;
+                                    $promoPrice = max(0, $basePrice - $discVal);
+                                    $promoBadge = $activeEventPromo->name . ' -Rp ' . number_format($discVal, 0, ',', '.');
+                                }
+                                $priceDisplay = 'Rp ' . number_format($promoPrice, 0, ',', '.');
+                            } elseif ($product->pos_discount_price) {
                                 $hasPromo = true;
                                 $promoPrice = $product->pos_discount_price;
-                                $originalPrice = $product->pos_price ?: $product->price;
+                                $originalPrice = $basePrice;
                                 $priceDisplay = 'Rp ' . number_format($promoPrice, 0, ',', '.');
                             } elseif ($product->pos_price) {
                                 $originalPrice = $product->pos_price;
@@ -836,19 +853,30 @@
                         
                         <div class="bg-white border border-gray-200 rounded-xl overflow-hidden {{ $isOutOfStock ? 'opacity-60 cursor-not-allowed' : 'hover:border-emerald-500 hover:shadow-md cursor-pointer group' }} transition duration-150 relative flex flex-col justify-between"
                              @if(!$isOutOfStock)
-                             x-data="{ variantsData: {{ $hasVariants ? \Illuminate\Support\Js::from($product->variants->map(fn($v) => [
-                                 'id' => $v->id, 
-                                 'name' => $v->name, 
-                                 'price' => $product->pos_discount_price ?: ($product->pos_price ?: ($v->price ?: $product->price)), 
-                                 'stock' => $v->stock,
-                                 'image' => $v->media ? Storage::url($v->media->path) : $image,
-                                 'attributes' => $v->attributeOptions->map(fn($opt) => [
-                                     'attr_id' => $opt->attribute_id,
-                                     'attr_name' => $opt->attribute->name ?? '',
-                                     'attr_slug' => $opt->attribute->slug ?? '',
-                                     'value' => $opt->value,
-                                 ])->values()->all()
-                             ])) : 'null' }} }"
+                             x-data="{ variantsData: {{ $hasVariants ? \Illuminate\Support\Js::from($product->variants->map(function($v) use ($product, $activeEventPromo, $image) {
+                                 $vBasePrice = $v->pos_price ?: ($v->price ?: $product->price);
+                                 $vPrice = $vBasePrice;
+                                 if ($activeEventPromo) {
+                                     if ($activeEventPromo->discount_type === 'percent') {
+                                         $vPrice = max(0, $vBasePrice * (1 - (((float)$activeEventPromo->discount_amount) / 100)));
+                                     } else {
+                                         $vPrice = max(0, $vBasePrice - ((float)$activeEventPromo->discount_amount));
+                                     }
+                                 }
+                                 return [
+                                     'id' => $v->id, 
+                                     'name' => $v->name, 
+                                     'price' => $vPrice, 
+                                     'stock' => $v->stock,
+                                     'image' => $v->media ? Storage::url($v->media->path) : $image,
+                                     'attributes' => $v->attributeOptions->map(fn($opt) => [
+                                         'attr_id' => $opt->attribute_id,
+                                         'attr_name' => $opt->attribute->name ?? '',
+                                         'attr_slug' => $opt->attribute->slug ?? '',
+                                         'value' => $opt->value,
+                                     ])->values()->all()
+                                 ];
+                             })) : 'null' }} }"
                              @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData, '{{ $image }}')"
                              @endif
                              >
@@ -861,7 +889,11 @@
 
                             <div class="aspect-square bg-gray-50 relative overflow-hidden">
                                 <img src="{{ $image }}" alt="{{ $product->name }}" class="object-cover w-full h-full {{ !$isOutOfStock ? 'group-hover:scale-102' : '' }} transition-transform duration-300">
-                                @if(isset($product->is_best_seller) && $product->is_best_seller)
+                                @if(!empty($promoBadge))
+                                    <span class="absolute top-2 left-2 bg-gradient-to-r from-rose-600 to-amber-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold shadow-md flex items-center gap-1 z-10 animate-pulse">
+                                        🔥 {{ $promoBadge }}
+                                    </span>
+                                @elseif(isset($product->is_best_seller) && $product->is_best_seller)
                                     <span class="absolute top-2 left-2 bg-amber-400 text-amber-950 text-[10px] px-2 py-0.5 rounded-md font-bold shadow-xs flex items-center gap-1 z-10">
                                         Terlaris
                                     </span>
@@ -876,8 +908,10 @@
                                 <div class="flex flex-col">
                                     @if($hasPromo)
                                         <span class="text-[10px] text-gray-400 line-through">Rp {{ number_format($originalPrice, 0, ',', '.') }}</span>
+                                        <span class="text-rose-600 font-bold text-sm leading-tight">{{ $priceDisplay }}</span>
+                                    @else
+                                        <span class="text-emerald-600 font-bold text-sm leading-tight">{{ $priceDisplay }}</span>
                                     @endif
-                                    <span class="text-emerald-600 font-bold text-sm leading-tight">{{ $priceDisplay }}</span>
                                 </div>
                             </div>
                         </div>
