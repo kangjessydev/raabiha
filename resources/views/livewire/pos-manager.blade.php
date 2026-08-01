@@ -1580,9 +1580,12 @@
                             </div>
 
                             <!-- Identitas Pembeli (Live Search Autocomplete) -->
-                            <div class="pt-2 border-t border-gray-200">
+                            <div class="pt-2 border-t border-gray-200" id="kasbonCustomerSection">
                                 <div class="flex items-center justify-between mb-1.5">
-                                    <label class="block text-xs font-semibold text-gray-700">Pelanggan (Live Search / Autocomplete)</label>
+                                    <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1">
+                                        <span>Pelanggan (Live Search / Autocomplete)</span>
+                                        <span x-show="paymentMethod === 'kasbon'" class="text-rose-600 font-bold text-xs">* (Wajib)</span>
+                                    </label>
                                     <button type="button" x-show="customerName || customerPhone || customerSearchInput" @click="clearCustomer()" class="text-[11px] font-bold text-rose-600 hover:text-rose-700 cursor-pointer flex items-center gap-0.5">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                         Hapus Pelanggan
@@ -1592,13 +1595,17 @@
                                 <div class="relative" @click.away="showCustomerDropdown = false">
                                     <div class="relative">
                                         <input type="text" 
+                                               id="kasbonCustomerSearchInput"
                                                x-model="customerSearchInput" 
                                                @input="onCustomerInput()"
                                                @focus="showCustomerDropdown = true"
-                                               class="w-full pl-8 pr-8 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs" 
+                                               class="w-full pl-8 pr-8 py-2 rounded-lg text-xs font-medium placeholder-gray-400 focus:outline-none transition-all shadow-xs"
+                                               :class="kasbonCustomerError 
+                                                   ? 'border-2 border-rose-500 bg-rose-50/70 text-rose-900 placeholder-rose-400 ring-2 ring-rose-500/20' 
+                                                   : 'border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500'" 
                                                placeholder="Cari nama atau No. WhatsApp (contoh: Siti / 0812...)">
                                         
-                                        <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-4 h-4 absolute left-2.5 top-2.5 pointer-events-none transition-colors" :class="kasbonCustomerError ? 'text-rose-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                         </svg>
 
@@ -1632,9 +1639,33 @@
 
                                 <!-- Detail Nama & Phone jika kasir mengetik manual / memilih -->
                                 <div class="grid grid-cols-2 gap-2 mt-2">
-                                    <input type="text" x-model="customerName" @input="saveActiveCart()" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded text-[11px] font-medium text-gray-800 focus:bg-white focus:outline-none focus:border-emerald-500" placeholder="Nama Pelanggan">
-                                    <input type="text" x-model="customerPhone" @input="saveActiveCart()" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded text-[11px] font-medium text-gray-800 focus:bg-white focus:outline-none focus:border-emerald-500" placeholder="No WhatsApp">
+                                    <input type="text" 
+                                           id="kasbonCustomerNameInput"
+                                           x-model="customerName" 
+                                           @input="saveActiveCart(); if(customerName.trim()) kasbonCustomerError = false;" 
+                                           class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all" 
+                                           :class="kasbonCustomerError 
+                                               ? 'border-2 border-rose-500 bg-rose-50/70 text-rose-900 placeholder-rose-400 ring-2 ring-rose-500/20' 
+                                               : 'border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500'"
+                                           placeholder="Nama Pelanggan">
+                                    <input type="text" 
+                                           id="kasbonCustomerPhoneInput"
+                                           x-model="customerPhone" 
+                                           @input="saveActiveCart(); if(customerName.trim()) kasbonCustomerError = false;" 
+                                           class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all" 
+                                           :class="kasbonCustomerError 
+                                               ? 'border-2 border-rose-500 bg-rose-50/70 text-rose-900 placeholder-rose-400 ring-2 ring-rose-500/20' 
+                                               : 'border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500'"
+                                           placeholder="No WhatsApp">
                                 </div>
+
+                                <!-- Inline Red Error Notice for Kasbon -->
+                                <template x-if="kasbonCustomerError">
+                                    <div x-transition class="mt-2 p-2 bg-rose-50 border border-rose-300 rounded-lg text-rose-700 text-[11px] font-bold flex items-center gap-1.5 shadow-2xs">
+                                        <svg class="w-4 h-4 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>Nama Pelanggan WAJIB diisi untuk transaksi Kasbon!</span>
+                                    </div>
+                                </template>
 
                                 <!-- Banner Pemberitahuan Voucher Hadiah Stempel di Modal Checkout -->
                                 <div x-show="activeCustomerLoyalty" x-transition class="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-xs">
@@ -4520,6 +4551,7 @@
                 paymentMethod: 'cash',
                 customerName: '',
                 customerPhone: '',
+                kasbonCustomerError: false,
                 activeCustomerLoyalty: null,
                 allPosCustomers: @js($allPosCustomers),
                 customerSearchInput: '',
@@ -5914,6 +5946,7 @@
                     this.activeCustomerLoyalty = cust;
                     this.customerSearchInput = (cust.name || '') + (cust.phone ? ' (' + cust.phone + ')' : '');
                     this.showCustomerDropdown = false;
+                    this.kasbonCustomerError = false;
                     this.saveActiveCart();
                 },
 
@@ -5929,6 +5962,9 @@
                 onCustomerInput() {
                     const val = (this.customerSearchInput || '').trim();
                     this.customerName = val;
+                    if (val) {
+                        this.kasbonCustomerError = false;
+                    }
                     if (/^[0-9+]+$/.test(val)) {
                         this.customerPhone = val;
                     }
@@ -6096,6 +6132,9 @@
 
                 selectPaymentMethod(method) {
                     this.paymentMethod = method.code;
+                    if (this.paymentMethod !== 'kasbon') {
+                        this.kasbonCustomerError = false;
+                    }
                     if (method.is_cash) {
                         this.calculateChange();
                     } else {
@@ -6107,6 +6146,7 @@
 
                 openCheckoutModal() {
                     if (this.cart.length === 0) return;
+                    this.kasbonCustomerError = false;
                     if (this.paymentMethods.length > 0) {
                         const cashMethod = this.paymentMethods.find(m => m.is_cash);
                         this.paymentMethod = cashMethod ? cashMethod.code : this.paymentMethods[0].code;
@@ -6160,9 +6200,17 @@
 
                 submitOrder() {
                     if (this.paymentMethod === 'kasbon' && (!this.customerName || !this.customerName.trim())) {
-                        this.showToast('Untuk metode Kasbon / Piutang, Nama Pelanggan WAJIB diisi!', 'error');
+                        this.kasbonCustomerError = true;
+                        this.$nextTick(() => {
+                            const nameInput = document.getElementById('kasbonCustomerNameInput') || document.getElementById('kasbonCustomerSearchInput');
+                            if (nameInput) {
+                                nameInput.focus();
+                                nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        });
                         return;
                     }
+                    this.kasbonCustomerError = false;
 
                     if (this.isCashSelected() && this.cashPaid < this.grandTotal) {
                         this.showToast('Uang yang dibayarkan kurang!', 'error');
