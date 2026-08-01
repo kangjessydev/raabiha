@@ -1231,6 +1231,7 @@ class PosManager extends Component
             'stock' => max(1, $qty),
             'sold_count' => 0,
             'is_active' => true,
+            'is_custom' => true,
             'channel_visibility' => 'pos_only',
         ]);
 

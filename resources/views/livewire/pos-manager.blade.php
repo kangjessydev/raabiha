@@ -877,7 +877,7 @@
                                      ])->values()->all()
                                  ];
                              })) : 'null' }} }"
-                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData, '{{ $image }}')"
+                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData, '{{ $image }}', {{ $product->is_custom ? 'true' : 'false' }}, {{ (float)($product->purchase_price ?? 0) }})"
                              @endif
                              >
                              
@@ -996,57 +996,66 @@
                 </div>
             </div>
 
-            <!-- Modal Edit Harga Nego Item Keranjang -->
-            <div x-show="showEditItemPriceModal" x-cloak wire:key="modal-edit-item-price" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
-                <div class="bg-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col" @click.away="showEditItemPriceModal = false">
+            <!-- Modal Nego Harga Produk Kustom (Saat Diklik dari Catalog Grid) -->
+            <div x-show="showCustomNegoModal" x-cloak wire:key="modal-custom-product-nego" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+                <div class="bg-white w-full max-w-sm rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col" @click.away="showCustomNegoModal = false">
                     <!-- Header -->
                     <div class="px-5 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white">
-                        <div class="flex items-center gap-2">
-                            <div class="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-100">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <div class="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-100 flex-shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </div>
-                            <div>
-                                <h3 class="font-bold text-sm text-gray-950 leading-tight">Harga Nego Item</h3>
-                                <p class="text-[11px] text-gray-500 font-medium truncate max-w-[200px]" x-text="editingItemName"></p>
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-sm text-gray-950 leading-tight truncate">Detail & Nego Produk Kustom</h3>
+                                <p class="text-[11px] text-gray-500 font-medium truncate" x-text="customNegoProduct.name"></p>
                             </div>
                         </div>
-                        <button @click="showEditItemPriceModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-lg transition">&times;</button>
+                        <button @click="showCustomNegoModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-lg transition">&times;</button>
                     </div>
 
                     <!-- Body -->
-                    <div class="p-5 space-y-3 bg-gray-50/50 text-xs">
+                    <div class="p-5 space-y-3.5 bg-gray-50/50 text-xs">
                         <div class="p-2.5 bg-white border border-gray-200 rounded-lg flex items-center justify-between shadow-2xs">
-                            <span class="text-gray-500 font-medium">Harga Normal Item:</span>
-                            <span class="font-bold text-gray-900" x-text="'Rp ' + formatMoney(editingItemOriginalPrice)"></span>
+                            <span class="text-gray-500 font-medium">Harga Normal Produk:</span>
+                            <span class="font-bold text-gray-900" x-text="'Rp ' + formatMoney(customNegoProduct.originalPrice)"></span>
                         </div>
 
                         <div>
-                            <label class="block font-bold text-gray-900 mb-1">Set Harga Nego Baru (Per Item)</label>
+                            <label class="block font-bold text-gray-900 mb-1">Harga Nego Ditetapkan (Per Item)</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-2.5 text-xs font-bold text-gray-400">Rp</span>
                                 <input type="number" 
-                                       x-model.number="editingItemNegoPrice" 
-                                       @keydown.enter="saveEditItemPrice()"
+                                       x-model.number="customNegoProduct.negoPrice" 
+                                       @keydown.enter="confirmCustomNegoAddToCart()"
                                        placeholder="0" 
                                        class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg bg-white text-xs font-bold text-emerald-950 shadow-xs focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                             </div>
                         </div>
 
-                        <template x-if="editingItemPurchasePrice > 0">
+                        <div>
+                            <label class="block font-bold text-gray-900 mb-1">Jumlah (Qty)</label>
+                            <div class="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden shadow-2xs w-36">
+                                <button type="button" @click="customNegoProduct.qty = Math.max(1, customNegoProduct.qty - 1)" class="w-10 h-8 flex items-center justify-center bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 cursor-pointer">-</button>
+                                <input type="number" x-model.number="customNegoProduct.qty" class="w-16 text-center border-none focus:ring-0 text-xs font-bold p-0" min="1">
+                                <button type="button" @click="customNegoProduct.qty = customNegoProduct.qty + 1" class="w-10 h-8 flex items-center justify-center bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 cursor-pointer">+</button>
+                            </div>
+                        </div>
+
+                        <template x-if="customNegoProduct.purchasePrice > 0">
                             <div class="text-[10px] text-gray-500 flex items-center justify-between pt-1">
-                                <span>Harga Modal (HPP): <strong x-text="'Rp ' + formatMoney(editingItemPurchasePrice)"></strong></span>
-                                <span class="text-rose-600 font-bold" x-show="editingItemNegoPrice < editingItemPurchasePrice">* Wajib PIN Supervisor</span>
+                                <span>Harga Modal (HPP): <strong x-text="'Rp ' + formatMoney(customNegoProduct.purchasePrice)"></strong></span>
+                                <span class="text-rose-600 font-bold" x-show="customNegoProduct.negoPrice < customNegoProduct.purchasePrice">* Wajib PIN Supervisor</span>
                             </div>
                         </template>
                     </div>
 
                     <!-- Footer -->
                     <div class="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2 rounded-b-xl">
-                        <button type="button" @click="showEditItemPriceModal = false" class="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition">
+                        <button type="button" @click="showCustomNegoModal = false" class="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition">
                             Batal
                         </button>
-                        <button type="button" @click="saveEditItemPrice()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs transition cursor-pointer">
-                            Terapkan Nego
+                        <button type="button" @click="confirmCustomNegoAddToCart()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs transition cursor-pointer">
+                            + Masukkan Keranjang
                         </button>
                     </div>
                 </div>
@@ -1093,13 +1102,7 @@
                         </div>
                         
                         <div class="flex justify-between items-center mt-0.5">
-                            <div class="flex items-center gap-1.5">
-                                <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' / item'"></div>
-                                <button type="button" @click="openEditItemPriceModal(index)" class="text-[10px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors flex items-center gap-0.5" title="Set Harga Nego">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                                    <span>Nego</span>
-                                </button>
-                            </div>
+                            <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price) + ' / item'"></div>
                             <!-- Qty Controls -->
                             <div class="flex items-center border border-gray-200 rounded-md bg-gray-50">
                                 <button @click="updateQty(index, -1)" class="w-6 h-6 flex items-center justify-center bg-white rounded-l-md text-gray-700 hover:text-emerald-600 font-bold text-xs cursor-pointer">-</button>
@@ -1251,13 +1254,7 @@
                         <div class="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs">
                             <div class="flex-1 min-w-0">
                                 <div class="font-bold text-gray-900 truncate" x-text="item.name"></div>
-                                <div class="flex items-center gap-1.5 mt-0.5">
-                                    <span class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price)"></span>
-                                    <button type="button" @click="openEditItemPriceModal(index)" class="text-[10px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded cursor-pointer transition-colors flex items-center gap-0.5" title="Set Harga Nego">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                                        <span>Nego</span>
-                                    </button>
-                                </div>
+                                <div class="text-[11px] text-gray-500" x-text="'Rp ' + formatMoney(item.price)"></div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button type="button" @click="updateQty(index, item.quantity - 1)" class="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">-</button>
@@ -4656,13 +4653,17 @@
                 customSaveToCatalog: true,
                 customAddToCart: false,
 
-                // State Modal Edit Harga Nego Item Keranjang
-                showEditItemPriceModal: false,
-                editingCartIndex: null,
-                editingItemName: '',
-                editingItemOriginalPrice: 0,
-                editingItemNegoPrice: 0,
-                editingItemPurchasePrice: 0,
+                // State Modal Detail & Nego Produk Kustom
+                showCustomNegoModal: false,
+                customNegoProduct: {
+                    id: null,
+                    name: '',
+                    originalPrice: 0,
+                    purchasePrice: 0,
+                    negoPrice: 0,
+                    qty: 1,
+                    defaultImage: ''
+                },
 
                 // State Modal Pelunasan Kasbon
                 showDebtPaymentModal: false,
@@ -5439,10 +5440,9 @@
 
                     // Proteksi Margin: jika harga nego < harga modal (HPP), minta otorisasi PIN Supervisor
                     if (this.customPurchasePrice > 0 && this.customPrice < this.customPurchasePrice) {
-                        this.askSupervisorPin(
-                            'Otorisasi Produk di Bawah Modal (HPP)',
-                            'Harga jual (Rp ' + this.formatMoney(this.customPrice) + ') berada di bawah harga modal (Rp ' + this.formatMoney(this.customPurchasePrice) + '). Wajib otorisasi Supervisor.',
-                            (supId) => {
+                        this.requestSupervisorAuth(
+                            'Otorisasi Produk di Bawah Modal (HPP): Harga jual (Rp ' + this.formatMoney(this.customPrice) + ') berada di bawah HPP (Rp ' + this.formatMoney(this.customPurchasePrice) + ').',
+                            () => {
                                 processSave();
                             }
                         );
@@ -5452,51 +5452,37 @@
                     processSave();
                 },
 
-                openEditItemPriceModal(index) {
-                    if (!this.cart[index]) return;
-                    const item = this.cart[index];
-                    this.editingCartIndex = index;
-                    this.editingItemName = item.name;
-                    this.editingItemOriginalPrice = item.original_price || item.price;
-                    this.editingItemNegoPrice = item.price;
-                    this.editingItemPurchasePrice = item.purchase_price || 0;
-                    this.showEditItemPriceModal = true;
-                },
-
-                async saveEditItemPrice() {
-                    if (this.editingCartIndex === null || !this.cart[this.editingCartIndex]) {
-                        this.showEditItemPriceModal = false;
+                confirmCustomNegoAddToCart() {
+                    if (!this.customNegoProduct || !this.customNegoProduct.id) {
+                        this.showCustomNegoModal = false;
                         return;
                     }
 
-                    const item = this.cart[this.editingCartIndex];
-                    const newPrice = parseFloat(this.editingItemNegoPrice || 0);
+                    const p = this.customNegoProduct;
+                    const negoPrice = parseFloat(p.negoPrice || 0);
+                    const qty = parseInt(p.qty || 1);
 
-                    if (isNaN(newPrice) || newPrice < 0) {
+                    if (isNaN(negoPrice) || negoPrice < 0) {
                         this.showToast('Harga nego tidak valid.', 'error');
                         return;
                     }
 
-                    const purchasePrice = parseFloat(item.purchase_price || 0);
-                    const processPriceChange = () => {
-                        if (!item.original_price) {
-                            item.original_price = item.price;
-                        }
-                        item.price = newPrice;
-                        this.saveActiveCart();
-                        this.showEditItemPriceModal = false;
-                        this.showToast(`Harga nego untuk ${item.name} berhasil diperbarui!`, 'success');
+                    const purchasePrice = parseFloat(p.purchasePrice || 0);
+                    const processAddToCart = () => {
+                        this.addToCart(p.id, null, p.name, negoPrice, qty, p.originalPrice, purchasePrice);
+                        this.showCustomNegoModal = false;
+                        this.showToast(`Produk kustom ${p.name} berhasil ditambahkan ke keranjang!`, 'success');
                     };
 
-                    if (purchasePrice > 0 && newPrice < purchasePrice) {
-                        this.showPinSupervisorModal(
-                            `Nego harga (${item.name}) Rp ${this.formatMoney(newPrice)} di bawah HPP Rp ${this.formatMoney(purchasePrice)}!`,
+                    if (purchasePrice > 0 && negoPrice < purchasePrice) {
+                        this.requestSupervisorAuth(
+                            `Otorisasi Nego Harga (${p.name}): Harga nego (Rp ${this.formatMoney(negoPrice)}) di bawah HPP (Rp ${this.formatMoney(purchasePrice)}).`,
                             () => {
-                                processPriceChange();
+                                processAddToCart();
                             }
                         );
                     } else {
-                        processPriceChange();
+                        processAddToCart();
                     }
                 },
 
@@ -5553,11 +5539,26 @@
                     this.showDebtPaymentModal = false;
                 },
 
-                addProduct(id, name, price, hasVariants, variants = null, defaultImage = null) {
+                addProduct(id, name, price, hasVariants, variants = null, defaultImage = null, isCustom = false, purchasePrice = 0) {
                     if (hasVariants && variants) {
                         this.initVariantSelector(id, name, price, variants, defaultImage);
                         return;
                     }
+
+                    if (isCustom) {
+                        this.customNegoProduct = {
+                            id: id,
+                            name: name,
+                            originalPrice: price,
+                            purchasePrice: purchasePrice,
+                            negoPrice: price,
+                            qty: 1,
+                            defaultImage: defaultImage || ''
+                        };
+                        this.showCustomNegoModal = true;
+                        return;
+                    }
+
                     this.addToCart(id, null, name, price);
                 },
 
@@ -5908,19 +5909,23 @@
                     this.bounceTimeout = setTimeout(() => { this.cartBouncing = false; }, 500);
                 },
 
-                addToCart(productId, variantId, name, price) {
+                addToCart(productId, variantId, name, price, qty = 1, originalPrice = null, purchasePrice = 0) {
                     this.triggerCartBounce();
-                    // Cek jika produk sudah ada di keranjang
-                    const existingIndex = this.cart.findIndex(item => item.product_id === productId && item.product_variant_id === variantId);
+                    const itemQty = parseInt(qty) || 1;
+                    const itemPrice = parseFloat(price) || 0;
+                    // Cek jika produk sudah ada di keranjang dengan harga nego yang sama
+                    const existingIndex = this.cart.findIndex(item => item.product_id === productId && item.product_variant_id === variantId && item.price === itemPrice);
                     if (existingIndex > -1) {
-                        this.cart[existingIndex].quantity++;
+                        this.cart[existingIndex].quantity += itemQty;
                     } else {
                         this.cart.unshift({ // Add to top
                             product_id: productId,
                             product_variant_id: variantId,
                             name: name,
-                            price: price,
-                            quantity: 1
+                            price: itemPrice,
+                            original_price: originalPrice !== null ? parseFloat(originalPrice) : itemPrice,
+                            purchase_price: parseFloat(purchasePrice) || 0,
+                            quantity: itemQty
                         });
                     }
                     this.calculateVoucherDiscount();

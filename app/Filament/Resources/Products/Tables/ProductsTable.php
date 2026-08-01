@@ -74,6 +74,13 @@ class ProductsTable
                     ->counts('variants')
                     ->label('Jumlah Varian')
                     ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
+                TextColumn::make('is_custom')
+                    ->label('Asal Produk')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state ? 'Dibuat via POS' : 'Admin Panel')
+                    ->color(fn ($state) => $state ? 'warning' : 'success')
+                    ->icon(fn ($state) => $state ? 'heroicon-m-shopping-bag' : 'heroicon-m-computer-desktop')
+                    ->sortable(),
                 TextColumn::make('channel_visibility')
                     ->label('Kanal Penjualan')
                     ->badge()
