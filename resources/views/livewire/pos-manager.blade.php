@@ -772,9 +772,9 @@
                 </button>
             </div>
 
-            <!-- Product Grid (Clean Filament Native Style - Responsive 2 to 5 Columns) -->
+            <!-- Product Grid (Fluid Auto-Fill Grid - Auto Responsive when Sidebar Opens) -->
             <div class="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
-                <div class="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pb-24 lg:pb-4">
+                <div class="grid gap-3 sm:gap-4 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))] pb-24 lg:pb-4">
                     @forelse($products as $product)
                         @php
                             // Cek jika produk punya varian
@@ -898,10 +898,10 @@
                                         Terlaris
                                     </span>
                                 @endif
-                                @if($hasVariants)
-                                    <span class="absolute top-2 right-2 bg-gray-900/80 text-white text-[10px] px-2 py-0.5 rounded-md font-medium z-10">{{ $product->variants->count() }} Varian</span>
-                                @endif
                                 <span class="absolute bottom-2 left-2 {{ $isOutOfStock ? 'bg-red-600' : 'bg-emerald-600' }} text-white text-[10px] px-2 py-0.5 rounded-md font-semibold shadow-xs z-10">Stok: {{ $computedStock }}</span>
+                                @if($hasVariants)
+                                    <span class="absolute bottom-2 right-2 bg-gray-900/85 backdrop-blur-xs text-white text-[10px] px-2 py-0.5 rounded-md font-medium z-10 border border-white/20 shadow-xs">{{ $product->variants->count() }} Varian</span>
+                                @endif
                             </div>
                             <div class="p-3 space-y-1.5">
                                 <h3 class="font-semibold text-gray-900 text-xs line-clamp-2 leading-tight {{ !$isOutOfStock ? 'group-hover:text-emerald-600' : '' }} transition-colors">{{ $product->name }}</h3>
