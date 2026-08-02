@@ -1008,21 +1008,21 @@
 
             <!-- Modal Nego Harga Produk Kustom (Saat Diklik dari Catalog Grid) -->
             <!-- Modal Nego Harga & Detail Produk (Mirip Gambar 3) -->
-            <div x-show="showCustomNegoModal" x-cloak wire:key="modal-custom-product-nego" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
-                <div class="bg-white w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col" @click.away="showCustomNegoModal = false">
+            <div x-show="showCustomNegoModal" x-cloak wire:key="modal-custom-product-nego" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
+                <div class="bg-white w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showCustomNegoModal = false">
                     <!-- Header (Mirip Gambar 3) -->
-                    <div class="px-6 py-4 border-b border-gray-100 flex items-start justify-between bg-white">
+                    <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-gray-100 flex items-start justify-between bg-white flex-shrink-0">
                         <div>
-                            <h3 class="font-black text-lg text-gray-950 leading-tight uppercase tracking-tight" x-text="customNegoProduct.name || 'Detail Produk Nego'"></h3>
-                            <p class="text-xs text-gray-500 font-medium mt-0.5">Atur harga nego dan jumlah produk yang akan dimasukkan ke keranjang</p>
+                            <h3 class="font-black text-base sm:text-lg text-gray-950 leading-tight uppercase tracking-tight" x-text="customNegoProduct.name || 'Detail Produk Nego'"></h3>
+                            <p class="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5">Atur harga nego dan jumlah produk yang akan dimasukkan ke keranjang</p>
                         </div>
                         <button @click="showCustomNegoModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
                     </div>
 
                     <!-- Body 2 Kolom (Mirip Gambar 3) -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 bg-white">
+                    <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-100 bg-white overflow-y-auto flex-1">
                         <!-- Kolom Kiri: Form Harga & Qty -->
-                        <div class="p-6 space-y-4">
+                        <div class="p-4 sm:p-6 space-y-4">
                             <!-- Harga Normal (Readonly) -->
                             <div>
                                 <label class="block text-[11px] font-bold uppercase text-gray-500 tracking-wider mb-1">Harga Normal (Tidak Dapat Diubah)</label>
@@ -1084,31 +1084,31 @@
                         </div>
 
                         <!-- Kolom Kanan: Preview Gambar & Total (Mirip Gambar 3) -->
-                        <div class="p-6 bg-gray-50/50 flex flex-col items-center justify-between space-y-4">
-                            <div class="w-full flex flex-col items-center text-center space-y-3">
-                                <div class="w-48 h-48 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs relative flex items-center justify-center">
+                        <div class="p-4 sm:p-6 bg-gray-50/50 flex flex-col items-center justify-between space-y-3 sm:space-y-4">
+                            <div class="w-full flex flex-col items-center text-center space-y-2 sm:space-y-3">
+                                <div class="w-28 h-28 sm:w-44 sm:h-44 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs relative flex items-center justify-center flex-shrink-0">
                                     <img :src="customNegoProduct.defaultImage || '{{ asset('assets/images/placeholder.webp') }}'" 
                                          :alt="customNegoProduct.name" 
                                          class="w-full h-full object-cover">
                                 </div>
                                 <div>
-                                    <h4 class="font-bold text-sm text-gray-900" x-text="customNegoProduct.name"></h4>
-                                    <p class="text-xs text-gray-500 font-semibold mt-0.5" x-text="customNegoProduct.qty + ' item × Rp ' + formatMoney(customNegoProduct.negoPrice)"></p>
+                                    <h4 class="font-bold text-xs sm:text-sm text-gray-900" x-text="customNegoProduct.name"></h4>
+                                    <p class="text-[11px] sm:text-xs text-gray-500 font-semibold mt-0.5" x-text="customNegoProduct.qty + ' item × Rp ' + formatMoney(customNegoProduct.negoPrice)"></p>
                                 </div>
-                                <div class="p-3 bg-emerald-50 border border-emerald-200/80 rounded-2xl w-full text-center">
+                                <div class="p-2.5 sm:p-3 bg-emerald-50 border border-emerald-200/80 rounded-2xl w-full text-center">
                                     <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Total Subtotal Nego</span>
-                                    <span class="text-2xl font-black text-emerald-700 font-mono" x-text="'Rp ' + formatMoney(customNegoProduct.negoPrice * customNegoProduct.qty)"></span>
+                                    <span class="text-xl sm:text-2xl font-black text-emerald-700 font-mono" x-text="'Rp ' + formatMoney(customNegoProduct.negoPrice * customNegoProduct.qty)"></span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Footer (Mirip Gambar 3) -->
-                    <div class="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between rounded-b-2xl">
-                        <button type="button" @click="showCustomNegoModal = false" class="px-5 py-2.5 bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 font-bold text-xs rounded-xl shadow-xs transition">
+                    <div class="px-4 sm:px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between rounded-b-2xl flex-shrink-0">
+                        <button type="button" @click="showCustomNegoModal = false" class="px-4 sm:px-5 py-2.5 bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 font-bold text-xs rounded-xl shadow-xs transition">
                             Batal
                         </button>
-                        <button type="button" @click="confirmCustomNegoAddToCart()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center gap-1.5">
+                        <button type="button" @click="confirmCustomNegoAddToCart()" class="px-4 sm:px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center gap-1.5">
                             + TAMBAH KE KERANJANG
                         </button>
                     </div>
@@ -1900,10 +1900,10 @@
                  x-transition:leave="transition ease-in duration-150 transform"
                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                  x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-                 class="bg-white border border-gray-200 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+                 class="bg-white border border-gray-200 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
                 
                 <!-- Modal Header -->
-                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                <div class="px-4 sm:px-6 py-3.5 border-b border-gray-200 flex items-center justify-between bg-white flex-shrink-0">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
@@ -1918,7 +1918,7 @@
                     </button>
                 </div>
                 
-                <form wire:submit.prevent="closeSession" class="space-y-0" x-data="{
+                <form wire:submit.prevent="closeSession" class="flex flex-col overflow-hidden flex-1" x-data="{
                     displayEndingCash: '',
                     formatRupiah(val) {
                         if (!val || val === 0 || val === '0') return '';
@@ -1931,7 +1931,7 @@
                         $wire.set('actualEndingCash', clean ? parseInt(clean, 10) : 0);
                     }
                 }" x-init="displayEndingCash = formatRupiah($wire.actualEndingCash)">
-                    <div class="p-6 space-y-4">
+                    <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
                         @if($activeSession)
                         @php
                             // Hanya hitung order tunai (cash/tunai), exclude QRIS, transfer, dll, dan cancelled
@@ -2048,7 +2048,7 @@
                     </div>
 
                     <!-- Modal Footer -->
-                    <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl">
+                    <div class="px-4 sm:px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
                         <button type="button" @click="showCloseSession = false" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">Batal</button>
                         <button 
                             type="submit" 
