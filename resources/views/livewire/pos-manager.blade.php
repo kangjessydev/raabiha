@@ -568,6 +568,15 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Pelanggan</span>
                     </button>
+                    <button @click="activePage = 'reserved'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[activePage==='reserved' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Pesanan Dipesan">
+                        <svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap flex items-center justify-between w-full">
+                            <span>Dipesan</span>
+                            @if(count($reservedOrders ?? []) > 0)
+                                <span class="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full">{{ count($reservedOrders) }}</span>
+                            @endif
+                        </span>
+                    </button>
                     <button @click="activePage = 'cashsummary'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[activePage==='cashsummary' ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Rekap Kas">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Rekap Kas</span>
@@ -1827,6 +1836,25 @@
                                         </div>
                                     </template>
                                 </div>
+
+                                <!-- Toggle Status Dipesan / Reserved -->
+                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                    <label class="flex items-center justify-between cursor-pointer p-2.5 bg-blue-50/80 rounded-xl border border-blue-200 hover:bg-blue-100/80 transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                            <div>
+                                                <span class="text-xs font-bold text-blue-950 block">Dipesan (Barang Ambil Nanti)</span>
+                                                <span class="text-[10px] text-blue-700 font-medium block">Bayar lunas/kasbon sekarang, barang diserahkan kemudian</span>
+                                            </div>
+                                        </div>
+                                        <input type="checkbox" x-model="isReserved" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer">
+                                    </label>
+
+                                    <div x-show="isReserved" x-transition class="mt-2.5 pl-1">
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Perkiraan Tanggal Ambil (Opsional):</label>
+                                        <input type="date" x-model="pickupDate" class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-medium text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1839,10 +1867,11 @@
                     </button>
                     <button type="button" @click="submitOrder()" 
                             :disabled="isProcessing || (isCashSelected() && cashPaid < grandTotal)" 
-                            class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-md transition duration-150 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="px-6 py-2.5 text-white font-bold text-xs rounded-lg shadow-md transition duration-150 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            :class="isReserved ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'">
                         <span x-show="!isProcessing" class="flex items-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>SELESAIKAN PEMBAYARAN</span>
+                            <span x-text="isReserved ? 'SIMPAN PESANAN (DIPESAN)' : 'SELESAIKAN PEMBAYARAN'"></span>
                         </span>
                         <span x-show="isProcessing" class="flex items-center gap-2">
                             <svg class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -3483,7 +3512,7 @@
                                     <td class="py-3 px-4 text-right whitespace-nowrap">
                                         <div class="font-bold text-xs text-gray-900">Rp {{ number_format($order->grand_total, 0, ',', '.') }}</div>
                                         @if($order->discount_total > 0)
-                                            <div class="text-[10px] font-medium text-emerald-600">Hemat Rp {{ number_format($order->discount_total, 0, ',', '.') }}</div>
+                                            <div class="text-[10px] font-medium text-emerald-600">Potongan Rp {{ number_format($order->discount_total, 0, ',', '.') }}</div>
                                         @endif
                                     </td>
 
@@ -3610,6 +3639,111 @@
                         </table>
                     </div>
                 </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- PAGE: Pesanan Dipesan / Reserved             -->
+        <!-- ============================================ -->
+        <div x-show="activePage === 'reserved'" x-cloak wire:key="pos-page-reserved" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
+            <!-- Header -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3">
+                    <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight text-gray-950 flex items-center gap-2">
+                            <span>Pesanan Dipesan (Barang Ambil Nanti)</span>
+                            <span class="px-2.5 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded-full">{{ count($reservedOrders ?? []) }} Pesanan</span>
+                        </h1>
+                        <p class="text-xs text-gray-500 font-medium">Pembayaran sudah tercatat & stok terpotong, menunggu pengambilan oleh pelanggan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6">
+                @if(empty($reservedOrders) || count($reservedOrders) === 0)
+                    <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center shadow-xs">
+                        <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <h3 class="text-base font-bold text-gray-900 mb-1">Tidak Ada Pesanan Dipesan</h3>
+                        <p class="text-xs text-gray-500 max-w-sm mx-auto">Saat ini belum ada pesanan yang tersimpan dengan status Dipesan.</p>
+                    </div>
+                @else
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        @foreach($reservedOrders as $rOrder)
+                            <div class="bg-white rounded-2xl border border-blue-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-all">
+                                <div>
+                                    <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                                        <div>
+                                            <span class="font-mono font-bold text-sm text-gray-900">#{{ $rOrder->order_number }}</span>
+                                            <div class="text-[11px] text-gray-500 font-medium mt-0.5">{{ $rOrder->created_at ? $rOrder->created_at->format('d M Y, H:i') : '-' }}</div>
+                                        </div>
+                                        <span class="px-2.5 py-1 text-xs font-bold bg-blue-100 text-blue-800 rounded-full">
+                                            Dipesan
+                                        </span>
+                                    </div>
+
+                                    <div class="py-3 space-y-2 text-xs">
+                                        <div class="flex justify-between items-start text-gray-700">
+                                            <span class="text-gray-500">Pelanggan:</span>
+                                            <div class="text-right">
+                                                <div class="font-bold text-gray-900">{{ $rOrder->customer_name ?: 'Pelanggan POS' }}</div>
+                                                @if($rOrder->customer_phone)
+                                                    <div class="text-[11px] text-emerald-600 font-semibold mt-0.5">{{ $rOrder->customer_phone }}</div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        @if($rOrder->pickup_date)
+                                            <div class="flex justify-between text-blue-900 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                                                <span class="font-semibold">Perkiraan Ambil:</span>
+                                                <span class="font-bold">{{ $rOrder->pickup_date->format('d M Y') }}</span>
+                                            </div>
+                                        @endif
+                                        <div class="flex justify-between text-gray-700">
+                                            <span class="text-gray-500">Metode Bayar:</span>
+                                            <span class="font-semibold uppercase text-gray-900">{{ $rOrder->payment_method ?: 'TUNAI' }}</span>
+                                        </div>
+                                        <div class="flex justify-between text-gray-900 font-bold pt-2 border-t border-gray-100 text-sm">
+                                            <span>Total Pembayaran:</span>
+                                            <span class="text-emerald-700">Rp {{ number_format($rOrder->grand_total, 0, ',', '.') }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Detail Barang -->
+                                    <div class="mt-2 p-2.5 bg-gray-50 rounded-xl text-[11px] text-gray-600 space-y-1">
+                                        <div class="font-semibold text-gray-700 mb-1">Rincian Barang:</div>
+                                        @foreach($rOrder->items as $rItem)
+                                            <div class="flex justify-between">
+                                                <span>{{ $rItem->name ?: ($rItem->product->name ?? 'Produk') }} ({{ $rItem->quantity }}x)</span>
+                                                <span class="font-medium">Rp {{ number_format($rItem->total ?? ($rItem->price * $rItem->quantity), 0, ',', '.') }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
+                                    <button type="button" 
+                                            @click="$wire.completeReservedOrder({{ $rOrder->id }})" 
+                                            class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Tandai Sudah Diambil</span>
+                                    </button>
+                                    <button type="button" 
+                                            @click="$wire.reprintReceipt({{ $rOrder->id }})" 
+                                            class="py-2.5 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium text-xs rounded-xl shadow-xs transition-colors cursor-pointer" 
+                                            title="Cetak Struk">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
                 @endif
             </div>
         </div>
@@ -4797,6 +4931,8 @@
                 paymentMethod: 'cash',
                 customerName: '',
                 customerPhone: '',
+                isReserved: false,
+                pickupDate: '',
                 kasbonCustomerError: false,
                 activeCustomerLoyalty: null,
                 allPosCustomers: @js($allPosCustomers),
@@ -5247,6 +5383,8 @@
                     this.$watch('manualDiscountValue', () => this.saveActiveCart());
                     this.$watch('customerName', () => this.saveActiveCart());
                     this.$watch('customerPhone', () => this.saveActiveCart());
+                    this.$watch('isReserved', () => this.saveActiveCart());
+                    this.$watch('pickupDate', () => this.saveActiveCart());
 
                     // Listener Fullscreen & PWA Desktop App
                     document.addEventListener('fullscreenchange', () => {
@@ -5469,6 +5607,8 @@
                             manualDiscountValue: this.manualDiscountValue,
                             customerName: this.customerName,
                             customerPhone: this.customerPhone,
+                            isReserved: this.isReserved,
+                            pickupDate: this.pickupDate,
                             loyaltyRedeemStamps: this.loyaltyRedeemStamps,
                             activeCustomerLoyalty: this.activeCustomerLoyalty,
                         };
@@ -5490,6 +5630,8 @@
                                 this.manualDiscountValue = payload.manualDiscountValue || 0;
                                 this.customerName = payload.customerName || '';
                                 this.customerPhone = payload.customerPhone || '';
+                                this.isReserved = payload.isReserved || false;
+                                this.pickupDate = payload.pickupDate || '';
                                 this.loyaltyRedeemStamps = payload.loyaltyRedeemStamps || 0;
                                 this.activeCustomerLoyalty = payload.activeCustomerLoyalty || null;
                             }
@@ -5513,6 +5655,8 @@
                         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
                         customerName: this.customerName || 'Umum',
                         customerPhone: this.customerPhone || '',
+                        isReserved: this.isReserved,
+                        pickupDate: this.pickupDate,
                         cart: JSON.parse(JSON.stringify(this.cart)),
                         activeVoucher: this.activeVoucher,
                         manualDiscountType: this.manualDiscountType,
@@ -5544,6 +5688,8 @@
                         this.manualDiscountValue = holdData.manualDiscountValue || 0;
                         this.customerName = holdData.customerName || '';
                         this.customerPhone = holdData.customerPhone || '';
+                        this.isReserved = holdData.isReserved || false;
+                        this.pickupDate = holdData.pickupDate || '';
                         
                         this.heldCarts = this.heldCarts.filter(h => h.id !== id);
                         this.saveHeldCarts();
@@ -6154,6 +6300,8 @@
                         this.activeCustomerLoyalty = null;
                         this.showCustomerDropdown = false;
                         this.currentCheckoutToken = null;
+                        this.isReserved = false;
+                        this.pickupDate = '';
                         this.saveActiveCart();
                     };
 
@@ -6560,6 +6708,8 @@
                         cash_change: this.cashChange,
                         customer_name: this.customerName,
                         customer_phone: this.customerPhone,
+                        is_reserved: this.isReserved,
+                        pickup_date: this.pickupDate,
                         payment_details: {
                             type: this.paymentMethod,
                             idempotency_key: this.currentCheckoutToken

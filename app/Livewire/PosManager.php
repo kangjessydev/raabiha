@@ -862,6 +862,24 @@ class PosManager extends Component
         }
     }
 
+    /**
+     * Tandai pesanan 'reserved' (Dipesan) sebagai 'completed' saat barang diambil pelanggan
+     */
+    public function completeReservedOrder($orderId)
+    {
+        try {
+            $service = new PosTransactionService();
+            $order = $service->completeReservedOrder((int) $orderId);
+
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => 'Pesanan #' . $order->order_number . ' berhasil ditandai Selesai (barang diambil).'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
     public function lookupPosCustomer($phone)
     {
         $normalized = \App\Models\PosCustomer::normalizePhone($phone);
@@ -1656,6 +1674,12 @@ class PosManager extends Component
             ];
         })->values()->all();
 
+        $reservedOrders = Order::with(['items', 'cashier'])
+            ->where('source', 'pos')
+            ->where('status', 'reserved')
+            ->latest()
+            ->get();
+
         return view('livewire.pos-manager', [
             'products'         => $products,
             'allProductsJson'  => $allProductsJson,
@@ -1666,6 +1690,7 @@ class PosManager extends Component
             'sessionPettyCash' => $sessionPettyCash,
             'sessionReturns'   => $sessionReturns,
             'sessionStats'     => $sessionStats,
+            'reservedOrders'   => $reservedOrders,
             'supervisorsList'  => $this->supervisorsList,
             'allPosCustomers'  => $this->allPosCustomers,
         ]);

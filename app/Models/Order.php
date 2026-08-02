@@ -48,6 +48,8 @@ class Order extends Model
         'cash_change',
         'due_amount',
         'is_kasbon',
+        'is_reserved',
+        'pickup_date',
         'payment_details',
         'void_by_id',
         'void_reason',
@@ -63,6 +65,8 @@ class Order extends Model
         'grand_total' => 'decimal:2',
         'due_amount' => 'decimal:2',
         'is_kasbon' => 'boolean',
+        'is_reserved' => 'boolean',
+        'pickup_date' => 'date',
         'void_at' => 'datetime',
     ];
 

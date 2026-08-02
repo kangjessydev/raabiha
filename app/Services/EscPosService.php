@@ -124,6 +124,15 @@ class EscPosService
             $this->add(self::BOLD_OFF);
         }
 
+        if ($order->status === 'reserved') {
+            $this->add(self::BOLD_ON);
+            $this->line("*** DIPESAN (BARANG BELUM DIAMBIL) ***");
+            if ($order->pickup_date) {
+                $this->line("Tgl Ambil: " . $order->pickup_date->format('d/m/Y'));
+            }
+            $this->add(self::BOLD_OFF);
+        }
+
         $this->line();
 
         // Metadata
@@ -155,20 +164,37 @@ class EscPosService
                 $this->line($nLine);
             }
             
-            $qtyStr = $item->quantity . "x " . number_format($item->price, 0, ',', '.');
-            $subtotalStr = number_format($item->total ?? $item->subtotal ?? 0, 0, ',', '.');
+            $unitPrice = ($item->original_price && $item->original_price > $item->price) ? (float)$item->original_price : (float)$item->price;
+            $itemSubtotal = $unitPrice * $item->quantity;
+
+            $qtyStr = $item->quantity . "x " . number_format($unitPrice, 0, ',', '.');
+            $subtotalStr = number_format($itemSubtotal, 0, ',', '.');
             $this->justify("  " . $qtyStr, $subtotalStr);
+
+            if ($item->original_price && $item->original_price > $item->price) {
+                $itemDiscTotal = ($item->original_price - $item->price) * $item->quantity;
+                $discStr = "-" . number_format($itemDiscTotal, 0, ',', '.');
+                $this->justify("  (Promo Event)", $discStr);
+            }
         }
         $this->divider();
 
         // Totals
-        // Totals
         $this->justify("Subtotal", number_format($order->subtotal, 0, ',', '.'));
         
         $paymentDetails = is_string($order->payment_details) ? json_decode($order->payment_details, true) : ($order->payment_details ?? []);
+        $itemDiscounts = (float) ($paymentDetails['item_discounts'] ?? 0);
         $voucherDiscount = (float) ($paymentDetails['voucher_discount'] ?? 0);
         $manualDiscount = (float) ($paymentDetails['manual_discount'] ?? 0);
         
+        if ($itemDiscounts <= 0 && $order->discount_total > ($voucherDiscount + $manualDiscount)) {
+            $itemDiscounts = $order->discount_total - ($voucherDiscount + $manualDiscount);
+        }
+
+        if ($itemDiscounts > 0) {
+            $this->justify("Diskon Promo", "-" . number_format($itemDiscounts, 0, ',', '.'));
+        }
+
         if ($voucherDiscount > 0) {
             $voucherName = $order->voucher ? $order->voucher->name : 'Promo';
             $discRight = "-" . number_format($voucherDiscount, 0, ',', '.');
@@ -180,12 +206,7 @@ class EscPosService
         }
         
         if ($manualDiscount > 0) {
-            $this->justify("Diskon", "-" . number_format($manualDiscount, 0, ',', '.'));
-        }
-        
-        if ($order->discount_total > 0 && $voucherDiscount == 0 && $manualDiscount == 0) {
-            // Fallback untuk transaksi lama
-            $this->justify("Diskon", "-" . number_format($order->discount_total, 0, ',', '.'));
+            $this->justify("Diskon Kasir", "-" . number_format($manualDiscount, 0, ',', '.'));
         }
         
         $this->add(self::BOLD_ON);
@@ -196,6 +217,12 @@ class EscPosService
             $this->line();
             $this->justify("Tunai", number_format($order->cash_paid, 0, ',', '.'));
             $this->justify("Kembali", number_format($order->cash_change ?? 0, 0, ',', '.'));
+        }
+
+        if ($order->discount_total > 0) {
+            $this->line();
+            $this->add(self::ALIGN_CENTER);
+            $this->line("Hemat Rp " . number_format($order->discount_total, 0, ',', '.') . " pada transaksi ini!");
         }
 
         // Section Loyalti Stempel Digital (jika diaktifkan di setting & ada nomor HP)
@@ -283,6 +310,13 @@ class EscPosService
             $lines[] = str_pad("*** SALINAN / REPRINT ***", $width, ' ', STR_PAD_BOTH);
         }
 
+        if ($order->status === 'reserved') {
+            $lines[] = str_pad("*** DIPESAN (AMBIL NANTI) ***", $width, ' ', STR_PAD_BOTH);
+            if ($order->pickup_date) {
+                $lines[] = str_pad("Tgl Ambil: " . $order->pickup_date->format('d/m/Y'), $width, ' ', STR_PAD_BOTH);
+            }
+        }
+
         $lines[] = str_repeat('-', $width);
         $lines[] = "Nota  : " . $order->order_number;
         if ($showDate && $order->created_at) {
@@ -307,11 +341,22 @@ class EscPosService
                 $lines[] = $nLine;
             }
 
-            $qtyStr = $item->quantity . "x " . number_format($item->price, 0, ',', '.');
-            $subtotalStr = number_format($item->total ?? $item->subtotal ?? 0, 0, ',', '.');
+            $unitPrice = ($item->original_price && $item->original_price > $item->price) ? (float)$item->original_price : (float)$item->price;
+            $itemSubtotal = $unitPrice * $item->quantity;
+
+            $qtyStr = $item->quantity . "x " . number_format($unitPrice, 0, ',', '.');
+            $subtotalStr = number_format($itemSubtotal, 0, ',', '.');
             $leftPad = "  " . $qtyStr;
             $spaces = max(1, $width - strlen($leftPad) - strlen($subtotalStr));
             $lines[] = $leftPad . str_repeat(' ', $spaces) . $subtotalStr;
+
+            if ($item->original_price && $item->original_price > $item->price) {
+                $itemDiscTotal = ($item->original_price - $item->price) * $item->quantity;
+                $discLeft = "  (Promo Event)";
+                $discRight = "-" . number_format($itemDiscTotal, 0, ',', '.');
+                $dSpaces = max(1, $width - strlen($discLeft) - strlen($discRight));
+                $lines[] = $discLeft . str_repeat(' ', $dSpaces) . $discRight;
+            }
         }
 
         $lines[] = str_repeat('-', $width);
@@ -321,9 +366,20 @@ class EscPosService
         $lines[] = $subLeft . str_repeat(' ', max(1, $width - strlen($subLeft) - strlen($subRight))) . $subRight;
         
         $paymentDetails = is_string($order->payment_details) ? json_decode($order->payment_details, true) : ($order->payment_details ?? []);
+        $itemDiscounts = (float) ($paymentDetails['item_discounts'] ?? 0);
         $voucherDiscount = (float) ($paymentDetails['voucher_discount'] ?? 0);
         $manualDiscount = (float) ($paymentDetails['manual_discount'] ?? 0);
-        
+
+        if ($itemDiscounts <= 0 && $order->discount_total > ($voucherDiscount + $manualDiscount)) {
+            $itemDiscounts = $order->discount_total - ($voucherDiscount + $manualDiscount);
+        }
+
+        if ($itemDiscounts > 0) {
+            $discLeft = "Diskon Promo";
+            $discRight = "-" . number_format($itemDiscounts, 0, ',', '.');
+            $lines[] = $discLeft . str_repeat(' ', max(1, $width - strlen($discLeft) - strlen($discRight))) . $discRight;
+        }
+
         if ($voucherDiscount > 0) {
             $voucherName = $order->voucher ? $order->voucher->name : 'Promo';
             $discRight = "-" . number_format($voucherDiscount, 0, ',', '.');
@@ -336,14 +392,8 @@ class EscPosService
         }
         
         if ($manualDiscount > 0) {
-            $discLeft = "Diskon";
+            $discLeft = "Diskon Kasir";
             $discRight = "-" . number_format($manualDiscount, 0, ',', '.');
-            $lines[] = $discLeft . str_repeat(' ', max(1, $width - strlen($discLeft) - strlen($discRight))) . $discRight;
-        }
-        
-        if ($order->discount_total > 0 && $voucherDiscount == 0 && $manualDiscount == 0) {
-            $discLeft = "Diskon";
-            $discRight = "-" . number_format($order->discount_total, 0, ',', '.');
             $lines[] = $discLeft . str_repeat(' ', max(1, $width - strlen($discLeft) - strlen($discRight))) . $discRight;
         }
 
@@ -360,6 +410,12 @@ class EscPosService
             $changeLeft = "Kembali";
             $changeRight = number_format($order->cash_change ?? 0, 0, ',', '.');
             $lines[] = $changeLeft . str_repeat(' ', max(1, $width - strlen($changeLeft) - strlen($changeRight))) . $changeRight;
+        }
+
+        if ($order->discount_total > 0) {
+            $lines[] = str_repeat('-', $width);
+            $saveMsg = "Hemat Rp " . number_format($order->discount_total, 0, ',', '.') . " pada transaksi ini!";
+            $lines[] = str_pad($saveMsg, $width, ' ', STR_PAD_BOTH);
         }
 
         if ($loyaltyEnabled && $order->customer_phone) {
