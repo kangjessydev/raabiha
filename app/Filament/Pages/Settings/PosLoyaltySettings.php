@@ -18,8 +18,8 @@ class PosLoyaltySettings extends Page implements HasForms
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-gift';
     protected static \UnitEnum|string|null $navigationGroup = 'Kasir & Toko Fisik (POS)';
-    protected static ?string $navigationLabel = 'Loyalti Stempel';
-    protected static ?string $title = 'Pengaturan Program Loyalti Stempel Digital';
+    protected static ?string $navigationLabel = 'Loyalti & Poin';
+    protected static ?string $title = 'Pengaturan Poin & Stempel Loyalitas';
     protected static ?int $navigationSort = 7;
     
     protected string $view = 'filament.pages.settings.pos-settings-form';
@@ -42,54 +42,71 @@ class PosLoyaltySettings extends Page implements HasForms
     {
         return $schema
             ->components([
-                \Filament\Schemas\Components\Section::make('Ketentuan & Perhitungan Stempel Digital')
-                    ->description('Atur syarat minimal belanja dan konversi stempel digital kasir.')
-                    ->icon('heroicon-o-sparkles')
+                Forms\Components\Toggle::make('pos_loyalty_enabled')
+                    ->label('Aktifkan Seluruh Program Loyalitas (Poin & Stempel)')
+                    ->helperText('Jika dimatikan, semua fitur pengumpulan poin dan stempel akan disembunyikan dari aplikasi kasir.')
+                    ->default(true),
+
+                \Filament\Schemas\Components\Section::make('Pengaturan Poin Belanja')
+                    ->description('Poin didapatkan dari kelipatan total transaksi dan dapat digunakan sebagai potongan harga.')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->columns(['sm' => 1, 'md' => 3])
                     ->components([
-                        Forms\Components\Toggle::make('pos_loyalty_enabled')
-                            ->label('Aktifkan Program Loyalti Stempel Digital POS')
-                            ->helperText('🟢 AKTIF: Kasir POS otomatis mengumpulkan stempel & mencetak saldo cap pelanggan di struk thermal. 🔴 NONAKTIF: Seluruh fitur loyalti disembunyikan dari POS & struk.')
-                            ->default(true),
-                        Forms\Components\TextInput::make('pos_loyalty_min_spend')
-                            ->label('Minimal Belanja per 1 Stempel (Rp)')
-                            ->helperText('Nominal transaksi minimal untuk mendapatkan 1 stempel (Bebas Anda atur, misal: Rp 10.000, Rp 50.000, atau Rp 100.000).')
+                        Forms\Components\TextInput::make('pos_point_spend_multiplier')
+                            ->label('Tiap Kelipatan Belanja (Rp)')
+                            ->helperText('Misal: 10000 (Tiap belanja kelipatan sepuluh ribu).')
                             ->numeric()
+                            ->prefix('Rp')
+                            ->default(10000)
+                            ->required(),
+                        Forms\Components\TextInput::make('pos_point_earned_per_multiplier')
+                            ->label('Mendapatkan Jumlah Poin')
+                            ->helperText('Jumlah poin yang diraih per kelipatan (Misal: 1 atau 10).')
+                            ->numeric()
+                            ->suffix('Poin')
+                            ->default(1)
+                            ->required(),
+                        Forms\Components\TextInput::make('pos_point_to_rupiah_value')
+                            ->label('1 Poin Setara Rupiah')
+                            ->helperText('Nilai tukar 1 poin saat dipakai bayar (Misal: Rp 100).')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->default(100)
+                            ->required(),
+                    ]),
+
+                \Filament\Schemas\Components\Section::make('Pengaturan Cap Stempel Digital')
+                    ->description('Stempel diberikan berdasar kunjungan berbelanja yang dikaitkan dengan Nomor HP pelanggan. Setiap 9 cap = 1 Kartu Penuh.')
+                    ->icon('heroicon-o-sparkles')
+                    ->columns(['sm' => 1, 'md' => 2])
+                    ->components([
+                        Forms\Components\TextInput::make('pos_loyalty_min_spend')
+                            ->label('Minimal Belanja Untuk Cap Stempel (Rp)')
+                            ->helperText('Syarat minimal belanja agar pelanggan mendapat 1 cap stempel. (Wajib menautkan Nomor HP saat di Kasir!).')
+                            ->numeric()
+                            ->prefix('Rp')
                             ->default(100000)
                             ->required(),
                         Forms\Components\TextInput::make('pos_loyalty_stamps_to_points_ratio')
-                            ->label('Rasio Konversi (1 Stempel = Berapa Poin)')
-                            ->helperText('Jumlah poin yang didapatkan dari 1 stempel (Default: 10 Poin per 1 Stempel).')
+                            ->label('1 Stempel Setara Poin')
+                            ->helperText('Nilai konversi 1 buah stempel ke poin (Admin bebas mengatur nilai ini).')
                             ->numeric()
+                            ->suffix('Poin')
                             ->default(10)
                             ->required(),
-                        Forms\Components\TextInput::make('pos_loyalty_stamp_expiry_months')
-                            ->label('Masa Berlaku Stempel (Bulan)')
-                            ->helperText('Stempel akan hangus jika pelanggan tidak bertransaksi selama X bulan (Default: 6 Bulan, isi 0 jika tanpa kadaluarsa).')
-                            ->numeric()
-                            ->default(6)
-                            ->required(),
-                        Forms\Components\Toggle::make('pos_loyalty_multiplier_mode')
-                            ->label('Mode Kelipatan Nominal Belanja')
-                            ->helperText('🟢 AKTIF: Dihitung kelipatan (Cth: Min. Belanja Rp 10.000, Belanja Rp 35.000 = 3 Cap). ⚪ DIMATIKAN: 1 transaksi hanya dapat max 1 Cap berapa pun nominal belanjanya.')
-                            ->default(false),
-                        
-                        \Filament\Forms\Components\Placeholder::make('loyalty_simulation_notice')
-                            ->label('🧮 Contoh Simulasi Perhitungan Stempel POS')
+                        \Filament\Forms\Components\Placeholder::make('loyalty_stamp_rule')
+                            ->label('Catatan Aturan Stempel (1/9)')
+                            ->columnSpan('full')
                             ->content(new \Illuminate\Support\HtmlString('
-                                <div class="p-4 bg-emerald-50/80 rounded-xl border border-emerald-200 text-emerald-950 text-xs space-y-2">
-                                    <div class="font-bold text-emerald-900 flex items-center gap-1.5">
-                                        <span>💡 Contoh Kasus Nyata di Kasir POS:</span>
-                                    </div>
-                                    <p class="leading-relaxed">
-                                        Misalkan Anda menetapkan <strong>Minimal Belanja per 1 Stempel = Rp 10.000</strong> & <strong>Rasio = 10 Poin</strong>:
-                                    </p>
+                                <div class="text-sm text-gray-500">
                                     <ul class="list-disc pl-4 space-y-1">
-                                        <li><strong>Jika Mode Kelipatan AKTIF:</strong> Pelanggan belanja <strong>Rp 35.000</strong> &rarr; Otomatis mendapatkan <strong class="text-emerald-700">3 Stempel & 30 Poin</strong>.</li>
-                                        <li><strong>Jika Mode Kelipatan DIMATIKAN:</strong> Pelanggan belanja <strong>Rp 35.000</strong> &rarr; Hanya mendapatkan <strong class="text-emerald-700">1 Stempel & 10 Poin</strong>.</li>
+                                        <li>Pelanggan <b>wajib</b> memberikan <b>Nomor HP</b> di kasir. Jika tidak pakai Nomor HP, stempel tidak akan tercetak/masuk.</li>
+                                        <li>Pelanggan akan mendapat cap dengan format (X/9). Jika cap sudah mencapai 9, sistem akan me-reset ke 1 dan pelanggan tersebut mendapatkan <b>Badge 1 Kartu</b>.</li>
                                     </ul>
                                 </div>
                             ')),
                     ]),
+
                 \Filament\Schemas\Components\Section::make('Tier Hadiah & Penukaran Voucher')
                     ->description('Daftar voucher promo yang dapat ditukarkan pelanggan menggunakan saldo stempel.')
                     ->icon('heroicon-o-gift')
@@ -133,7 +150,7 @@ class PosLoyaltySettings extends Page implements HasForms
         }
 
         Notification::make()
-            ->title('Pengaturan Program Loyalti Stempel berhasil disimpan')
+            ->title('Pengaturan Poin & Stempel berhasil disimpan')
             ->success()
             ->send();
     }

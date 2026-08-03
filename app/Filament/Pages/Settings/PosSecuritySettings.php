@@ -8,6 +8,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Schema;
 use Filament\Forms;
+use Filament\Forms\Get;
 use App\Models\SiteSetting;
 use Filament\Notifications\Notification;
 
@@ -21,7 +22,7 @@ class PosSecuritySettings extends Page implements HasForms
     protected static ?string $navigationLabel = 'Keamanan & Limit Kasir';
     protected static ?string $title = 'Pengaturan Keamanan & Otorisasi POS';
     protected static ?int $navigationSort = 5;
-    
+
     protected string $view = 'filament.pages.settings.pos-settings-form';
 
     public ?array $data = [];
@@ -29,6 +30,10 @@ class PosSecuritySettings extends Page implements HasForms
     public function mount(): void
     {
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
+        // Set default type if not present
+        if (!isset($settings['pos_discount_limit_type'])) {
+            $settings['pos_discount_limit_type'] = 'percent';
+        }
         $this->form->fill($settings);
     }
 
@@ -40,58 +45,92 @@ class PosSecuritySettings extends Page implements HasForms
                     ->description('Batasi transaksi sensitif agar kasir tidak dapat memberikan diskon berlebihan atau refund tanpa izin supervisor.')
                     ->icon('heroicon-o-shield-exclamation')
                     ->components([
-                        Forms\Components\TextInput::make('pos_manual_discount_max_percent_without_pin')
-                            ->label('Batas Diskon Manual Persen Tanpa PIN Supervisor (%)')
-                            ->helperText('Persentase diskon manual maksimal yang bisa diberikan kasir mandiri tanpa otorisasi PIN Supervisor (Default: 20%).')
-                            ->numeric()
-                            ->default(20)
-                            ->required(),
-                        Forms\Components\TextInput::make('pos_manual_discount_max_rp_without_pin')
-                            ->label('Batas Diskon Manual Nominal Tanpa PIN Supervisor (Rp)')
-                            ->helperText('Nominal potongan rupiah diskon manual maksimal yang bisa diberikan kasir mandiri tanpa otorisasi PIN Supervisor (Default: Rp 50.000).')
-                            ->numeric()
-                            ->default(50000)
-                            ->required(),
-                        Forms\Components\TextInput::make('pos_refund_max_without_pin')
-                            ->label('Batas Maksimal Refund Tanpa PIN Supervisor (Rp)')
-                            ->helperText('Pengembalian uang tunai / transfer bank yang nilainya di bawah nominal ini DAPAT diproses langsung oleh kasir tanpa PIN Supervisor. Isi 0 jika INGIN SELURUH REFUND WAJIB PIN Supervisor.')
-                            ->numeric()
-                            ->default(0)
-                            ->required(),
+                        \Filament\Schemas\Components\Grid::make(['sm' => 1, 'xl' => 2])
+                            ->components([
+                                \Filament\Schemas\Components\Fieldset::make('Batasan Diskon')
+                                    ->columns(1)
+                                    ->components([
+                                        Forms\Components\Radio::make('pos_discount_limit_type')
+                                            ->label('Gunakan Batasan Diskon Berdasarkan:')
+                                            ->options([
+                                                'percent' => 'Persentase (%)',
+                                                'nominal' => 'Nominal (Rp)',
+                                            ])
+                                            ->inline()
+                                            ->default('percent')
+                                            ->live(),
+
+                                        Forms\Components\TextInput::make('pos_manual_discount_max_percent_without_pin')
+                                            ->label('Batas Diskon (Persen)')
+                                            ->helperText('Diskon maksimal oleh kasir tanpa otorisasi PIN (Default: 20).')
+                                            ->numeric()
+                                            ->suffix('%')
+                                            ->default(20)
+                                            ->required()
+                                            ->visible(fn($get) => $get('pos_discount_limit_type') === 'percent'),
+
+                                        Forms\Components\TextInput::make('pos_manual_discount_max_rp_without_pin')
+                                            ->label('Batas Diskon (Nominal)')
+                                            ->helperText('Potongan rupiah maksimal tanpa otorisasi PIN (Default: 50000).')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->default(50000)
+                                            ->required()
+                                            ->visible(fn($get) => $get('pos_discount_limit_type') === 'nominal'),
+                                    ]),
+
+                                \Filament\Schemas\Components\Fieldset::make('Batasan Refund')
+                                    ->columns(1)
+                                    ->components([
+                                        Forms\Components\TextInput::make('pos_refund_max_without_pin')
+                                            ->label('Batas Maksimal Refund (Kasir Mandiri)')
+                                            ->helperText('Batas uang pengembalian (refund) yang boleh dilakukan kasir mandiri. Isi 0 jika SELURUH pengembalian barang wajib menggunakan PIN Supervisor.')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->default(0)
+                                            ->required(),
+                                    ]),
+                            ]),
                     ]),
-                \Filament\Schemas\Components\Section::make('Pengaturan Kas Kecil & Pengeluaran Toko (Petty Cash)')
-                    ->description('Batas maksimal pengeluaran kas toko dari laci kasir.')
-                    ->icon('heroicon-o-banknotes')
+                \Filament\Schemas\Components\Grid::make(['sm' => 1, 'xl' => 2])
                     ->components([
-                        Forms\Components\Select::make('pos_petty_cash_limit_mode')
-                            ->label('Mode Penghitungan Batas Limit Kas Kecil')
-                            ->options([
-                                'cumulative'      => 'Kalkulasi Akumulasi Total Shift (Default)',
-                                'per_transaction' => 'Batas Per Transaksi Tunggal',
-                                'both'            => 'Kombinasi (Per Transaksi & Akumulasi Shift)',
-                            ])
-                            ->default('cumulative')
-                            ->required()
-                            ->helperText('Mode "Kalkulasi Akumulasi" menghitung total seluruh kas keluar shift ini. Jika total melebihi limit, pengeluaran berikutnya wajib PIN Supervisor.'),
-                        Forms\Components\TextInput::make('pos_petty_cash_max_limit')
-                            ->label('Batas Maksimal Kas Keluar Mandiri (Rp)')
-                            ->helperText('Pengeluaran kasir yang melebihi limit ini WAJIB membutuhkan verifikasi PIN Supervisor (Default: Rp 50.000).')
-                            ->numeric()
-                            ->default(50000)
-                            ->required(),
-                        Forms\Components\Toggle::make('pos_auto_open_drawer_on_petty_cash')
-                            ->label('Otomatis Buka Laci Kasir saat Catat Kas')
-                            ->helperText('Mengirim sinyal elektrik untuk membuka laci kasir secara otomatis begitu kasir menyimpan Kas Masuk / Kas Keluar.')
-                            ->default(true),
-                    ]),
-                \Filament\Schemas\Components\Section::make('Keamanan Laci Kasir (Cash Drawer)')
-                    ->description('Pengamanan fisik laci kasir di luar transaksi penjualan.')
-                    ->icon('heroicon-o-lock-closed')
-                    ->components([
-                        Forms\Components\Toggle::make('pos_require_pin_for_manual_drawer')
-                            ->label('Wajib PIN Supervisor untuk Buka Laci Manual (No Sale)')
-                            ->helperText('Jika diaktifkan, tombol Buka Laci Manual di POS wajib memasukkan PIN Supervisor demi keamanan laci kasir.')
-                            ->default(true),
+                        \Filament\Schemas\Components\Section::make('Kas Kecil & Pengeluaran Toko')
+                            ->description('Batas maksimal pengeluaran kas dari laci kasir.')
+                            ->icon('heroicon-o-banknotes')
+                            ->columnSpan(1)
+                            ->components([
+                                Forms\Components\Select::make('pos_petty_cash_limit_mode')
+                                    ->label('Mode Penghitungan Batas')
+                                    ->options([
+                                        'cumulative' => 'Total Akumulasi Shift',
+                                        'per_transaction' => 'Per Transaksi Tunggal',
+                                        'both' => 'Kombinasi Keduanya',
+                                    ])
+                                    ->default('cumulative')
+                                    ->required()
+                                    ->helperText("Mode 'Total Akumulasi' menghitung gabungan dari SEMUA kas keluar di shift kasir tersebut.\nMode 'Per Transaksi' menghitung batas untuk tiap lembar pencatatan."),
+                                Forms\Components\TextInput::make('pos_petty_cash_max_limit')
+                                    ->label('Batas Maksimal Kas Keluar')
+                                    ->helperText('Ini adalah batas maksimal uang yang BOLEH dikeluarkan oleh KASIR tanpa izin. Jika pengeluaran lebih dari ini, WAJIB memasukkan PIN Supervisor (Default: 50000).')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->default(50000)
+                                    ->required(),
+                                Forms\Components\Toggle::make('pos_auto_open_drawer_on_petty_cash')
+                                    ->label('Otomatis Buka Laci Kasir')
+                                    ->helperText('Mengirim sinyal elektrik buka laci begitu kasir menyimpan form kas masuk/keluar.')
+                                    ->default(true),
+                            ]),
+                        \Filament\Schemas\Components\Section::make('Keamanan Laci Kasir Fisik')
+                            ->description('Pengamanan laci kasir (Cash Drawer) di luar penjualan.')
+                            ->icon('heroicon-o-lock-closed')
+                            ->columnSpan(1)
+                            ->components([
+                                Forms\Components\Toggle::make('pos_require_pin_for_manual_drawer')
+                                    ->label('Wajib PIN Supervisor untuk Buka Laci Manual (No Sale)')
+                                    ->helperText('Jika diaktifkan, tombol Buka Laci Manual di layar POS wajib meminta PIN Supervisor demi mencegah pembukaan laci kasir sembarangan.')
+                                    ->default(true),
+                            ]),
                     ]),
             ])
             ->statePath('data');

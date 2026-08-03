@@ -364,40 +364,52 @@ class PosTransactionService
             ]);
         }
 
-        // 3. Proses Perolehan Stempel Baru (Earning)
+        // 3. Proses Perolehan Stempel & Poin Baru (Earning)
         $minSpend = (float) (\App\Models\SiteSetting::where('key', 'pos_loyalty_min_spend')->value('value') ?? 100000);
+        $pointsSpendMultiplier = (float) (\App\Models\SiteSetting::where('key', 'pos_point_spend_multiplier')->value('value') ?? 10000);
+        $pointsEarnedPerMultiplier = (int) (\App\Models\SiteSetting::where('key', 'pos_point_earned_per_multiplier')->value('value') ?? 1);
+        $pointsRatio = (int) (\App\Models\SiteSetting::where('key', 'pos_loyalty_stamps_to_points_ratio')->value('value') ?? 10);
         
+        $stampsEarned = 0;
+        $pointsEarned = 0;
+
+        // A. Poin Reguler dari Nominal Transaksi
+        if ($order->grand_total > 0 && $pointsSpendMultiplier > 0) {
+            $pointsEarned += (int) floor($order->grand_total / $pointsSpendMultiplier) * $pointsEarnedPerMultiplier;
+        }
+
+        // B. Cap Stempel dari Minimal Transaksi Kunjungan
         if ($order->grand_total >= $minSpend) {
-            // Mode kelipatan: per Rp 100k dapat 1 stempel, atau 1 stempel per transaksi
-            $multiplierMode = filter_var(\App\Models\SiteSetting::where('key', 'pos_loyalty_multiplier_mode')->value('value') ?? false, FILTER_VALIDATE_BOOLEAN);
-            $stampsEarned = $multiplierMode ? (int) floor($order->grand_total / $minSpend) : 1;
+            $stampsEarned = 1; // Selalu 1 cap stempel per kunjungan yang memenuhi syarat (Sistem 1/9)
+            $pointsEarned += ($stampsEarned * $pointsRatio); // Poin bonus dari stempel
+        }
             
-            if ($stampsEarned > 0) {
-                $pointsEarned = $stampsEarned * $pointsRatio;
+        if ($stampsEarned > 0 || $pointsEarned > 0) {
+            $newStampCount = $customer->stamp_count + $stampsEarned;
+            
+            // Hitung kartu penuh (tiap 9 cap)
+            $completedCardsAdd = (int) floor($newStampCount / 9);
+            $finalStampCount = $newStampCount % 9;
 
-                $newStampCount = $customer->stamp_count + $stampsEarned;
-                $completedCardsAdd = (int) floor($newStampCount / 9);
-                $finalStampCount = $newStampCount % 9;
+            $customer->update([
+                'stamp_count'           => $finalStampCount,
+                'points_balance'        => $customer->points_balance + $pointsEarned,
+                'total_stamps_earned'   => $customer->total_stamps_earned + $stampsEarned,
+                'completed_cards_count' => $customer->completed_cards_count + $completedCardsAdd,
+                'total_visits'          => $customer->total_visits + 1,
+                'total_spent'           => $customer->total_spent + $order->grand_total,
+                'last_visit_at'         => now(),
+            ]);
 
-                $customer->update([
-                    'stamp_count'           => $finalStampCount,
-                    'points_balance'        => $customer->points_balance + $pointsEarned,
-                    'total_stamps_earned'   => $customer->total_stamps_earned + $stampsEarned,
-                    'completed_cards_count' => $customer->completed_cards_count + $completedCardsAdd,
-                    'total_visits'          => $customer->total_visits + 1,
-                    'total_spent'           => $customer->total_spent + $order->grand_total,
-                    'last_visit_at'         => now(),
-                ]);
-
-                \App\Models\PosStampLog::create([
-                    'pos_customer_id' => $customer->id,
-                    'order_id'        => $order->id,
-                    'type'            => 'earned',
-                    'stamps'          => $stampsEarned,
-                    'points'          => $pointsEarned,
-                    'description'     => "Perolehan {$stampsEarned} Stempel ({$pointsEarned} Poin) dari Nota POS #{$order->order_number}.",
-                ]);
-            }
+            \App\Models\PosStampLog::create([
+                'pos_customer_id' => $customer->id,
+                'order_id'        => $order->id,
+                'type'            => 'earned',
+                'stamps'          => $stampsEarned,
+                'points'          => $pointsEarned,
+                'description'     => "Perolehan {$stampsEarned} Stempel & {$pointsEarned} Poin dari Nota POS #{$order->order_number}.",
+            ]);
+        }
         } else {
             // Tetap update last_visit & total_spent walau tidak dapet stempel
             $customer->update([
