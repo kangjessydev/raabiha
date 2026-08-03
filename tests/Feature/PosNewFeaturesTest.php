@@ -5,8 +5,6 @@ namespace Tests\Feature;
 use App\Models\Cashflow;
 use App\Models\Category;
 use App\Models\Order;
-use App\Models\PosCustomer;
-use App\Models\PosDebtPayment;
 use App\Models\PosEventPromotion;
 use App\Models\PosHeldCart;
 use App\Models\PosSession;
@@ -140,102 +138,5 @@ class PosNewFeaturesTest extends TestCase
         $sharedCarts = PosHeldCart::latest()->get();
         $this->assertCount(1, $sharedCarts);
         $this->assertEquals('Pak Ahmad', $sharedCarts->first()->customer_name);
-    }
-
-    /**
-     * 4. Test Kasbon Debt Transaction (Kasir A) & Next Shift Debt Collection (Kasir B)
-     */
-    public function test_kasbon_debt_checkout_and_next_shift_debt_collection()
-    {
-        Mail::fake();
-
-        $kasirA = User::factory()->create(['name' => 'Kasir A']);
-        $sessionA = PosSession::create([
-            'cashier_id' => $kasirA->id,
-            'opened_at' => now(),
-            'opening_cash' => 100000,
-            'status' => 'open',
-        ]);
-
-        $product = Product::create([
-            'name' => 'Barang Toko',
-            'slug' => 'barang-toko',
-            'price' => 500000,
-            'stock' => 10,
-            'is_active' => true,
-        ]);
-
-        $service = new PosTransactionService();
-
-        // 1. Kasir A processes Kasbon transaction (Customer: Pak Ahmad)
-        $kasbonPayload = [
-            'cashier_id' => $kasirA->id,
-            'pos_session_id' => $sessionA->id,
-            'payment_method' => 'kasbon',
-            'cash_paid' => 0,
-            'customer_name' => 'Pak Ahmad',
-            'customer_phone' => '08123456789',
-            'items' => [
-                [
-                    'product_id' => $product->id,
-                    'quantity' => 1,
-                ],
-            ],
-        ];
-
-        $order = $service->completePosTransaction($kasbonPayload);
-
-        // Verify Order status & due amount
-        $this->assertEquals('unpaid', $order->payment_status);
-        $this->assertTrue($order->is_kasbon);
-        $this->assertEquals(500000, $order->due_amount);
-
-        // Verify Stock IS decremented
-        $this->assertEquals(9, $product->fresh()->stock);
-
-        // Verify Cashflow cash-in for Kasir A drawer IS ZERO
-        $cashflowA = Cashflow::where('order_id', $order->id)->first();
-        $this->assertEquals('in', $cashflowA->type);
-        $this->assertEquals('pos_sale_kasbon', $cashflowA->category);
-        $this->assertEquals(0, $cashflowA->amount);
-
-        // Verify Customer Total Debt
-        $customer = PosCustomer::where('phone', '08123456789')->first();
-        $this->assertNotNull($customer);
-        $this->assertEquals(500000, $customer->total_debt);
-
-        // 2. Next Shift: Kasir B collects debt payment from Pak Ahmad
-        $kasirB = User::factory()->create(['name' => 'Kasir B']);
-        $sessionB = PosSession::create([
-            'cashier_id' => $kasirB->id,
-            'opened_at' => now(),
-            'opening_cash' => 200000,
-            'status' => 'open',
-        ]);
-
-        $paymentPayload = [
-            'order_id' => $order->id,
-            'amount_paid' => 500000,
-            'payment_method' => 'cash',
-            'user_id' => $kasirB->id,
-            'pos_session_id' => $sessionB->id,
-            'notes' => 'Pelunasan Tunai Pak Ahmad di Kasir B',
-        ];
-
-        $debtPayment = $service->processDebtPayment($paymentPayload);
-
-        // Verify Order is updated to Paid
-        $this->assertEquals('paid', $order->fresh()->payment_status);
-        $this->assertEquals(0, $order->fresh()->due_amount);
-        $this->assertEquals(0, $customer->fresh()->total_debt);
-
-        // Verify Stock is UNCHANGED during debt payment (remains 9)
-        $this->assertEquals(9, $product->fresh()->stock);
-
-        // Verify Cashflow FOR KASIR B DRAWER receives +Rp 500,000
-        $cashflowB = Cashflow::where('category', 'pos_debt_payment')->first();
-        $this->assertNotNull($cashflowB);
-        $this->assertEquals('in', $cashflowB->type);
-        $this->assertEquals(500000, $cashflowB->amount);
     }
 }

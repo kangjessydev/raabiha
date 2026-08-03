@@ -17,8 +17,8 @@ class EnsurePosAuthenticated
 
         $user = Auth::user();
 
-        // 1. Role Kasir & Super Admin selalu diizinkan
-        if ($user->hasAnyRole(['kasir', 'super_admin']) || in_array($user->role, ['kasir', 'super_admin'])) {
+        // 1. Secara default, hanya Role Kasir yang langsung diizinkan
+        if ($user->hasRole('kasir') || $user->role === 'kasir') {
             return $next($request);
         }
 

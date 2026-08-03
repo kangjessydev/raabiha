@@ -39,22 +39,6 @@ class PosCustomer extends Model
         return $this->hasMany(Order::class, 'customer_phone', 'phone');
     }
 
-    public function debtPayments(): HasMany
-    {
-        return $this->hasMany(PosDebtPayment::class, 'pos_customer_id');
-    }
-
-    /**
-     * Calculate total outstanding debt (unpaid kasbon orders).
-     */
-    public function getTotalDebtAttribute(): float
-    {
-        return (float) Order::where('customer_phone', $this->phone)
-            ->where('payment_status', 'unpaid')
-            ->where('is_kasbon', true)
-            ->sum('due_amount');
-    }
-
     /**
      * Helper: Normalisasi nomor HP ke format standar 08...
      */

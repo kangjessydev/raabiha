@@ -51,6 +51,16 @@ class PosManager extends Component
     public string $customerSearch = '';
     public string $customerDateFilter = 'shift';
 
+    // State Filter & Search Pesanan Dipesan (Reserved)
+    public string $reservedSearch = '';
+    public string $reservedFilterStatus = 'all'; // all, upcoming, overdue
+
+    public function resetReservedFilters()
+    {
+        $this->reservedSearch = '';
+        $this->reservedFilterStatus = 'all';
+    }
+
     public function resetHistoryFilters()
     {
         $this->historySearch = '';
@@ -245,8 +255,8 @@ class PosManager extends Component
 
     public function loadActiveSession()
     {
-        // Pemicu Safety Net: Otomatis selesaikan sesi gantung dari hari kemarin jika ada
-        PosSession::autoCloseStaleSessions(Auth::id());
+        // Pemicu Safety Net: Otomatis selesaikan sesi gantung yang melampaui batas shift/hari kemarin jika ada
+        PosSession::autoCloseStaleSessions();
 
         $this->activeSession = PosSession::where('cashier_id', Auth::id())
             ->where('status', 'open')
@@ -426,21 +436,40 @@ class PosManager extends Component
         $rawShifts = \App\Models\SiteSetting::where('key', 'pos_master_shifts')->value('value');
         $masterShifts = is_string($rawShifts) ? (json_decode($rawShifts, true) ?: []) : (is_array($rawShifts) ? $rawShifts : []);
 
+        $rawWhitelist = \App\Models\SiteSetting::where('key', 'pos_whitelist_users')->value('value');
+        $whitelistUsers = is_string($rawWhitelist) ? (json_decode($rawWhitelist, true) ?: []) : (is_array($rawWhitelist) ? $rawWhitelist : []);
+
+        // 1. Cek jika pengguna terdaftar di Whitelist
+        $whitelistEntry = null;
+        foreach ($whitelistUsers as $w) {
+            if (isset($w['user_id']) && (string)$w['user_id'] === (string)$cashierId) {
+                $whitelistEntry = $w;
+                break;
+            }
+        }
+
+        if ($whitelistEntry) {
+            // Jika akun Whitelist dan opsi Master Shift terikat dikosongkan -> Bebas 24 jam
+            if (empty($whitelistEntry['shift_name'])) {
+                return ['allowed' => true, 'reason' => 'Whitelist Unrestricted Access'];
+            }
+        }
+
         $now = \Carbon\Carbon::now();
         $currentTime = $now->format('H:i');
 
         $userShifts = [];
-        $hasSpecificAssignments = false;
-        foreach ($masterShifts as $shift) {
-            $assigned = $shift['assigned_cashiers'] ?? [];
-            if (is_array($assigned) && !empty($assigned)) {
-                $hasSpecificAssignments = true;
-                if (in_array((string)$cashierId, array_map('strval', $assigned), true)) {
+        $assignedShift = \App\Models\PosSession::findAssignedShiftForUser($cashierId, $masterShifts, $whitelistUsers);
+
+        if ($assignedShift) {
+            $userShifts[] = $assignedShift;
+        } else {
+            // Jika tidak ada spesifik shift terikat, cek shift umum yang terbuka untuk semua kasir
+            foreach ($masterShifts as $shift) {
+                $assigned = $shift['assigned_cashiers'] ?? [];
+                if (!is_array($assigned) || empty($assigned)) {
                     $userShifts[] = $shift;
                 }
-            } else {
-                // Shift umum tanpa batasan nama kasir
-                $userShifts[] = $shift;
             }
         }
 
@@ -454,11 +483,7 @@ class PosManager extends Component
             }
         }
 
-        // Jika master shift memiliki penugasan kasir spesifik dan kasir ini tidak terdaftar di mana pun
         if (empty($userShifts)) {
-            if ($hasSpecificAssignments) {
-                return ['allowed' => true, 'reason' => 'No Shift Assigned to Cashier'];
-            }
             if (empty($masterShifts)) {
                 return ['allowed' => true, 'reason' => 'No Shift Configured'];
             }
@@ -874,6 +899,20 @@ class PosManager extends Component
             $this->dispatch('notify', [
                 'type' => 'success',
                 'message' => 'Pesanan #' . $order->order_number . ' berhasil ditandai Selesai (barang diambil).'
+            ]);
+
+            // Cetak / Pratinjau Struk Penyerahan Barang
+            $receiptBase64 = $this->escPos()->generateReceipt($order, isReprint: false);
+            $receiptText   = $this->escPos()->generateReceiptText($order, isReprint: false);
+
+            $this->dispatch('print-receipt', [
+                'title'        => 'Struk Penyerahan Barang (Selesai)',
+                'order_id'     => $order->id,
+                'order_number' => $order->order_number,
+                'cash_change'  => $order->cash_change,
+                'text'         => $receiptText,
+                'base64'       => $receiptBase64,
+                'has_returns'  => false,
             ]);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);
@@ -1343,16 +1382,11 @@ class PosManager extends Component
             }
 
             /* ---------- Riwayat Transaksi (dinamis filter & search) ---------- */
-            $ordersQuery = Order::with(['items', 'cashier', 'voidBy', 'posReturns', 'debtPayments.cashier'])
+            $ordersQuery = Order::with(['items', 'cashier', 'voidBy', 'posReturns'])
                 ->where('source', 'pos');
 
             if ($this->historyDateFilter === 'shift' && $this->activeSession) {
-                $ordersQuery->where(function($q) {
-                    $q->where('pos_session_id', $this->activeSession->id)
-                      ->orWhere(function($sub) {
-                          $sub->where('is_kasbon', true)->where('due_amount', '>', 0);
-                      });
-                });
+                $ordersQuery->where('pos_session_id', $this->activeSession->id);
             } elseif ($this->historyDateFilter === 'today') {
                 $ordersQuery->whereDate('created_at', now()->toDateString());
             } elseif ($this->historyDateFilter === 'yesterday') {
@@ -1395,12 +1429,7 @@ class PosManager extends Component
                 ->where('customer_name', '!=', '');
 
             if ($this->customerDateFilter === 'shift' && $this->activeSession) {
-                $custQuery->where(function($q) {
-                    $q->where('pos_session_id', $this->activeSession->id)
-                      ->orWhere(function($sub) {
-                          $sub->where('is_kasbon', true)->where('due_amount', '>', 0);
-                      });
-                });
+                $custQuery->where('pos_session_id', $this->activeSession->id);
             } elseif ($this->customerDateFilter === 'today') {
                 $custQuery->whereDate('created_at', now()->toDateString());
             } elseif ($this->customerDateFilter === 'yesterday') {
@@ -1468,43 +1497,19 @@ class PosManager extends Component
                         'grand_total' => (float)$o->grand_total,
                         'cash_paid' => (float)($o->cash_paid ?? 0),
                         'cash_change' => (float)($o->cash_change ?? 0),
-                        'is_kasbon' => (bool)$o->is_kasbon,
-                        'due_amount' => (float)$o->due_amount,
-                        'status' => $o->status,
+                        'payment_status' => $o->payment_status,
                         'cashier_name' => $o->user?->name ?? 'Kasir System',
                         'items' => $o->items->map(fn($item) => [
                             'name' => $item->product_name ?? 'Produk',
                             'variant' => $item->variant_name ?? '',
                             'price' => (float)$item->price,
                             'qty' => (int)$item->quantity,
-                            'quantity' => (int)$item->quantity,
                             'subtotal' => (float)$item->total,
                             'total' => (float)$item->total,
-                        ])->values()->all(),
-                        'debt_payments' => $o->debtPayments ? $o->debtPayments->map(fn($dp) => [
-                            'amount_paid' => (float)$dp->amount_paid,
-                            'payment_method' => strtoupper($dp->payment_method ?? 'CASH'),
-                            'cashier_name' => $dp->cashier?->name ?? 'Kasir',
-                            'notes' => $dp->notes,
-                            'created_at' => $dp->created_at ? $dp->created_at->format('d M Y, H:i') : '-',
-                        ])->values()->all() : [],
+                        ])
                     ];
                 })->values()->all();
 
-                // Hitung sisa kasbon/piutang pelanggan ini
-                $unpaidKasbonOrders = $customerOrders->filter(fn($o) => $o['is_kasbon'] && $o['due_amount'] > 0);
-                $c->total_kasbon_due = $unpaidKasbonOrders->sum('due_amount');
-                $c->latest_kasbon_order = Order::where('status', '!=', 'cancelled')
-                    ->where('is_kasbon', true)
-                    ->where('due_amount', '>', 0)
-                    ->where(function($q) use ($c) {
-                        if ($c->customer_phone) {
-                            $q->where('customer_phone', $c->customer_phone);
-                        } else {
-                            $q->where('customer_name', $c->customer_name);
-                        }
-                    })
-                    ->first();
                 return $c;
             });
 
@@ -1674,25 +1679,60 @@ class PosManager extends Component
             ];
         })->values()->all();
 
-        $reservedOrders = Order::with(['items', 'cashier'])
+        $reservedQuery = Order::with(['items', 'cashier'])
             ->where('source', 'pos')
-            ->where('status', 'reserved')
-            ->latest()
-            ->get();
+            ->where('status', 'reserved');
+
+        // Stats counts
+        $allReservedBase = (clone $reservedQuery)->get();
+        $totalReservedCount = $allReservedBase->count();
+        $todayStr = now()->toDateString();
+        
+        $todayCount = $allReservedBase->filter(fn($o) => $o->pickup_date && $o->pickup_date->toDateString() === $todayStr)->count();
+        $overdueCount = $allReservedBase->filter(fn($o) => $o->pickup_date && $o->pickup_date->toDateString() < $todayStr)->count();
+        $upcomingCount = $allReservedBase->filter(fn($o) => !$o->pickup_date || $o->pickup_date->toDateString() > $todayStr)->count();
+
+        // Apply Status Filter
+        if ($this->reservedFilterStatus === 'overdue') {
+            $reservedQuery->whereDate('pickup_date', '<', $todayStr);
+        } elseif ($this->reservedFilterStatus === 'today') {
+            $reservedQuery->whereDate('pickup_date', '=', $todayStr);
+        } elseif ($this->reservedFilterStatus === 'upcoming') {
+            $reservedQuery->where(function ($q) use ($todayStr) {
+                $q->whereNull('pickup_date')
+                  ->orWhereDate('pickup_date', '>', $todayStr);
+            });
+        }
+
+        // Apply Search Filter
+        if (!empty(trim($this->reservedSearch))) {
+            $s = '%' . trim($this->reservedSearch) . '%';
+            $reservedQuery->where(function ($q) use ($s) {
+                $q->where('order_number', 'like', $s)
+                  ->orWhere('customer_name', 'like', $s)
+                  ->orWhere('customer_phone', 'like', $s);
+            });
+        }
+
+        $reservedOrders = $reservedQuery->latest()->get();
 
         return view('livewire.pos-manager', [
-            'products'         => $products,
-            'allProductsJson'  => $allProductsJson,
-            'vouchers'         => $this->vouchers,
-            'paymentMethods'   => $this->paymentMethods,
-            'sessionOrders'    => $sessionOrders,
-            'sessionCustomers' => $sessionCustomers,
-            'sessionPettyCash' => $sessionPettyCash,
-            'sessionReturns'   => $sessionReturns,
-            'sessionStats'     => $sessionStats,
-            'reservedOrders'   => $reservedOrders,
-            'supervisorsList'  => $this->supervisorsList,
-            'allPosCustomers'  => $this->allPosCustomers,
+            'products'            => $products,
+            'allProductsJson'     => $allProductsJson,
+            'vouchers'            => $this->vouchers,
+            'paymentMethods'      => $this->paymentMethods,
+            'sessionOrders'       => $sessionOrders,
+            'sessionCustomers'    => $sessionCustomers,
+            'sessionPettyCash'    => $sessionPettyCash,
+            'sessionReturns'      => $sessionReturns,
+            'sessionStats'        => $sessionStats,
+            'reservedOrders'      => $reservedOrders,
+            'totalReservedCount'  => $totalReservedCount,
+            'todayCount'          => $todayCount,
+            'overdueCount'        => $overdueCount,
+            'upcomingCount'       => $upcomingCount,
+            'supervisorsList'     => $this->supervisorsList,
+            'allPosCustomers'     => $this->allPosCustomers,
         ]);
     }
 
@@ -1749,7 +1789,7 @@ class PosManager extends Component
     #[\Livewire\Attributes\Computed]
     public function paymentMethods()
     {
-        $methods = \App\Models\PaymentMethod::where('is_active', true)
+        return \App\Models\PaymentMethod::where('is_active', true)
             ->get()
             ->filter(function ($method) {
                 $config = is_array($method->config) ? $method->config : (json_decode($method->config ?? '[]', true) ?? []);
@@ -1763,22 +1803,8 @@ class PosManager extends Component
                     'code'      => $method->code,
                     'logo'      => $method->logo ? asset('storage/' . $method->logo) : null,
                     'is_cash'   => strtolower($method->code) === 'tunai' || strtolower($method->name) === 'tunai',
-                    'is_kasbon' => false,
                 ];
-            })
-            ->values();
-
-        // Tambahkan opsi Kasbon / Piutang Pelanggan untuk POS
-        $methods->push([
-            'id'        => 'kasbon',
-            'name'      => 'Kasbon / Piutang Pelanggan',
-            'code'      => 'kasbon',
-            'logo'      => null,
-            'is_cash'   => false,
-            'is_kasbon' => true,
-        ]);
-
-        return $methods;
+            })->values();
     }
 
     #[\Livewire\Attributes\Computed]
@@ -1952,26 +1978,6 @@ class PosManager extends Component
     public function deleteHeldCartFromDb($holdId)
     {
         \App\Models\PosHeldCart::where('hold_id', $holdId)->delete();
-    }
-
-    public function processDebtPayment($payload)
-    {
-        if (!$this->activeSession) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Sesi kasir belum dibuka!']);
-            return;
-        }
-
-        $data = is_string($payload) ? json_decode($payload, true) : $payload;
-        $data['user_id'] = Auth::id();
-        $data['pos_session_id'] = $this->activeSession->id;
-
-        try {
-            $debtPayment = app(PosTransactionService::class)->processDebtPayment($data);
-            $this->dispatch('notify', ['type' => 'success', 'message' => 'Pelunasan Kasbon Rp ' . number_format($debtPayment->amount_paid, 0, ',', '.') . ' berhasil dicatat!']);
-            $this->dispatch('debt-payment-success');
-        } catch (\Exception $e) {
-            $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal pelunasan kasbon: ' . $e->getMessage()]);
-        }
     }
 
     #[\Livewire\Attributes\Computed]

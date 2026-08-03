@@ -2,13 +2,11 @@
     <form wire:submit="submit">
         {{ $this->form }}
 
-        @if (auth()->user()->can('Update:PosSettings'))
-        <div class="mt-4">
-            <x-filament::button type="submit">
+        <div class="mt-6 flex items-center justify-end gap-x-6">
+            <x-filament::button type="submit" size="lg" icon="heroicon-m-check">
                 Simpan Pengaturan
             </x-filament::button>
         </div>
-        @endif
     </form>
 
     <x-filament-actions::modals />

@@ -1,6 +1,9 @@
 <div x-data="posSystem()" wire:poll.5s="checkTakeoverRequest" class="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-gray-50/50 relative">
     @php
         $posLogoSetting = \App\Models\SiteSetting::where('key', 'pos_ui_logo')->first();
+        $posReceiptLogoSetting = \App\Models\SiteSetting::where('key', 'pos_receipt_logo_enabled')->first();
+        $posReceiptLogoEnabled = filter_var($posReceiptLogoSetting?->value ?? false, FILTER_VALIDATE_BOOLEAN);
+
         $posLogoUrl = asset('assets/images/pos-logo-icon.png');
         if ($posLogoSetting && $posLogoSetting->value) {
             $media = \Awcodes\Curator\Models\Media::find($posLogoSetting->value);
@@ -568,12 +571,19 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap">Pelanggan</span>
                     </button>
-                    <button @click="activePage = 'reserved'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer" :class="[activePage==='reserved' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Pesanan Dipesan">
-                        <svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <button @click="activePage = 'reserved'" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer relative" :class="[activePage==='reserved' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900', isSidebarOpen ? 'justify-start' : 'justify-center']" title="Pesanan Dipesan">
+                        <div class="relative flex-shrink-0">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            @if(($totalReservedCount ?? 0) > 0)
+                                <span class="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-black rounded-full shadow-xs border-2 border-white {{ ($overdueCount ?? 0) > 0 ? 'bg-rose-600 text-white animate-pulse' : (($todayCount ?? 0) > 0 ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white') }}">
+                                    {{ $totalReservedCount }}
+                                </span>
+                            @endif
+                        </div>
                         <span x-show="isSidebarOpen" x-transition.opacity.duration.300ms class="whitespace-nowrap flex items-center justify-between w-full">
                             <span>Dipesan</span>
-                            @if(count($reservedOrders ?? []) > 0)
-                                <span class="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-800 rounded-full">{{ count($reservedOrders) }}</span>
+                            @if(($totalReservedCount ?? 0) > 0)
+                                <span class="ml-1.5 px-2 py-0.5 text-[10px] font-extrabold rounded-full {{ ($overdueCount ?? 0) > 0 ? 'bg-rose-100 text-rose-800' : (($todayCount ?? 0) > 0 ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800') }}">{{ $totalReservedCount }}</span>
                             @endif
                         </span>
                     </button>
@@ -1713,12 +1723,9 @@
                             </div>
 
                             <!-- Identitas Pembeli (Live Search Autocomplete) -->
-                            <div class="pt-2 border-t border-gray-200" id="kasbonCustomerSection">
+                            <div class="pt-2 border-t border-gray-200" id="customerSection">
                                 <div class="flex items-center justify-between mb-1.5">
-                                    <label class="block text-xs font-semibold text-gray-700 flex items-center gap-1">
                                         <span>Pelanggan (Live Search / Autocomplete)</span>
-                                        <span x-show="paymentMethod === 'kasbon'" class="text-rose-600 font-bold text-xs">* (Wajib)</span>
-                                    </label>
                                     <button type="button" x-show="customerName || customerPhone || customerSearchInput" @click="clearCustomer()" class="text-[11px] font-bold text-rose-600 hover:text-rose-700 cursor-pointer flex items-center gap-0.5">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                         Hapus Pelanggan
@@ -1728,17 +1735,13 @@
                                 <div class="relative" @click.away="showCustomerDropdown = false">
                                     <div class="relative">
                                         <input type="text" 
-                                               id="kasbonCustomerSearchInput"
-                                               x-model="customerSearchInput" 
-                                               @input="onCustomerInput()"
+                                               x-model="customerSearchInput"
                                                @focus="showCustomerDropdown = true"
-                                               class="w-full pl-8 pr-8 py-2 rounded-lg text-xs font-medium placeholder-gray-400 focus:outline-none transition-all shadow-xs"
-                                               :class="kasbonCustomerError 
-                                                   ? 'border-2 border-rose-500 bg-rose-50/70 text-rose-900 placeholder-rose-400 ring-2 ring-rose-500/20' 
-                                                   : 'border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500'" 
+                                               @input="onCustomerInput()"
+                                               class="w-full pl-8 pr-8 py-2 rounded-lg text-xs font-medium placeholder-gray-400 focus:outline-none transition-all shadow-xs border border-gray-300 bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500"
                                                placeholder="Cari nama atau No. WhatsApp (contoh: Siti / 0812...)">
                                         
-                                        <svg class="w-4 h-4 absolute left-2.5 top-2.5 pointer-events-none transition-colors" :class="kasbonCustomerError ? 'text-rose-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-4 h-4 absolute left-2.5 top-2.5 pointer-events-none text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                         </svg>
 
@@ -1772,33 +1775,19 @@
 
                                 <!-- Detail Nama & Phone jika kasir mengetik manual / memilih -->
                                 <div class="grid grid-cols-2 gap-2 mt-2">
-                                    <input type="text" 
-                                           id="kasbonCustomerNameInput"
-                                           x-model="customerName" 
-                                           @input="saveActiveCart(); if(customerName.trim()) kasbonCustomerError = false;" 
-                                           class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all" 
-                                           :class="kasbonCustomerError 
-                                               ? 'border-2 border-rose-500 bg-rose-50/70 text-rose-900 placeholder-rose-400 ring-2 ring-rose-500/20' 
-                                               : 'border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500'"
+                                    <input type="text"
+                                           id="customerNameInput"
+                                           x-model="customerName"
+                                           @input="saveActiveCart()"
+                                           class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500"
                                            placeholder="Nama Pelanggan">
-                                    <input type="text" 
-                                           id="kasbonCustomerPhoneInput"
-                                           x-model="customerPhone" 
-                                           @input="saveActiveCart(); if(customerName.trim()) kasbonCustomerError = false;" 
-                                           class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all" 
-                                           :class="kasbonCustomerError 
-                                               ? 'border-2 border-rose-500 bg-rose-50/70 text-rose-900 placeholder-rose-400 ring-2 ring-rose-500/20' 
-                                               : 'border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500'"
+                                    <input type="text"
+                                           id="customerPhoneInput"
+                                           x-model="customerPhone"
+                                           @input="saveActiveCart()"
+                                           class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500"
                                            placeholder="No WhatsApp">
                                 </div>
-
-                                <!-- Inline Red Error Notice for Kasbon -->
-                                <template x-if="kasbonCustomerError">
-                                    <div x-transition class="mt-2 p-2 bg-rose-50 border border-rose-300 rounded-lg text-rose-700 text-[11px] font-bold flex items-center gap-1.5 shadow-2xs">
-                                        <svg class="w-4 h-4 text-rose-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        <span>Nama Pelanggan WAJIB diisi untuk transaksi Kasbon!</span>
-                                    </div>
-                                </template>
 
                                 <!-- Banner Pemberitahuan Voucher Hadiah Stempel di Modal Checkout -->
                                 <div x-show="activeCustomerLoyalty" x-transition class="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-xs">
@@ -1844,7 +1833,7 @@
                                             <svg class="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                             <div>
                                                 <span class="text-xs font-bold text-blue-950 block">Dipesan (Barang Ambil Nanti)</span>
-                                                <span class="text-[10px] text-blue-700 font-medium block">Bayar lunas/kasbon sekarang, barang diserahkan kemudian</span>
+                                                <span class="text-[10px] text-blue-700 font-medium block">Bayar lunas sekarang, barang diserahkan kemudian</span>
                                             </div>
                                         </div>
                                         <input type="checkbox" x-model="isReserved" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer">
@@ -1877,6 +1866,56 @@
                             <svg class="animate-spin h-4 w-4 text-white shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             <span>Memproses Transaksi...</span>
                         </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Konfirmasi Penyerahan Barang Reserved Order -->
+        <div x-show="showPickupConfirmModal" 
+             x-cloak 
+             x-transition:enter="transition ease-out duration-200" 
+             x-transition:enter-start="opacity-0" 
+             x-transition:enter-end="opacity-100" 
+             x-transition:leave="transition ease-in duration-150" 
+             x-transition:leave-start="opacity-100" 
+             x-transition:leave-end="opacity-0" 
+             class="fixed inset-0 z-[110] flex items-center justify-center bg-gray-950/60 backdrop-blur-xs p-4 font-sans" style="display: none;">
+            <div @click.away="showPickupConfirmModal = false"
+                 x-show="showPickupConfirmModal"
+                 x-transition:enter="transition ease-out duration-200 transform"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-150 transform"
+                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+                 class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-md p-6 text-center space-y-5">
+                
+                <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto ring-8 ring-emerald-50">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                
+                <div class="space-y-2">
+                    <h3 class="text-lg font-bold text-gray-900">Konfirmasi Penyerahan Barang</h3>
+                    <p class="text-xs text-gray-600 leading-relaxed">
+                        Apakah Anda yakin barang untuk pesanan <span class="font-mono font-bold text-emerald-700" x-text="confirmPickupOrder ? '#' + confirmPickupOrder.number : ''"></span> a.n. <strong class="text-gray-900" x-text="confirmPickupOrder ? confirmPickupOrder.name : ''"></strong> sudah diserahkan ke pelanggan?
+                    </p>
+                    <p class="text-[11px] text-gray-500 bg-amber-50 text-amber-800 p-2.5 rounded-xl border border-amber-200/80 mt-2 font-medium">
+                        Status pesanan akan diubah menjadi <strong class="font-bold">Selesai (Completed)</strong>.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" 
+                            @click="showPickupConfirmModal = false" 
+                            class="w-1/2 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-xl shadow-xs transition cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" 
+                            @click="$wire.completeReservedOrder(confirmPickupOrder.id); showPickupConfirmModal = false" 
+                            class="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Ya, Serahkan</span>
                     </button>
                 </div>
             </div>
@@ -3569,16 +3608,7 @@
                                                 'grand_total' => (float)$order->grand_total,
                                                 'cash_paid' => (float)$order->cash_paid,
                                                 'cash_change' => (float)$order->cash_change,
-                                                'is_kasbon' => (bool)$order->is_kasbon,
-                                                'due_amount' => (float)$order->due_amount,
                                                 'status' => $order->status,
-                                                'debt_payments' => $order->debtPayments->map(fn($dp) => [
-                                                    'amount_paid' => (float)$dp->amount_paid,
-                                                    'payment_method' => strtoupper($dp->payment_method),
-                                                    'cashier_name' => $dp->cashier->name ?? 'Kasir',
-                                                    'notes' => $dp->notes,
-                                                    'created_at' => $dp->created_at->format('d M Y, H:i')
-                                                ])->values()->all(),
                                                 'items' => $order->items->map(fn($i) => [
                                                     'name' => $i->product_name ?? $i->name,
                                                     'variant' => $i->variant_name,
@@ -3638,17 +3668,17 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
                 @endif
             </div>
         </div>
+    </div>
 
         <!-- ============================================ -->
-        <!-- PAGE: Pesanan Dipesan / Reserved             -->
+        <!-- PAGE: Pesanan Dipesan (Barang Ambil Nanti)   -->
         <!-- ============================================ -->
         <div x-show="activePage === 'reserved'" x-cloak wire:key="pos-page-reserved" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
-            <!-- Header -->
-            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
+            <!-- Header & Filter Bar -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs">
                 <div class="flex items-center gap-3">
                     <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
@@ -3656,36 +3686,129 @@
                     <div>
                         <h1 class="text-xl font-bold tracking-tight text-gray-950 flex items-center gap-2">
                             <span>Pesanan Dipesan (Barang Ambil Nanti)</span>
-                            <span class="px-2.5 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded-full">{{ count($reservedOrders ?? []) }} Pesanan</span>
+                            <span class="px-2.5 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 rounded-full">{{ $totalReservedCount ?? 0 }} Pesanan</span>
                         </h1>
                         <p class="text-xs text-gray-500 font-medium">Pembayaran sudah tercatat & stok terpotong, menunggu pengambilan oleh pelanggan.</p>
+                    </div>
+                </div>
+
+                <!-- Search & Status Filter Chips -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- Search Bar -->
+                    <div class="relative min-w-[220px]">
+                        <input type="text" 
+                               wire:model.live.debounce.300ms="reservedSearch" 
+                               placeholder="Cari nama, WA, #order..." 
+                               class="w-full pl-8 pr-7 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+                        <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        @if(!empty($reservedSearch))
+                            <button wire:click="$set('reservedSearch', '')" class="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        @endif
+                    </div>
+
+                    <!-- Filter Status -->
+                    <div class="inline-flex bg-gray-100 p-1 rounded-lg border border-gray-200 text-xs font-semibold">
+                        <button type="button" 
+                                wire:click="$set('reservedFilterStatus', 'all')" 
+                                wire:loading.attr="disabled"
+                                class="px-3 py-1 rounded-md transition-all cursor-pointer {{ $reservedFilterStatus === 'all' ? 'bg-white text-blue-900 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900' }}">
+                            Semua ({{ $totalReservedCount ?? 0 }})
+                        </button>
+                        <button type="button" 
+                                wire:click="$set('reservedFilterStatus', 'today')" 
+                                wire:loading.attr="disabled"
+                                class="px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 {{ $reservedFilterStatus === 'today' ? 'bg-amber-500 text-white shadow-xs font-bold' : (($todayCount ?? 0) > 0 ? 'text-amber-700 hover:bg-amber-50 font-bold' : 'text-gray-600 hover:text-gray-900') }}">
+                            @if(($todayCount ?? 0) > 0)
+                                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                            @endif
+                            Hari Ini ({{ $todayCount ?? 0 }})
+                        </button>
+                        <button type="button" 
+                                wire:click="$set('reservedFilterStatus', 'upcoming')" 
+                                wire:loading.attr="disabled"
+                                class="px-3 py-1 rounded-md transition-all cursor-pointer {{ $reservedFilterStatus === 'upcoming' ? 'bg-white text-blue-900 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900' }}">
+                            Mendatang ({{ $upcomingCount ?? 0 }})
+                        </button>
+                        <button type="button" 
+                                wire:click="$set('reservedFilterStatus', 'overdue')" 
+                                wire:loading.attr="disabled"
+                                class="px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 {{ $reservedFilterStatus === 'overdue' ? 'bg-rose-600 text-white shadow-xs font-bold' : (($overdueCount ?? 0) > 0 ? 'text-rose-600 hover:bg-rose-50 font-bold' : 'text-gray-600 hover:text-gray-900') }}">
+                            @if(($overdueCount ?? 0) > 0)
+                                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                            @endif
+                            Jatuh Tempo ({{ $overdueCount ?? 0 }})
+                        </button>
                     </div>
                 </div>
             </div>
 
             <!-- Content Area -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6">
+                <!-- Loading State Indicator -->
+                <div wire:loading wire:target="reservedFilterStatus, reservedSearch, resetReservedFilters" class="w-full py-16 flex flex-col items-center justify-center text-gray-500">
+                    <div class="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <p class="text-xs font-semibold text-gray-600">Memuat pesanan dipesan...</p>
+                </div>
+
+                <div wire:loading.remove wire:target="reservedFilterStatus, reservedSearch, resetReservedFilters">
                 @if(empty($reservedOrders) || count($reservedOrders) === 0)
                     <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center shadow-xs">
                         <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
                         <h3 class="text-base font-bold text-gray-900 mb-1">Tidak Ada Pesanan Dipesan</h3>
-                        <p class="text-xs text-gray-500 max-w-sm mx-auto">Saat ini belum ada pesanan yang tersimpan dengan status Dipesan.</p>
+                        <p class="text-xs text-gray-500 max-w-sm mx-auto">
+                            @if(!empty($reservedSearch) || $reservedFilterStatus !== 'all')
+                                Tidak ditemukan pesanan dipesan dengan kata kunci / filter tersebut. 
+                                <button wire:click="resetReservedFilters()" class="text-blue-600 underline font-semibold ml-1 cursor-pointer">Reset Filter</button>
+                            @else
+                                Saat ini belum ada pesanan yang tersimpan dengan status Dipesan.
+                            @endif
+                        </p>
                     </div>
                 @else
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         @foreach($reservedOrders as $rOrder)
-                            <div class="bg-white rounded-2xl border border-blue-200 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-all">
+                            @php
+                                $isToday   = $rOrder->pickup_date && $rOrder->pickup_date->isToday();
+                                $isOverdue = $rOrder->pickup_date && $rOrder->pickup_date->isPast() && !$isToday;
+                            @endphp
+                            <div wire:key="reserved-order-{{ $rOrder->id }}" class="bg-white rounded-2xl border {{ $isOverdue ? 'border-rose-300 ring-2 ring-rose-200/80 shadow-rose-100/50 bg-rose-50/10' : ($isToday ? 'border-amber-300 ring-2 ring-amber-200/80 bg-amber-50/10' : 'border-blue-200') }} p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition-all">
                                 <div>
+                                    @if($isOverdue)
+                                        <div class="mb-3 p-2 bg-rose-50 border border-rose-200 text-rose-900 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5">
+                                            <span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
+                                            <span>⚠️ Pesanan Melewati Tanggal Janji Ambil!</span>
+                                        </div>
+                                    @elseif($isToday)
+                                        <div class="mb-3 p-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5">
+                                            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                                            <span>🔔 Jadwal Pengambilan Barang Hari Ini!</span>
+                                        </div>
+                                    @endif
+
                                     <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                                         <div>
                                             <span class="font-mono font-bold text-sm text-gray-900">#{{ $rOrder->order_number }}</span>
                                             <div class="text-[11px] text-gray-500 font-medium mt-0.5">{{ $rOrder->created_at ? $rOrder->created_at->format('d M Y, H:i') : '-' }}</div>
                                         </div>
-                                        <span class="px-2.5 py-1 text-xs font-bold bg-blue-100 text-blue-800 rounded-full">
-                                            Dipesan
-                                        </span>
+                                        @if($isOverdue)
+                                            <span class="px-2.5 py-1 text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200 rounded-full flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                Jatuh Tempo
+                                            </span>
+                                        @elseif($isToday)
+                                            <span class="px-2.5 py-1 text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 rounded-full flex items-center gap-1">
+                                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                                Hari Ini
+                                            </span>
+                                        @else
+                                            <span class="px-2.5 py-1 text-xs font-bold bg-blue-100 text-blue-800 rounded-full">
+                                                Dipesan
+                                            </span>
+                                        @endif
                                     </div>
 
                                     <div class="py-3 space-y-2 text-xs">
@@ -3698,12 +3821,22 @@
                                                 @endif
                                             </div>
                                         </div>
-                                        @if($rOrder->pickup_date)
-                                            <div class="flex justify-between text-blue-900 bg-blue-50 p-2 rounded-lg border border-blue-100">
-                                                <span class="font-semibold">Perkiraan Ambil:</span>
-                                                <span class="font-bold">{{ $rOrder->pickup_date->format('d M Y') }}</span>
-                                            </div>
-                                        @endif
+                                         @if($rOrder->pickup_date)
+                                             <div class="flex justify-between items-center p-2 rounded-lg border text-xs {{ $isOverdue ? 'bg-rose-50 border-rose-200 text-rose-900 font-bold' : ($isToday ? 'bg-amber-50 border-amber-200 text-amber-900 font-bold' : 'bg-blue-50 border-blue-100 text-blue-900 font-semibold') }}">
+                                                 <span class="flex items-center gap-1">
+                                                     <svg class="w-4 h-4 {{ $isOverdue ? 'text-rose-600' : ($isToday ? 'text-amber-600' : 'text-blue-600') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                     Perkiraan Ambil:
+                                                 </span>
+                                                 <span>
+                                                     {{ $rOrder->pickup_date->format('d M Y') }}
+                                                     @if($isOverdue)
+                                                         <span class="text-[10px] bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded font-bold ml-1">Terlewat</span>
+                                                     @elseif($isToday)
+                                                         <span class="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold ml-1">Hari Ini</span>
+                                                     @endif
+                                                 </span>
+                                             </div>
+                                         @endif
                                         <div class="flex justify-between text-gray-700">
                                             <span class="text-gray-500">Metode Bayar:</span>
                                             <span class="font-semibold uppercase text-gray-900">{{ $rOrder->payment_method ?: 'TUNAI' }}</span>
@@ -3729,7 +3862,7 @@
                                 <!-- Action Buttons -->
                                 <div class="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
                                     <button type="button" 
-                                            @click="$wire.completeReservedOrder({{ $rOrder->id }})" 
+                                            @click="confirmPickupOrder = { id: {{ $rOrder->id }}, number: '{{ $rOrder->order_number }}', name: '{{ addslashes($rOrder->customer_name ?: 'Pelanggan POS') }}' }; showPickupConfirmModal = true" 
                                             class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                         <span>Tandai Sudah Diambil</span>
@@ -3738,37 +3871,37 @@
                                             @click="$wire.reprintReceipt({{ $rOrder->id }})" 
                                             class="py-2.5 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium text-xs rounded-xl shadow-xs transition-colors cursor-pointer" 
                                             title="Cetak Struk">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"/></svg>
                                     </button>
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 @endif
+                </div>
             </div>
         </div>
 
         <!-- ============================================ -->
         <!-- PAGE: Riwayat Retur (Filament Native Table)  -->
         <!-- ============================================ -->
-        <div x-show="activePage === 'returns'" x-cloak wire:key="pos-page-returns" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
-            <!-- Header -->
-            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
-                <div class="flex items-center gap-3">
-                    <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    </button>
-                    <div>
-                        <h1 class="text-xl font-bold tracking-tight text-gray-950">
-                            Riwayat Retur & Penukaran Barang
-                        </h1>
-                        <p class="text-xs text-gray-500 font-medium">Shift hari ini &mdash; {{ count($sessionReturns ?? []) }} retur/penukaran tercatat</p>
+        <div x-show="activePage === 'returns'" x-cloak wire:key="pos-page-returns" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-y-auto font-sans">
+            <div class="p-4 md:p-6 max-w-7xl w-full mx-auto space-y-5">
+                
+                <!-- Header Title Bar -->
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        </button>
+                        <div>
+                            <h1 class="text-xl font-bold tracking-tight text-gray-950">
+                                Riwayat Retur & Penukaran Barang
+                            </h1>
+                            <p class="text-xs text-gray-500 font-medium">Manajemen retur, penukaran barang, dan pengembalian uang kasir.</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
                 <!-- Ringkasan KPI Retur -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
@@ -3966,7 +4099,7 @@
                                         <button wire:click="reprintReturnReceipt({{ $ret->id }})" wire:loading.attr="disabled"
                                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                                             <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"/>
                                             </svg>
                                             <span>Cetak Struk</span>
                                         </button>
@@ -3990,22 +4123,21 @@
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
-             class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
-            <!-- Header -->
-            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
-                <div class="flex items-center gap-3">
-                    <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    </button>
-                    <div>
-                        <h1 class="text-xl font-bold tracking-tight text-gray-950">Pelanggan POS</h1>
-                        <p class="text-xs text-gray-500 font-medium">{{ count($sessionCustomers) }} pelanggan terdaftar pada shift ini</p>
+             class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-y-auto font-sans">
+            <div class="p-4 md:p-6 max-w-7xl w-full mx-auto space-y-5">
+                
+                <!-- Header Title Bar -->
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        </button>
+                        <div>
+                            <h1 class="text-xl font-bold tracking-tight text-gray-950">Pelanggan POS</h1>
+                            <p class="text-xs text-gray-500 font-medium">Manajemen riwayat transaksi dan kartu stempel loyalty pelanggan.</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
                 <!-- Ringkasan KPI Pelanggan -->
                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
@@ -4016,9 +4148,9 @@
                         <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Belanja Pelanggan</p>
                         <p class="text-2xl font-bold text-gray-950 mt-1">Rp {{ number_format($sessionCustomers->sum('total_spent'), 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-amber-50/70 rounded-xl border border-amber-200/80 p-4 shadow-xs">
-                        <p class="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Piutang Kasbon Belum Lunas</p>
-                        <p class="text-2xl font-black text-amber-950 mt-1">Rp {{ number_format($sessionCustomers->sum('total_kasbon_due'), 0, ',', '.') }}</p>
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Kunjungan Berulang</p>
+                        <p class="text-2xl font-bold text-gray-950 mt-1">{{ $sessionCustomers->filter(fn($c) => ($c->total_orders ?? 1) > 1)->count() }} <span class="text-sm font-normal text-gray-400">pelanggan</span></p>
                     </div>
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
                         <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Kartu Stempel Ready</p>
@@ -4038,7 +4170,7 @@
                             <input type="text"
                                    wire:model.live.debounce.300ms="customerSearch"
                                    wire:key="customer-search-input"
-                                   placeholder="Cari nama, No. HP, atau kasbon..."
+                                   placeholder="Cari nama atau No. HP..."
                                    class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs">
                         </div>
 
@@ -4126,7 +4258,6 @@
                                     <th class="py-3 px-4 text-center">Stempel Aktif</th>
                                     <th class="py-3 px-4 text-center">Saldo Poin</th>
                                     <th class="py-3 px-4 text-center">Kartu Selesai (9 Cap)</th>
-                                    <th class="py-3 px-4 text-center">Piutang Kasbon</th>
                                     <th class="py-3 px-4 text-right">Total Belanja</th>
                                     <th class="py-3 px-4 text-center">Aksi</th>
                                 </tr>
@@ -4191,25 +4322,12 @@
                                         @endif
                                     </td>
 
-                                    <!-- Piutang Kasbon -->
-                                    <td class="py-3 px-4 text-center whitespace-nowrap">
-                                        @if(($customer->total_kasbon_due ?? 0) > 0)
-                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-black bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20 shadow-2xs">
-                                                <span>Rp {{ number_format($customer->total_kasbon_due, 0, ',', '.') }}</span>
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium text-gray-400 bg-gray-50">
-                                                Lunas / Rapi
-                                            </span>
-                                        @endif
-                                    </td>
-
                                     <!-- Total Belanja -->
                                     <td class="py-3 px-4 text-right whitespace-nowrap">
                                         <div class="font-bold text-xs text-gray-900">Rp {{ number_format($customer->total_spent, 0, ',', '.') }}</div>
                                     </td>
 
-                                    <!-- Aksi (Detail & Bayar Kasbon) -->
+                                    <!-- Aksi (Detail Pelanggan) -->
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
                                         <div class="flex items-center justify-center gap-1.5">
                                             <button type="button"
@@ -4218,14 +4336,6 @@
                                                 <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                 <span>Detail</span>
                                             </button>
-                                            @if(($customer->total_kasbon_due ?? 0) > 0 && isset($customer->latest_kasbon_order))
-                                                <button type="button"
-                                                        @click="openDebtPaymentModal({{ \Illuminate\Support\Js::from($customer->latest_kasbon_order) }})"
-                                                        class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] rounded-lg shadow-xs transition duration-150 cursor-pointer flex items-center gap-1">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                                    <span>Bayar Kasbon</span>
-                                                </button>
-                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -4241,22 +4351,21 @@
         <!-- ============================================ -->
         <!-- PAGE: Rekap Kas (Filament Native Style)      -->
         <!-- ============================================ -->
-        <div x-show="activePage === 'cashsummary'" x-cloak wire:key="pos-page-cashsummary" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-hidden font-sans">
-            <!-- Header -->
-            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-xs">
-                <div class="flex items-center gap-3">
-                    <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    </button>
-                    <div>
-                        <h1 class="text-xl font-bold tracking-tight text-gray-950">Rekap Kas Shift</h1>
-                        <p class="text-xs text-gray-500 font-medium">Shift dibuka sejak {{ $sessionStats['opened_at'] ?? '-' }}</p>
+        <div x-show="activePage === 'cashsummary'" x-cloak wire:key="pos-page-cashsummary" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="flex-1 flex flex-col h-full bg-gray-50/50 overflow-y-auto font-sans">
+            <div class="p-4 md:p-6 max-w-7xl w-full mx-auto space-y-5">
+                
+                <!-- Header Title Bar -->
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <button @click="activePage = 'kasir'" class="p-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500" title="Kembali ke Kasir">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        </button>
+                        <div>
+                            <h1 class="text-xl font-bold tracking-tight text-gray-950">Rekap Kas Shift</h1>
+                            <p class="text-xs text-gray-500 font-medium">Shift dibuka sejak {{ $sessionStats['opened_at'] ?? '-' }}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Content Area -->
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
                 <!-- Ringkasan KPI - 3 Stat Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <!-- Stat 1: Estimasi Kas di Laci (Featured) -->
@@ -4469,6 +4578,11 @@
                     </div>
                     <div class="bg-gray-200 p-4 rounded-xl border border-gray-300 shadow-inner flex justify-center max-h-[380px] overflow-y-auto">
                         <div class="bg-white p-4 shadow-sm w-full max-w-[300px]" style="font-family: 'Courier New', Courier, monospace;">
+                            @if($posReceiptLogoEnabled)
+                            <div class="flex justify-center mb-3">
+                                <img src="{{ $posLogoUrl }}" alt="Logo Toko" class="w-12 h-12 object-contain rounded-full border border-gray-200 p-0.5 bg-white shadow-xs">
+                            </div>
+                            @endif
                             <pre class="text-[11px] leading-tight text-black whitespace-pre-wrap word-break-all" x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? previewReceiptData.return_text : (previewReceiptData ? previewReceiptData.text : '')"></pre>
                         </div>
                     </div>
@@ -4621,65 +4735,7 @@
     </div>
 
 
-    <!-- Modal Pelunasan Kasbon / Piutang - Filament Native Style -->
-    <div x-show="showDebtPaymentModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
-        <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showDebtPaymentModal = false">
-            <!-- Header -->
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
-                <div class="flex items-center gap-2.5">
-                    <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600 border border-emerald-100">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-base text-gray-950 leading-tight">Terima Pelunasan Kasbon</h3>
-                        <p class="text-xs text-gray-500 font-medium" x-text="selectedDebtOrder ? ('Nota #' + selectedDebtOrder.order_number) : 'Pelunasan Piutang Pelanggan'"></p>
-                    </div>
-                </div>
-                <button @click="showDebtPaymentModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
-            </div>
 
-            <!-- Content Area -->
-            <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs bg-gray-50/50" x-show="selectedDebtOrder">
-                <!-- Info Order & Total Piutang -->
-                <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-center">
-                    <div class="text-[11px] font-bold uppercase tracking-wider text-amber-800" x-text="'Pelanggan: ' + (selectedDebtOrder ? selectedDebtOrder.customer_name : '')"></div>
-                    <div class="text-2xl font-black text-amber-950 mt-1">
-                        Rp <span x-text="formatMoney(selectedDebtOrder ? selectedDebtOrder.due_amount : 0)"></span>
-                    </div>
-                    <div class="text-[11px] text-amber-700 mt-0.5">Sisa Kasbon yang Harus Dilunasi</div>
-                </div>
-
-                <div>
-                    <label class="block font-bold text-gray-900 mb-1">Nominal Pembayaran (Rp)</label>
-                    <input type="number" x-model.number="debtPaymentAmount" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-base font-extrabold text-gray-950">
-                </div>
-
-                <div>
-                    <label class="block font-bold text-gray-900 mb-1">Metode Pembayaran</label>
-                    <select x-model="debtPaymentMethod" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-semibold">
-                        <option value="cash">Tunai Kasir</option>
-                        <option value="qris">QRIS</option>
-                        <option value="transfer">Transfer Bank</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block font-bold text-gray-900 mb-1">Catatan Pelunasan</label>
-                    <input type="text" x-model="debtPaymentNotes" placeholder="misal: Pelunasan tunai dari Pak Ahmad" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs font-medium">
-                </div>
-            </div>
-
-            <!-- Footer Actions -->
-            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
-                <button type="button" @click="showDebtPaymentModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
-                    Batal
-                </button>
-                <button type="button" @click="submitDebtPayment()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
-                    Simpan Pelunasan Kasbon
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal Detail Rincian Nota Transaksi - Filament Native Style -->
     <div x-show="showDetailOrderModal" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-950/60 backdrop-blur-xs font-sans" x-transition.opacity>
@@ -4745,25 +4801,7 @@
                     </div>
                 </div>
 
-                <!-- Riwayat Audit Pelunasan Kasbon -->
-                <div x-show="selectedOrderDetail && selectedOrderDetail.debt_payments && selectedOrderDetail.debt_payments.length > 0" class="p-4 bg-amber-50/70 rounded-lg border border-amber-200/80 space-y-2 shadow-xs">
-                    <div class="font-bold text-amber-900 text-xs uppercase tracking-wider flex items-center justify-between border-b border-amber-200/60 pb-1.5">
-                        <span>Riwayat Audit Pelunasan Kasbon</span>
-                        <span class="text-[10px] font-black text-amber-800" x-text="selectedOrderDetail && selectedOrderDetail.due_amount > 0 ? 'Sisa Piutang: Rp ' + formatMoney(selectedOrderDetail.due_amount) : 'LUNAS'"></span>
-                    </div>
-                    <div class="space-y-2 pt-1">
-                        <template x-for="pay in (selectedOrderDetail ? selectedOrderDetail.debt_payments : [])">
-                            <div class="flex items-center justify-between text-[11px] bg-white p-2.5 rounded-md border border-amber-200/50">
-                                <div>
-                                    <div class="font-bold text-gray-900" x-text="'Rp ' + formatMoney(pay.amount_paid) + ' (' + pay.payment_method + ')'"></div>
-                                    <div class="text-gray-500 text-[10px]" x-text="'Dilayani Kasir: ' + pay.cashier_name"></div>
-                                    <div class="text-gray-400 italic text-[10px]" x-show="pay.notes" x-text="pay.notes"></div>
-                                </div>
-                                <div class="text-right font-mono text-[10px] text-gray-500" x-text="pay.created_at"></div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
+
             </div>
 
             <!-- Footer Action -->
@@ -4809,8 +4847,8 @@
                         <div class="text-sm font-extrabold text-amber-600 mt-1" x-text="(selectedCustomerDetail ? selectedCustomerDetail.completed_cards_count : 0) + ' Kartu'"></div>
                     </div>
                     <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-xs">
-                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sisa Kasbon</div>
-                        <div class="text-sm font-extrabold text-rose-600 mt-1" x-text="selectedCustomerDetail && selectedCustomerDetail.total_kasbon_due > 0 ? 'Rp ' + formatMoney(selectedCustomerDetail.total_kasbon_due) : 'Lunas'"></div>
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Belanja</div>
+                        <div class="text-sm font-extrabold text-emerald-600 mt-1" x-text="'Rp ' + formatMoney(selectedCustomerDetail ? selectedCustomerDetail.total_spent : 0)"></div>
                     </div>
                 </div>
 
@@ -4854,12 +4892,7 @@
                                             </td>
                                             <td class="py-2.5 px-3 text-right font-bold text-gray-950 whitespace-nowrap" x-text="'Rp ' + formatMoney(order.grand_total)"></td>
                                             <td class="py-2.5 px-3 text-center whitespace-nowrap">
-                                                <template x-if="order.is_kasbon && order.due_amount > 0">
-                                                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20" x-text="'Kasbon: Rp ' + formatMoney(order.due_amount)"></span>
-                                                </template>
-                                                <template x-if="!order.is_kasbon || order.due_amount <= 0">
-                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Lunas</span>
-                                                </template>
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Lunas</span>
                                             </td>
                                         </tr>
                                     </template>
@@ -4922,6 +4955,8 @@
                 showCheckoutModal: false,
                 showMobileCartDrawer: false,
                 showCloseSession: false,
+                showPickupConfirmModal: false,
+                confirmPickupOrder: null,
                 activePage: 'kasir',
                 
                 // Checkout State
@@ -4933,7 +4968,6 @@
                 customerPhone: '',
                 isReserved: false,
                 pickupDate: '',
-                kasbonCustomerError: false,
                 activeCustomerLoyalty: null,
                 allPosCustomers: @js($allPosCustomers),
                 customerSearchInput: '',
@@ -4986,12 +5020,7 @@
                     defaultImage: ''
                 },
 
-                // State Modal Pelunasan Kasbon
-                showDebtPaymentModal: false,
-                selectedDebtOrder: null,
-                debtPaymentAmount: 0,
-                debtPaymentMethod: 'cash',
-                debtPaymentNotes: '',
+
 
                 // State Modal Detail Pelanggan & Log Transaksi
                 showCustomerDetailModal: false,
@@ -5854,30 +5883,7 @@
                     this.calculateVoucherDiscount();
                 },
 
-                openDebtPaymentModal(order) {
-                    this.selectedDebtOrder = order;
-                    this.debtPaymentAmount = order.due_amount || 0;
-                    this.debtPaymentMethod = 'cash';
-                    this.debtPaymentNotes = '';
-                    this.showDebtPaymentModal = true;
-                },
 
-                submitDebtPayment() {
-                    if (!this.selectedDebtOrder) return;
-                    if (!this.debtPaymentAmount || this.debtPaymentAmount <= 0) {
-                        this.showToast('Nominal pelunasan kasbon harus lebih dari 0.', 'error');
-                        return;
-                    }
-
-                    @this.call('processDebtPayment', JSON.stringify({
-                        order_id: this.selectedDebtOrder.id,
-                        amount_paid: this.debtPaymentAmount,
-                        payment_method: this.debtPaymentMethod,
-                        notes: this.debtPaymentNotes
-                    }));
-
-                    this.showDebtPaymentModal = false;
-                },
 
                 addProduct(id, name, price, hasVariants, variants = null, defaultImage = null, isCustom = false, purchasePrice = 0, originalPrice = null, promoPrice = null) {
                     if (hasVariants && variants) {
@@ -6416,7 +6422,6 @@
                     this.activeCustomerLoyalty = cust;
                     this.customerSearchInput = (cust.name || '') + (cust.phone ? ' (' + cust.phone + ')' : '');
                     this.showCustomerDropdown = false;
-                    this.kasbonCustomerError = false;
                     this.saveActiveCart();
                 },
 
@@ -6432,9 +6437,6 @@
                 onCustomerInput() {
                     const val = (this.customerSearchInput || '').trim();
                     this.customerName = val;
-                    if (val) {
-                        this.kasbonCustomerError = false;
-                    }
                     if (/^[0-9+]+$/.test(val)) {
                         this.customerPhone = val;
                     }
@@ -6491,6 +6493,8 @@
                 showManualDiscountModal: false,
                 tempManualDiscountType: 'rp',
                 tempManualDiscountValue: '',
+                manualDiscountMaxPercentWithoutPin: {{ (float) (\App\Models\SiteSetting::where('key', 'pos_manual_discount_max_percent_without_pin')->value('value') ?? 20) }},
+                manualDiscountMaxRpWithoutPin: {{ (float) (\App\Models\SiteSetting::where('key', 'pos_manual_discount_max_rp_without_pin')->value('value') ?? 50000) }},
 
                 openManualDiscountModal() {
                     this.tempManualDiscountType = this.manualDiscountType;
@@ -6511,10 +6515,14 @@
                         return;
                     }
 
-                    const isHighDiscount = (this.tempManualDiscountType === 'percent' && val > 20) || (this.tempManualDiscountType === 'rp' && val > 50000);
+                    const maxPercent = this.manualDiscountMaxPercentWithoutPin;
+                    const maxRp = this.manualDiscountMaxRpWithoutPin;
+
+                    const isHighDiscount = (this.tempManualDiscountType === 'percent' && val > maxPercent) || (this.tempManualDiscountType === 'rp' && val > maxRp);
 
                     if (val > 0 && isHighDiscount) {
-                        const reasonText = `Diskon manual ${this.tempManualDiscountType === 'percent' ? val + '%' : 'Rp ' + this.formatMoney(val)} memerlukan otorisasi Supervisor (> 20% / > Rp 50k).`;
+                        const limitLabel = this.tempManualDiscountType === 'percent' ? maxPercent + '%' : 'Rp ' + this.formatMoney(maxRp);
+                        const reasonText = `Diskon manual ${this.tempManualDiscountType === 'percent' ? val + '%' : 'Rp ' + this.formatMoney(val)} memerlukan otorisasi Supervisor (Batas Mandiri: > ${limitLabel}).`;
                         this.requestSupervisorAuth(reasonText, () => {
                             this.commitManualDiscount(val);
                         });
@@ -6602,9 +6610,6 @@
 
                 selectPaymentMethod(method) {
                     this.paymentMethod = method.code;
-                    if (this.paymentMethod !== 'kasbon') {
-                        this.kasbonCustomerError = false;
-                    }
                     if (method.is_cash) {
                         this.calculateChange();
                     } else {
@@ -6616,7 +6621,6 @@
 
                 openCheckoutModal() {
                     if (this.cart.length === 0) return;
-                    this.kasbonCustomerError = false;
                     if (this.paymentMethods.length > 0) {
                         const cashMethod = this.paymentMethods.find(m => m.is_cash);
                         this.paymentMethod = cashMethod ? cashMethod.code : this.paymentMethods[0].code;
@@ -6669,18 +6673,6 @@
                 },
 
                 submitOrder() {
-                    if (this.paymentMethod === 'kasbon' && (!this.customerName || !this.customerName.trim())) {
-                        this.kasbonCustomerError = true;
-                        this.$nextTick(() => {
-                            const nameInput = document.getElementById('kasbonCustomerNameInput') || document.getElementById('kasbonCustomerSearchInput');
-                            if (nameInput) {
-                                nameInput.focus();
-                                nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }
-                        });
-                        return;
-                    }
-                    this.kasbonCustomerError = false;
 
                     if (this.isCashSelected() && this.cashPaid < this.grandTotal) {
                         this.showToast('Uang yang dibayarkan kurang!', 'error');

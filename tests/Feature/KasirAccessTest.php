@@ -56,12 +56,29 @@ class KasirAccessTest extends TestCase
         $this->assertStringNotContainsString('/pos', $response->headers->get('Location') ?? '');
     }
 
-    public function test_super_admin_can_access_pos_directly()
+    public function test_super_admin_without_whitelist_cannot_access_pos_directly()
     {
         $admin = User::factory()->create([
             'email' => 'admin@raabiha.com',
         ]);
         $admin->assignRole('super_admin');
+
+        $response = $this->actingAs($admin)->get('/pos');
+
+        $response->assertRedirect('/admin');
+    }
+
+    public function test_whitelisted_super_admin_can_access_pos()
+    {
+        $admin = User::factory()->create([
+            'email' => 'admin_whitelisted@raabiha.com',
+        ]);
+        $admin->assignRole('super_admin');
+
+        \App\Models\SiteSetting::create([
+            'key'   => 'pos_allowed_user_ids',
+            'value' => json_encode([$admin->id]),
+        ]);
 
         $response = $this->actingAs($admin)->get('/pos');
 

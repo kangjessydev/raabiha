@@ -119,11 +119,6 @@ class PosCustomerResource extends Resource
                     ->label('Total Belanja')
                     ->money('IDR')
                     ->sortable(),
-                TextColumn::make('total_debt')
-                    ->label('Sisa Kasbon')
-                    ->formatStateUsing(fn ($record) => $record->total_debt > 0 ? 'Rp ' . number_format($record->total_debt, 0, ',', '.') : 'Lunas')
-                    ->badge()
-                    ->color(fn ($record) => $record->total_debt > 0 ? 'danger' : 'gray'),
                 TextColumn::make('last_visit_at')
                     ->label('Kunjungan Terakhir')
                     ->dateTime('d M Y H:i')
@@ -162,11 +157,6 @@ class PosCustomerResource extends Resource
                             ->color(fn ($state) => $state > 0 ? 'warning' : 'gray')
                             ->formatStateUsing(fn ($state) => $state > 0 ? "{$state} Kartu" : "0 Kartu"),
                         \Filament\Infolists\Components\TextEntry::make('total_spent')->label('Total Akumulasi Belanja')->money('IDR'),
-                        \Filament\Infolists\Components\TextEntry::make('total_debt')
-                            ->label('Sisa Piutang Kasbon')
-                            ->badge()
-                            ->color(fn ($state) => $state > 0 ? 'danger' : 'gray')
-                            ->formatStateUsing(fn ($state) => $state > 0 ? 'Rp ' . number_format($state, 0, ',', '.') : 'Lunas'),
                         \Filament\Infolists\Components\TextEntry::make('last_visit_at')->label('Kunjungan Terakhir')->dateTime('d M Y H:i')->default('-'),
                     ])->columns(4),
 
@@ -193,10 +183,8 @@ class PosCustomerResource extends Resource
                                 \Filament\Infolists\Components\TextEntry::make('payment_status')
                                     ->label('Status Bayar')
                                     ->badge()
-                                    ->color(fn ($record) => ($record->is_kasbon && $record->due_amount > 0) ? 'danger' : 'success')
-                                    ->state(fn ($record) => ($record->is_kasbon && $record->due_amount > 0)
-                                        ? 'Kasbon: Rp ' . number_format($record->due_amount, 0, ',', '.')
-                                        : 'Lunas'),
+                                    ->color(fn ($state) => $state === 'paid' ? 'success' : 'warning')
+                                    ->formatStateUsing(fn ($state) => $state === 'paid' ? 'Lunas' : 'Menunggu'),
                                 \Filament\Infolists\Components\TextEntry::make('items_summary')
                                     ->label('Rincian Barang')
                                     ->state(fn ($record) => $record->items

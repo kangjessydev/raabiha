@@ -191,15 +191,9 @@ class PosTransactionService
             $paymentDetails['manual_discount'] = $manualDiscount;
             $paymentDetails['voucher_discount'] = $voucherDiscount;
             
-            $isKasbon = ($data['payment_method'] ?? 'cash') === 'kasbon';
-            $paymentStatus = $isKasbon ? 'unpaid' : 'paid';
-            $dueAmount = $isKasbon ? $grandTotal : 0;
-            $orderCashPaid = $isKasbon ? 0 : $cashPaid;
-            $orderCashChange = $isKasbon ? 0 : $cashChange;
-
-            if ($isKasbon && (empty($normalizedPhone) && empty($customerName))) {
-                throw new Exception("Transaksi Kasbon wajib memilih/mengisi data Pelanggan.");
-            }
+            $paymentStatus = 'paid';
+            $orderCashPaid = $cashPaid;
+            $orderCashChange = max(0, $cashPaid - ($data['grand_total'] ?? 0));
 
             $isReserved = !empty($data['is_reserved']);
             $pickupDate = !empty($data['pickup_date']) ? $data['pickup_date'] : null;
@@ -220,10 +214,8 @@ class PosTransactionService
                 'status' => $isReserved ? 'reserved' : 'completed',
                 'payment_status' => $paymentStatus,
                 'payment_method' => $data['payment_method'] ?? 'cash',
-                'cash_paid' => $orderCashPaid,
-                'cash_change' => $orderCashChange,
-                'due_amount' => $dueAmount,
-                'is_kasbon' => $isKasbon,
+                'cash_paid'      => $orderCashPaid,
+                'cash_change'    => $cashChange,
                 'is_reserved' => $isReserved,
                 'pickup_date' => $pickupDate,
                 'payment_details' => json_encode($paymentDetails),
@@ -253,7 +245,7 @@ class PosTransactionService
                         'quantity_before' => $before,
                         'quantity_change' => -$qty,
                         'quantity_after' => $after,
-                        'reason' => $isKasbon ? 'Sales (Kasbon)' : 'Sales',
+                        'reason' => 'Sales',
                         'notes' => 'Penjualan POS #' . $order->order_number,
                         'user_id' => $cashierId,
                     ]);
@@ -277,9 +269,9 @@ class PosTransactionService
             Cashflow::create([
                 'transaction_date' => now()->toDateString(),
                 'type' => 'in',
-                'category' => $isKasbon ? 'pos_sale_kasbon' : 'pos_sale',
-                'amount' => $isKasbon ? 0 : $grandTotal,
-                'description' => ($isKasbon ? 'Penjualan Kasbon POS #' : 'Penjualan POS #') . $order->order_number,
+                'category'     => 'pos_sale',
+                'amount'       => $grandTotal,
+                'description'  => 'Penjualan POS #' . $order->order_number,
                 'order_id' => $order->id,
                 'source' => 'pos',
                 'is_reversed' => false,
@@ -703,74 +695,6 @@ class PosTransactionService
             }
 
             return $posReturn;
-        });
-    }
-
-    /**
-     * Memproses pelunasan piutang/kasbon pelanggan oleh kasir.
-     */
-    public function processDebtPayment(array $data)
-    {
-        return DB::transaction(function () use ($data) {
-            $orderId = $data['order_id'];
-            $amountPaid = (float) $data['amount_paid'];
-            $paymentMethod = $data['payment_method'] ?? 'cash';
-            $cashierId = $data['user_id'];
-            $posSessionId = $data['pos_session_id'] ?? null;
-            $notes = $data['notes'] ?? 'Pelunasan Kasbon';
-
-            $order = Order::where('id', $orderId)->lockForUpdate()->firstOrFail();
-
-            if (!$order->is_kasbon) {
-                throw new Exception("Nota transaksi ini bukan transaksi kasbon.");
-            }
-
-            if ($order->payment_status === 'paid' || $order->due_amount <= 0) {
-                throw new Exception("Kasbon pada nota transaksi ini sudah lunas.");
-            }
-
-            if ($amountPaid <= 0) {
-                throw new Exception("Nominal pembayaran harus lebih dari 0.");
-            }
-
-            $customer = \App\Models\PosCustomer::where('phone', $order->customer_phone)->first();
-            $customerId = $customer ? $customer->id : null;
-
-            // Catat transaksi pelunasan piutang
-            $debtPayment = \App\Models\PosDebtPayment::create([
-                'order_id' => $order->id,
-                'pos_customer_id' => $customerId,
-                'pos_session_id' => $posSessionId,
-                'user_id' => $cashierId,
-                'payment_method' => $paymentMethod,
-                'amount_paid' => $amountPaid,
-                'notes' => $notes,
-            ]);
-
-            // Update order due amount & payment status
-            $newDueAmount = max(0, $order->due_amount - $amountPaid);
-            $newPaidAmount = $order->cash_paid + $amountPaid;
-            $newStatus = ($newDueAmount == 0) ? 'paid' : 'partial';
-
-            $order->update([
-                'due_amount' => $newDueAmount,
-                'cash_paid' => $newPaidAmount,
-                'payment_status' => $newStatus,
-            ]);
-
-            // Catat Cashflow fisik di laci kasir penerima (Kasir B)
-            Cashflow::create([
-                'transaction_date' => now()->toDateString(),
-                'type' => 'in',
-                'category' => 'pos_debt_payment',
-                'amount' => $amountPaid,
-                'description' => 'Pelunasan Kasbon Nota #' . $order->order_number . ' a/n ' . ($order->customer_name ?: 'Pelanggan'),
-                'order_id' => null,
-                'source' => 'pos',
-                'is_reversed' => false,
-            ]);
-
-            return $debtPayment;
         });
     }
 

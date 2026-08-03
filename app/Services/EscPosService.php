@@ -124,12 +124,18 @@ class EscPosService
             $this->add(self::BOLD_OFF);
         }
 
-        if ($order->status === 'reserved') {
+        if ($order->is_reserved && $order->status === 'reserved') {
             $this->add(self::BOLD_ON);
-            $this->line("*** DIPESAN (BARANG BELUM DIAMBIL) ***");
+            $this->line("*** STRUK PEMESANAN ***");
+            $this->line("(BARANG AMBIL NANTI - LUNAS)");
             if ($order->pickup_date) {
-                $this->line("Tgl Ambil: " . $order->pickup_date->format('d/m/Y'));
+                $this->line("Perkiraan Ambil: " . $order->pickup_date->format('d/m/Y'));
             }
+            $this->add(self::BOLD_OFF);
+        } elseif ($order->is_reserved && $order->status === 'completed') {
+            $this->add(self::BOLD_ON);
+            $this->line("*** NOTA PENYERAHAN BARANG ***");
+            $this->line("(SUDAH DIAMBIL - SELESAI)");
             $this->add(self::BOLD_OFF);
         }
 
@@ -255,6 +261,13 @@ class EscPosService
             }
         }
 
+        if ($order->is_reserved && $order->status === 'reserved') {
+            $this->divider();
+            $this->add(self::ALIGN_CENTER);
+            $this->line("* Simpan struk ini / tunjukkan *");
+            $this->line("* No. Order/HP saat ambil barang *");
+        }
+
         // Footer
         $this->line();
         $this->add(self::ALIGN_CENTER);
@@ -310,11 +323,15 @@ class EscPosService
             $lines[] = str_pad("*** SALINAN / REPRINT ***", $width, ' ', STR_PAD_BOTH);
         }
 
-        if ($order->status === 'reserved') {
-            $lines[] = str_pad("*** DIPESAN (AMBIL NANTI) ***", $width, ' ', STR_PAD_BOTH);
+        if ($order->is_reserved && $order->status === 'reserved') {
+            $lines[] = str_pad("*** STRUK PEMESANAN ***", $width, ' ', STR_PAD_BOTH);
+            $lines[] = str_pad("(BARANG AMBIL NANTI - LUNAS)", $width, ' ', STR_PAD_BOTH);
             if ($order->pickup_date) {
-                $lines[] = str_pad("Tgl Ambil: " . $order->pickup_date->format('d/m/Y'), $width, ' ', STR_PAD_BOTH);
+                $lines[] = str_pad("Perkiraan Ambil: " . $order->pickup_date->format('d/m/Y'), $width, ' ', STR_PAD_BOTH);
             }
+        } elseif ($order->is_reserved && $order->status === 'completed') {
+            $lines[] = str_pad("*** NOTA PENYERAHAN BARANG ***", $width, ' ', STR_PAD_BOTH);
+            $lines[] = str_pad("(SUDAH DIAMBIL - SELESAI)", $width, ' ', STR_PAD_BOTH);
         }
 
         $lines[] = str_repeat('-', $width);
@@ -442,6 +459,12 @@ class EscPosService
                 $lines[] = "Voucher 3 (25k): " . $row3;
                 $lines[] = "Masa Berlaku: s/d " . $expiryDate;
             }
+        }
+
+        if ($order->is_reserved && $order->status === 'reserved') {
+            $lines[] = str_repeat('-', $width);
+            $lines[] = str_pad("* Simpan struk ini / tunjukkan *", $width, ' ', STR_PAD_BOTH);
+            $lines[] = str_pad("* No. Order/HP saat ambil barang *", $width, ' ', STR_PAD_BOTH);
         }
 
         $lines[] = str_repeat('-', $width);
