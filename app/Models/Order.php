@@ -105,4 +105,37 @@ class Order extends Model
     {
         return $this->hasMany(OrderRequest::class);
     }
+
+    public function getFormattedPaymentMethodAttribute(): string
+    {
+        $method = strtolower($this->payment_method ?? '');
+
+        if ($method === 'split') {
+            $details = is_string($this->payment_details) 
+                ? json_decode($this->payment_details, true) 
+                : ($this->payment_details ?? []);
+
+            if (!empty($details['split_payments']) && is_array($details['split_payments'])) {
+                $parts = [];
+                foreach ($details['split_payments'] as $sp) {
+                    $m = strtolower($sp['method'] ?? '');
+                    if ($m === 'cash' || $m === 'tunai') {
+                        $parts[] = 'TUNAI';
+                    } else {
+                        $parts[] = strtoupper($m);
+                    }
+                }
+                if (!empty($parts)) {
+                    return implode(' + ', array_unique($parts));
+                }
+            }
+            return 'SPLIT PAYMENT';
+        }
+
+        if (in_array($method, ['cash', 'tunai'])) {
+            return 'TUNAI';
+        }
+
+        return strtoupper($this->payment_method ?? 'TUNAI');
+    }
 }

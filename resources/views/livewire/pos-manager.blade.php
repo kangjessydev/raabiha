@@ -38,6 +38,26 @@
         </div>
     </div>
 
+    <!-- Global Processing Spinner Overlay -->
+    <div x-show="isProcessing && !previewReceiptData" 
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[150] flex flex-col items-center justify-center bg-gray-900/40 backdrop-blur-sm font-sans">
+        <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center max-w-sm w-full mx-4 border border-gray-100">
+            <svg class="animate-spin h-10 w-10 text-emerald-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <h3 class="text-gray-900 font-bold text-lg mb-1">Memproses Transaksi</h3>
+            <p class="text-gray-500 text-sm text-center">Mohon tunggu sebentar, sistem sedang memproses pembayaran dan menyiapkan struk Anda...</p>
+        </div>
+    </div>
+
     <!-- MODAL GLOBAL: Otorisasi PIN Supervisor (Clean Filament Native Style) -->
     <div x-show="showSupervisorPinModal"
          x-cloak
@@ -1320,20 +1340,27 @@
                 <!-- Drawer Cart Items List -->
                 <div class="flex-1 overflow-y-auto p-4 space-y-3 divide-y divide-gray-100">
                     <template x-for="(item, index) in cart" :key="item.product_id + '-' + (item.product_variant_id || '')">
-                        <div class="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs">
+                        <div class="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs" :class="item.is_return ? 'bg-rose-50/50 p-2 rounded-lg -mx-2' : ''">
                             <div class="flex-1 min-w-0">
-                                <div class="font-bold text-gray-900 truncate" x-text="item.name"></div>
-                                <div class="text-[11px] text-gray-500 flex items-center gap-1">
-                                    <template x-if="item.original_price && item.original_price > item.price">
+                                <div class="font-bold truncate" :class="item.is_return ? 'text-rose-900' : 'text-gray-900'" x-text="item.name"></div>
+                                <div class="text-[11px] flex items-center gap-1" :class="item.is_return ? 'text-rose-600' : 'text-gray-500'">
+                                    <template x-if="item.original_price && item.original_price > item.price && !item.is_return">
                                         <span class="line-through text-gray-400" x-text="'Rp ' + formatMoney(item.original_price)"></span>
                                     </template>
-                                    <span x-text="'Rp ' + formatMoney(item.price)"></span>
+                                    <span x-text="(item.price < 0 ? '- ' : '') + 'Rp ' + formatMoney(Math.abs(item.price))"></span>
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button type="button" @click="updateQty(index, item.quantity - 1)" class="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">-</button>
-                                <span class="w-6 text-center font-bold text-gray-900" x-text="item.quantity"></span>
-                                <button type="button" @click="updateQty(index, item.quantity + 1)" class="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">+</button>
+                                <template x-if="!item.is_return">
+                                    <div class="flex items-center">
+                                        <button type="button" @click="updateQty(index, item.quantity - 1)" class="w-7 h-7 rounded-l-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">-</button>
+                                        <span class="w-8 text-center font-bold text-gray-900 border-t border-b border-gray-300 h-7 flex items-center justify-center" x-text="item.quantity"></span>
+                                        <button type="button" @click="updateQty(index, item.quantity + 1)" class="w-7 h-7 rounded-r-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">+</button>
+                                    </div>
+                                </template>
+                                <template x-if="item.is_return">
+                                    <span class="text-xs font-bold text-rose-700 bg-rose-100 px-2 py-1 rounded" x-text="'Qty: ' + item.quantity"></span>
+                                </template>
                                 <button type="button" @click="removeFromCart(index)" class="text-rose-500 hover:text-rose-700 ml-1 p-1">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                 </button>
@@ -1601,9 +1628,10 @@
                     <div class="md:col-span-5 p-5 bg-gray-50/50 flex flex-col justify-between space-y-4">
                         <div class="space-y-4">
                             <!-- Giant Total Tagihan Display -->
-                            <div class="bg-emerald-600 text-white p-4 rounded-xl shadow-xs">
-                                <span class="text-[11px] font-bold uppercase tracking-wider block opacity-90">Total Tagihan</span>
-                                <span class="text-2xl sm:text-3xl font-extrabold mt-1 block" x-text="'Rp ' + formatMoney(grandTotal)"></span>
+                            <div class="p-4 rounded-xl shadow-xs" :class="grandTotal < 0 ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'">
+                                <span class="text-[11px] font-bold uppercase tracking-wider block opacity-90" x-text="grandTotal < 0 ? 'Kembalian ke Pelanggan' : 'Total Tagihan'"></span>
+                                <span class="text-2xl sm:text-3xl font-extrabold mt-1 block" x-text="'Rp ' + formatMoney(Math.abs(grandTotal))"></span>
+                                <span x-show="grandTotal < 0" class="text-[11px] opacity-80 mt-1 block">Selisih retur — kembalikan uang ke pelanggan</span>
                             </div>
 
                             <!-- List Items (Scrollable) -->
@@ -1614,17 +1642,17 @@
                                 </div>
                                 <div class="max-h-48 overflow-y-auto space-y-1.5 pr-1 border border-gray-200 rounded-xl p-2.5 bg-white shadow-xs">
                                     <template x-for="(item, idx) in cart" :key="idx">
-                                        <div class="flex justify-between items-center text-xs py-1 border-b border-gray-100 last:border-b-0">
+                                        <div class="flex justify-between items-center text-xs py-1 border-b border-gray-100 last:border-b-0" :class="item.is_return ? 'bg-rose-50/50 p-2 rounded-lg' : ''">
                                             <div class="pr-2 truncate">
-                                                <div class="font-bold text-gray-900 truncate" x-text="item.name"></div>
-                                                <div class="text-[11px] text-gray-500 flex items-center gap-1">
-                                                    <template x-if="item.original_price && item.original_price > item.price">
+                                                <div class="font-bold truncate" :class="item.is_return ? 'text-rose-900' : 'text-gray-900'" x-text="item.name"></div>
+                                                <div class="text-[11px] flex items-center gap-1" :class="item.is_return ? 'text-rose-600' : 'text-gray-500'">
+                                                    <template x-if="item.original_price && item.original_price > item.price && !item.is_return">
                                                         <span class="line-through text-gray-400" x-text="'Rp ' + formatMoney(item.original_price)"></span>
                                                     </template>
-                                                    <span x-text="'Rp ' + formatMoney(item.price) + ' × ' + item.quantity + ' pcs'"></span>
+                                                    <span x-text="(item.price < 0 ? '- ' : '') + 'Rp ' + formatMoney(Math.abs(item.price)) + ' × ' + item.quantity + ' pcs'"></span>
                                                 </div>
                                             </div>
-                                            <div class="font-bold text-gray-950 whitespace-nowrap" x-text="'Rp ' + formatMoney(item.price * item.quantity)"></div>
+                                            <div class="font-bold whitespace-nowrap" :class="item.is_return ? 'text-rose-700' : 'text-gray-950'" x-text="(item.price * item.quantity < 0 ? '- ' : '') + 'Rp ' + formatMoney(Math.abs(item.price * item.quantity))"></div>
                                         </div>
                                     </template>
                                 </div>
@@ -1655,8 +1683,23 @@
                     <!-- Kolom Kanan: Metode Bayar & Nominal (Col 7) -->
                     <div class="md:col-span-7 p-5 space-y-4 flex flex-col justify-between">
                         <div class="space-y-4">
+                            <!-- Split Payment Toggle -->
+                            <div class="flex items-center justify-between mb-4 bg-purple-50 p-3 rounded-xl border border-purple-200">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                                    <div>
+                                        <h4 class="font-bold text-purple-900 text-xs">Gunakan Split Payment</h4>
+                                        <p class="text-[10px] text-purple-700">Bayar dengan lebih dari 1 metode pembayaran</p>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" x-model="isSplitPayment" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                                </label>
+                            </div>
+
                             <!-- Metode Pembayaran Grid -->
-                            <div>
+                            <div x-show="!isSplitPayment">
                                 <h4 class="font-bold text-gray-900 text-xs uppercase tracking-wider mb-2.5">Metode Pembayaran</h4>
                                 
                                 <div class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
@@ -1678,7 +1721,7 @@
                             </div>
 
                             <!-- Nominal Uang (Jika Tunai) -->
-                            <div x-show="isCashSelected()" x-transition.opacity class="space-y-3 bg-emerald-50/40 p-4 rounded-xl border border-emerald-200/80">
+                            <div x-show="!isSplitPayment && isCashSelected()" x-transition.opacity class="space-y-3 bg-emerald-50/40 p-4 rounded-xl border border-emerald-200/80">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-900 mb-1.5">Uang Diterima (Rp)</label>
                                     <div class="relative">
@@ -1710,16 +1753,60 @@
                                 </div>
 
                                 <!-- Prominent Kembalian Box -->
-                                <div class="p-3.5 rounded-xl flex items-center justify-between text-xs font-bold border shadow-xs"
-                                     :class="cashPaid < grandTotal ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-100/80 border-emerald-300 text-emerald-950'">
-                                    <span class="uppercase tracking-wider font-extrabold" x-text="cashPaid < grandTotal ? 'Uang Masih Kurang' : 'Kembalian'"></span>
-                                    <span class="text-xl font-extrabold" x-text="'Rp ' + formatMoney(Math.abs(cashChange))"></span>
-                                </div>
+                                <template x-if="grandTotal < 0">
+                                    <div class="p-3.5 rounded-xl flex items-center justify-between text-xs font-bold border shadow-xs bg-rose-50 border-rose-300 text-rose-700">
+                                        <span class="uppercase tracking-wider font-extrabold">Kembalian ke Pelanggan</span>
+                                        <span class="text-xl font-extrabold" x-text="'Rp ' + formatMoney(Math.abs(grandTotal))"></span>
+                                    </div>
+                                </template>
+                                <template x-if="grandTotal >= 0">
+                                    <div class="p-3.5 rounded-xl flex items-center justify-between text-xs font-bold border shadow-xs"
+                                         :class="cashPaid < grandTotal ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-100/80 border-emerald-300 text-emerald-950'">
+                                        <span class="uppercase tracking-wider font-extrabold" x-text="cashPaid < grandTotal ? 'Uang Masih Kurang' : 'Kembalian'"></span>
+                                        <span class="text-xl font-extrabold" x-text="'Rp ' + formatMoney(Math.abs(cashChange))"></span>
+                                    </div>
+                                </template>
                             </div>
 
                             <!-- Catatan Pembayaran Non-Tunai -->
-                            <div x-show="!isCashSelected()" x-transition.opacity class="p-3.5 bg-white rounded-xl border border-gray-200 text-xs text-gray-600 leading-relaxed shadow-xs">
+                            <div x-show="!isSplitPayment && !isCashSelected()" x-transition.opacity class="p-3.5 bg-white rounded-xl border border-gray-200 text-xs text-gray-600 leading-relaxed shadow-xs">
                                 Metode pembayaran non-tunai (<strong x-text="paymentMethods.find(m => m.code === paymentMethod)?.name || paymentMethod"></strong>) dipilih. Transaksi akan dicatat di laporan kasir.
+                            </div>
+
+                            <!-- Split Payment UI -->
+                            <div x-show="isSplitPayment" x-transition.opacity class="space-y-3 bg-purple-50/40 p-4 rounded-xl border border-purple-200/80">
+                                <h4 class="font-bold text-purple-900 text-xs mb-2">Rincian Split Payment</h4>
+                                <template x-for="(sp, index) in splitPayments" :key="index">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <select x-model="sp.method" class="w-1/3 px-3 py-2 border border-purple-300 rounded-lg text-xs font-semibold focus:ring-purple-500 focus:border-purple-500">
+                                            <template x-for="m in paymentMethods" :key="m.code">
+                                                <option :value="m.code" x-text="m.name"></option>
+                                            </template>
+                                        </select>
+                                        <div class="relative w-2/3">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-xs font-extrabold text-gray-400">Rp</div>
+                                            <input type="number"
+                                                x-model="sp.amount"
+                                                @input="calculateChange()"
+                                                class="w-full pl-8 pr-3 py-2 bg-white border border-purple-300 rounded-lg text-sm font-bold text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xs"
+                                                placeholder="0">
+                                        </div>
+                                        <button type="button" @click="removeSplitPayment(index)" x-show="splitPayments.length > 1" class="p-2 text-rose-500 hover:text-rose-700 bg-white border border-rose-200 rounded-lg shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </div>
+                                </template>
+                                
+                                <button type="button" @click="addSplitPayment()" class="w-full py-2 bg-white border border-dashed border-purple-300 rounded-lg text-purple-700 text-xs font-bold hover:bg-purple-50 transition flex items-center justify-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Tambah Metode Bayar
+                                </button>
+
+                                <div class="p-3.5 rounded-xl flex items-center justify-between text-xs font-bold border shadow-xs mt-3"
+                                     :class="grandTotal < 0 ? 'bg-rose-50 border-rose-300 text-rose-700' : (totalSplitPaid < grandTotal ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-emerald-100/80 border-emerald-300 text-emerald-950')">
+                                    <span class="uppercase tracking-wider font-extrabold" x-text="grandTotal < 0 ? 'Kembalian ke Pelanggan' : (totalSplitPaid < grandTotal ? 'Uang Masih Kurang' : 'Kembalian')"></span>
+                                    <span class="text-xl font-extrabold" x-text="'Rp ' + formatMoney(Math.abs(grandTotal < 0 ? grandTotal : cashChange))"></span>
+                                </div>
                             </div>
 
                             <!-- Identitas Pembeli (Live Search Autocomplete) -->
@@ -1855,7 +1942,7 @@
                         Batal
                     </button>
                     <button type="button" @click="submitOrder()" 
-                            :disabled="isProcessing || (isCashSelected() && cashPaid < grandTotal)" 
+                            :disabled="isProcessing || (grandTotal >= 0 && !isSplitPayment && isCashSelected() && cashPaid < grandTotal) || (grandTotal >= 0 && isSplitPayment && totalSplitPaid < grandTotal)" 
                             class="px-6 py-2.5 text-white font-bold text-xs rounded-lg shadow-md transition duration-150 cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             :class="isReserved ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'">
                         <span x-show="!isProcessing" class="flex items-center gap-1.5">
@@ -3557,15 +3644,9 @@
 
                                     <!-- Metode -->
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
-                                        @if(in_array(strtolower($order->payment_method), ['cash', 'tunai']))
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                                                Tunai
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-600/20">
-                                                {{ strtoupper($order->payment_method) }}
-                                            </span>
-                                        @endif
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-600/20">
+                                            {{ $order->formatted_payment_method }}
+                                        </span>
                                     </td>
 
                                     <!-- Status -->
@@ -3602,7 +3683,7 @@
                                                 'cashier_name' => $order->cashier->name ?? 'Kasir',
                                                 'customer_name' => $order->customer_name ?: 'Pelanggan Umum',
                                                 'customer_phone' => $order->customer_phone ?: '-',
-                                                'payment_method' => strtoupper($order->payment_method),
+                                                'payment_method' => $order->formatted_payment_method,
                                                 'subtotal' => (float)$order->subtotal,
                                                 'discount_total' => (float)$order->discount_total,
                                                 'grand_total' => (float)$order->grand_total,
@@ -3623,14 +3704,14 @@
 
                                             @if($order->status !== 'cancelled')
                                             <!-- Reprint Thermal Receipt Button -->
-                                            <button type="button" wire:click="reprintReceipt({{ $order->id }})" wire:loading.attr="disabled"
+                                            <button type="button" @click="showReceiptPreviewModal = true; isProcessing = true; previewReceiptData = null; $wire.reprintReceipt({{ $order->id }})" :disabled="isProcessing"
                                                     class="p-1.5 bg-white border border-gray-300 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 text-gray-700 rounded-lg transition-colors cursor-pointer" title="{{ $order->posReturns && $order->posReturns->count() > 0 ? 'Pratinjau / Cetak Struk Penjualan & Retur' : 'Cetak Ulang Struk Thermal' }}">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"/></svg>
                                             </button>
 
                                             @if($order->posReturns && $order->posReturns->count() > 0)
                                             <!-- Dedicated Return Receipt Print Button -->
-                                            <button type="button" wire:click="reprintReturnReceipt({{ $order->posReturns->last()->id }})" wire:loading.attr="disabled"
+                                            <button type="button" @click="showReceiptPreviewModal = true; isProcessing = true; previewReceiptData = null; $wire.reprintReturnReceipt({{ $order->posReturns->last()->id }})" :disabled="isProcessing"
                                                     class="p-1.5 bg-amber-50 border border-amber-300 hover:bg-amber-100 hover:border-amber-400 text-amber-800 rounded-lg transition-colors cursor-pointer" title="Pratinjau / Cetak Struk Retur (#{{ $order->posReturns->last()->return_number }})">
                                                 <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                                             </button>
@@ -3868,7 +3949,7 @@
                                         <span>Tandai Sudah Diambil</span>
                                     </button>
                                     <button type="button" 
-                                            @click="$wire.reprintReceipt({{ $rOrder->id }})" 
+                                            @click="showReceiptPreviewModal = true; isProcessing = true; previewReceiptData = null; $wire.reprintReceipt({{ $rOrder->id }})" 
                                             class="py-2.5 px-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium text-xs rounded-xl shadow-xs transition-colors cursor-pointer" 
                                             title="Cetak Struk">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"/></svg>
@@ -4096,7 +4177,7 @@
 
                                     <!-- Aksi -->
                                     <td class="py-3 px-4 text-right whitespace-nowrap">
-                                        <button wire:click="reprintReturnReceipt({{ $ret->id }})" wire:loading.attr="disabled"
+                                        <button type="button" @click="showReceiptPreviewModal = true; isProcessing = true; previewReceiptData = null; $wire.reprintReturnReceipt({{ $ret->id }})" :disabled="isProcessing"
                                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
                                             <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"/>
@@ -4534,77 +4615,130 @@
 
     <!-- Modal Preview Struk & Sukses Pembayaran - Filament Native Style -->
     <div x-show="showReceiptPreviewModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
-        <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showReceiptPreviewModal = false">
+        <div class="bg-white w-full max-w-md rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="!isProcessing && (showReceiptPreviewModal = false)">
             <!-- Header -->
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
                 <div>
-                    <h3 class="font-bold text-base text-gray-950" x-text="previewReceiptData.title || 'Pratinjau Struk Cetak'"></h3>
-                    <p class="text-xs text-gray-500 font-medium" x-text="previewReceiptData.orderNumber"></p>
+                    <template x-if="isProcessing">
+                        <div class="animate-pulse flex flex-col gap-2">
+                            <div class="h-5 bg-gray-200 rounded w-32"></div>
+                            <div class="h-3 bg-gray-200 rounded w-24"></div>
+                        </div>
+                    </template>
+                    <template x-if="!isProcessing">
+                        <div>
+                            <h3 class="font-bold text-base text-gray-950" x-text="previewReceiptData ? (previewReceiptData.title || 'Pratinjau Struk Cetak') : 'Pratinjau Struk Cetak'"></h3>
+                            <p class="text-xs text-gray-500 font-medium" x-text="previewReceiptData ? previewReceiptData.orderNumber : ''"></p>
+                        </div>
+                    </template>
                 </div>
-                <button @click="showReceiptPreviewModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">
+                <button @click="showReceiptPreviewModal = false" :disabled="isProcessing" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition" :class="isProcessing ? 'opacity-50 cursor-not-allowed' : ''">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
             <!-- Content Area -->
             <div class="p-6 space-y-4 overflow-y-auto flex-1 bg-gray-50/50">
-                <!-- High Contrast Change Display (If Cash Change > 0) -->
-                <template x-if="previewReceiptData && previewReceiptData.cashChange > 0">
-                    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-                        <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Uang Kembalian Pelanggan</div>
-                        <div class="text-2xl font-black text-emerald-800 mt-0.5">
-                            Rp <span x-text="formatMoney(previewReceiptData.cashChange)"></span>
+                <template x-if="isProcessing">
+                    <div class="space-y-4">
+                        <div class="flex flex-col items-center justify-center py-6">
+                            <svg class="animate-spin h-10 w-10 text-emerald-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <h3 class="text-gray-900 font-bold text-lg mb-1">Memproses Transaksi...</h3>
+                            <p class="text-gray-500 text-sm text-center max-w-xs">Mohon tunggu, sistem sedang menyelesaikan pembayaran dan menyiapkan struk Anda.</p>
                         </div>
-                    </div>
-                </template>
-
-                <!-- Tab Switcher for Orders with Returns -->
-                <template x-if="previewReceiptData && previewReceiptData.has_returns">
-                    <div class="flex items-center gap-1.5 p-1 bg-gray-200/80 rounded-lg border border-gray-300">
-                        <button type="button" @click="previewReceiptData.activeTab = 'sales'" :class="previewReceiptData.activeTab === 'sales' ? 'bg-white text-gray-950 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'" class="flex-1 py-1.5 px-3 text-xs rounded-md transition text-center cursor-pointer">
-                            Struk Penjualan Asli
-                        </button>
-                        <button type="button" @click="previewReceiptData.activeTab = 'return'" :class="previewReceiptData.activeTab === 'return' ? 'bg-white text-amber-900 shadow-xs font-bold ring-1 ring-amber-500/30' : 'text-amber-800 hover:text-amber-950 font-medium'" class="flex-1 py-1.5 px-3 text-xs rounded-md transition text-center cursor-pointer">
-                            Struk Retur (<span x-text="previewReceiptData.return_number"></span>)
-                        </button>
-                    </div>
-                </template>
-
-                <!-- Receipt Thermal Text Paper Preview -->
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-gray-700" x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? 'Pratinjau Struk Retur' : 'Pratinjau Struk Penjualan'"></span>
-                        <span class="text-[11px] text-gray-400">Kertas Thermal 80mm/58mm</span>
-                    </div>
-                    <div class="bg-gray-200 p-4 rounded-xl border border-gray-300 shadow-inner flex justify-center max-h-[380px] overflow-y-auto">
-                        <div class="bg-white p-4 shadow-sm w-full max-w-[300px]" style="font-family: 'Courier New', Courier, monospace;">
-                            @if($posReceiptLogoEnabled)
-                            <div class="flex justify-center mb-3">
-                                <img src="{{ $posLogoUrl }}" alt="Logo Toko" class="w-12 h-12 object-contain rounded-full border border-gray-200 p-0.5 bg-white shadow-xs">
+                        <div class="bg-gray-200 p-4 rounded-xl border border-gray-300 shadow-inner flex justify-center">
+                            <div class="bg-white p-4 shadow-sm w-full max-w-[300px] animate-pulse space-y-3">
+                                <div class="h-10 w-10 bg-gray-200 rounded-full mx-auto"></div>
+                                <div class="h-3 bg-gray-200 rounded mx-auto w-3/4"></div>
+                                <div class="h-3 bg-gray-200 rounded mx-auto w-1/2"></div>
+                                <div class="border-t border-dashed border-gray-300 my-4"></div>
+                                <div class="h-3 bg-gray-200 rounded w-full"></div>
+                                <div class="h-3 bg-gray-200 rounded w-full"></div>
+                                <div class="h-3 bg-gray-200 rounded w-5/6"></div>
+                                <div class="border-t border-dashed border-gray-300 my-4"></div>
+                                <div class="flex justify-between">
+                                    <div class="h-4 bg-gray-200 rounded w-1/3"></div>
+                                    <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+                                </div>
                             </div>
-                            @endif
-                            <pre class="text-[11px] leading-tight text-black whitespace-pre-wrap word-break-all" x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? previewReceiptData.return_text : (previewReceiptData ? previewReceiptData.text : '')"></pre>
                         </div>
                     </div>
-                </div>
+                </template>
+
+                <template x-if="!isProcessing">
+                    <div class="space-y-4">
+                        <!-- High Contrast Change Display (If Cash Change > 0) -->
+                        <template x-if="previewReceiptData && previewReceiptData.cashChange > 0">
+                            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                                <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Uang Kembalian Pelanggan</div>
+                                <div class="text-2xl font-black text-emerald-800 mt-0.5">
+                                    Rp <span x-text="formatMoney(previewReceiptData.cashChange)"></span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Tab Switcher for Orders with Returns -->
+                        <template x-if="previewReceiptData && previewReceiptData.has_returns">
+                            <div class="flex items-center gap-1.5 p-1 bg-gray-200/80 rounded-lg border border-gray-300">
+                                <button type="button" @click="previewReceiptData.activeTab = 'sales'" :class="previewReceiptData.activeTab === 'sales' ? 'bg-white text-gray-950 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'" class="flex-1 py-1.5 px-3 text-xs rounded-md transition text-center cursor-pointer">
+                                    Struk Penjualan Asli
+                                </button>
+                                <button type="button" @click="previewReceiptData.activeTab = 'return'" :class="previewReceiptData.activeTab === 'return' ? 'bg-white text-amber-900 shadow-xs font-bold ring-1 ring-amber-500/30' : 'text-amber-800 hover:text-amber-950 font-medium'" class="flex-1 py-1.5 px-3 text-xs rounded-md transition text-center cursor-pointer">
+                                    Struk Retur (<span x-text="previewReceiptData.return_number"></span>)
+                                </button>
+                            </div>
+                        </template>
+
+                        <!-- Receipt Thermal Text Paper Preview -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-gray-700" x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? 'Pratinjau Struk Retur' : 'Pratinjau Struk Penjualan'"></span>
+                                <span class="text-[11px] text-gray-400">Kertas Thermal 80mm/58mm</span>
+                            </div>
+                            <div class="bg-gray-200 p-4 rounded-xl border border-gray-300 shadow-inner flex justify-center max-h-[380px] overflow-y-auto">
+                                <div class="bg-white p-4 shadow-sm w-full max-w-[300px]" style="font-family: 'Courier New', Courier, monospace;">
+                                    @if($posReceiptLogoEnabled)
+                                    <div class="flex justify-center mb-3">
+                                        <img src="{{ $posLogoUrl }}" alt="Logo Toko" class="w-12 h-12 object-contain rounded-full border border-gray-200 p-0.5 bg-white shadow-xs">
+                                    </div>
+                                    @endif
+                                    <pre class="text-[11px] leading-tight text-black whitespace-pre-wrap word-break-all" x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? previewReceiptData.return_text : (previewReceiptData ? previewReceiptData.text : '')"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </div>
 
             <!-- Footer Actions -->
             <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
-                <template x-if="previewReceiptData && previewReceiptData.isCloseSession">
-                    <button @click="$wire.logoutCashier()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
-                        Selesai & Keluar (Logout)
-                    </button>
+                <template x-if="isProcessing">
+                    <div class="flex items-center gap-3 w-full justify-end animate-pulse">
+                        <div class="h-9 bg-gray-200 rounded-lg w-20"></div>
+                        <div class="h-9 bg-gray-300 rounded-lg w-32"></div>
+                    </div>
                 </template>
-                <template x-if="!previewReceiptData || !previewReceiptData.isCloseSession">
-                    <button @click="showReceiptPreviewModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
-                        Selesai
-                    </button>
+                <template x-if="!isProcessing">
+                    <div class="flex items-center gap-3 w-full justify-end">
+                        <template x-if="previewReceiptData && previewReceiptData.isCloseSession">
+                            <button @click="$wire.logoutCashier()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                                Selesai & Keluar (Logout)
+                            </button>
+                        </template>
+                        <template x-if="!previewReceiptData || !previewReceiptData.isCloseSession">
+                            <button @click="showReceiptPreviewModal = false" class="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+                                Selesai
+                            </button>
+                        </template>
+                        <button @click="printBase64(previewReceiptData.activeTab === 'return' ? previewReceiptData.return_base64 : previewReceiptData.base64, previewReceiptData.order_id); showToast('Mengirim perintah cetak ke printer...', 'info')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"></path></svg>
+                            <span x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? 'Cetak Struk Retur' : 'Cetak Struk'"></span>
+                        </button>
+                    </div>
                 </template>
-                <button @click="printBase64(previewReceiptData.activeTab === 'return' ? previewReceiptData.return_base64 : previewReceiptData.base64, previewReceiptData.order_id); showToast('Mengirim perintah cetak ke printer...', 'info')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 flex items-center gap-1.5 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"></path></svg>
-                    <span x-text="previewReceiptData && previewReceiptData.activeTab === 'return' ? 'Cetak Struk Retur' : 'Cetak Struk'"></span>
-                </button>
             </div>
         </div>
     </div>
@@ -4916,6 +5050,18 @@
     </div>
     @endif
 
+    <!-- Global Livewire Loading Overlay (Spinner) -->
+    <div wire:loading.flex wire:target="submitReturn, printZReport" class="fixed inset-0 z-[9999] flex-col items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm font-sans">
+        <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center max-w-sm w-full mx-4 border border-gray-100">
+            <svg class="animate-spin h-10 w-10 text-emerald-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <h3 class="text-gray-900 font-bold text-lg mb-1">Memuat Struk...</h3>
+            <p class="text-gray-500 text-sm text-center">Mohon tunggu sebentar, sistem sedang memproses dan mengambil data pratinjau struk Anda...</p>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('posSystem', () => ({
@@ -4937,6 +5083,23 @@
                 vouchers: {{ \Illuminate\Support\Js::from($vouchers ?? []) }},
                 posLoyaltyTiers: {{ \Illuminate\Support\Js::from(json_decode(\App\Models\SiteSetting::where('key', 'pos_loyalty_tiers')->value('value') ?? '[]', true) ?: []) }},
                 paymentMethods: {{ \Illuminate\Support\Js::from($paymentMethods ?? []) }},
+                isSplitPayment: false,
+                splitPayments: [{method: 'cash', amount: ''}],
+
+                get totalSplitPaid() {
+                    return this.splitPayments.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+                },
+
+                addSplitPayment() {
+                    this.splitPayments.push({method: 'cash', amount: ''});
+                },
+
+                removeSplitPayment(index) {
+                    if (this.splitPayments.length > 1) {
+                        this.splitPayments.splice(index, 1);
+                        this.calculateChange();
+                    }
+                },
 
                 broadcastCrossTabSync(reason = 'sync') {
                     localStorage.setItem('pos_cross_tab_sync', JSON.stringify({
@@ -5182,11 +5345,12 @@
 
                     const net = this.returnNetAmount;
 
-                    if (net > 0) {
-                        this.showToast('Untuk penukaran dengan barang lebih mahal / tambah item, silakan lakukan Refund dulu lalu checkout di Keranjang POS Utama.', 'error');
+                    if (this.returnType === 'exchange' && net > 0) {
+                        this.showToast('Barang yang ditukar lebih mahal. Silakan gunakan opsi Refund dan buat transaksi baru.', 'error');
                         return;
                     }
 
+                    // Alur eksekusi langsung (Refund murni ATAU Exchange yang harganya lebih murah/sama)
                     const refundAmount = Math.abs(net);
                     const isRefundOrNegative = (this.returnType === 'refund' || net < 0);
                     const requiresSupervisor = isRefundOrNegative && (refundAmount > this.refundMaxWithoutPin);
@@ -5253,8 +5417,10 @@
                         supervisor_pin: this.returnSupervisorPinInput
                     };
 
-                    @this.call('processReturn', JSON.stringify(payload));
+                    this.isProcessing = true;
                     this.showReturnModal = false;
+                    this.showReceiptPreviewModal = true;
+                    @this.call('processReturn', JSON.stringify(payload));
                 },
 
                 // Input Modal State
@@ -5565,6 +5731,7 @@
                         }
                     });
                     window.addEventListener('print-receipt', (e) => {
+                        this.isProcessing = false;
                         const detail = (e.detail && e.detail[0]) ? e.detail[0] : (e.detail || {});
                         const b64 = detail.base64;
                         const orderId = detail.order_id || null;
@@ -6308,6 +6475,9 @@
                         this.currentCheckoutToken = null;
                         this.isReserved = false;
                         this.pickupDate = '';
+                        // Reset split payment state
+                        this.isSplitPayment = false;
+                        this.splitPayments = [{method: 'cash', amount: ''}];
                         this.saveActiveCart();
                     };
 
@@ -6614,7 +6784,7 @@
                         this.calculateChange();
                     } else {
                         this.cashPaid = this.grandTotal;
-                        this.displayCashPaid = this.grandTotal > 0 ? this.formatMoney(this.grandTotal) : '';
+                        this.displayCashPaid = this.formatMoney(this.grandTotal);
                         this.calculateChange();
                     }
                 },
@@ -6629,7 +6799,7 @@
                     }
                     
                     this.cashPaid = this.grandTotal;
-                    this.displayCashPaid = this.grandTotal > 0 ? this.formatMoney(this.grandTotal) : '';
+                    this.displayCashPaid = this.formatMoney(this.grandTotal);
                     this.calculateChange();
                     this.showCheckoutModal = true;
                 },
@@ -6669,14 +6839,25 @@
                 },
 
                 calculateChange() {
-                    this.cashChange = this.cashPaid - this.grandTotal;
+                    if (this.isSplitPayment) {
+                        this.cashChange = this.totalSplitPaid - this.grandTotal;
+                    } else {
+                        this.cashChange = this.cashPaid - this.grandTotal;
+                    }
                 },
 
                 submitOrder() {
 
-                    if (this.isCashSelected() && this.cashPaid < this.grandTotal) {
-                        this.showToast('Uang yang dibayarkan kurang!', 'error');
-                        return;
+                    if (this.isSplitPayment) {
+                        if (this.totalSplitPaid < this.grandTotal) {
+                            this.showToast('Total uang dari Split Payment masih kurang!', 'error');
+                            return;
+                        }
+                    } else {
+                        if (this.isCashSelected() && this.cashPaid < this.grandTotal) {
+                            this.showToast('Uang yang dibayarkan kurang!', 'error');
+                            return;
+                        }
                     }
 
                     if (!this.currentCheckoutToken) {
@@ -6687,6 +6868,8 @@
 
                     this.isProcessing = true;
                     this.showCheckoutModal = false;
+                    this.showReceiptPreviewModal = true;
+                    this.previewReceiptData = null;
                     
                     const payload = {
                         items: this.cart,
@@ -6695,16 +6878,21 @@
                         manual_discount: this.manualDiscountValue || 0,
                         voucher_id: this.activeVoucher ? this.activeVoucher.id : null,
                         loyalty_redeem_stamps: this.loyaltyRedeemStamps || 0,
-                        payment_method: this.paymentMethod,
-                        cash_paid: this.cashPaid,
+                        payment_method: this.isSplitPayment ? 'split' : this.paymentMethod,
+                        cash_paid: this.isSplitPayment ? this.totalSplitPaid : this.cashPaid,
                         cash_change: this.cashChange,
                         customer_name: this.customerName,
                         customer_phone: this.customerPhone,
                         is_reserved: this.isReserved,
                         pickup_date: this.pickupDate,
                         payment_details: {
-                            type: this.paymentMethod,
-                            idempotency_key: this.currentCheckoutToken
+                            type: this.isSplitPayment ? 'split' : this.paymentMethod,
+                            idempotency_key: this.currentCheckoutToken,
+                            is_split_payment: this.isSplitPayment,
+                            split_payments: this.isSplitPayment ? this.splitPayments.map(sp => ({
+                                method: sp.method,
+                                amount: parseFloat(sp.amount) || 0
+                            })) : []
                         }
                     };
 

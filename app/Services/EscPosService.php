@@ -219,7 +219,23 @@ class EscPosService
         $this->justify("TOTAL", number_format($order->grand_total, 0, ',', '.'));
         $this->add(self::BOLD_OFF);
 
-        if ($order->cash_paid) {
+        if ($order->payment_method === 'split' && !empty($paymentDetails['split_payments'])) {
+            $this->line();
+            foreach ($paymentDetails['split_payments'] as $split) {
+                $methodName = strtoupper($split['method']);
+                if ($methodName === 'CASH') $methodName = 'TUNAI';
+                $this->justify($methodName, number_format($split['amount'], 0, ',', '.'));
+            }
+            if ($order->cash_change > 0) {
+                $this->justify("Kembali", number_format($order->cash_change, 0, ',', '.'));
+            }
+        } elseif ($order->payment_method === 'qris') {
+            $this->line();
+            $this->justify("QRIS", number_format($order->grand_total, 0, ',', '.'));
+        } elseif ($order->payment_method === 'transfer') {
+            $this->line();
+            $this->justify("Transfer", number_format($order->grand_total, 0, ',', '.'));
+        } elseif ($order->cash_paid) {
             $this->line();
             $this->justify("Tunai", number_format($order->cash_paid, 0, ',', '.'));
             $this->justify("Kembali", number_format($order->cash_change ?? 0, 0, ',', '.'));
@@ -418,7 +434,30 @@ class EscPosService
         $totRight = number_format($order->grand_total, 0, ',', '.');
         $lines[] = $totLeft . str_repeat(' ', max(1, $width - strlen($totLeft) - strlen($totRight))) . $totRight;
 
-        if ($order->cash_paid) {
+        if ($order->payment_method === 'split' && !empty($paymentDetails['split_payments'])) {
+            $lines[] = str_repeat('-', $width);
+            foreach ($paymentDetails['split_payments'] as $split) {
+                $methodName = strtoupper($split['method']);
+                if ($methodName === 'CASH') $methodName = 'TUNAI';
+                $right = number_format($split['amount'], 0, ',', '.');
+                $lines[] = $methodName . str_repeat(' ', max(1, $width - strlen($methodName) - strlen($right))) . $right;
+            }
+            if ($order->cash_change > 0) {
+                $changeLeft = "Kembali";
+                $changeRight = number_format($order->cash_change, 0, ',', '.');
+                $lines[] = $changeLeft . str_repeat(' ', max(1, $width - strlen($changeLeft) - strlen($changeRight))) . $changeRight;
+            }
+        } elseif ($order->payment_method === 'qris') {
+            $lines[] = str_repeat('-', $width);
+            $paidLeft = "QRIS";
+            $paidRight = number_format($order->grand_total, 0, ',', '.');
+            $lines[] = $paidLeft . str_repeat(' ', max(1, $width - strlen($paidLeft) - strlen($paidRight))) . $paidRight;
+        } elseif ($order->payment_method === 'transfer') {
+            $lines[] = str_repeat('-', $width);
+            $paidLeft = "Transfer";
+            $paidRight = number_format($order->grand_total, 0, ',', '.');
+            $lines[] = $paidLeft . str_repeat(' ', max(1, $width - strlen($paidLeft) - strlen($paidRight))) . $paidRight;
+        } elseif ($order->cash_paid) {
             $lines[] = str_repeat('-', $width);
             $paidLeft = "Tunai";
             $paidRight = number_format($order->cash_paid, 0, ',', '.');
@@ -492,8 +531,42 @@ class EscPosService
         $voidedOrders = $orders->where('status', 'cancelled');
 
         $totalTrxCount = $validOrders->count();
-        $cashSales = $validOrders->filter(fn($o) => in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
-        $nonCashSales = $validOrders->filter(fn($o) => !in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
+        $cashSales = 0;
+        $nonCashSales = 0;
+
+        foreach ($validOrders as $o) {
+            $pm = strtolower($o->payment_method);
+            if ($pm === 'split') {
+                $pd = is_string($o->payment_details) ? json_decode($o->payment_details, true) : ($o->payment_details ?? []);
+                $splits = $pd['split_payments'] ?? [];
+                // Harus memperhitungkan kembalian (cash_change) yang mengurangi porsi tunai
+                $change = (float)($o->cash_change ?? 0);
+                
+                foreach ($splits as $split) {
+                    $method = strtolower($split['method'] ?? '');
+                    $amount = (float)$split['amount'];
+                    
+                    if (in_array($method, ['cash', 'tunai'])) {
+                        if ($change > 0) {
+                            if ($amount >= $change) {
+                                $amount -= $change;
+                                $change = 0;
+                            } else {
+                                $change -= $amount;
+                                $amount = 0;
+                            }
+                        }
+                        $cashSales += $amount;
+                    } else {
+                        $nonCashSales += $amount;
+                    }
+                }
+            } elseif (in_array($pm, ['cash', 'tunai'])) {
+                $cashSales += (float)$o->grand_total;
+            } else {
+                $nonCashSales += (float)$o->grand_total;
+            }
+        }
         $totalSales = $cashSales + $nonCashSales;
 
         $voidTotal = $voidedOrders->sum('grand_total');
@@ -603,9 +676,43 @@ class EscPosService
         $voidedOrders = $orders->where('status', 'cancelled');
 
         $totalTrxCount = $validOrders->count();
-        $cashSales     = $validOrders->filter(fn($o) => in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
-        $nonCashSales  = $validOrders->filter(fn($o) => !in_array(strtolower($o->payment_method), ['cash', 'tunai']))->sum('grand_total');
-        $totalSales    = $cashSales + $nonCashSales;
+        $cashSales = 0;
+        $nonCashSales = 0;
+
+        foreach ($validOrders as $o) {
+            $pm = strtolower($o->payment_method);
+            if ($pm === 'split') {
+                $pd = is_string($o->payment_details) ? json_decode($o->payment_details, true) : ($o->payment_details ?? []);
+                $splits = $pd['split_payments'] ?? [];
+                // Harus memperhitungkan kembalian (cash_change) yang mengurangi porsi tunai
+                $change = (float)($o->cash_change ?? 0);
+                
+                foreach ($splits as $split) {
+                    $method = strtolower($split['method'] ?? '');
+                    $amount = (float)$split['amount'];
+                    
+                    if (in_array($method, ['cash', 'tunai'])) {
+                        if ($change > 0) {
+                            if ($amount >= $change) {
+                                $amount -= $change;
+                                $change = 0;
+                            } else {
+                                $change -= $amount;
+                                $amount = 0;
+                            }
+                        }
+                        $cashSales += $amount;
+                    } else {
+                        $nonCashSales += $amount;
+                    }
+                }
+            } elseif (in_array($pm, ['cash', 'tunai'])) {
+                $cashSales += (float)$o->grand_total;
+            } else {
+                $nonCashSales += (float)$o->grand_total;
+            }
+        }
+        $totalSales = $cashSales + $nonCashSales;
 
         $voidTotal = $voidedOrders->sum('grand_total');
 

@@ -266,16 +266,48 @@ class PosTransactionService
             }
 
             // 4. Catat Cashflow otomatis
-            Cashflow::create([
-                'transaction_date' => now()->toDateString(),
-                'type' => 'in',
-                'category'     => 'pos_sale',
-                'amount'       => $grandTotal,
-                'description'  => 'Penjualan POS #' . $order->order_number,
-                'order_id' => $order->id,
-                'source' => 'pos',
-                'is_reversed' => false,
-            ]);
+            if (($data['payment_method'] ?? 'cash') === 'split' && !empty($paymentDetails['split_payments'])) {
+                $remainingChange = $cashChange;
+                foreach ($paymentDetails['split_payments'] as $split) {
+                    $splitAmount = (float) $split['amount'];
+                    $splitMethod = $split['method'];
+                    
+                    // Jika ada kembalian, kurangkan dari pembayaran 'cash' (jika ada)
+                    if ($remainingChange > 0 && $splitMethod === 'cash') {
+                        if ($splitAmount >= $remainingChange) {
+                            $splitAmount -= $remainingChange;
+                            $remainingChange = 0;
+                        } else {
+                            $remainingChange -= $splitAmount;
+                            $splitAmount = 0;
+                        }
+                    }
+
+                    if ($splitAmount > 0) {
+                        Cashflow::create([
+                            'transaction_date' => now()->toDateString(),
+                            'type' => 'in',
+                            'category'     => 'pos_sale',
+                            'amount'       => $splitAmount,
+                            'description'  => 'Penjualan POS #' . $order->order_number . ' (' . strtoupper($splitMethod) . ')',
+                            'order_id' => $order->id,
+                            'source' => 'pos',
+                            'is_reversed' => false,
+                        ]);
+                    }
+                }
+            } else {
+                Cashflow::create([
+                    'transaction_date' => now()->toDateString(),
+                    'type' => 'in',
+                    'category'     => 'pos_sale',
+                    'amount'       => $grandTotal,
+                    'description'  => 'Penjualan POS #' . $order->order_number,
+                    'order_id' => $order->id,
+                    'source' => 'pos',
+                    'is_reversed' => false,
+                ]);
+            }
 
             // 5. Proses Loyalti Stempel Pelanggan POS
             $this->processPosLoyalty($order, $data);
@@ -409,7 +441,6 @@ class PosTransactionService
                 'points'          => $pointsEarned,
                 'description'     => "Perolehan {$stampsEarned} Stempel & {$pointsEarned} Poin dari Nota POS #{$order->order_number}.",
             ]);
-        }
         } else {
             // Tetap update last_visit & total_spent walau tidak dapet stempel
             $customer->update([

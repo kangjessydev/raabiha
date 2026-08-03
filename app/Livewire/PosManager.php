@@ -1206,18 +1206,42 @@ class PosManager extends Component
                     }
                 }
 
-                // 3. Record Cashflow Reversal untuk SEMUA metode pembayaran
-                // (karena saat checkout awal, SEMUA transaksi mencatat Cashflow 'pos_sale')
-                \App\Models\Cashflow::create([
-                    'transaction_date' => now()->toDateString(),
-                    'type'             => 'out',
-                    'category'         => 'pos_void',
-                    'amount'           => $order->grand_total,
-                    'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
-                    'order_id'         => $order->id,
-                    'source'           => 'pos',
-                    'is_reversed'      => true,
-                ]);
+                // 3. Record Cashflow Reversal — balik SEMUA entri 'pos_sale' untuk order ini
+                // (Penting untuk Split Payment yang memiliki lebih dari 1 baris cashflow per transaksi)
+                $existingCashflows = \App\Models\Cashflow::where('order_id', $order->id)
+                    ->where('type', 'in')
+                    ->where('source', 'pos')
+                    ->where('category', 'pos_sale')
+                    ->where('is_reversed', false)
+                    ->get();
+
+                foreach ($existingCashflows as $cf) {
+                    $cf->update(['is_reversed' => true]);
+                    \App\Models\Cashflow::create([
+                        'transaction_date' => now()->toDateString(),
+                        'type'             => 'out',
+                        'category'         => 'pos_void',
+                        'amount'           => $cf->amount,
+                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
+                        'order_id'         => $order->id,
+                        'source'           => 'pos',
+                        'is_reversed'      => true,
+                    ]);
+                }
+
+                // Fallback: jika tidak ada cashflow 'in' yang ditemukan (misal sudah pernah di-void), catat manual
+                if ($existingCashflows->isEmpty()) {
+                    \App\Models\Cashflow::create([
+                        'transaction_date' => now()->toDateString(),
+                        'type'             => 'out',
+                        'category'         => 'pos_void',
+                        'amount'           => $order->grand_total,
+                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
+                        'order_id'         => $order->id,
+                        'source'           => 'pos',
+                        'is_reversed'      => true,
+                    ]);
+                }
 
                 // 4. Rollback Loyalti Stempel Pelanggan jika ada
                 if ($order->customer_phone) {
