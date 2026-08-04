@@ -4743,132 +4743,101 @@
         </div>
     </div>
 
-    <!-- Modal Pengaturan Printer POS Hybrid - Filament Native Style -->
-    <div x-show="showPrinterModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-950/50 backdrop-blur-xs font-sans" x-transition.opacity>
-        <div class="bg-white w-full max-w-lg rounded-xl overflow-hidden shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]" @click.away="showPrinterModal = false">
+    <!-- Modal Pengaturan Printer POS Hybrid - Raabiha POS 2-Column Style -->
+    <div x-show="showPrinterModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-gray-950/60 backdrop-blur-xs font-sans" x-transition.opacity>
+        <div class="bg-white w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[90vh]" @click.away="showPrinterModal = false">
             <!-- Header -->
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-white">
-                <div class="flex items-center gap-2.5">
-                    <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600 border border-emerald-100">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H7a2 2 0 00-2 2v4h10z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-base text-gray-950 leading-tight">Pengaturan Printer Thermal POS</h3>
-                        <p class="text-xs text-gray-500 font-medium">Hubungkan printer Bluetooth, USB Kabel, atau Agent Lokal</p>
-                    </div>
+            <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-900 leading-tight">Pengaturan Printer Thermal POS</h3>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Sambungkan printer cetak struk via Bluetooth atau Kabel USB</p>
                 </div>
-                <button @click="showPrinterModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1.5 rounded-lg transition">&times;</button>
+                <button @click="showPrinterModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-xl text-lg font-bold transition">&times;</button>
             </div>
 
             <!-- Content Area -->
-            <div class="p-6 space-y-5 overflow-y-auto flex-1 text-xs bg-gray-50/50">
-                <!-- Status Bar Printer Aktif -->
-                <div class="p-4 rounded-xl border flex items-center justify-between shadow-xs"
-                    :class="printerConnected ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'">
-                    <div class="flex items-center gap-3">
-                        <div class="h-3 w-3 rounded-full flex-shrink-0"
-                            :class="printerConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"></div>
-                        <div>
-                            <div class="font-bold text-xs" :class="printerConnected ? 'text-emerald-900' : 'text-rose-900'"
-                                x-text="printerConnected ? 'Terhubung: ' + (printerDeviceName || 'Printer Thermal') : 'Printer Belum Terhubung'"></div>
-                            <div class="text-[11px] mt-0.5" :class="printerConnected ? 'text-emerald-700' : 'text-rose-700'">
-                                <span x-text="printerConnected ? ('Metode: ' + (printerConnectionMethod === 'ble' ? 'Web Bluetooth (Wireless)' : (printerConnectionMethod === 'serial' ? 'USB / Serial Cable' : 'Print Agent Bridge'))) : 'Pilih salah satu metode di bawah untuk menyambungkan printer.'"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <template x-if="printerConnected">
-                        <button type="button" @click="disconnectPrinter()" class="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg shadow-xs transition text-[11px] cursor-pointer">
-                            Putuskan
-                        </button>
-                    </template>
-                </div>
-
-                <!-- Opsi Metode Koneksi (Card Radio Group) -->
-                <div>
-                    <label class="block font-bold text-gray-900 text-xs uppercase tracking-wider mb-2.5">Pilih Metode & Cari Perangkat</label>
-                    <div class="space-y-2.5">
-                        <!-- Mode 1: Web Bluetooth (Wireless Scan) -->
-                        <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-xs hover:border-emerald-300 transition duration-150">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-start gap-3">
-                                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-100 mt-0.5">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18l6-6-6-6m-6 12l6-6-6-6"/></svg>
-                                    </div>
-                                    <div>
-                                        <div class="font-bold text-gray-900 text-xs">Web Bluetooth API (Pindai Sekitar)</div>
-                                        <p class="text-[11px] text-gray-500 mt-0.5">Memindai & memilih printer Bluetooth langsung dari browser (Kassen, RPP02N, Panda, dll).</p>
-                                    </div>
+            <div class="p-6 space-y-6 overflow-y-auto flex-1 bg-white">
+                <!-- Top Control Bar: Status + Auto Print Switch -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Status Bar Printer (Spans 2 cols) -->
+                    <div class="sm:col-span-2 p-4 rounded-xl border flex items-center justify-between shadow-xs transition"
+                        :class="printerConnected ? 'bg-emerald-50/80 border-emerald-200' : 'bg-rose-50/80 border-rose-200'">
+                        <div class="flex items-center gap-3">
+                            <div class="h-3 w-3 rounded-full flex-shrink-0"
+                                :class="printerConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"></div>
+                            <div>
+                                <div class="font-bold text-sm" :class="printerConnected ? 'text-emerald-900' : 'text-rose-900'"
+                                    x-text="printerConnected ? 'Terhubung: ' + (printerDeviceName || 'Printer Thermal') : 'Printer Belum Terhubung'"></div>
+                                <div class="text-xs mt-0.5" :class="printerConnected ? 'text-emerald-700' : 'text-rose-700'">
+                                    <span x-text="printerConnected ? ('Metode: ' + (printerConnectionMethod === 'ble' ? 'Bluetooth (Nirkabel)' : 'Kabel USB Direct')) : 'Silakan pilih salah satu opsi di bawah untuk menghubungkan printer.'"></span>
                                 </div>
                             </div>
-                            <button type="button" @click="scanAndConnectWebBluetooth()" class="mt-3 w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        </div>
+                        <template x-if="printerConnected">
+                            <button type="button" @click="disconnectPrinter()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-xs transition text-xs cursor-pointer">
+                                Putuskan
+                            </button>
+                        </template>
+                    </div>
+
+                    <!-- Auto Print Toggle (Spans 1 col) -->
+                    <div class="p-4 bg-gray-50/80 rounded-xl border border-gray-200/80 flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-xs text-gray-900">Cetak Struk Otomatis</div>
+                            <div class="text-[11px] text-gray-500 mt-0.5">Setiap selesai transaksi</div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                            <input type="checkbox" x-model="autoPrintReceipt" @change="saveAutoPrintSettings" class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Opsi Metode Koneksi (2-Column Grid) -->
+                <div>
+                    <label class="block font-bold text-gray-700 text-xs uppercase tracking-wider mb-3">Pilih Cara Menyambungkan Printer</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Mode 1: Web Bluetooth -->
+                        <div class="p-5 bg-gray-50/70 hover:bg-gray-50 rounded-2xl border border-gray-200/80 transition flex flex-col justify-between">
+                            <div>
+                                <div class="w-11 h-11 rounded-xl bg-white text-emerald-700 border border-gray-200 shadow-xs flex items-center justify-center font-bold mb-3.5">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18l6-6-6-6m-6 12l6-6-6-6"/></svg>
+                                </div>
+                                <div class="font-bold text-base text-gray-900">Printer Bluetooth</div>
+                                <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Pindai dan pilih printer Bluetooth nirkabel yang menyala di sekitar kasir (Kassen, Panda, RPP02N, dll).</p>
+                            </div>
+                            <button type="button" @click="scanAndConnectWebBluetooth()" class="mt-6 w-full py-2.5 px-4 bg-white hover:bg-emerald-50 text-emerald-800 border-2 border-emerald-600 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <span>Pindai & Sambung Bluetooth</span>
+                                <span>Cari Printer Bluetooth</span>
                             </button>
                         </div>
 
                         <!-- Mode 2: Web Serial (Kabel USB) -->
-                        <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-xs hover:border-emerald-300 transition duration-150">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-start gap-3">
-                                    <div class="p-2 bg-purple-50 text-purple-600 rounded-lg border border-purple-100 mt-0.5">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                    </div>
-                                    <div>
-                                        <div class="font-bold text-gray-900 text-xs">Web Serial USB / Kabel Serial</div>
-                                        <p class="text-[11px] text-gray-500 mt-0.5">Memilih port kabel USB printer di komputer kasir (`/dev/ttyUSB0` / `COMx`).</p>
-                                    </div>
+                        <div class="p-5 bg-gray-50/70 hover:bg-gray-50 rounded-2xl border border-gray-200/80 transition flex flex-col justify-between">
+                            <div>
+                                <div class="w-11 h-11 rounded-xl bg-white text-emerald-700 border border-gray-200 shadow-xs flex items-center justify-center font-bold mb-3.5">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                 </div>
+                                <div class="font-bold text-base text-gray-900">Printer Kabel USB</div>
+                                <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Hubungkan printer yang tercolok menggunakan kabel USB ke komputer atau laptop kasir.</p>
                             </div>
-                            <button type="button" @click="scanAndConnectWebSerial()" class="mt-3 w-full py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                            <button type="button" @click="scanAndConnectWebSerial()" class="mt-6 w-full py-2.5 px-4 bg-white hover:bg-emerald-50 text-emerald-800 border-2 border-emerald-600 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                <span>Pilih Port Kabel USB</span>
-                            </button>
-                        </div>
-
-                        <!-- Mode 3: Print Agent Bridge (Local Service) -->
-                        <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-xs hover:border-emerald-300 transition duration-150">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-start gap-3">
-                                    <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 mt-0.5">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
-                                    </div>
-                                    <div>
-                                        <div class="font-bold text-gray-900 text-xs">Raabiha Print Agent (Background Bridge)</div>
-                                        <p class="text-[11px] text-gray-500 mt-0.5">Menghubungkan via layanan agen lokal Node.js (`ws://localhost:8765`).</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" @click="connectToBridge(true)" class="mt-3 w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                <span>Sambung ke Print Agent</span>
+                                <span>Pilih Kabel USB</span>
                             </button>
                         </div>
                     </div>
-                </div>
-
-                <!-- Pengaturan Cetak Otomatis (Auto Print Toggle) -->
-                <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-xs flex items-center justify-between">
-                    <div>
-                        <div class="font-bold text-gray-900 text-xs">Cetak Struk Otomatis</div>
-                        <div class="text-[11px] text-gray-500">Otomatis kirim cetakan ke printer setiap pembayaran selesai.</div>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" x-model="autoPrintReceipt" @change="saveAutoPrintSettings" class="sr-only peer">
-                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                    </label>
                 </div>
             </div>
 
             <!-- Footer Actions -->
-            <div class="px-6 py-3.5 bg-gray-50/80 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-xl flex-shrink-0">
-                <button type="button" @click="showPrinterModal = false" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition duration-150 cursor-pointer">
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-2xl flex-shrink-0">
+                <button type="button" @click="showPrinterModal = false" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition duration-150 cursor-pointer">
                     Selesai & Tutup
                 </button>
             </div>
         </div>
     </div>
-
-
 
 
     <!-- Modal Detail Rincian Nota Transaksi - Filament Native Style -->

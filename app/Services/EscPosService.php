@@ -515,6 +515,107 @@ class EscPosService
     }
 
     /**
+     * Data struktur array Z-Report untuk tampilan Filament UI
+     */
+    public function getZReportData(PosSession $session): array
+    {
+        $orders = $session->orders()->get();
+        $validOrders = $orders->where('status', '!=', 'cancelled');
+        $voidedOrders = $orders->where('status', 'cancelled');
+
+        $totalTrxCount = $validOrders->count();
+        $cashSales = 0;
+        $nonCashSales = 0;
+
+        foreach ($validOrders as $o) {
+            $pm = strtolower($o->payment_method ?? '');
+            if ($pm === 'split') {
+                $pd = is_string($o->payment_details) ? json_decode($o->payment_details, true) : ($o->payment_details ?? []);
+                $splits = $pd['split_payments'] ?? [];
+                $change = (float)($o->cash_change ?? 0);
+                
+                foreach ($splits as $split) {
+                    $method = strtolower($split['method'] ?? '');
+                    $amount = (float)($split['amount'] ?? 0);
+                    
+                    if (in_array($method, ['cash', 'tunai'])) {
+                        if ($change > 0) {
+                            if ($amount >= $change) {
+                                $amount -= $change;
+                                $change = 0;
+                            } else {
+                                $change -= $amount;
+                                $amount = 0;
+                            }
+                        }
+                        $cashSales += $amount;
+                    } else {
+                        $nonCashSales += $amount;
+                    }
+                }
+            } elseif (in_array($pm, ['cash', 'tunai'])) {
+                $cashSales += (float)$o->grand_total;
+            } else {
+                $nonCashSales += (float)$o->grand_total;
+            }
+        }
+        $totalSales = $cashSales + $nonCashSales;
+
+        $voidTotal = $voidedOrders->sum('grand_total');
+
+        $pettyIn = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_petty_cash')
+            ->where('type', 'in')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $pettyOut = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_petty_cash')
+            ->where('type', 'out')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $refundOut = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_return_refund')
+            ->where('type', 'out')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $exchangeIn = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_exchange_pay')
+            ->where('type', 'in')
+            ->where('created_at', '>=', $session->opened_at)
+            ->sum('amount');
+
+        $diff = (float)($session->difference_cash ?? 0);
+        $diffLabel = $diff < 0 ? "Kurang" : ($diff > 0 ? "Lebih" : "Pas");
+
+        return [
+            'session'              => $session,
+            'cashier_name'         => $session->cashier->name ?? 'Kasir',
+            'opened_at'            => $session->opened_at,
+            'closed_at'            => $session->closed_at,
+            'status'               => $session->status,
+            'total_trx_count'      => $totalTrxCount,
+            'cash_sales'           => $cashSales,
+            'non_cash_sales'       => $nonCashSales,
+            'total_sales'          => $totalSales,
+            'void_total'           => $voidTotal,
+            'void_count'           => $voidedOrders->count(),
+            'petty_in'             => (float)$pettyIn,
+            'petty_out'            => (float)$pettyOut,
+            'refund_out'           => (float)$refundOut,
+            'exchange_in'          => (float)$exchangeIn,
+            'opening_cash'         => (float)($session->opening_cash ?? 0),
+            'expected_ending_cash' => $session->expected_ending_cash !== null ? (float)$session->expected_ending_cash : null,
+            'actual_ending_cash'   => $session->actual_ending_cash !== null ? (float)$session->actual_ending_cash : null,
+            'difference_cash'      => $diff,
+            'difference_label'     => $diffLabel,
+            'notes'                => $session->notes,
+        ];
+    }
+
+    /**
      * Generate Base64 Z-Report for a closed Shift
      */
     public function generateZReport(PosSession $session): string

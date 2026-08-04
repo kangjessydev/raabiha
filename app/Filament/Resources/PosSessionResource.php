@@ -4,10 +4,13 @@ namespace App\Filament\Resources;
 
 use App\Models\PosSession;
 use BackedEnum;
-use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -137,11 +140,15 @@ class PosSessionResource extends Resource
                     ->label('Pratinjau / Cetak Z-Report')
                     ->icon('heroicon-o-printer')
                     ->color('info')
-                    ->modalHeading(fn ($record) => 'Laporan Shift (Z-Report) - ' . ($record->cashier->name ?? 'Kasir'))
+                    ->modalHeading(fn ($record) => 'Pratinjau Struk Z-Report — ' . ($record->cashier->name ?? 'Kasir'))
+                    ->modalWidth('md')
                     ->modalContent(function ($record) {
                         $escPosService = new \App\Services\EscPosService();
                         $text = $escPosService->generateZReportText($record);
-                        return view('filament.components.z-report-preview', ['text' => $text, 'record' => $record]);
+                        return view('filament.components.z-report-preview', [
+                            'text'   => $text,
+                            'record' => $record,
+                        ]);
                     })
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup'),

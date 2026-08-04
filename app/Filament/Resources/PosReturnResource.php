@@ -5,7 +5,7 @@ namespace App\Filament\Resources;
 use App\Models\PosReturn;
 use BackedEnum;
 use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -21,9 +21,9 @@ class PosReturnResource extends Resource
 
     protected static \UnitEnum|string|null $navigationGroup = 'Kasir & Toko Fisik (POS)';
 
-    protected static ?string $navigationLabel = 'Retur Barang POS';
-    protected static ?string $modelLabel = 'Retur Barang POS';
-    protected static ?string $pluralModelLabel = 'Retur Barang POS';
+    protected static ?string $navigationLabel = 'Retur/Refund POS';
+    protected static ?string $modelLabel = 'Retur/Refund POS';
+    protected static ?string $pluralModelLabel = 'Retur/Refund POS';
 
     protected static ?int $navigationSort = 3;
 
@@ -73,19 +73,19 @@ class PosReturnResource extends Resource
                     ->label('Nota Asli')
                     ->searchable()
                     ->sortable()
-                    ->description(fn ($record) => 'Kasir: ' . ($record->cashier->name ?? 'Kasir')),
+                    ->description(fn($record) => 'Kasir: ' . ($record->cashier->name ?? 'Kasir')),
                 TextColumn::make('type')
                     ->label('Jenis Retur')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
+                    ->formatStateUsing(fn($state) => match ($state) {
                         'exchange' => 'Tukar Barang',
-                        'refund'   => 'Refund Uang',
-                        default    => ucwords($state ?? '-'),
+                        'refund' => 'Refund Uang',
+                        default => ucwords($state ?? '-'),
                     })
-                    ->color(fn ($state) => match ($state) {
+                    ->color(fn($state) => match ($state) {
                         'exchange' => 'warning',
-                        'refund'   => 'danger',
-                        default    => 'secondary',
+                        'refund' => 'danger',
+                        default => 'secondary',
                     }),
                 TextColumn::make('returned_subtotal')
                     ->label('Barang Retur')
@@ -99,21 +99,21 @@ class PosReturnResource extends Resource
                     ->label('Hasil Selisih')
                     ->money('IDR')
                     ->weight('bold')
-                    ->color(fn ($state) => match (true) {
+                    ->color(fn($state) => match (true) {
                         $state < 0 => 'danger',
                         $state > 0 => 'warning',
-                        default    => 'gray',
+                        default => 'gray',
                     })
                     ->sortable(),
                 TextColumn::make('refund_payment_method')
                     ->label('Metode Refund')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'cash'  => 'Tunai Laci',
-                        'bank'  => 'Transfer Bank',
+                    ->formatStateUsing(fn($state) => match ($state) {
+                        'cash' => 'Tunai Laci',
+                        'bank' => 'Transfer Bank',
                         default => $state ? ucwords($state) : '-',
                     })
-                    ->color(fn ($state) => match ($state) {
+                    ->color(fn($state) => match ($state) {
                         'cash' => 'success',
                         'bank' => 'info',
                         default => 'secondary',
@@ -133,7 +133,7 @@ class PosReturnResource extends Resource
                     ->native(false)
                     ->options([
                         'exchange' => 'Tukar Barang',
-                        'refund'   => 'Pengembalian Uang (Refund)',
+                        'refund' => 'Pengembalian Uang (Refund)',
                     ]),
                 SelectFilter::make('refund_payment_method')
                     ->label('Metode Refund')
@@ -157,10 +157,10 @@ class PosReturnResource extends Resource
                     ->schema([
                         TextEntry::make('return_number')->label('No. Retur')->weight('bold'),
                         TextEntry::make('order.order_number')->label('Nota Asli'),
-                        TextEntry::make('type')->label('Jenis Retur')->badge()->formatStateUsing(fn ($state) => match ($state) {
+                        TextEntry::make('type')->label('Jenis Retur')->badge()->formatStateUsing(fn($state) => match ($state) {
                             'exchange' => 'Tukar Barang',
-                            'refund'   => 'Refund Uang',
-                            default    => ucwords($state ?? '-'),
+                            'refund' => 'Refund Uang',
+                            default => ucwords($state ?? '-'),
                         }),
                         TextEntry::make('cashier.name')->label('Kasir'),
                         TextEntry::make('supervisor.name')->label('Supervisor Pengizin')->default('-'),
@@ -175,7 +175,7 @@ class PosReturnResource extends Resource
                             ->schema([
                                 TextEntry::make('product_name')
                                     ->label('Nama Barang')
-                                    ->state(fn ($record) => $record->product ? ($record->product->name . ($record->variant ? ' - ' . $record->variant->name : '')) : '-'),
+                                    ->state(fn($record) => $record->product ? ($record->product->name . ($record->variant ? ' - ' . $record->variant->name : '')) : '-'),
                                 TextEntry::make('quantity')->label('Qty Retur'),
                                 TextEntry::make('price')->label('Harga Satuan')->money('IDR'),
                                 TextEntry::make('total')->label('Subtotal')->money('IDR')->weight('bold'),
@@ -184,14 +184,14 @@ class PosReturnResource extends Resource
                     ]),
 
                 Section::make('Item Barang Pengganti (Tukar)')
-                    ->visible(fn ($record) => $record->exchangedItems()->count() > 0)
+                    ->visible(fn($record) => $record->exchangedItems()->count() > 0)
                     ->schema([
                         RepeatableEntry::make('exchangedItems')
                             ->label('')
                             ->schema([
                                 TextEntry::make('product_name')
                                     ->label('Nama Barang Pengganti')
-                                    ->state(fn ($record) => $record->product ? ($record->product->name . ($record->variant ? ' - ' . $record->variant->name : '')) : '-'),
+                                    ->state(fn($record) => $record->product ? ($record->product->name . ($record->variant ? ' - ' . $record->variant->name : '')) : '-'),
                                 TextEntry::make('quantity')->label('Qty Tukar'),
                                 TextEntry::make('price')->label('Harga Satuan')->money('IDR'),
                                 TextEntry::make('total')->label('Subtotal')->money('IDR')->weight('bold'),

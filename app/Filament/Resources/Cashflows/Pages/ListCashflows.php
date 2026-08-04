@@ -32,8 +32,12 @@ class ListCashflows extends ListRecords
                 ->action(function () {
                     $count = 0;
 
-                    // Chunk 100 per batch — hemat memory di VPS 2GB
+                    // Chunk 100 per batch — hemat memory di VPS 2GB (Hanya pesanan E-Commerce/Online, POS punya handler arus kas sendiri)
                     Order::where('payment_status', 'paid')
+                        ->where(function ($q) {
+                            $q->whereNull('source')
+                              ->orWhere('source', '!=', 'pos');
+                        })
                         ->chunk(100, function ($orders) use (&$count) {
                             foreach ($orders as $order) {
                                 $created = Cashflow::updateOrCreate(
