@@ -255,17 +255,45 @@ class BluetoothPrinter extends EventEmitter {
             return;
         }
 
-        const device = this._getSerialPath();
+        const device = this._getSerialPath() || '/dev/rfcomm0';
         const devNum = device.replace('/dev/rfcomm', '') || '0';
+        const fs = require('fs');
 
         console.log(`[BT] Binding ${mac} ke ${device}...`);
         try {
+            // Lepas binding lama jika ada
             try { await execAsync(`sudo fuser -k ${device} 2>/dev/null || true`); } catch (e) {}
             try { await execAsync(`sudo rfcomm release ${devNum} 2>/dev/null || true`); } catch (e) {}
 
             await new Promise(r => setTimeout(r, 800));
             await execAsync(`sudo rfcomm bind ${devNum} ${mac} 1`);
-            await execAsync(`sudo chmod 666 ${device}`);
+
+            // Tunggu device muncul di /dev (kernel butuh waktu buat node-nya)
+            let waited = 0;
+            while (!fs.existsSync(device) && waited < 3000) {
+                await new Promise(r => setTimeout(r, 200));
+                waited += 200;
+            }
+
+            if (!fs.existsSync(device)) {
+                throw new Error(`Device ${device} tidak muncul setelah rfcomm bind. Pastikan printer sudah di-pair dan Bluetooth aktif.`);
+            }
+
+            // chmod dengan retry karena device node kadang butuh sesaat setelah muncul
+            let chmodOk = false;
+            for (let i = 0; i < 3; i++) {
+                try {
+                    await execAsync(`sudo chmod 666 ${device}`);
+                    chmodOk = true;
+                    break;
+                } catch (chmodErr) {
+                    await new Promise(r => setTimeout(r, 300));
+                }
+            }
+            if (!chmodOk) {
+                console.warn(`[BT] chmod ${device} gagal, lanjut saja (mungkin sudah punya akses)`);
+            }
+
             console.log(`[BT] ✅ rfcomm bind berhasil: ${device}`);
 
             try {
@@ -373,13 +401,19 @@ class BluetoothPrinter extends EventEmitter {
                 // Verifikasi dengan test write (penting untuk rfcomm di Linux)
                 await new Promise((resolve, reject) => {
                     const statusQuery = Buffer.from([0x10, 0x04, 0x01]);
-                    this.port.write(statusQuery, (err) => {
-                        if (err) {
+                    this.port.write(statusQuery, (writeErr) => {
+                        if (writeErr) {
                             this.port.close(() => {});
-                            reject(new Error('Printer tidak merespons. Pastikan printer menyala.'));
-                        } else {
-                            resolve();
+                            return reject(new Error('Printer tidak merespons (write error). Pastikan printer menyala.'));
                         }
+                        // Harus di-drain untuk memastikan data benar-benar terkirim keluar dari OS buffer
+                        this.port.drain((drainErr) => {
+                            if (drainErr) {
+                                this.port.close(() => {});
+                                return reject(new Error('Printer tidak merespons (drain error). Pastikan printer menyala.'));
+                            }
+                            resolve();
+                        });
                     });
                 });
 
@@ -505,6 +539,7 @@ class BluetoothPrinter extends EventEmitter {
                 console.log(`[SERIAL] ✅ ${data.length} bytes terkirim (Leaky Bucket Pacing, 1KB/500ms)`);
             } finally {
                 this.isWriting = false;
+                this.lastWriteTime = Date.now();
             }
         });
 
@@ -562,6 +597,10 @@ class BluetoothPrinter extends EventEmitter {
 
             // Jika sedang ada proses cetak aktif atau menggunakan USB raw character device, lewatkan write ping
             if (this.isWriting || (this.currentPath && this.currentPath.startsWith('/dev/usb/lp'))) return;
+
+            // Tambahkan cooldown (tunggu 3 detik setelah print selesai sebelum ping lagi)
+            if (this.lastWriteTime && Date.now() - this.lastWriteTime < 3000) return;
+
 
             const pingBuf = Buffer.from([0x10, 0x04, 0x01]);
             this.port.write(pingBuf, (err) => {
