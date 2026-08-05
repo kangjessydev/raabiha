@@ -1,13 +1,15 @@
 /**
  * WebSocket Server
  * Menerima print jobs dari browser POS
- * 
+ *
  * Protocol:
- *   Client kirim JSON: { "type": "print", "data": "<base64 ESC/POS>" }
- *   Client kirim JSON: { "type": "status" }
- *   Server balas JSON: { "type": "status", "connected": true/false, ... }
- *   Server balas JSON: { "type": "print_ok" }
- *   Server balas JSON: { "type": "error", "message": "..." }
+ *   Client → { "type": "print", "data": "<base64 ESC/POS>" }
+ *   Client → { "type": "status" }
+ *   Client → { "type": "scan" }          ← baru: minta scan ulang printer
+ *   Server → { "type": "status", "connected": true/false, ... }
+ *   Server → { "type": "print_ok" }
+ *   Server → { "type": "scan_result", "found": true/false, "port": "COM3" }
+ *   Server → { "type": "error", "message": "..." }
  */
 
 const WebSocket = require('ws');
@@ -15,15 +17,14 @@ const WebSocket = require('ws');
 const HEARTBEAT_INTERVAL_MS = 30000;
 
 function createServer(port, printer) {
-    const wss = new WebSocket.Server({ 
+    const wss = new WebSocket.Server({
         port,
         // Allow connections dari semua origin (HTTPS raabiha.com + localhost)
-        verifyClient: () => true 
+        verifyClient: () => true
     });
 
     console.log(`[WS] WebSocket server berjalan di ws://localhost:${port}`);
 
-    // Broadcast status ke semua client
     function broadcastStatus() {
         const status = {
             type: 'status',
@@ -37,7 +38,6 @@ function createServer(port, printer) {
         });
     }
 
-    // Listen to printer events untuk broadcast
     printer.on('connected', broadcastStatus);
     printer.on('disconnected', broadcastStatus);
 
@@ -52,7 +52,6 @@ function createServer(port, printer) {
             timestamp: Date.now()
         }));
 
-        // Heartbeat untuk keep connection alive
         ws.isAlive = true;
         ws.on('pong', () => { ws.isAlive = true; });
 
@@ -68,12 +67,80 @@ function createServer(port, printer) {
             console.log(`[WS] Pesan diterima: type=${msg.type}`);
 
             switch (msg.type) {
+
                 case 'status':
                     ws.send(JSON.stringify({
                         type: 'status',
                         ...printer.getStatus(),
                         timestamp: Date.now()
                     }));
+                    break;
+
+                case 'config':
+                    // Browser kirim MAC address atau COM port manual
+                    if (!msg.value) {
+                        ws.send(JSON.stringify({ type: 'error', message: 'Alamat tidak boleh kosong' }));
+                        return;
+                    }
+
+                    ws.send(JSON.stringify({ type: 'scanning' }));
+
+                    try {
+                        const val = msg.value.trim();
+                        const isMac = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(val);
+
+                        if (isMac) {
+                            // MAC address → set untuk rfcomm bind (Linux)
+                            printer.config.printer_mac = val;
+                            printer.config.serial_port = ''; // reset supaya bind ulang
+                            console.log(`[WS] Config manual: MAC = ${val}`);
+                        } else {
+                            // COM port atau serial path → langsung pakai
+                            printer.config.serial_port = val;
+                            printer.config.printer_mac = ''; // clear MAC supaya skip rfcomm bind
+                            console.log(`[WS] Config manual: port = ${val}`);
+                        }
+
+                        await printer.rescan();
+
+                        ws.send(JSON.stringify({
+                            type: 'config_result',
+                            found: printer.connected,
+                            connected: printer.connected,
+                            name: printer.config.printer_name || val,
+                            ...printer.getStatus()
+                        }));
+                        broadcastStatus();
+                    } catch (err) {
+                        ws.send(JSON.stringify({
+                            type: 'config_result',
+                            found: false,
+                            connected: false,
+                            message: err.message
+                        }));
+                    }
+                    break;
+
+                case 'scan':
+                    // Browser minta scan ulang printer (misal: printer baru di-pair)
+                    ws.send(JSON.stringify({ type: 'scanning' }));
+                    try {
+                        await printer.rescan();
+                        ws.send(JSON.stringify({
+                            type: 'scan_result',
+                            found: printer.connected,
+                            port: printer.config.serial_port || null,
+                            ...printer.getStatus()
+                        }));
+                        broadcastStatus();
+                    } catch (err) {
+                        ws.send(JSON.stringify({
+                            type: 'scan_result',
+                            found: false,
+                            port: null,
+                            message: err.message
+                        }));
+                    }
                     break;
 
                 case 'print':
@@ -88,7 +155,6 @@ function createServer(port, printer) {
                     }
 
                     try {
-                        // Data dikirim sebagai base64
                         const buffer = Buffer.from(msg.data, 'base64');
                         console.log(`[WS] Mencetak ${buffer.length} bytes...`);
                         await printer.write(buffer);
@@ -105,22 +171,14 @@ function createServer(port, printer) {
             }
         });
 
-        ws.on('close', () => {
-            console.log('[WS] Client terputus');
-        });
-
-        ws.on('error', (err) => {
-            console.error('[WS] Error:', err.message);
-        });
+        ws.on('close', () => console.log('[WS] Client terputus'));
+        ws.on('error', (err) => console.error('[WS] Error:', err.message));
     });
 
     // Heartbeat check setiap 30 detik
     const heartbeat = setInterval(() => {
         wss.clients.forEach(ws => {
-            if (!ws.isAlive) {
-                ws.terminate();
-                return;
-            }
+            if (!ws.isAlive) { ws.terminate(); return; }
             ws.isAlive = false;
             ws.ping();
         });

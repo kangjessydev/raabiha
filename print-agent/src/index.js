@@ -1,53 +1,46 @@
 /**
  * Raabiha Print Agent
  * Menjembatani browser POS (WebSocket) ↔ Printer Bluetooth Classic (SPP)
- * 
+ *
  * Cara pakai:
  *   node src/index.js
- * 
- * Env / args:
- *   PRINTER_MAC=XX:XX:XX:XX:XX:XX  — MAC address printer
- *   PRINTER_NAME=Xantri RPP02N      — nama printer (untuk scan)
- *   WS_PORT=8765                    — port WebSocket (default: 8765)
+ *
+ * Tidak perlu konfigurasi manual — auto-deteksi printer Bluetooth yang sudah di-pair.
  */
 
 const { createServer } = require('./server');
 const { BluetoothPrinter } = require('./bluetooth');
-const { loadConfig, saveConfig } = require('./config');
-
-const isDev = process.argv.includes('--dev');
+const { loadConfig } = require('./config');
 
 async function main() {
     console.log('==============================================');
-    console.log('  Raabiha Print Agent v1.0.0');
+    console.log('  Raabiha Print Agent v2.0.0');
+    console.log('  Auto-Scan Edition');
     console.log('==============================================');
 
-    // Load config
     const config = loadConfig();
 
-    if (!config.printer_mac && !config.printer_name) {
-        console.error('[ERROR] Printer belum dikonfigurasi!');
-        console.error('        Set PRINTER_MAC atau PRINTER_NAME di config.json');
-        console.error('        Path config: ' + require('./config').CONFIG_PATH);
-        process.exit(1);
+    console.log(`[INFO] WebSocket port: ${config.ws_port}`);
+    if (config.serial_port) {
+        console.log(`[INFO] Config tersimpan: ${config.serial_port}`);
+    } else {
+        console.log('[INFO] Tidak ada config printer, akan auto-scan saat ada client terhubung.');
     }
 
-    console.log(`[INFO] Printer: ${config.printer_name || 'Unknown'} (${config.printer_mac || 'scan by name'})`);
-    console.log(`[INFO] WebSocket port: ${config.ws_port}`);
-
-    // Init Bluetooth
+    // Init Bluetooth printer handler
     const printer = new BluetoothPrinter(config);
 
     // Init WebSocket server
     const server = createServer(config.ws_port, printer);
 
-    // Connect ke printer
-    console.log('[BT] Mencari printer...');
-    await printer.connect().catch(err => {
-        console.warn('[BT] Koneksi awal gagal, akan retry...', err.message);
+    // Coba connect di startup (non-blocking)
+    // Kalau gagal, akan auto-retry dan juga bisa di-trigger dari browser
+    printer.connect().catch(err => {
+        console.warn('[BT] Koneksi awal belum berhasil:', err.message);
+        console.warn('[BT] Print Agent tetap jalan. Printer akan ditemukan saat browser klik Sambungkan.');
     });
 
-    // Handle graceful shutdown
+    // Graceful shutdown
     process.on('SIGINT', async () => {
         console.log('\n[INFO] Mematikan agent...');
         try { await printer.disconnect(); } catch (e) {}

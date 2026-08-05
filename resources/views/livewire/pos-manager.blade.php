@@ -4756,78 +4756,173 @@
             </div>
 
             <!-- Content Area -->
-            <div class="p-6 space-y-6 overflow-y-auto flex-1 bg-white">
-                <!-- Top Control Bar: Status + Auto Print Switch -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <!-- Status Bar Printer (Spans 2 cols) -->
-                    <div class="sm:col-span-2 p-4 rounded-xl border flex items-center justify-between shadow-xs transition"
-                        :class="printerConnected ? 'bg-emerald-50/80 border-emerald-200' : 'bg-rose-50/80 border-rose-200'">
-                        <div class="flex items-center gap-3">
-                            <div class="h-3 w-3 rounded-full flex-shrink-0"
-                                :class="printerConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"></div>
-                            <div>
-                                <div class="font-bold text-sm" :class="printerConnected ? 'text-emerald-900' : 'text-rose-900'"
-                                    x-text="printerConnected ? 'Terhubung: ' + (printerDeviceName || 'Printer Thermal') : 'Printer Belum Terhubung'"></div>
-                                <div class="text-xs mt-0.5" :class="printerConnected ? 'text-emerald-700' : 'text-rose-700'">
-                                    <span x-text="printerConnected ? ('Metode: ' + (printerConnectionMethod === 'ble' ? 'Bluetooth (Nirkabel)' : 'Kabel USB Direct')) : 'Silakan pilih salah satu opsi di bawah untuk menghubungkan printer.'"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <template x-if="printerConnected">
-                            <button type="button" @click="disconnectPrinter()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-xs transition text-xs cursor-pointer">
-                                Putuskan
-                            </button>
-                        </template>
-                    </div>
+            <div class="p-6 space-y-5 overflow-y-auto flex-1 bg-white">
 
-                    <!-- Auto Print Toggle (Spans 1 col) -->
-                    <div class="p-4 bg-gray-50/80 rounded-xl border border-gray-200/80 flex items-center justify-between">
+                <!-- Status Bar Printer -->
+                <div x-show="printerConnected" class="p-3 border rounded-xl flex items-center justify-between"
+                    :class="printerConnected ? 'bg-emerald-50/80 border-emerald-200' : 'bg-rose-50/80 border-rose-200'">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2.5 h-2.5 rounded-full"
+                            :class="printerConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'"></div>
                         <div>
-                            <div class="font-bold text-xs text-gray-900">Cetak Struk Otomatis</div>
-                            <div class="text-[11px] text-gray-500 mt-0.5">Setiap selesai transaksi</div>
+                            <div class="font-bold text-sm" :class="printerConnected ? 'text-emerald-900' : 'text-rose-900'"
+                                x-text="printerConnected ? (printerDeviceName || 'Printer') + ' — Terhubung' : 'Printer Belum Terhubung'"></div>
+                            <div class="text-xs mt-0.5" :class="printerConnected ? 'text-emerald-700' : 'text-rose-700'"
+                                x-text="printerConnected ? 'Siap mencetak struk.' : 'Pilih cara sambungkan printer di bawah.'"></div>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                            <input type="checkbox" x-model="autoPrintReceipt" @change="saveAutoPrintSettings" class="sr-only peer">
-                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                        </label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="printTestReceipt()"
+                            class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-lg hover:bg-emerald-200 transition-colors">
+                            Tes Printer
+                        </button>
+                        <button type="button" @click="disconnectPrinter()"
+                            class="px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 rounded-lg hover:bg-rose-700 shadow-sm transition-colors">
+                            Putuskan
+                        </button>
                     </div>
                 </div>
 
-                <!-- Opsi Metode Koneksi (2-Column Grid) -->
-                <div>
-                    <label class="block font-bold text-gray-700 text-xs uppercase tracking-wider mb-3">Pilih Cara Menyambungkan Printer</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Mode 1: Web Bluetooth -->
-                        <div class="p-5 bg-gray-50/70 hover:bg-gray-50 rounded-2xl border border-gray-200/80 transition flex flex-col justify-between">
-                            <div>
-                                <div class="w-11 h-11 rounded-xl bg-white text-emerald-700 border border-gray-200 shadow-xs flex items-center justify-center font-bold mb-3.5">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18l6-6-6-6m-6 12l6-6-6-6"/></svg>
-                                </div>
-                                <div class="font-bold text-base text-gray-900">Printer Bluetooth</div>
-                                <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Pindai dan pilih printer Bluetooth nirkabel yang menyala di sekitar kasir (Kassen, Panda, RPP02N, dll).</p>
-                            </div>
-                            <button type="button" @click="scanAndConnectWebBluetooth()" class="mt-6 w-full py-2.5 px-4 bg-white hover:bg-emerald-50 text-emerald-800 border-2 border-emerald-600 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <span>Cari Printer Bluetooth</span>
-                            </button>
+                <!-- Auto Print Toggle -->
+                <div class="p-4 bg-gray-50/80 rounded-xl border border-gray-200/80 flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-sm text-gray-900">Cetak Struk Otomatis</div>
+                        <div class="text-xs text-gray-500 mt-0.5">Struk langsung tercetak setiap selesai transaksi</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                        <input type="checkbox" x-model="autoPrintReceipt" @change="saveAutoPrintSettings" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                    </label>
+                </div>
+
+                <!-- Tombol Koneksi -->
+                <div class="space-y-3">
+                    <!-- Tombol Bluetooth (auto-try Print Agent → BLE) -->
+                    <button type="button" @click="connectBluetooth()"
+                        :disabled="isConnectingBT"
+                        class="w-full py-4 px-5 rounded-2xl border-2 flex items-center gap-4 transition-all cursor-pointer"
+                        :class="isConnectingBT ? 'bg-gray-50 border-gray-200 cursor-not-allowed' : 'bg-white hover:bg-emerald-50 border-emerald-500 hover:border-emerald-600 hover:shadow-md active:scale-[0.99]'">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition"
+                            :class="isConnectingBT ? 'bg-gray-100 text-gray-400' : 'bg-emerald-50 text-emerald-600'">
+                            <!-- Spinner saat loading -->
+                            <template x-if="isConnectingBT">
+                                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                            </template>
+                            <!-- Icon Bluetooth normal -->
+                            <template x-if="!isConnectingBT">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18l6-6-6-6m-6 12l6-6-6-6"/>
+                                </svg>
+                            </template>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-bold text-sm" :class="isConnectingBT ? 'text-gray-400' : 'text-gray-900'"
+                                x-text="isConnectingBT ? 'Menghubungkan...' : 'Sambungkan via Bluetooth'"></div>
+                            <div class="text-xs mt-0.5" :class="isConnectingBT ? 'text-gray-400' : 'text-gray-500'"
+                                x-text="isConnectingBT ? 'Sedang mencari printer, harap tunggu...' : 'Untuk printer nirkabel yang sudah dipasangkan'"></div>
+                        </div>
+                    </button>
+
+                    <!-- Tombol Kabel USB -->
+                    <button type="button" @click="scanAndConnectWebSerial()"
+                        class="w-full py-4 px-5 rounded-2xl border-2 bg-white hover:bg-blue-50 border-blue-400 hover:border-blue-500 flex items-center gap-4 transition-all hover:shadow-md active:scale-[0.99] cursor-pointer">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <div class="font-bold text-sm text-gray-900">Sambungkan via Kabel USB</div>
+                            <div class="text-xs text-gray-500 mt-0.5">Untuk printer yang terhubung dengan kabel ke komputer</div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Teks bantuan -->
+                <p class="text-xs text-gray-400 text-center">
+                    Pastikan printer sudah menyala sebelum menekan tombol di atas.
+                </p>
+
+                <!-- Atur Koneksi Manual (accordion) -->
+                <div class="border border-gray-200 rounded-2xl overflow-hidden">
+                    <!-- Header accordion -->
+                    <button type="button" @click="showManualForm = !showManualForm"
+                        class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition text-left cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span class="text-xs font-semibold text-gray-500">Koneksi Manual (Pengaturan Lanjutan)</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" :class="showManualForm ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+
+                    <!-- Konten accordion -->
+                    <div x-show="showManualForm"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 -translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 -translate-y-1"
+                        class="px-4 pb-4 pt-3 space-y-3 bg-white">
+
+                        <!-- Peringatan -->
+                        <div class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                            <svg class="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <p class="text-xs text-amber-700 leading-relaxed">
+                                Bagian ini untuk pengaturan lanjutan. Jika tidak yakin, gunakan tombol <strong>Sambungkan via Bluetooth</strong> di atas.
+                            </p>
                         </div>
 
-                        <!-- Mode 2: Web Serial (Kabel USB) -->
-                        <div class="p-5 bg-gray-50/70 hover:bg-gray-50 rounded-2xl border border-gray-200/80 transition flex flex-col justify-between">
-                            <div>
-                                <div class="w-11 h-11 rounded-xl bg-white text-emerald-700 border border-gray-200 shadow-xs flex items-center justify-center font-bold mb-3.5">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                </div>
-                                <div class="font-bold text-base text-gray-900">Printer Kabel USB</div>
-                                <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Hubungkan printer yang tercolok menggunakan kabel USB ke komputer atau laptop kasir.</p>
-                            </div>
-                            <button type="button" @click="scanAndConnectWebSerial()" class="mt-6 w-full py-2.5 px-4 bg-white hover:bg-emerald-50 text-emerald-800 border-2 border-emerald-600 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                <span>Pilih Kabel USB</span>
-                            </button>
+                        <!-- Input alamat -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5">
+                                Alamat Bluetooth atau Port USB
+                            </label>
+                            <input type="text"
+                                x-model="manualPrinterAddress"
+                                placeholder="Contoh: 05:37:57:E4:5A:23 atau COM3"
+                                class="w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 placeholder-gray-400 font-mono"
+                                @keydown.enter="connectManual()"
+                            />
+                            <p class="text-[11px] text-gray-400 mt-1">
+                                Bluetooth: isi dengan MAC address printer (lihat di pengaturan Bluetooth komputer).
+                                USB: isi dengan nama port seperti COM3 (Windows) atau /dev/ttyUSB0 (Linux).
+                            </p>
                         </div>
+
+                        <!-- Tombol sambungkan manual -->
+                        <button type="button" @click="connectManual()"
+                            :disabled="!manualPrinterAddress.trim() || isConnectingBT"
+                            class="w-full py-2.5 px-4 rounded-xl border-2 font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                            :class="!manualPrinterAddress.trim() || isConnectingBT
+                                ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                                : 'bg-white hover:bg-emerald-50 border-emerald-500 text-emerald-700 hover:shadow-md active:scale-[0.99]'">
+                            <template x-if="isConnectingBT">
+                                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                            </template>
+                            <span x-text="isConnectingBT ? 'Menghubungkan...' : 'Sambungkan'"></span>
+                        </button>
                     </div>
                 </div>
+
+                <!-- Note: Android tidak support -->
+                <p class="text-[11px] text-gray-300 text-center">
+                    ⚠️ Koneksi printer hanya tersedia di komputer Windows/Linux. Tidak support Android.
+                </p>
+
             </div>
 
             <!-- Footer Actions -->
@@ -5125,11 +5220,15 @@
                 printerConnected: false,
                 autoPrintReceipt: localStorage.getItem('pos_auto_print') === 'true',
                 printerDevice: null,
+                printerDeviceName: localStorage.getItem('pos_printer_name') || '',
                 printerType: 'bluetooth',
                 printerCharacteristic: null,
                 printerPort: null,
                 bridgeSocket: null,
                 printerConnectionMethod: null, // 'ble', 'serial', 'bridge'
+                isConnectingBT: false,
+                showManualForm: false,
+                manualPrinterAddress: localStorage.getItem('pos_printer_manual_addr') || '',
                 // State Modal Produk Kustom Fast Entry
                 showCustomProductModal: false,
                 customProductName: '',
@@ -5757,6 +5856,11 @@
                             }
                         }
                     });
+
+                    // Auto-reconnect printer jika sebelumnya pernah terhubung
+                    setTimeout(() => {
+                        this.autoConnectPrinter();
+                    }, 800);
                 },
 
                 saveHeldCarts() {
@@ -6178,6 +6282,223 @@
                     localStorage.setItem('pos_auto_print', this.autoPrintReceipt);
                 },
 
+                /**
+                 * Wrapper kasir-friendly untuk koneksi Bluetooth.
+                 * Urutan: Print Agent (Classic BT) → Web Bluetooth BLE (fallback)
+                 * Kasir tidak perlu tahu mekanisme di balik ini.
+                 */
+                /**
+                 * Koneksi manual dengan MAC address atau COM port yang diisi user.
+                 * Simpan ke localStorage (browser) DAN kirim ke Print Agent (config file).
+                 */
+                async connectManual() {
+                    const addr = this.manualPrinterAddress.trim();
+                    if (!addr || this.isConnectingBT) return;
+
+                    this.isConnectingBT = true;
+                    try {
+                        // Simpan ke localStorage supaya pre-fill next time
+                        localStorage.setItem('pos_printer_manual_addr', addr);
+
+                        // Kirim ke Print Agent
+                        const result = await new Promise((resolve) => {
+                            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                            const ws = new WebSocket(wsProtocol + '//localhost:8765');
+
+                            const timeout = setTimeout(() => {
+                                ws.close();
+                                resolve({ success: false, reason: 'timeout' });
+                            }, 15000); // Lebih lama karena harus bind rfcomm di Linux
+
+                            ws.onopen = () => {
+                                // Kirim config ke Print Agent
+                                // Print Agent akan detect sendiri apakah ini MAC atau COM port
+                                ws.send(JSON.stringify({ type: 'config', value: addr }));
+                            };
+
+                            ws.onmessage = (event) => {
+                                try {
+                                    const msg = JSON.parse(event.data);
+                                    if (msg.type === 'scanning' || msg.type === 'status') return;
+
+                                    if (msg.type === 'scan_result' || msg.type === 'config_result') {
+                                        clearTimeout(timeout);
+                                        if (msg.found || msg.connected) {
+                                            this.bridgeSocket = ws;
+                                            this.printerConnectionMethod = 'bridge';
+                                            this.printerType = 'bridge';
+                                            this.printerDeviceName = msg.name || addr;
+                                            this.printerConnected = true;
+
+                                            localStorage.setItem('pos_printer_name', this.printerDeviceName);
+                                            localStorage.setItem('pos_printer_type', 'bridge');
+
+                                            ws.onclose = () => {
+                                                this.printerConnected = false;
+                                                this.bridgeSocket = null;
+                                                this.printerConnectionMethod = null;
+                                                this.showToast('Koneksi printer terputus.', 'error');
+                                            };
+                                            ws.onmessage = (e) => {
+                                                try {
+                                                    const m = JSON.parse(e.data);
+                                                    if (m.type === 'error') this.showToast('Error Printer: ' + m.message, 'error');
+                                                    // Sync status dari Print Agent (misal: printer putus karena EIO)
+                                                    if (m.type === 'status') {
+                                                        const wasConnected = this.printerConnected;
+                                                        this.printerConnected = m.connected === true;
+                                                        if (wasConnected && !this.printerConnected) {
+                                                            this.showToast('Koneksi printer terputus. Klik Sambungkan untuk menghubungkan kembali.', 'error');
+                                                        }
+                                                    }
+                                                } catch (ex) {}
+                                            };
+
+                                            resolve({ success: true });
+                                        } else {
+                                            ws.close();
+                                            resolve({ success: false, message: msg.message });
+                                        }
+                                    }
+
+                                    if (msg.type === 'error') {
+                                        clearTimeout(timeout);
+                                        ws.close();
+                                        resolve({ success: false, message: msg.message });
+                                    }
+                                } catch (e) {}
+                            };
+
+                            ws.onerror = () => {
+                                clearTimeout(timeout);
+                                resolve({ success: false, reason: 'no_agent', message: 'Print Agent tidak berjalan di komputer ini.' });
+                            };
+                        });
+
+                        if (result.success) {
+                            this.showToast('Printer ' + this.printerDeviceName + ' berhasil terhubung!', 'success');
+                            this.showPrinterModal = false;
+                        } else {
+                            const msg = result.message || 'Gagal terhubung. Pastikan alamat benar dan printer menyala.';
+                            this.showToast(msg, 'error');
+                        }
+
+                    } catch (err) {
+                        console.error('[Manual Connect]', err);
+                        this.showToast('Terjadi kesalahan saat menghubungkan.', 'error');
+                    } finally {
+                        this.isConnectingBT = false;
+                    }
+                },
+
+                async connectBluetooth() {
+
+                    if (this.isConnectingBT) return;
+                    this.isConnectingBT = true;
+                    try {
+                        // Step 1: Coba Print Agent lokal (untuk Classic BT seperti RPP02N)
+                        const bridgeResult = await new Promise((resolve) => {
+                            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                            const ws = new WebSocket(wsProtocol + '//localhost:8765');
+                            const timeout = setTimeout(() => {
+                                ws.close();
+                                resolve({ success: false, reason: 'timeout' });
+                            }, 3000);
+
+                            ws.onopen = () => {
+                                // Minta Print Agent scan printer
+                                ws.send(JSON.stringify({ type: 'scan' }));
+                            };
+
+                            ws.onmessage = (event) => {
+                                try {
+                                    const msg = JSON.parse(event.data);
+                                    if (msg.type === 'scanning') {
+                                        // Print Agent sedang scanning, biarkan loading terus
+                                        return;
+                                    }
+                                    if (msg.type === 'scan_result') {
+                                        clearTimeout(timeout);
+                                        if (msg.found) {
+                                            // Printer ditemukan — simpan bridge untuk print
+                                            this.bridgeSocket = ws;
+                                            this.printerConnectionMethod = 'bridge';
+                                            this.printerType = 'bridge';
+                                            this.printerDeviceName = msg.name || 'Printer';
+                                            this.printerConnected = true;
+
+                                            localStorage.setItem('pos_printer_name', this.printerDeviceName);
+                                            localStorage.setItem('pos_printer_type', 'bridge');
+                                            if (msg.mac || msg.port) {
+                                                localStorage.setItem('pos_printer_manual_addr', msg.mac || msg.port);
+                                            }
+
+                                            ws.onclose = () => {
+                                                this.printerConnected = false;
+                                                this.bridgeSocket = null;
+                                                this.printerConnectionMethod = null;
+                                                this.showToast('Koneksi printer terputus.', 'error');
+                                            };
+
+                                            ws.onmessage = (e) => {
+                                                try {
+                                                    const m = JSON.parse(e.data);
+                                                    if (m.type === 'error') this.showToast('Error Printer: ' + m.message, 'error');
+                                                    // Sync status dari Print Agent (misal: printer putus karena EIO)
+                                                    if (m.type === 'status') {
+                                                        const wasConnected = this.printerConnected;
+                                                        this.printerConnected = m.connected === true;
+                                                        if (wasConnected && !this.printerConnected) {
+                                                            this.showToast('Koneksi printer terputus. Klik Sambungkan untuk menghubungkan kembali.', 'error');
+                                                        }
+                                                    }
+                                                } catch (ex) {}
+                                            };
+
+                                            resolve({ success: true });
+                                        } else {
+                                            // Print Agent jalan tapi printer tidak ditemukan
+                                            ws.close();
+                                            resolve({ success: false, reason: 'not_found', message: msg.message });
+                                        }
+                                    } else if (msg.type === 'status') {
+                                        // Abaikan status awal, tunggu scan_result
+                                    }
+                                } catch (e) {}
+                            };
+
+                            ws.onerror = () => {
+                                clearTimeout(timeout);
+                                resolve({ success: false, reason: 'no_agent' });
+                            };
+                        });
+
+                        if (bridgeResult.success) {
+                            this.showToast('Printer ' + this.printerDeviceName + ' berhasil terhubung!', 'success');
+                            this.showPrinterModal = false;
+                            return;
+                        }
+
+                        if (bridgeResult.reason === 'not_found') {
+                            // Print Agent jalan tapi tidak temukan printer
+                            this.showToast(
+                                'Printer tidak ditemukan. Pastikan printer sudah dipasangkan di Bluetooth Settings dan dalam keadaan menyala.',
+                                'error'
+                            );
+                            return;
+                        }
+
+                        // Step 2: Print Agent tidak ada — fallback ke Web Bluetooth BLE
+                        await this.scanAndConnectWebBluetooth();
+
+                    } catch (err) {
+                        console.error('[BT Wrapper]', err);
+                        this.showToast('Gagal menghubungkan printer. Pastikan printer menyala.', 'error');
+                    } finally {
+                        this.isConnectingBT = false;
+                    }
+                },
+
                 async scanAndConnectWebBluetooth() {
                     if (!navigator.bluetooth) {
                         this.showToast('Browser Anda tidak mendukung koneksi Bluetooth langsung. Gunakan Chrome atau Edge.', 'error');
@@ -6348,7 +6669,126 @@
                     this.printerPort = null;
                     this.bridgeSocket = null;
                     this.printerDeviceName = '';
+                    localStorage.removeItem('pos_printer_type');
                     this.showToast('Koneksi printer berhasil diputuskan.', 'info');
+                },
+
+                autoConnectPrinter() {
+                    if (this.printerConnected) return;
+
+                    const savedType = localStorage.getItem('pos_printer_type');
+                    const savedAddr = localStorage.getItem('pos_printer_manual_addr') || '';
+                    const savedName = localStorage.getItem('pos_printer_name') || '';
+
+                    if (savedType !== 'bridge' && !savedAddr) return;
+
+                    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = wsProtocol + '//localhost:8765';
+                    
+                    let ws;
+                    try {
+                        ws = new WebSocket(wsUrl);
+                    } catch (e) {
+                        return; // Silent fail jika Print Agent tidak berjalan
+                    }
+
+                    const timeout = setTimeout(() => {
+                        try { ws.close(); } catch (e) {}
+                    }, 5000);
+
+                    ws.onopen = () => {
+                        // Request status saat ini ke Print Agent
+                        ws.send(JSON.stringify({ type: 'status' }));
+                    };
+
+                    ws.onmessage = (event) => {
+                        try {
+                            const msg = JSON.parse(event.data);
+
+                            if (msg.type === 'status') {
+                                if (msg.connected) {
+                                    clearTimeout(timeout);
+                                    this.bridgeSocket = ws;
+                                    this.printerConnectionMethod = 'bridge';
+                                    this.printerType = 'bridge';
+                                    this.printerDeviceName = msg.name || savedName || 'Printer Bluetooth';
+                                    this.printerConnected = true;
+                                    this.showToast('Printer ' + this.printerDeviceName + ' terhubung otomatis!', 'success');
+
+                                    ws.onclose = () => {
+                                        this.printerConnected = false;
+                                        this.bridgeSocket = null;
+                                        this.printerConnectionMethod = null;
+                                    };
+                                    ws.onmessage = (e) => {
+                                        try {
+                                            const m = JSON.parse(e.data);
+                                            if (m.type === 'status') {
+                                                this.printerConnected = m.connected === true;
+                                            }
+                                        } catch (ex) {}
+                                    };
+                                } else if (savedAddr) {
+                                    // Print Agent jalan tapi printer belum terhubung -> coba hubungkan ke alamat tersimpan
+                                    ws.send(JSON.stringify({ type: 'config', value: savedAddr }));
+                                }
+                            } else if (msg.type === 'scan_result' || msg.type === 'config_result') {
+                                clearTimeout(timeout);
+                                if (msg.found || msg.connected) {
+                                    this.bridgeSocket = ws;
+                                    this.printerConnectionMethod = 'bridge';
+                                    this.printerType = 'bridge';
+                                    this.printerDeviceName = msg.name || savedName || savedAddr;
+                                    this.printerConnected = true;
+                                    this.showToast('Printer ' + this.printerDeviceName + ' terhubung otomatis!', 'success');
+
+                                    ws.onclose = () => {
+                                        this.printerConnected = false;
+                                        this.bridgeSocket = null;
+                                        this.printerConnectionMethod = null;
+                                    };
+                                    ws.onmessage = (e) => {
+                                        try {
+                                            const m = JSON.parse(e.data);
+                                            if (m.type === 'status') {
+                                                this.printerConnected = m.connected === true;
+                                            }
+                                        } catch (ex) {}
+                                    };
+                                } else {
+                                    try { ws.close(); } catch (e) {}
+                                }
+                            }
+                        } catch (e) {}
+                    };
+
+                    ws.onerror = () => {
+                        clearTimeout(timeout);
+                    };
+                },
+
+                printTestReceipt() {
+                    let escpos = "\x1B\x40"; // Init
+                    escpos += "\x1B\x61\x01"; // Center align
+                    escpos += "RAABIHA STORE\n";
+                    escpos += "TES PRINTER THERMAL\n";
+                    escpos += "--------------------------------\n";
+                    escpos += "\x1B\x61\x00"; // Left align
+                    escpos += "Ini adalah cetak uji coba untuk\nmemastikan koneksi printer.\n";
+                    escpos += "Jika tulisan ini bisa terbaca\ndengan jelas tanpa garis-garis,\nberarti printer berjalan normal.\n";
+                    escpos += "--------------------------------\n";
+                    escpos += "1x Produk Tes          50.000\n";
+                    escpos += "2x Kopi Susu          100.000\n";
+                    escpos += "--------------------------------\n";
+                    escpos += "\x1B\x61\x02"; // Right align
+                    escpos += "TOTAL: 150.000\n";
+                    escpos += "\x1B\x61\x01"; // Center
+                    escpos += "TERIMA KASIH\n";
+                    escpos += "\x0A\x0A\x0A\x0A\x0A"; // Feed
+                    
+                    const b64 = btoa(escpos);
+                    this.printBase64(b64, null);
+                    this.showToast('Mengirim struk uji coba ke printer...', 'info');
                 },
 
                 async printBase64(base64Data, orderId = null) {
