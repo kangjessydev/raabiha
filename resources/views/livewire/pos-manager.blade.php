@@ -6302,7 +6302,7 @@
 
                         // Kirim ke Print Agent
                         const result = await new Promise((resolve) => {
-                            const ws = new WebSocket('ws://localhost:8765');
+                            const ws = new WebSocket('ws://127.0.0.1:8765');
 
                             const timeout = setTimeout(() => {
                                 ws.close();
@@ -6397,7 +6397,7 @@
                     try {
                         // Step 1: Coba Print Agent lokal (untuk Classic BT seperti RPP02N)
                         const bridgeResult = await new Promise((resolve) => {
-                            const ws = new WebSocket('ws://localhost:8765');
+                            const ws = new WebSocket('ws://127.0.0.1:8765');
                             const timeout = setTimeout(() => {
                                 ws.close();
                                 resolve({ success: false, reason: 'timeout' });
@@ -6601,7 +6601,7 @@
 
                 async connectToBridge(showNotify = false) {
                     return new Promise((resolve, reject) => {
-                        const wsUrl = 'ws://localhost:8765';
+                        const wsUrl = 'ws://127.0.0.1:8765';
                         const ws = new WebSocket(wsUrl);
                         
                         ws.onopen = () => {
@@ -6679,7 +6679,7 @@
 
                     if (savedType !== 'bridge' && !savedAddr) return;
 
-                    const wsUrl = 'ws://localhost:8765';
+                    const wsUrl = 'ws://127.0.0.1:8765';
                     
                     let ws;
                     try {

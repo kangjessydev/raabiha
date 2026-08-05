@@ -19,6 +19,7 @@ const HEARTBEAT_INTERVAL_MS = 30000;
 function createServer(port, printer) {
     const wss = new WebSocket.Server({
         port,
+        host: '0.0.0.0',
         // Allow connections dari semua origin (HTTPS raabiha.com + localhost)
         verifyClient: () => true
     });
