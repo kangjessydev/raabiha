@@ -178,6 +178,16 @@ function createServer(port, printer) {
                     }
                     break;
 
+                case 'list_devices':
+                    // Browser minta daftar perangkat Bluetooth yang sudah di-pair
+                    try {
+                        const devices = await printer.listPairedDevices();
+                        ws.send(JSON.stringify({ type: 'devices_list', devices }));
+                    } catch (err) {
+                        ws.send(JSON.stringify({ type: 'devices_list', devices: [], error: err.message }));
+                    }
+                    break;
+
                 default:
                     ws.send(JSON.stringify({ type: 'error', message: 'Perintah tidak dikenal: ' + msg.type }));
             }

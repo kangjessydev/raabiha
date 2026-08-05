@@ -30,6 +30,8 @@ class BluetoothPrinter extends EventEmitter {
         this.platform = os.platform();
         this.scanTarget = null;  // 'bluetooth', 'usb', atau null (generic)
         this.currentPath = null; // path port yang sedang aktif
+        this.retryCount = 0;     // jumlah reconnect attempt berturut-turut
+        this.MAX_RETRIES = 3;    // hentikan auto-reconnect setelah N kali gagal
     }
 
     _getSerialPath() {
@@ -386,6 +388,7 @@ class BluetoothPrinter extends EventEmitter {
 
             this.connected = true;
             this.connecting = false;
+            this.retryCount = 0; // reset retry counter saat sukses
             this.emit('connected');
             this._startHeartbeat();
 
@@ -443,7 +446,16 @@ class BluetoothPrinter extends EventEmitter {
 
     _scheduleReconnect() {
         if (this.reconnectTimer) return;
-        console.log(`[BT] Retry dalam ${RECONNECT_DELAY_MS / 1000}s...`);
+
+        this.retryCount++;
+        if (this.retryCount > this.MAX_RETRIES) {
+            console.warn(`[BT] Printer tidak merespons setelah ${this.MAX_RETRIES} percobaan. Auto-reconnect dihentikan.`);
+            console.warn('[BT] Silakan hubungkan kembali secara manual dari halaman POS.');
+            this.retryCount = 0; // reset agar bisa coba lagi dari UI
+            return;
+        }
+
+        console.log(`[BT] Retry ${this.retryCount}/${this.MAX_RETRIES} dalam ${RECONNECT_DELAY_MS / 1000}s...`);
         this.reconnectTimer = setTimeout(() => {
             this.reconnectTimer = null;
             this.connect().catch(() => {});
@@ -584,6 +596,46 @@ class BluetoothPrinter extends EventEmitter {
             scanTarget: this.scanTarget || null,
             platform: this.platform,
         };
+    }
+
+    /**
+     * List semua perangkat Bluetooth yang sudah di-pair di sistem.
+     * Linux: parse `bluetoothctl devices`
+     * Windows: parse list dari SerialPort dengan keyword BT
+     * @returns {Promise<Array<{mac: string, name: string}>>}
+     */
+    async listPairedDevices() {
+        if (this.platform === 'linux') {
+            try {
+                const { stdout } = await execAsync('bluetoothctl devices 2>/dev/null');
+                const devices = [];
+                stdout.split('\n').forEach(line => {
+                    const match = line.match(/^Device\s+([0-9A-Fa-f:]{17})\s+(.+)$/);
+                    if (match) {
+                        devices.push({ mac: match[1].trim(), name: match[2].trim() });
+                    }
+                });
+                return devices;
+            } catch (e) {
+                console.warn('[BT] Gagal list paired devices:', e.message);
+                return [];
+            }
+        }
+
+        // Windows: tidak ada cara mudah tanpa extra tooling,
+        // kembalikan daftar port COM dengan kata BT di deskripsinya
+        try {
+            const ports = await SerialPort.list();
+            const btKeywords = ['bluetooth', 'rfcomm', 'bt port', 'spp'];
+            return ports
+                .filter(p => {
+                    const desc = ((p.friendlyName || '') + ' ' + (p.manufacturer || '')).toLowerCase();
+                    return btKeywords.some(kw => desc.includes(kw));
+                })
+                .map(p => ({ mac: p.path, name: p.friendlyName || p.path }));
+        } catch (e) {
+            return [];
+        }
     }
 }
 

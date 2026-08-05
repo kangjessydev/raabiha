@@ -4856,6 +4856,83 @@
                     </button>
                 </div>
 
+                <!-- Panel: Scan Perangkat Bluetooth Terpasang -->
+                <div class="border border-emerald-200 rounded-2xl overflow-hidden">
+                    <button type="button"
+                        @click="showDeviceList = !showDeviceList; if(showDeviceList && pairedDevices.length === 0) loadPairedDevices()"
+                        class="w-full flex items-center justify-between px-4 py-3 bg-emerald-50 hover:bg-emerald-100 transition text-left cursor-pointer">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <span class="text-xs font-semibold text-emerald-700">Pilih Printer dari Daftar Perangkat Terpasang</span>
+                        </div>
+                        <svg class="w-4 h-4 text-emerald-500 transition-transform duration-200" :class="showDeviceList ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+
+                    <div x-show="showDeviceList"
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 -translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 -translate-y-1"
+                        class="px-4 pb-4 pt-3 bg-white space-y-2">
+
+                        <p class="text-xs text-gray-500 mb-2">Pilih printer Bluetooth Classic yang sudah dipasangkan di pengaturan Bluetooth komputer Anda.</p>
+
+                        <!-- Loading -->
+                        <template x-if="loadingDevices">
+                            <div class="flex items-center justify-center py-4 gap-2 text-gray-400">
+                                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                <span class="text-xs">Memuat daftar perangkat...</span>
+                            </div>
+                        </template>
+
+                        <!-- Kosong -->
+                        <template x-if="!loadingDevices && pairedDevices.length === 0">
+                            <div class="text-center py-4">
+                                <p class="text-xs text-gray-400 mb-2">Tidak ada perangkat Bluetooth yang terpasang.</p>
+                                <p class="text-xs text-amber-600 font-medium">Langkah: Buka Pengaturan Bluetooth di komputer → Tambahkan printer Kassen → Kembali ke sini dan klik Muat Ulang.</p>
+                                <button type="button" @click="loadPairedDevices()"
+                                    class="mt-2 text-xs text-emerald-600 hover:underline cursor-pointer">Muat Ulang</button>
+                            </div>
+                        </template>
+
+                        <!-- Daftar device -->
+                        <template x-if="!loadingDevices && pairedDevices.length > 0">
+                            <div class="space-y-1.5">
+                                <template x-for="dev in pairedDevices" :key="dev.mac">
+                                    <button type="button"
+                                        @click="connectWithMac(dev.mac, dev.name)"
+                                        :disabled="isConnectingBT"
+                                        class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-emerald-50 hover:border-emerald-300 transition cursor-pointer">
+                                        <div class="flex items-center gap-2.5 text-left">
+                                            <div class="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18l6-6-6-6m-6 12l6-6-6-6"/>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-800" x-text="dev.name"></div>
+                                                <div class="text-xs text-gray-400 font-mono" x-text="dev.mac"></div>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-emerald-600 font-medium">Hubungkan</span>
+                                    </button>
+                                </template>
+                                <button type="button" @click="loadPairedDevices()"
+                                    class="w-full text-xs text-gray-400 hover:text-gray-600 py-1 cursor-pointer">↻ Muat Ulang</button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
                 <!-- Teks bantuan -->
                 <p class="text-xs text-gray-400 text-center">
                     Pastikan printer sudah menyala sebelum menekan tombol di atas.
@@ -5243,6 +5320,9 @@
                 printerConnectionMethod: null, // 'ble', 'serial', 'bridge'
                 isConnectingBT: false,
                 isConnectingUSB: false,
+                pairedDevices: [],
+                loadingDevices: false,
+                showDeviceList: false,
                 showManualForm: false,
                 manualPrinterAddress: localStorage.getItem('pos_printer_manual_addr') || '',
                 // State Modal Produk Kustom Fast Entry
@@ -6401,6 +6481,116 @@
                     } catch (err) {
                         console.error('[Manual Connect]', err);
                         this.showToast('Terjadi kesalahan saat menghubungkan.', 'error');
+                    } finally {
+                        this.isConnectingBT = false;
+                    }
+                },
+
+                /**
+                 * Muat daftar perangkat Bluetooth yang sudah di-pair di sistem
+                 * via Print Agent → bluetoothctl devices
+                 */
+                async loadPairedDevices() {
+                    this.loadingDevices = true;
+                    this.pairedDevices = [];
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const ws = new WebSocket('ws://127.0.0.1:8765');
+                            const timeout = setTimeout(() => { ws.close(); resolve(); }, 5000);
+
+                            ws.onopen = () => { ws.send(JSON.stringify({ type: 'list_devices' })); };
+                            ws.onmessage = (event) => {
+                                try {
+                                    const msg = JSON.parse(event.data);
+                                    if (msg.type === 'devices_list') {
+                                        clearTimeout(timeout);
+                                        this.pairedDevices = msg.devices || [];
+                                        ws.close();
+                                        resolve();
+                                    }
+                                } catch (e) {}
+                            };
+                            ws.onerror = () => { clearTimeout(timeout); resolve(); };
+                        });
+                    } catch (e) {}
+                    this.loadingDevices = false;
+                },
+
+                /**
+                 * Hubungkan ke printer Bluetooth Classic menggunakan MAC address yang dipilih dari daftar
+                 */
+                async connectWithMac(mac, name) {
+                    if (this.isConnectingBT) return;
+                    this.isConnectingBT = true;
+                    this.showToast('Menghubungkan ke ' + name + '...', 'info');
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const ws = new WebSocket('ws://127.0.0.1:8765');
+                            const timeout = setTimeout(() => {
+                                ws.close();
+                                reject(new Error('Timeout menghubungkan ke ' + name));
+                            }, 30000); // rfcomm bind butuh waktu lebih lama
+
+                            ws.onopen = () => {
+                                ws.send(JSON.stringify({ type: 'config', value: mac, target: 'bluetooth' }));
+                            };
+
+                            ws.onmessage = (event) => {
+                                try {
+                                    const msg = JSON.parse(event.data);
+                                    if (msg.type === 'scanning') return; // masih proses, tunggu
+
+                                    if (msg.type === 'config_result') {
+                                        clearTimeout(timeout);
+                                        if (msg.found || msg.connected) {
+                                            this.bridgeSocket = ws;
+                                            this.printerConnectionMethod = 'bridge';
+                                            this.printerType = 'bridge';
+                                            this.printerDeviceName = name;
+                                            this.printerConnected = true;
+
+                                            localStorage.setItem('pos_printer_name', name);
+                                            localStorage.setItem('pos_printer_type', 'bridge');
+                                            localStorage.setItem('pos_printer_manual_addr', mac);
+
+                                            ws.onclose = () => {
+                                                this.printerConnected = false;
+                                                this.bridgeSocket = null;
+                                                this.printerConnectionMethod = null;
+                                                this.showToast('Koneksi printer ' + name + ' terputus.', 'error');
+                                            };
+                                            ws.onmessage = (e) => {
+                                                try {
+                                                    const m = JSON.parse(e.data);
+                                                    if (m.type === 'status') {
+                                                        const wasConnected = this.printerConnected;
+                                                        this.printerConnected = m.connected === true;
+                                                        if (wasConnected && !this.printerConnected) {
+                                                            this.showToast('Koneksi printer ' + name + ' terputus.', 'error');
+                                                        }
+                                                    }
+                                                } catch (ex) {}
+                                            };
+
+                                            resolve();
+                                        } else {
+                                            ws.close();
+                                            reject(new Error(msg.message || 'Printer tidak merespons. Pastikan printer menyala.'));
+                                        }
+                                    }
+                                } catch (e) {}
+                            };
+
+                            ws.onerror = () => {
+                                clearTimeout(timeout);
+                                reject(new Error('Tidak bisa terhubung ke Print Agent.'));
+                            };
+                        });
+
+                        this.showToast('Printer ' + name + ' berhasil terhubung!', 'success');
+                        this.showPrinterModal = false;
+                    } catch (err) {
+                        this.showToast(err.message, 'error');
                     } finally {
                         this.isConnectingBT = false;
                     }
