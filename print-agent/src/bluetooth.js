@@ -44,7 +44,16 @@ class BluetoothPrinter extends EventEmitter {
      */
     async listPorts() {
         try {
-            return await SerialPort.list();
+            const ports = await SerialPort.list();
+            if (this.platform === 'linux') {
+                const fs = require('fs');
+                ['/dev/usb/lp0', '/dev/usb/lp1', '/dev/usb/lp2'].forEach(lp => {
+                    if (fs.existsSync(lp)) {
+                        ports.push({ path: lp, friendlyName: 'USB Thermal Printer (' + lp + ')' });
+                    }
+                });
+            }
+            return ports;
         } catch (err) {
             console.error('[SCAN] Gagal list port:', err.message);
             return [];
@@ -216,8 +225,10 @@ class BluetoothPrinter extends EventEmitter {
                 this.port = {
                     isOpen: true,
                     write: (data, cb) => {
-                        const ok = stream.write(data, cb);
-                        if (ok && cb && data.length < 10) cb(); // status check fallback
+                        stream.write(data, cb);
+                    },
+                    drain: (cb) => {
+                        if (cb) cb(null);
                     },
                     close: (cb) => {
                         try { stream.end(); } catch (e) {}
@@ -410,8 +421,8 @@ class BluetoothPrinter extends EventEmitter {
                 } catch (e) {}
             }
 
-            // Jika sedang ada proses cetak aktif, lewatkan write ping agar tidak bentrok
-            if (this.isWriting) return;
+            // Jika sedang ada proses cetak aktif atau menggunakan USB raw character device, lewatkan write ping
+            if (this.isWriting || this._getSerialPath().startsWith('/dev/usb/lp')) return;
 
             const pingBuf = Buffer.from([0x10, 0x04, 0x01]);
             this.port.write(pingBuf, (err) => {
