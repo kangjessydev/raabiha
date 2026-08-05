@@ -28,6 +28,8 @@ class BluetoothPrinter extends EventEmitter {
         this.connecting = false;
         this.reconnectTimer = null;
         this.platform = os.platform();
+        this.scanTarget = null;  // 'bluetooth', 'usb', atau null (generic)
+        this.currentPath = null; // path port yang sedang aktif
     }
 
     _getSerialPath() {
@@ -105,6 +107,92 @@ class BluetoothPrinter extends EventEmitter {
         }
 
         console.log('[SCAN] Tidak ada printer yang merespons di semua port.');
+        return null;
+    }
+
+    /**
+     * Auto-scan HANYA port Bluetooth/rfcomm.
+     */
+    async autoScanBluetooth() {
+        console.log('[SCAN] Scanning port Bluetooth saja...');
+        const fs = require('fs');
+        const ports = [];
+
+        // Linux: coba /dev/rfcomm0, rfcomm1, rfcomm2
+        if (this.platform === 'linux') {
+            ['/dev/rfcomm0', '/dev/rfcomm1', '/dev/rfcomm2'].forEach(p => {
+                if (fs.existsSync(p)) ports.push({ path: p });
+            });
+        }
+
+        // Tambah dari SerialPort.list() yang mengandung kata BT
+        try {
+            const allPorts = await SerialPort.list();
+            const btKeywords = ['bluetooth', 'bt port', 'rfcomm', 'spp', 'serial port (spp)'];
+            allPorts.forEach(p => {
+                const desc = ((p.friendlyName || '') + ' ' + (p.manufacturer || '') + ' ' + (p.pnpId || '')).toLowerCase();
+                if (btKeywords.some(kw => desc.includes(kw)) && !ports.find(x => x.path === p.path)) {
+                    ports.push(p);
+                }
+            });
+        } catch (e) {}
+
+        if (ports.length === 0) {
+            console.log('[SCAN] Tidak ada port Bluetooth yang ditemukan.');
+            return null;
+        }
+        console.log('[SCAN] Kandidat port BT:', ports.map(p => p.path).join(', '));
+
+        for (const portInfo of ports) {
+            const ok = await this._tryPort(portInfo.path);
+            if (ok) {
+                console.log(`[SCAN] ✅ Bluetooth printer di: ${portInfo.path}`);
+                this.config.serial_port = portInfo.path;
+                return portInfo.path;
+            }
+        }
+        console.log('[SCAN] Bluetooth printer tidak merespons.');
+        return null;
+    }
+
+    /**
+     * Auto-scan HANYA port USB printer.
+     */
+    async autoScanUsb() {
+        console.log('[SCAN] Scanning port USB saja...');
+        const fs = require('fs');
+
+        if (this.platform === 'linux') {
+            const usbPaths = ['/dev/usb/lp0', '/dev/usb/lp1', '/dev/usb/lp2'];
+            for (const usbPath of usbPaths) {
+                if (fs.existsSync(usbPath)) {
+                    console.log(`[SCAN] ✅ USB printer di: ${usbPath}`);
+                    this.config.serial_port = usbPath;
+                    return usbPath;
+                }
+            }
+            console.log('[SCAN] /dev/usb/lp* tidak ditemukan. Pastikan kabel USB terhubung.');
+            return null;
+        }
+
+        // Windows: cari COM port dengan keyword USB printer
+        try {
+            const allPorts = await SerialPort.list();
+            const usbKeywords = ['usb', 'printer', 'usbprint'];
+            const usbPorts = allPorts.filter(p => {
+                const desc = ((p.friendlyName || '') + ' ' + (p.manufacturer || '') + ' ' + (p.pnpId || '')).toLowerCase();
+                return usbKeywords.some(kw => desc.includes(kw));
+            });
+            for (const portInfo of usbPorts) {
+                const ok = await this._tryPort(portInfo.path);
+                if (ok) {
+                    console.log(`[SCAN] ✅ USB printer di: ${portInfo.path}`);
+                    this.config.serial_port = portInfo.path;
+                    return portInfo.path;
+                }
+            }
+        } catch (e) {}
+        console.log('[SCAN] USB printer tidak ditemukan.');
         return null;
     }
 
@@ -199,8 +287,8 @@ class BluetoothPrinter extends EventEmitter {
         this.connecting = true;
 
         try {
-            // Linux: bind rfcomm dulu jika ada MAC
-            if (this.platform === 'linux' && this.config.printer_mac) {
+            // Linux: bind rfcomm hanya jika target adalah Bluetooth
+            if (this.platform === 'linux' && this.config.printer_mac && this.scanTarget !== 'usb') {
                 await this._bindRfcomm();
                 await new Promise(r => setTimeout(r, 1000));
             }
@@ -209,40 +297,66 @@ class BluetoothPrinter extends EventEmitter {
 
             // Auto-scan jika belum ada path yang dikonfigurasi
             if (!serialPath) {
-                console.log('[BT] Tidak ada serial_port di config, memulai auto-scan...');
-                serialPath = await this.autoScan();
+                let scanFn;
+                if (this.scanTarget === 'bluetooth') {
+                    console.log('[BT] Target Bluetooth — scan port rfcomm/BT...');
+                    scanFn = this.autoScanBluetooth.bind(this);
+                } else if (this.scanTarget === 'usb') {
+                    console.log('[USB] Target USB — scan port /dev/usb/lp*...');
+                    scanFn = this.autoScanUsb.bind(this);
+                } else {
+                    console.log('[BT] Tidak ada target spesifik, auto-scan semua port...');
+                    scanFn = this.autoScan.bind(this);
+                }
+
+                serialPath = await scanFn();
 
                 if (!serialPath) {
                     this.connecting = false;
                     this.emit('disconnected');
-                    throw new Error('Printer tidak ditemukan. Pastikan printer sudah di-pair di Bluetooth Settings dan dalam keadaan menyala.');
+                    const hint = this.scanTarget === 'usb'
+                        ? 'Printer USB tidak ditemukan. Pastikan kabel USB terhubung dan printer menyala.'
+                        : 'Printer Bluetooth tidak ditemukan. Pastikan printer sudah di-pair dan menyala.';
+                    throw new Error(hint);
                 }
 
-                // Simpan ke config agar startup berikutnya langsung konek
                 this.config.serial_port = serialPath;
                 saveConfig(this.config);
-                console.log(`[BT] Config otomatis disimpan: serial_port = ${serialPath}`);
+                console.log(`[BT] Config disimpan: serial_port = ${serialPath}`);
             }
 
+            this.currentPath = serialPath;
             console.log(`[SERIAL] Membuka ${serialPath} @ ${BAUD_RATE} baud...`);
 
             const fs = require('fs');
             if (serialPath.startsWith('/dev/usb/lp')) {
+                // USB raw device — gunakan EventEmitter proper agar event close/error berfungsi
+                const { EventEmitter: EvEm } = require('events');
+                const usbEmitter = new EvEm();
                 const stream = fs.createWriteStream(serialPath, { flags: 'a' });
+
                 this.port = {
                     isOpen: true,
-                    write: (data, cb) => {
-                        stream.write(data, cb);
-                    },
-                    drain: (cb) => {
-                        if (cb) cb(null);
-                    },
+                    path: serialPath,
+                    write: (data, cb) => { stream.write(data, cb); },
+                    drain: (cb) => { if (cb) cb(null); },
                     close: (cb) => {
+                        this.port.isOpen = false;
                         try { stream.end(); } catch (e) {}
+                        usbEmitter.emit('close');
                         if (cb) cb();
                     },
-                    on: () => {}
+                    on: (event, handler) => usbEmitter.on(event, handler),
                 };
+
+                stream.on('error', (err) => { usbEmitter.emit('error', err); });
+                stream.on('close', () => {
+                    if (this.port) this.port.isOpen = false;
+                    usbEmitter.emit('close');
+                });
+
+                // USB lp device: tidak perlu verify write (DLE EOT bisa bingungkan printer)
+                console.log('[SERIAL] ✅ USB printer terbuka!');
             } else {
                 this.port = new SerialPort({
                     path: serialPath,
@@ -253,22 +367,23 @@ class BluetoothPrinter extends EventEmitter {
                 await new Promise((resolve, reject) => {
                     this.port.open((err) => err ? reject(err) : resolve());
                 });
+
+                // Verifikasi dengan test write (penting untuk rfcomm di Linux)
+                await new Promise((resolve, reject) => {
+                    const statusQuery = Buffer.from([0x10, 0x04, 0x01]);
+                    this.port.write(statusQuery, (err) => {
+                        if (err) {
+                            this.port.close(() => {});
+                            reject(new Error('Printer tidak merespons. Pastikan printer menyala.'));
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
+
+                console.log('[SERIAL] ✅ Port terbuka dan terverifikasi!');
             }
 
-            // Verifikasi koneksi dengan test write (penting untuk Linux rfcomm karena open() selalu sukses)
-            await new Promise((resolve, reject) => {
-                const statusQuery = Buffer.from([0x10, 0x04, 0x01]);
-                this.port.write(statusQuery, (err) => {
-                    if (err) {
-                        this.port.close(() => {});
-                        reject(new Error('Printer tidak merespons. Pastikan printer menyala dan alamat benar.'));
-                    } else {
-                        resolve();
-                    }
-                });
-            });
-
-            console.log('[SERIAL] ✅ Port terbuka dan terverifikasi!');
             this.connected = true;
             this.connecting = false;
             this.emit('connected');
@@ -279,6 +394,7 @@ class BluetoothPrinter extends EventEmitter {
                 this._stopHeartbeat();
                 this.connected = false;
                 this.port = null;
+                this.currentPath = null;
                 this.emit('disconnected');
                 this._scheduleReconnect();
             });
@@ -303,10 +419,8 @@ class BluetoothPrinter extends EventEmitter {
      * Paksa re-scan — dipanggil dari server.js saat browser minta scan ulang
      * (misal: printer baru di-pair, atau ganti printer)
      */
-    async rescan() {
+    async rescan(targetPort = null) {
         console.log('[SCAN] Rescan diminta...');
-        // Reset path agar connect() akan scan ulang
-        this.config.serial_port = '';
 
         if (this.port && this.port.isOpen) {
             try { await new Promise(r => this.port.close(() => r())); } catch (e) {}
@@ -314,10 +428,15 @@ class BluetoothPrinter extends EventEmitter {
         this.connected = false;
         this.connecting = false;
         this.port = null;
+        this.currentPath = null;
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
         }
+
+        // Jika ada targetPort → set langsung (tidak di-reset)
+        // Jika tidak → reset ke '' agar connect() auto-scan sesuai scanTarget
+        this.config.serial_port = targetPort || '';
 
         return this.connect();
     }
@@ -352,12 +471,12 @@ class BluetoothPrinter extends EventEmitter {
                     await new Promise((resolve, reject) => {
                         this.port.write(chunk, (err) => {
                             if (err) {
-                                if (this.port.isOpen) this.port.close();
+                                if (this.port && this.port.isOpen) this.port.close();
                                 return reject(new Error('Write gagal: ' + err.message));
                             }
                             this.port.drain((drainErr) => {
                                 if (drainErr) {
-                                    if (this.port.isOpen) this.port.close();
+                                    if (this.port && this.port.isOpen) this.port.close();
                                     return reject(new Error('Drain gagal: ' + drainErr.message));
                                 }
                                 
@@ -408,7 +527,8 @@ class BluetoothPrinter extends EventEmitter {
             if (!this.connected || !this.port) return;
 
             // Di Linux, tanyakan langsung ke kernel Bluetooth via `rfcomm info`
-            if (this.platform === 'linux' && this.config.printer_mac) {
+            // Hanya untuk koneksi Bluetooth (rfcomm), tidak untuk USB
+            if (this.platform === 'linux' && this.config.printer_mac && this.currentPath && this.currentPath.startsWith('/dev/rfcomm')) {
                 const device = this._getSerialPath();
                 const devNum = device.replace('/dev/rfcomm', '') || '0';
                 try {
@@ -429,7 +549,7 @@ class BluetoothPrinter extends EventEmitter {
             }
 
             // Jika sedang ada proses cetak aktif atau menggunakan USB raw character device, lewatkan write ping
-            if (this.isWriting || this._getSerialPath().startsWith('/dev/usb/lp')) return;
+            if (this.isWriting || (this.currentPath && this.currentPath.startsWith('/dev/usb/lp'))) return;
 
             const pingBuf = Buffer.from([0x10, 0x04, 0x01]);
             this.port.write(pingBuf, (err) => {
@@ -460,7 +580,8 @@ class BluetoothPrinter extends EventEmitter {
             connecting: this.connecting,
             mac: this.config.printer_mac || null,
             name: this.config.printer_name || null,
-            serial_port: this.config.serial_port || null,
+            serial_port: this.currentPath || this.config.serial_port || null,
+            scanTarget: this.scanTarget || null,
             platform: this.platform,
         };
     }

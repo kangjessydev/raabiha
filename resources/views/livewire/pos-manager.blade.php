@@ -6420,8 +6420,8 @@
                             }, 3000);
 
                             ws.onopen = () => {
-                                // Minta Print Agent scan printer
-                                ws.send(JSON.stringify({ type: 'scan' }));
+                                // Minta Print Agent scan printer Bluetooth spesifik
+                                ws.send(JSON.stringify({ type: 'scan', target: 'bluetooth' }));
                             };
 
                             ws.onmessage = (event) => {
@@ -6443,8 +6443,12 @@
 
                                             localStorage.setItem('pos_printer_name', this.printerDeviceName);
                                             localStorage.setItem('pos_printer_type', 'bridge');
-                                            if (msg.mac || msg.port) {
-                                                localStorage.setItem('pos_printer_manual_addr', msg.mac || msg.port);
+                                            // Hanya simpan MAC address, BUKAN rfcomm port
+                                            // agar tidak campur dengan alamat USB printer
+                                            if (msg.mac) {
+                                                localStorage.setItem('pos_printer_manual_addr', msg.mac);
+                                            } else {
+                                                localStorage.removeItem('pos_printer_manual_addr');
                                             }
 
                                             ws.onclose = () => {
@@ -6600,10 +6604,15 @@
 
                             ws.onopen = () => {
                                 const savedAddr = localStorage.getItem('pos_printer_manual_addr');
-                                if (savedAddr) {
-                                    ws.send(JSON.stringify({ type: 'config', value: savedAddr }));
+                                // Hanya gunakan savedAddr jika itu adalah path USB (bukan rfcomm/MAC BT)
+                                const isUsbAddr = savedAddr && (
+                                    savedAddr.startsWith('/dev/usb/lp') ||
+                                    /^COM\d+$/i.test(savedAddr)
+                                );
+                                if (isUsbAddr) {
+                                    ws.send(JSON.stringify({ type: 'config', value: savedAddr, target: 'usb' }));
                                 } else {
-                                    ws.send(JSON.stringify({ type: 'scan' }));
+                                    ws.send(JSON.stringify({ type: 'scan', target: 'usb' }));
                                 }
                             };
 
@@ -6623,6 +6632,12 @@
 
                                             localStorage.setItem('pos_printer_name', this.printerDeviceName);
                                             localStorage.setItem('pos_printer_type', 'bridge');
+                                            // Simpan path USB untuk auto-reconnect, hapus MAC BT lama
+                                            if (msg.serial_port) {
+                                                localStorage.setItem('pos_printer_manual_addr', msg.serial_port);
+                                            } else {
+                                                localStorage.removeItem('pos_printer_manual_addr');
+                                            }
 
                                             ws.onclose = () => {
                                                 this.printerConnected = false;
@@ -6810,7 +6825,9 @@
                                     };
                                 } else if (savedAddr) {
                                     // Print Agent jalan tapi printer belum terhubung -> coba hubungkan ke alamat tersimpan
-                                    ws.send(JSON.stringify({ type: 'config', value: savedAddr }));
+                                    // Deteksi tipe agar Print Agent tahu cara scan yang benar
+                                    const isUsbSaved = savedAddr.startsWith('/dev/usb/lp') || /^COM\d+$/i.test(savedAddr);
+                                    ws.send(JSON.stringify({ type: 'config', value: savedAddr, target: isUsbSaved ? 'usb' : 'bluetooth' }));
                                 }
                             } else if (msg.type === 'scan_result' || msg.type === 'config_result') {
                                 clearTimeout(timeout);

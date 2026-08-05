@@ -94,15 +94,20 @@ function createServer(port, printer) {
                             // MAC address → set untuk rfcomm bind (Linux)
                             printer.config.printer_mac = val;
                             printer.config.serial_port = ''; // reset supaya bind ulang
+                            printer.scanTarget = 'bluetooth';
                             console.log(`[WS] Config manual: MAC = ${val}`);
                         } else {
                             // COM port atau serial path → langsung pakai
                             printer.config.serial_port = val;
                             printer.config.printer_mac = ''; // clear MAC supaya skip rfcomm bind
-                            console.log(`[WS] Config manual: port = ${val}`);
+                            // Deteksi tipe dari path
+                            const isUsbPath = val.startsWith('/dev/usb/lp') || /^USB/i.test(val);
+                            printer.scanTarget = isUsbPath ? 'usb' : 'bluetooth';
+                            console.log(`[WS] Config manual: port = ${val} (target: ${printer.scanTarget})`);
                         }
 
-                        await printer.rescan();
+                        // Untuk path (bukan MAC): kirim langsung ke rescan agar tidak di-reset
+                        await printer.rescan(isMac ? null : val);
 
                         ws.send(JSON.stringify({
                             type: 'config_result',
@@ -126,6 +131,12 @@ function createServer(port, printer) {
                     // Browser minta scan ulang printer (misal: printer baru di-pair)
                     ws.send(JSON.stringify({ type: 'scanning' }));
                     try {
+                        // Set target scan jika browser mengirimkan tipe yang diinginkan
+                        if (msg.target === 'bluetooth' || msg.target === 'usb') {
+                            printer.scanTarget = msg.target;
+                            console.log(`[WS] Scan target: ${msg.target}`);
+                        }
+
                         await printer.rescan();
                         ws.send(JSON.stringify({
                             type: 'scan_result',
