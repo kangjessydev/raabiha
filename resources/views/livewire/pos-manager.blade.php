@@ -6302,8 +6302,7 @@
 
                         // Kirim ke Print Agent
                         const result = await new Promise((resolve) => {
-                            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                            const ws = new WebSocket(wsProtocol + '//localhost:8765');
+                            const ws = new WebSocket('ws://localhost:8765');
 
                             const timeout = setTimeout(() => {
                                 ws.close();
@@ -6398,8 +6397,7 @@
                     try {
                         // Step 1: Coba Print Agent lokal (untuk Classic BT seperti RPP02N)
                         const bridgeResult = await new Promise((resolve) => {
-                            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                            const ws = new WebSocket(wsProtocol + '//localhost:8765');
+                            const ws = new WebSocket('ws://localhost:8765');
                             const timeout = setTimeout(() => {
                                 ws.close();
                                 resolve({ success: false, reason: 'timeout' });
@@ -6603,8 +6601,7 @@
 
                 async connectToBridge(showNotify = false) {
                     return new Promise((resolve, reject) => {
-                        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                        const wsUrl = wsProtocol + '//localhost:8765';
+                        const wsUrl = 'ws://localhost:8765';
                         const ws = new WebSocket(wsUrl);
                         
                         ws.onopen = () => {
@@ -6682,8 +6679,7 @@
 
                     if (savedType !== 'bridge' && !savedAddr) return;
 
-                    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                    const wsUrl = wsProtocol + '//localhost:8765';
+                    const wsUrl = 'ws://localhost:8765';
                     
                     let ws;
                     try {
