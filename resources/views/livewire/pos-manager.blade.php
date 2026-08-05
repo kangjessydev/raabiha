@@ -4828,15 +4828,30 @@
 
                     <!-- Tombol Kabel USB -->
                     <button type="button" @click="scanAndConnectWebSerial()"
-                        class="w-full py-4 px-5 rounded-2xl border-2 bg-white hover:bg-blue-50 border-blue-400 hover:border-blue-500 flex items-center gap-4 transition-all hover:shadow-md active:scale-[0.99] cursor-pointer">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
+                        :disabled="isConnectingBT || isConnectingUSB"
+                        class="w-full py-4 px-5 rounded-2xl border-2 flex items-center gap-4 transition-all cursor-pointer"
+                        :class="isConnectingUSB ? 'bg-gray-50 border-gray-200 cursor-not-allowed' : 'bg-white hover:bg-blue-50 border-blue-400 hover:border-blue-500 hover:shadow-md active:scale-[0.99]'">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition"
+                            :class="isConnectingUSB ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600'">
+                            <!-- Spinner saat loading -->
+                            <template x-if="isConnectingUSB">
+                                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                            </template>
+                            <!-- Icon USB normal -->
+                            <template x-if="!isConnectingUSB">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </template>
                         </div>
                         <div class="text-left">
-                            <div class="font-bold text-sm text-gray-900">Sambungkan via Kabel USB</div>
-                            <div class="text-xs text-gray-500 mt-0.5">Untuk printer yang terhubung dengan kabel ke komputer</div>
+                            <div class="font-bold text-sm" :class="isConnectingUSB ? 'text-gray-400' : 'text-gray-900'"
+                                x-text="isConnectingUSB ? 'Menghubungkan USB...' : 'Sambungkan via Kabel USB'"></div>
+                            <div class="text-xs mt-0.5" :class="isConnectingUSB ? 'text-gray-400' : 'text-gray-500'"
+                                x-text="isConnectingUSB ? 'Sedang mencari printer USB...' : 'Untuk printer yang terhubung dengan kabel ke komputer'"></div>
                         </div>
                     </button>
                 </div>
@@ -5227,6 +5242,7 @@
                 bridgeSocket: null,
                 printerConnectionMethod: null, // 'ble', 'serial', 'bridge'
                 isConnectingBT: false,
+                isConnectingUSB: false,
                 showManualForm: false,
                 manualPrinterAddress: localStorage.getItem('pos_printer_manual_addr') || '',
                 // State Modal Produk Kustom Fast Entry
@@ -6571,8 +6587,8 @@
                 },
 
                 async scanAndConnectWebSerial() {
-                    if (this.isConnectingBT) return;
-                    this.isConnectingBT = true;
+                    if (this.isConnectingBT || this.isConnectingUSB) return;
+                    this.isConnectingUSB = true;
                     try {
                         // Step 1: Coba via Print Agent dulu (mendukung /dev/usb/lp0 di Linux & COM port di Windows)
                         const bridgeResult = await new Promise((resolve) => {
@@ -6663,7 +6679,7 @@
                             this.showToast('Gagal terhubung ke USB. Gunakan Koneksi Manual dengan mengisi /dev/usb/lp0 atau COM port.', 'error');
                         }
                     } finally {
-                        this.isConnectingBT = false;
+                        this.isConnectingUSB = false;
                     }
                 },
 
