@@ -210,15 +210,32 @@ class BluetoothPrinter extends EventEmitter {
 
             console.log(`[SERIAL] Membuka ${serialPath} @ ${BAUD_RATE} baud...`);
 
-            this.port = new SerialPort({
-                path: serialPath,
-                baudRate: BAUD_RATE,
-                autoOpen: false,
-            });
+            const fs = require('fs');
+            if (serialPath.startsWith('/dev/usb/lp')) {
+                const stream = fs.createWriteStream(serialPath, { flags: 'a' });
+                this.port = {
+                    isOpen: true,
+                    write: (data, cb) => {
+                        const ok = stream.write(data, cb);
+                        if (ok && cb && data.length < 10) cb(); // status check fallback
+                    },
+                    close: (cb) => {
+                        try { stream.end(); } catch (e) {}
+                        if (cb) cb();
+                    },
+                    on: () => {}
+                };
+            } else {
+                this.port = new SerialPort({
+                    path: serialPath,
+                    baudRate: BAUD_RATE,
+                    autoOpen: false,
+                });
 
-            await new Promise((resolve, reject) => {
-                this.port.open((err) => err ? reject(err) : resolve());
-            });
+                await new Promise((resolve, reject) => {
+                    this.port.open((err) => err ? reject(err) : resolve());
+                });
+            }
 
             // Verifikasi koneksi dengan test write (penting untuk Linux rfcomm karena open() selalu sukses)
             await new Promise((resolve, reject) => {
