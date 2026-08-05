@@ -115,6 +115,12 @@ class BluetoothPrinter extends EventEmitter {
      */
     _tryPort(path) {
         return new Promise((resolve) => {
+            if (path.startsWith('/dev/usb/lp')) {
+                const fs = require('fs');
+                resolve(fs.existsSync(path));
+                return;
+            }
+
             const timeout = setTimeout(() => {
                 try { testPort.close(); } catch (e) {}
                 resolve(false);
