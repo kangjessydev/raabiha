@@ -35,11 +35,7 @@ class BluetoothPrinter extends EventEmitter {
     }
 
     _getSerialPath() {
-        if (this.platform === 'win32') {
-            return this.config.serial_port || null;
-        } else {
-            return this.config.serial_port || '/dev/rfcomm0';
-        }
+        return this.config.serial_port || null;
     }
 
     /**
@@ -360,7 +356,13 @@ class BluetoothPrinter extends EventEmitter {
 
             const fs = require('fs');
             if (serialPath.startsWith('/dev/usb/lp')) {
-                // USB raw device — gunakan EventEmitter proper agar event close/error berfungsi
+                // USB raw device — pastikan izin akses write ada
+                try {
+                    await execAsync(`sudo chmod 666 ${serialPath}`);
+                } catch (e) {
+                    console.warn(`[USB] Gagal chmod 666 ${serialPath}, lanjut dengan akses saat ini`);
+                }
+
                 const { EventEmitter: EvEm } = require('events');
                 const usbEmitter = new EvEm();
                 const stream = fs.createWriteStream(serialPath, { flags: 'a' });
@@ -398,18 +400,39 @@ class BluetoothPrinter extends EventEmitter {
                     this.port.open((err) => err ? reject(err) : resolve());
                 });
 
+                // Pasang listener error DULU sebelum test write agar tidak crash jika terjadi unhandled error
+                this.port.on('error', (err) => {
+                    console.error('[SERIAL] Error:', err.message);
+                    this._stopHeartbeat();
+                    if (this.port && this.port.isOpen) {
+                        try { this.port.close(); } catch(e) {}
+                    }
+                });
+
+                this.port.on('close', () => {
+                    console.warn('[SERIAL] Port ditutup!');
+                    this._stopHeartbeat();
+                    this.connected = false;
+                    this.port = null;
+                    this.currentPath = null;
+                    this.emit('disconnected');
+                    if (!this.intentionalDisconnect) {
+                        this._scheduleReconnect();
+                    }
+                });
+
                 // Verifikasi dengan test write (penting untuk rfcomm di Linux)
                 await new Promise((resolve, reject) => {
                     const statusQuery = Buffer.from([0x10, 0x04, 0x01]);
                     this.port.write(statusQuery, (writeErr) => {
                         if (writeErr) {
-                            this.port.close(() => {});
+                            try { this.port.close(() => {}); } catch(e){}
                             return reject(new Error('Printer tidak merespons (write error). Pastikan printer menyala.'));
                         }
                         // Harus di-drain untuk memastikan data benar-benar terkirim keluar dari OS buffer
                         this.port.drain((drainErr) => {
                             if (drainErr) {
-                                this.port.close(() => {});
+                                try { this.port.close(() => {}); } catch(e){}
                                 return reject(new Error('Printer tidak merespons (drain error). Pastikan printer menyala.'));
                             }
                             resolve();
@@ -423,31 +446,16 @@ class BluetoothPrinter extends EventEmitter {
             this.connected = true;
             this.connecting = false;
             this.retryCount = 0; // reset retry counter saat sukses
+            this.intentionalDisconnect = false; // reset flag
             this.emit('connected');
             this._startHeartbeat();
-
-            this.port.on('close', () => {
-                console.warn('[SERIAL] Port ditutup!');
-                this._stopHeartbeat();
-                this.connected = false;
-                this.port = null;
-                this.currentPath = null;
-                this.emit('disconnected');
-                this._scheduleReconnect();
-            });
-
-            this.port.on('error', (err) => {
-                console.error('[SERIAL] Error:', err.message);
-                this._stopHeartbeat();
-                if (this.port && this.port.isOpen) {
-                    this.port.close();
-                }
-            });
 
         } catch (err) {
             console.error('[BT] Gagal connect:', err.message);
             this.connecting = false;
-            this._scheduleReconnect();
+            if (!this.intentionalDisconnect) {
+                this._scheduleReconnect();
+            }
             throw err;
         }
     }
@@ -458,10 +466,15 @@ class BluetoothPrinter extends EventEmitter {
      */
     async rescan(targetPort = null) {
         console.log('[SCAN] Rescan diminta...');
+        this.intentionalDisconnect = true;
 
         if (this.port && this.port.isOpen) {
             try { await new Promise(r => this.port.close(() => r())); } catch (e) {}
         }
+        
+        // Reset flag agar koneksi berikutnya bisa auto-reconnect kalau gagal/terputus
+        this.intentionalDisconnect = false;
+
         this.connected = false;
         this.connecting = false;
         this.port = null;
