@@ -99,6 +99,7 @@ class BluetoothPrinter extends EventEmitter {
             const ok = await this._tryPort(portInfo.path);
             if (ok) {
                 console.log(`[SCAN] ✅ Printer ditemukan di: ${portInfo.path}`);
+                this.config.serial_port = portInfo.path;
                 return portInfo.path;
             }
         }
