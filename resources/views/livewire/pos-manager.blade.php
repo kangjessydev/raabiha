@@ -6571,11 +6571,77 @@
                 },
 
                 async scanAndConnectWebSerial() {
-                    if (!navigator.serial) {
-                        this.showToast('Browser Anda tidak mendukung koneksi USB/Serial. Gunakan Google Chrome atau Microsoft Edge.', 'error');
-                        return;
-                    }
+                    if (this.isConnectingBT) return;
+                    this.isConnectingBT = true;
                     try {
+                        // Step 1: Coba via Print Agent dulu (mendukung /dev/usb/lp0 di Linux & COM port di Windows)
+                        const bridgeResult = await new Promise((resolve) => {
+                            const ws = new WebSocket('ws://127.0.0.1:8765');
+                            const timeout = setTimeout(() => {
+                                ws.close();
+                                resolve({ success: false, reason: 'timeout' });
+                            }, 5000);
+
+                            ws.onopen = () => {
+                                const savedAddr = localStorage.getItem('pos_printer_manual_addr');
+                                if (savedAddr) {
+                                    ws.send(JSON.stringify({ type: 'config', value: savedAddr }));
+                                } else {
+                                    ws.send(JSON.stringify({ type: 'scan' }));
+                                }
+                            };
+
+                            ws.onmessage = (event) => {
+                                try {
+                                    const msg = JSON.parse(event.data);
+                                    if (msg.type === 'scanning' || msg.type === 'status') return;
+
+                                    if (msg.type === 'scan_result' || msg.type === 'config_result') {
+                                        clearTimeout(timeout);
+                                        if (msg.found || msg.connected) {
+                                            this.bridgeSocket = ws;
+                                            this.printerConnectionMethod = 'bridge';
+                                            this.printerType = 'bridge';
+                                            this.printerDeviceName = msg.name || 'Printer USB';
+                                            this.printerConnected = true;
+
+                                            localStorage.setItem('pos_printer_name', this.printerDeviceName);
+                                            localStorage.setItem('pos_printer_type', 'bridge');
+
+                                            ws.onclose = () => {
+                                                this.printerConnected = false;
+                                                this.bridgeSocket = null;
+                                                this.printerConnectionMethod = null;
+                                                this.showToast('Koneksi printer terputus.', 'error');
+                                            };
+
+                                            resolve({ success: true });
+                                        } else {
+                                            ws.close();
+                                            resolve({ success: false });
+                                        }
+                                    }
+                                } catch (e) {}
+                            };
+
+                            ws.onerror = () => {
+                                clearTimeout(timeout);
+                                resolve({ success: false });
+                            };
+                        });
+
+                        if (bridgeResult.success) {
+                            this.showToast('Printer USB ' + this.printerDeviceName + ' berhasil terhubung!', 'success');
+                            this.showPrinterModal = false;
+                            return;
+                        }
+
+                        // Step 2: Fallback ke Web Serial API jika Print Agent tidak ada
+                        if (!navigator.serial) {
+                            this.showToast('Gagal terhubung ke Print Agent. Browser juga tidak mendukung Web Serial.', 'error');
+                            return;
+                        }
+
                         const port = await navigator.serial.requestPort();
                         await port.open({ baudRate: 9600 });
                         this.printerPort = port;
@@ -6583,10 +6649,10 @@
                         this.printerConnectionMethod = 'serial';
                         this.printerDeviceName = 'Printer USB / Serial Cable';
                         this.printerType = 'serial';
-                        
+
                         localStorage.setItem('pos_printer_name', this.printerDeviceName);
                         localStorage.setItem('pos_printer_type', 'serial');
-                        
+
                         this.showToast('Printer USB/Serial berhasil terhubung!', 'success');
                         this.showPrinterModal = false;
                     } catch (error) {
@@ -6594,8 +6660,10 @@
                         if (error.name === 'NotFoundError' || error.message.includes('No port selected')) {
                             this.showToast('Tidak ada port USB yang dipilih.', 'error');
                         } else {
-                            this.showToast('Gagal terhubung ke USB: ' + error.message, 'error');
+                            this.showToast('Gagal terhubung ke USB. Gunakan Koneksi Manual dengan mengisi /dev/usb/lp0 atau COM port.', 'error');
                         }
+                    } finally {
+                        this.isConnectingBT = false;
                     }
                 },
 
