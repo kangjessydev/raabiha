@@ -387,6 +387,26 @@ class BluetoothPrinter extends EventEmitter {
                     usbEmitter.emit('close');
                 });
 
+                this.port.on('error', (err) => {
+                    console.error('[SERIAL] Error:', err.message);
+                    this._stopHeartbeat();
+                    if (this.port && this.port.isOpen) {
+                        try { this.port.close(); } catch(e) {}
+                    }
+                });
+
+                this.port.on('close', () => {
+                    console.warn('[SERIAL] Port ditutup!');
+                    this._stopHeartbeat();
+                    this.connected = false;
+                    this.port = null;
+                    this.currentPath = null;
+                    this.emit('disconnected');
+                    if (!this.intentionalDisconnect) {
+                        this._scheduleReconnect();
+                    }
+                });
+
                 // USB lp device: tidak perlu verify write (DLE EOT bisa bingungkan printer)
                 console.log('[SERIAL] ✅ USB printer terbuka!');
             } else {
