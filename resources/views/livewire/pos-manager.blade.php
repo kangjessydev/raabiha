@@ -293,7 +293,7 @@
     }
     </style>
 
-    <!-- Notifications Toast (with Close Button) -->
+    <!-- Notifications Toast (with Close Button & Status Color Variants) -->
     <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         <template x-for="(toast, index) in toasts" :key="toast.id">
             <div x-show="true" 
@@ -304,12 +304,23 @@
                  x-transition:leave-start="opacity-100 translate-x-0"
                  x-transition:leave-end="opacity-0 translate-x-8"
                  class="pointer-events-auto px-4 py-3 rounded-xl flex items-center justify-between gap-3 shadow-lg border text-sm font-semibold transition-all"
-                 :class="toast.type === 'error' ? 'border-red-300 bg-red-50 text-red-900' : 'border-emerald-300 bg-emerald-50 text-emerald-900'">
+                 :class="{
+                     'border-red-300 bg-red-50 text-red-900': toast.type === 'error',
+                     'border-amber-300 bg-amber-50 text-amber-900': toast.type === 'warning',
+                     'border-sky-300 bg-sky-50 text-sky-900': toast.type === 'info',
+                     'border-emerald-300 bg-emerald-50 text-emerald-900': toast.type === 'success' || !['error', 'warning', 'info'].includes(toast.type)
+                 }">
                 <div class="flex items-center gap-2">
                     <template x-if="toast.type === 'error'">
                         <svg class="w-4 h-4 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </template>
-                    <template x-if="toast.type !== 'error'">
+                    <template x-if="toast.type === 'warning'">
+                        <svg class="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </template>
+                    <template x-if="toast.type === 'info'">
+                        <svg class="w-4 h-4 text-sky-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </template>
+                    <template x-if="toast.type === 'success' || !['error', 'warning', 'info'].includes(toast.type)">
                         <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     </template>
                     <span x-text="toast.message"></span>
@@ -917,7 +928,7 @@
                                      ])->values()->all()
                                  ];
                              })) : 'null' }} }"
-                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData, '{{ $image }}', {{ $product->is_custom ? 'true' : 'false' }}, {{ (float)($product->purchase_price ?? 0) }}, {{ (float)($originalPrice ?? $priceForJs) }}, {{ $hasPromo ? (float)$promoPrice : 'null' }})"
+                             @click="addProduct({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $priceForJs }}, {{ $hasVariants ? 'true' : 'false' }}, variantsData, '{{ $image }}', {{ $product->is_custom ? 'true' : 'false' }}, {{ (float)($product->purchase_price ?? 0) }}, {{ (float)($originalPrice ?? $priceForJs) }}, {{ $hasPromo ? (float)$promoPrice : 'null' }}, {{ (int)$computedStock }})"
                              @endif
                              >
                              
@@ -1093,11 +1104,16 @@
 
                             <!-- Jumlah (Qty) -->
                             <div>
-                                <label class="block text-[11px] font-bold uppercase text-gray-500 tracking-wider mb-1">Jumlah (Qty)</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-[11px] font-bold uppercase text-gray-500 tracking-wider">Jumlah (Qty)</label>
+                                    <template x-if="customNegoProduct.stock !== undefined && customNegoProduct.stock !== 999999">
+                                        <span class="text-[11px] font-semibold text-emerald-600" x-text="'Stok: ' + customNegoProduct.stock"></span>
+                                    </template>
+                                </div>
                                 <div class="inline-flex items-center border border-gray-300 rounded-xl bg-white overflow-hidden shadow-xs">
                                     <button type="button" @click="customNegoProduct.qty = Math.max(1, customNegoProduct.qty - 1)" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-black cursor-pointer text-base transition select-none flex-shrink-0 border-r border-gray-200">-</button>
-                                    <input type="number" x-model.number="customNegoProduct.qty" min="1" class="w-16 text-center border-0 focus:ring-0 text-sm font-black p-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                    <button type="button" @click="customNegoProduct.qty = customNegoProduct.qty + 1" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-black cursor-pointer text-base transition select-none flex-shrink-0 border-l border-gray-200">+</button>
+                                    <input type="number" x-model.number="customNegoProduct.qty" min="1" :max="customNegoProduct.stock" @input="if(customNegoProduct.stock && customNegoProduct.qty > customNegoProduct.stock) { customNegoProduct.qty = customNegoProduct.stock; showToast('Jumlah melebihi stok yang tersedia (' + customNegoProduct.stock + ')', 'warning'); }" class="w-16 text-center border-0 focus:ring-0 text-sm font-black p-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                    <button type="button" @click="if(!customNegoProduct.stock || customNegoProduct.qty < customNegoProduct.stock) { customNegoProduct.qty++ } else { showToast('Jumlah melebihi stok yang tersedia (' + customNegoProduct.stock + ')', 'warning') }" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-black cursor-pointer text-base transition select-none flex-shrink-0 border-l border-gray-200">+</button>
                                 </div>
                             </div>
 
@@ -1195,7 +1211,7 @@
                             <!-- Qty Controls -->
                             <div class="flex items-center border border-gray-200 rounded-md bg-gray-50">
                                 <button @click="updateQty(index, -1)" class="w-6 h-6 flex items-center justify-center bg-white rounded-l-md text-gray-700 hover:text-emerald-600 font-bold text-xs cursor-pointer">-</button>
-                                <input type="number" x-model.number="item.quantity" class="w-8 text-center bg-transparent border-none focus:ring-0 text-xs font-semibold p-0 mx-0.5" min="1">
+                                <input type="number" x-model.number="item.quantity" @input="validateCartItemQty(index)" @change="validateCartItemQty(index)" class="w-8 text-center bg-transparent border-none focus:ring-0 text-xs font-semibold p-0 mx-0.5" min="1" :max="item.stock">
                                 <button @click="updateQty(index, 1)" class="w-6 h-6 flex items-center justify-center bg-white rounded-r-md text-gray-700 hover:text-emerald-600 font-bold text-xs cursor-pointer">+</button>
                             </div>
                         </div>
@@ -1353,9 +1369,9 @@
                             <div class="flex items-center gap-2">
                                 <template x-if="!item.is_return">
                                     <div class="flex items-center">
-                                        <button type="button" @click="updateQty(index, item.quantity - 1)" class="w-7 h-7 rounded-l-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">-</button>
+                                        <button type="button" @click="updateQty(index, -1)" class="w-7 h-7 rounded-l-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">-</button>
                                         <span class="w-8 text-center font-bold text-gray-900 border-t border-b border-gray-300 h-7 flex items-center justify-center" x-text="item.quantity"></span>
-                                        <button type="button" @click="updateQty(index, item.quantity + 1)" class="w-7 h-7 rounded-r-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">+</button>
+                                        <button type="button" @click="updateQty(index, 1)" class="w-7 h-7 rounded-r-lg border border-gray-300 flex items-center justify-center font-bold text-gray-700 hover:bg-gray-100">+</button>
                                     </div>
                                 </template>
                                 <template x-if="item.is_return">
@@ -1852,7 +1868,7 @@
                                                 </div>
                                                 <div class="text-right">
                                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                                        <span x-text="c.stamp_count || 0"></span>/9 Cap
+                                                        <span x-text="c.stamp_count || 0"></span>/12 Cap
                                                     </span>
                                                 </div>
                                             </div>
@@ -1860,58 +1876,84 @@
                                     </div>
                                 </div>
 
-                                <!-- Detail Nama & Phone jika kasir mengetik manual / memilih -->
+                                <!-- Detail Nama & Phone jika kasir mengetik manual -->
                                 <div class="grid grid-cols-2 gap-2 mt-2">
-                                    <input type="text"
-                                           id="customerNameInput"
-                                           x-model="customerName"
-                                           @input="saveActiveCart()"
-                                           class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500"
-                                           placeholder="Nama Pelanggan">
-                                    <input type="text"
-                                           id="customerPhoneInput"
-                                           x-model="customerPhone"
-                                           @input="saveActiveCart()"
-                                           class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500"
-                                           placeholder="No WhatsApp">
-                                </div>
+                                     <input type="text"
+                                            id="customerNameInput"
+                                            x-model="customerName"
+                                            @input="saveActiveCart()"
+                                            class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500"
+                                            placeholder="Nama Pelanggan">
+                                     <input type="text"
+                                            id="customerPhoneInput"
+                                            x-model="customerPhone"
+                                            @input="saveActiveCart()"
+                                            class="w-full px-2.5 py-1 rounded text-[11px] font-medium text-gray-800 focus:outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500"
+                                            placeholder="No WhatsApp">
+                                 </div>
 
-                                <!-- Banner Pemberitahuan Voucher Hadiah Stempel di Modal Checkout -->
-                                <div x-show="activeCustomerLoyalty" x-transition class="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-xs">
-                                    <div class="font-bold text-amber-900 flex items-center justify-between">
-                                        <span>Informasi Stempel Pelanggan:</span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300" x-text="(activeCustomerLoyalty?.stamp_count || 0) + ' / 9 Cap'"></span>
-                                    </div>
-                                    <template x-if="availableLoyaltyVouchersForCustomer.length > 0">
-                                        <div class="mt-2">
-                                            <div class="text-[11px] font-semibold text-amber-800 mb-1.5">
-                                                Pelanggan ini berhak memasang Voucher Hadiah Stempel:
-                                            </div>
-                                            <div class="space-y-1.5">
-                                                <template x-for="v in availableLoyaltyVouchersForCustomer" :key="v.id">
-                                                    <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-amber-200 shadow-xs">
-                                                        <div>
-                                                            <div class="font-bold text-gray-900 text-xs" x-text="v.name"></div>
-                                                            <div class="text-[10px] text-emerald-700 font-semibold" x-text="getVoucherDiscountLabel(v)"></div>
-                                                        </div>
-                                                        <button type="button" 
-                                                                @click="applyVoucher(v); showToast('Voucher hadiah berhasil dipasang!', 'success');"
-                                                                :disabled="activeVoucher && activeVoucher.id === v.id"
-                                                                class="px-2.5 py-1 text-[11px] font-bold rounded shadow-xs cursor-pointer transition"
-                                                                :class="activeVoucher && activeVoucher.id === v.id ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-600 hover:bg-amber-700 text-white'">
-                                                            <span x-text="activeVoucher && activeVoucher.id === v.id ? 'Terpasang' : 'Pasang Voucher'"></span>
-                                                        </button>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </template>
-                                    <template x-if="availableLoyaltyVouchersForCustomer.length === 0">
-                                        <div class="text-[11px] text-amber-800 mt-1">
-                                            Saldo stempel pelanggan saat ini: <strong x-text="(activeCustomerLoyalty?.stamp_count || 0)"></strong> Cap. Stempel baru akan ditambahkan otomatis setelah pembayaran selesai.
-                                        </div>
-                                    </template>
-                                </div>
+                                 <!-- Banner Pemberitahuan Voucher & Hadiah Stempel di Modal Checkout -->
+                                 <div x-show="activeCustomerLoyalty" x-transition class="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-300 text-xs">
+                                     <div class="font-bold text-amber-900 flex items-center justify-between">
+                                         <span>Informasi Stempel Pelanggan:</span>
+                                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900 border border-amber-300" x-text="(activeCustomerLoyalty?.stamp_count || 0) + ' / 12 Cap'"></span>
+                                     </div>
+
+                                     <!-- Voucher Promo Hadiah -->
+                                     <template x-if="availableLoyaltyVouchersForCustomer.length > 0">
+                                         <div class="mt-2">
+                                             <div class="text-[11px] font-semibold text-amber-800 mb-1.5">
+                                                 🎟️ Pelanggan berhak memasang Voucher Hadiah Stempel:
+                                             </div>
+                                             <div class="space-y-1.5">
+                                                 <template x-for="v in availableLoyaltyVouchersForCustomer" :key="v.id">
+                                                     <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-amber-200 shadow-xs">
+                                                         <div>
+                                                             <div class="font-bold text-gray-900 text-xs" x-text="v.name"></div>
+                                                             <div class="text-[10px] text-emerald-700 font-semibold" x-text="getVoucherDiscountLabel(v)"></div>
+                                                         </div>
+                                                         <button type="button" 
+                                                                 @click="applyVoucher(v); showToast('Voucher hadiah berhasil dipasang!', 'success');"
+                                                                 :disabled="activeVoucher && activeVoucher.id === v.id"
+                                                                 class="px-2.5 py-1 text-[11px] font-bold rounded shadow-xs cursor-pointer transition"
+                                                                 :class="activeVoucher && activeVoucher.id === v.id ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-600 hover:bg-amber-700 text-white'">
+                                                             <span x-text="activeVoucher && activeVoucher.id === v.id ? 'Terpasang' : 'Pasang Voucher'"></span>
+                                                         </button>
+                                                     </div>
+                                                 </template>
+                                             </div>
+                                         </div>
+                                     </template>
+
+                                     <!-- Hadiah Barang Fisik / Manual -->
+                                     <template x-if="availableLoyaltyManualRewardsForCustomer.length > 0">
+                                         <div class="mt-2 pt-2 border-t border-amber-200">
+                                             <div class="text-[11px] font-semibold text-amber-900 mb-1">
+                                                 🎁 Hadiah Barang Fisik (Serahkan ke Pelanggan):
+                                             </div>
+                                             <div class="space-y-1.5">
+                                                 <template x-for="(mTier, mIdx) in availableLoyaltyManualRewardsForCustomer" :key="mIdx">
+                                                     <div class="bg-white p-2 rounded-lg border border-amber-300 flex items-center justify-between shadow-xs">
+                                                         <div>
+                                                             <div class="font-bold text-amber-950 text-xs flex items-center gap-1">
+                                                                 <span>🎁</span>
+                                                                 <span x-text="mTier.description"></span>
+                                                             </div>
+                                                             <div class="text-[10px] text-amber-800 font-medium" x-text="'Syarat: Minimal ' + mTier.min_stamps + ' Cap Stempel (Terpenuhi)'"></div>
+                                                         </div>
+                                                         <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-600 text-white rounded">Siap Diserahkan</span>
+                                                     </div>
+                                                 </template>
+                                             </div>
+                                         </div>
+                                     </template>
+
+                                     <template x-if="availableLoyaltyVouchersForCustomer.length === 0 && availableLoyaltyManualRewardsForCustomer.length === 0">
+                                         <div class="text-[11px] text-amber-800 mt-1">
+                                             Saldo stempel pelanggan saat ini: <strong x-text="(activeCustomerLoyalty?.stamp_count || 0)"></strong> Cap. Stempel baru akan ditambahkan otomatis setelah pembayaran selesai.
+                                         </div>
+                                     </template>
+                                 </div>
 
                                 <!-- Toggle Status Dipesan / Reserved -->
                                 <div class="mt-3 pt-3 border-t border-gray-200">
@@ -3585,20 +3627,52 @@
                     @else
                     <div class="overflow-x-auto rounded-b-xl">
                         <table class="w-full text-left border-collapse">
-                            <thead>
+                            <thead class="select-none">
                                 <tr class="bg-gray-50/80 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
-                                    <th class="py-3 px-4">No. Nota & Waktu</th>
-                                    <th class="py-3 px-4">Pelanggan</th>
+                                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortHistoryClient('created_at')">
+                                        <div class="flex items-center gap-1.5">
+                                            <span>No. Nota & Waktu</span>
+                                            <span class="text-xs font-bold" :class="historySortCol === 'created_at' ? 'text-emerald-600' : 'text-gray-400'" x-text="historySortCol === 'created_at' ? (historySortDir === 'desc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortHistoryClient('customer')">
+                                        <div class="flex items-center gap-1.5">
+                                            <span>Pelanggan</span>
+                                            <span class="text-xs font-bold" :class="historySortCol === 'customer' ? 'text-emerald-600' : 'text-gray-400'" x-text="historySortCol === 'customer' ? (historySortDir === 'asc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
                                     <th class="py-3 px-4">Item Barang</th>
-                                    <th class="py-3 px-4 text-right">Total Belanja</th>
-                                    <th class="py-3 px-4 text-center">Metode</th>
-                                    <th class="py-3 px-4 text-center">Status</th>
+                                    <th class="py-3 px-4 text-right cursor-pointer hover:bg-gray-100 transition" @click="sortHistoryClient('grand_total')">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <span>Total Belanja</span>
+                                            <span class="text-xs font-bold" :class="historySortCol === 'grand_total' ? 'text-emerald-600' : 'text-gray-400'" x-text="historySortCol === 'grand_total' ? (historySortDir === 'desc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 text-center cursor-pointer hover:bg-gray-100 transition" @click="sortHistoryClient('method')">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span>Metode</span>
+                                            <span class="text-xs font-bold" :class="historySortCol === 'method' ? 'text-emerald-600' : 'text-gray-400'" x-text="historySortCol === 'method' ? (historySortDir === 'asc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 text-center cursor-pointer hover:bg-gray-100 transition" @click="sortHistoryClient('status')">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span>Status</span>
+                                            <span class="text-xs font-bold" :class="historySortCol === 'status' ? 'text-emerald-600' : 'text-gray-400'" x-text="historySortCol === 'status' ? (historySortDir === 'asc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
                                     <th class="py-3 px-4 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 text-xs">
+                            <tbody id="posHistoryTableBody" class="divide-y divide-gray-100 text-xs">
                                 @foreach($sessionOrders as $order)
-                                <tr wire:key="order-row-{{ $order->id }}" class="hover:bg-gray-50/80 transition-colors {{ $order->status === 'cancelled' ? 'bg-rose-50/20' : '' }}">
+                                <tr wire:key="order-row-{{ $order->id }}"
+                                    data-history-row
+                                    data-sort-created_at="{{ $order->created_at->timestamp }}"
+                                    data-sort-customer="{{ strtolower($order->customer_name ?? '') }}"
+                                    data-sort-grand_total="{{ $order->grand_total }}"
+                                    data-sort-method="{{ strtolower($order->formatted_payment_method ?? '') }}"
+                                    data-sort-status="{{ strtolower($order->status) }}"
+                                    class="hover:bg-gray-50/80 transition-colors {{ $order->status === 'cancelled' ? 'bg-rose-50/20' : '' }}">
                                     <!-- No. Nota & Waktu -->
                                     <td class="py-3 px-4 whitespace-nowrap">
                                         <div class="font-bold font-mono text-gray-900 text-xs">#{{ $order->order_number }}</div>
@@ -3898,30 +3972,40 @@
                                             <div class="text-right">
                                                 <div class="font-bold text-gray-900">{{ $rOrder->customer_name ?: 'Pelanggan POS' }}</div>
                                                 @if($rOrder->customer_phone)
-                                                    <div class="text-[11px] text-emerald-600 font-semibold mt-0.5">{{ $rOrder->customer_phone }}</div>
+                                                    <div class="text-[11px] text-emerald-600 font-semibold mt-0.5">📞 {{ $rOrder->customer_phone }}</div>
+                                                @else
+                                                    <div class="text-[11px] text-gray-400 font-normal italic mt-0.5">(Tanpa No. HP)</div>
                                                 @endif
                                             </div>
                                         </div>
-                                         @if($rOrder->pickup_date)
-                                             <div class="flex justify-between items-center p-2 rounded-lg border text-xs {{ $isOverdue ? 'bg-rose-50 border-rose-200 text-rose-900 font-bold' : ($isToday ? 'bg-amber-50 border-amber-200 text-amber-900 font-bold' : 'bg-blue-50 border-blue-100 text-blue-900 font-semibold') }}">
-                                                 <span class="flex items-center gap-1">
-                                                     <svg class="w-4 h-4 {{ $isOverdue ? 'text-rose-600' : ($isToday ? 'text-amber-600' : 'text-blue-600') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                     Perkiraan Ambil:
-                                                 </span>
-                                                 <span>
-                                                     {{ $rOrder->pickup_date->format('d M Y') }}
-                                                     @if($isOverdue)
-                                                         <span class="text-[10px] bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded font-bold ml-1">Terlewat</span>
-                                                     @elseif($isToday)
-                                                         <span class="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold ml-1">Hari Ini</span>
-                                                     @endif
-                                                 </span>
-                                             </div>
-                                         @endif
-                                        <div class="flex justify-between text-gray-700">
-                                            <span class="text-gray-500">Metode Bayar:</span>
-                                            <span class="font-semibold uppercase text-gray-900">{{ $rOrder->payment_method ?: 'TUNAI' }}</span>
+
+                                        <div class="flex justify-between items-center text-gray-700">
+                                            <span class="text-gray-500">Tgl. Transaksi:</span>
+                                            <span class="font-semibold text-gray-900">{{ $rOrder->created_at ? $rOrder->created_at->format('d M Y, H:i') : '-' }}</span>
                                         </div>
+
+                                        @if($rOrder->pickup_date)
+                                            <div class="flex justify-between items-center p-2 rounded-lg border text-xs {{ $isOverdue ? 'bg-rose-50 border-rose-200 text-rose-900 font-bold' : ($isToday ? 'bg-amber-50 border-amber-200 text-amber-900 font-bold' : 'bg-blue-50 border-blue-100 text-blue-900 font-semibold') }}">
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-4 h-4 {{ $isOverdue ? 'text-rose-600' : ($isToday ? 'text-amber-600' : 'text-blue-600') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                    Perkiraan Ambil:
+                                                </span>
+                                                <span>
+                                                    {{ $rOrder->pickup_date->format('d M Y') }}
+                                                    @if($isOverdue)
+                                                        <span class="text-[10px] bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded font-bold ml-1">Terlewat</span>
+                                                    @elseif($isToday)
+                                                        <span class="text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded font-bold ml-1">Hari Ini</span>
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        @endif
+
+                                        <div class="flex justify-between items-start text-gray-700">
+                                            <span class="text-gray-500">Metode Bayar:</span>
+                                            <span class="font-semibold text-right text-gray-900 max-w-[200px] break-words">{{ $rOrder->formatted_payment_method }}</span>
+                                        </div>
+
                                         <div class="flex justify-between text-gray-900 font-bold pt-2 border-t border-gray-100 text-sm">
                                             <span>Total Pembayaran:</span>
                                             <span class="text-emerald-700">Rp {{ number_format($rOrder->grand_total, 0, ',', '.') }}</span>
@@ -4101,20 +4185,46 @@
                     @else
                     <div class="overflow-x-auto rounded-b-xl">
                         <table class="w-full text-left border-collapse">
-                            <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                            <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider select-none">
                                 <tr>
-                                    <th class="py-3 px-4">No. Retur & Waktu</th>
+                                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortReturnClient('created_at')">
+                                        <div class="flex items-center gap-1.5">
+                                            <span>No. Retur & Waktu</span>
+                                            <span class="text-xs font-bold" :class="returnSortCol === 'created_at' ? 'text-emerald-600' : 'text-gray-400'" x-text="returnSortCol === 'created_at' ? (returnSortDir === 'desc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
                                     <th class="py-3 px-4">Nota Asli</th>
-                                    <th class="py-3 px-4 text-center">Tipe Transaksi</th>
+                                    <th class="py-3 px-4 text-center cursor-pointer hover:bg-gray-100 transition" @click="sortReturnClient('type')">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span>Tipe Transaksi</span>
+                                            <span class="text-xs font-bold" :class="returnSortCol === 'type' ? 'text-emerald-600' : 'text-gray-400'" x-text="returnSortCol === 'type' ? (returnSortDir === 'asc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
                                     <th class="py-3 px-4">Rincian Barang</th>
-                                    <th class="py-3 px-4 text-right">Selisih Nominal</th>
-                                    <th class="py-3 px-4">Petugas</th>
+                                    <th class="py-3 px-4 text-right cursor-pointer hover:bg-gray-100 transition" @click="sortReturnClient('net_amount')">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <span>Selisih Nominal</span>
+                                            <span class="text-xs font-bold" :class="returnSortCol === 'net_amount' ? 'text-emerald-600' : 'text-gray-400'" x-text="returnSortCol === 'net_amount' ? (returnSortDir === 'desc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortReturnClient('cashier')">
+                                        <div class="flex items-center gap-1.5">
+                                            <span>Petugas</span>
+                                            <span class="text-xs font-bold" :class="returnSortCol === 'cashier' ? 'text-emerald-600' : 'text-gray-400'" x-text="returnSortCol === 'cashier' ? (returnSortDir === 'asc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
                                     <th class="py-3 px-4 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 text-xs">
+                            <tbody id="posReturnTableBody" class="divide-y divide-gray-100 text-xs">
                                 @foreach($sessionReturns as $ret)
-                                <tr wire:key="return-row-{{ $ret->id }}" class="hover:bg-gray-50/80 transition-colors">
+                                <tr wire:key="return-row-{{ $ret->id }}"
+                                    data-return-row
+                                    data-sort-created_at="{{ $ret->created_at->timestamp }}"
+                                    data-sort-type="{{ $ret->type }}"
+                                    data-sort-net_amount="{{ $ret->net_amount }}"
+                                    data-sort-cashier="{{ strtolower($ret->cashier->name ?? '') }}"
+                                    class="hover:bg-gray-50/80 transition-colors">
                                     <!-- No. Retur & Waktu -->
                                     <td class="py-3 px-4 whitespace-nowrap">
                                         <div class="font-bold font-mono text-gray-900 text-xs">#{{ $ret->return_number }}</div>
@@ -4222,7 +4332,7 @@
                 <!-- Ringkasan KPI Pelanggan -->
                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
-                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Pelanggan Shift Ini</p>
+                        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Pelanggan POS</p>
                         <p class="text-2xl font-bold text-gray-950 mt-1">{{ count($sessionCustomers) }} <span class="text-sm font-normal text-gray-400">orang</span></p>
                     </div>
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
@@ -4235,7 +4345,7 @@
                     </div>
                     <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
                         <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Kartu Stempel Ready</p>
-                        <p class="text-2xl font-bold text-emerald-600 mt-1">{{ $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= 10 || ($c->completed_cards_count ?? 0) > 0)->count() }} <span class="text-sm font-normal text-gray-400">voucher</span></p>
+                        <p class="text-2xl font-bold text-emerald-600 mt-1">{{ $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= 3 || ($c->completed_cards_count ?? 0) > 0)->count() }} <span class="text-sm font-normal text-gray-400">voucher</span></p>
                     </div>
                 </div>
 
@@ -4258,7 +4368,7 @@
                         <!-- SISI KANAN: Filter Action Button & Popover Modal -->
                         <div class="relative flex-shrink-0" x-data="{ showFilterPopover: false }" wire:ignore.self wire:key="customer-filter-container">
                             @php
-                                $activeCustomerFilterCount = ($customerDateFilter !== 'shift' ? 1 : 0);
+                                $activeCustomerFilterCount = ($customerDateFilter !== 'all' ? 1 : 0) + ($customerStampFilter !== 'all' ? 1 : 0);
                             @endphp
 
                             <!-- Filter Action Trigger Button -->
@@ -4299,15 +4409,57 @@
 
                                 <div class="space-y-3">
                                     <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Status Stempel & Hadiah</label>
+                                        <select wire:key="filter-customer-stamp-select" wire:model.live="customerStampFilter"
+                                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="all">Semua Pelanggan</option>
+                                            <option value="ready_gift">Berhak Hadiah (Stempel ≥ 3 Cap)</option>
+                                            <option value="completed_card">Memiliki Kartu Selesai (≥ 1 Kartu)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Urutkan Berdasarkan</label>
+                                        <select wire:key="filter-customer-sort-select"
+                                                @change="$wire.set('customerSortColumn', $event.target.value.split('_')[0]); $wire.set('customerSortDirection', $event.target.value.endsWith('asc') ? 'asc' : 'desc'); customerSortCol = $event.target.value.split('_')[0]; customerSortDir = $event.target.value.endsWith('asc') ? 'asc' : 'desc'; sortCustomersClient($event.target.value.split('_')[0]);"
+                                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="total_spent_desc" {{ $customerSortColumn === 'total_spent' && $customerSortDirection === 'desc' ? 'selected' : '' }}>Total Belanja: Terbanyak → Terkecil (↑)</option>
+                                            <option value="total_spent_asc" {{ $customerSortColumn === 'total_spent' && $customerSortDirection === 'asc' ? 'selected' : '' }}>Total Belanja: Terkecil → Terbanyak (↓)</option>
+                                            <option value="stamp_count_desc" {{ $customerSortColumn === 'stamp_count' && $customerSortDirection === 'desc' ? 'selected' : '' }}>Stempel Aktif: Terbanyak → Terkecil (↑)</option>
+                                            <option value="points_desc" {{ $customerSortColumn === 'points' && $customerSortDirection === 'desc' ? 'selected' : '' }}>Saldo Poin: Terbanyak → Terkecil (↑)</option>
+                                            <option value="completed_cards_desc" {{ $customerSortColumn === 'completed_cards' && $customerSortDirection === 'desc' ? 'selected' : '' }}>Kartu Selesai: Terbanyak → Terkecil (↑)</option>
+                                            <option value="name_asc" {{ $customerSortColumn === 'name' && $customerSortDirection === 'asc' ? 'selected' : '' }}>Nama Pelanggan: A → Z (↑)</option>
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-gray-700 mb-1">Min. Belanja (Rp)</label>
+                                            <input type="number" wire:model.live.debounce.300ms="customerMinSpend" placeholder="0" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-gray-700 mb-1">Max. Belanja (Rp)</label>
+                                            <input type="number" wire:model.live.debounce.300ms="customerMaxSpend" placeholder="Tanpa batas" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-gray-700 mb-1">Min. Cap Stempel</label>
+                                            <input type="number" wire:model.live.debounce.300ms="customerMinStamps" placeholder="0" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-semibold text-gray-700 mb-1">Min. Saldo Poin</label>
+                                            <input type="number" wire:model.live.debounce.300ms="customerMinPoints" placeholder="0" class="w-full px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800">
+                                        </div>
+                                    </div>
+                                    <div>
                                         <label class="block text-[11px] font-semibold text-gray-700 mb-1">Periode Kunjungan</label>
                                         <select wire:key="filter-customer-date-select" wire:model.live="customerDateFilter"
                                                 class="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition cursor-pointer">
+                                            <option value="all">Semua Pelanggan (Default)</option>
                                             <option value="shift">Shift Hari Ini</option>
                                             <option value="today">Hari Ini</option>
                                             <option value="yesterday">Kemarin</option>
                                             <option value="7days">7 Hari Terakhir</option>
                                             <option value="30days">30 Hari Terakhir</option>
-                                            <option value="all">Semua Pelanggan</option>
                                         </select>
                                     </div>
                                 </div>
@@ -4332,20 +4484,51 @@
                     @else
                     <div class="overflow-x-auto rounded-b-xl">
                         <table class="w-full text-left border-collapse">
-                            <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                            <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider select-none">
                                 <tr>
-                                    <th class="py-3 px-4">Nama Pelanggan</th>
+                                    <th class="py-3 px-4 cursor-pointer hover:bg-gray-100 transition" @click="sortCustomersClient('name')">
+                                        <div class="flex items-center gap-1.5">
+                                            <span>Nama Pelanggan</span>
+                                            <span class="text-xs font-bold" :class="customerSortCol === 'name' ? 'text-emerald-600' : 'text-gray-400'" x-text="customerSortCol === 'name' ? (customerSortDir === 'asc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
                                     <th class="py-3 px-4">No. Telepon / HP</th>
-                                    <th class="py-3 px-4 text-center">Stempel Aktif</th>
-                                    <th class="py-3 px-4 text-center">Saldo Poin</th>
-                                    <th class="py-3 px-4 text-center">Kartu Selesai (9 Cap)</th>
-                                    <th class="py-3 px-4 text-right">Total Belanja</th>
+                                    <th class="py-3 px-4 text-center cursor-pointer hover:bg-gray-100 transition" @click="sortCustomersClient('stamp_count')" title="Klik untuk mengurutkan stempel">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span>Stempel Aktif</span>
+                                            <span class="text-xs font-bold" :class="customerSortCol === 'stamp_count' ? 'text-emerald-600' : 'text-gray-400'" x-text="customerSortCol === 'stamp_count' ? (customerSortDir === 'desc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 text-center cursor-pointer hover:bg-gray-100 transition" @click="sortCustomersClient('points')" title="Klik untuk mengurutkan poin">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span>Saldo Poin</span>
+                                            <span class="text-xs font-bold" :class="customerSortCol === 'points' ? 'text-emerald-600' : 'text-gray-400'" x-text="customerSortCol === 'points' ? (customerSortDir === 'desc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 text-center cursor-pointer hover:bg-gray-100 transition" @click="sortCustomersClient('completed_cards')" title="Klik untuk mengurutkan kartu selesai">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <span>Kartu Selesai (12 Cap)</span>
+                                            <span class="text-xs font-bold" :class="customerSortCol === 'completed_cards' ? 'text-emerald-600' : 'text-gray-400'" x-text="customerSortCol === 'completed_cards' ? (customerSortDir === 'desc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
+                                    <th class="py-3 px-4 text-right cursor-pointer hover:bg-gray-100 transition" @click="sortCustomersClient('total_spent')" title="Klik untuk mengurutkan total belanja">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <span>Total Belanja</span>
+                                            <span class="text-xs font-bold" :class="customerSortCol === 'total_spent' ? 'text-emerald-600' : 'text-gray-400'" x-text="customerSortCol === 'total_spent' ? (customerSortDir === 'desc' ? '↑' : '↓') : '↕'"></span>
+                                        </div>
+                                    </th>
                                     <th class="py-3 px-4 text-center">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100 text-xs">
+                            <tbody id="posCustomerTableBody" class="divide-y divide-gray-100 text-xs">
                                 @foreach($sessionCustomers as $idx => $customer)
                                 <tr wire:key="cust-row-{{ $idx }}"
+                                    data-cust-row
+                                    data-sort-name="{{ strtolower($customer->customer_name) }}"
+                                    data-sort-stamp_count="{{ $customer->stamp_count ?? 0 }}"
+                                    data-sort-points="{{ $customer->loyalty_points ?? 0 }}"
+                                    data-sort-completed_cards="{{ $customer->completed_cards_count ?? 0 }}"
+                                    data-sort-total_spent="{{ $customer->total_spent ?? 0 }}"
                                     x-show="!$wire.customerSearch || '{{ strtolower($customer->customer_name) }}'.includes(($wire.customerSearch || '').toLowerCase()) || '{{ $customer->customer_phone }}'.includes($wire.customerSearch || '')"
                                     class="hover:bg-gray-50/80 transition-colors">
 
@@ -4371,14 +4554,14 @@
                                         @endif
                                     </td>
 
-                                    <!-- Stempel Aktif (5 / 9 Cap) -->
+                                    <!-- Stempel Aktif (12 Cap) -->
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
                                         @php
-                                            $stamps = $customer->active_stamps ?? (($customer->stamp_count ?? 0) % 9);
+                                            $stamps = $customer->active_stamps ?? (($customer->stamp_count ?? 0) % 12);
                                         @endphp
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
                                             <svg class="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                            <span>{{ $stamps }} / 9 Cap</span>
+                                            <span>{{ $stamps }} / 12 Cap</span>
                                         </span>
                                     </td>
 
@@ -4387,10 +4570,10 @@
                                         {{ number_format($customer->loyalty_points ?? 0, 0, ',', '.') }}
                                     </td>
 
-                                    <!-- Kartu Selesai (9 Cap) -->
+                                    <!-- Kartu Selesai (12 Cap) -->
                                     <td class="py-3 px-4 text-center whitespace-nowrap">
                                         @php
-                                            $completed = $customer->completed_cards_count ?? floor(($customer->stamp_count ?? 0) / 9);
+                                            $completed = $customer->completed_cards_count ?? floor(($customer->stamp_count ?? 0) / 12);
                                         @endphp
                                         @if($completed > 0)
                                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20">
@@ -5126,7 +5309,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-xs">
                         <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Stempel Aktif</div>
-                        <div class="text-sm font-extrabold text-emerald-600 mt-1" x-text="(selectedCustomerDetail ? (selectedCustomerDetail.active_stamps ?? (selectedCustomerDetail.stamp_count % 9)) : 0) + ' / 9 Cap'"></div>
+                        <div class="text-sm font-extrabold text-emerald-600 mt-1" x-text="(selectedCustomerDetail ? (selectedCustomerDetail.active_stamps ?? (selectedCustomerDetail.stamp_count % 12)) : 0) + ' / 12 Cap'"></div>
                     </div>
                     <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-xs">
                         <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Saldo Poin</div>
@@ -5152,6 +5335,31 @@
                         <div><span class="text-gray-500">Alamat:</span> <span class="text-gray-900 font-medium" x-text="selectedCustomerDetail && selectedCustomerDetail.customer_address ? selectedCustomerDetail.customer_address : '-'"></span></div>
                     </div>
                 </div>
+
+                <!-- Hadiah Fisik Loyalti yang Berhak Diterima -->
+                <template x-if="selectedCustomerDetail && availableLoyaltyManualRewardsForCustomer.length > 0">
+                    <div class="bg-amber-50 p-3.5 rounded-xl border border-amber-300 space-y-2 shadow-xs">
+                        <div class="font-bold text-amber-950 text-xs flex items-center justify-between">
+                            <span>🎁 Hadiah Barang Fisik / Souvenir Pelanggan Ini:</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] bg-amber-200 text-amber-900 border border-amber-300 font-bold" x-text="(selectedCustomerDetail.stamp_count || 0) + ' / 12 Cap'"></span>
+                        </div>
+                        <div class="space-y-2 pt-1">
+                            <template x-for="(mTier, mIdx) in availableLoyaltyManualRewardsForCustomer" :key="mIdx">
+                                <div class="bg-white p-2.5 rounded-lg border border-amber-200 flex items-center justify-between shadow-xs">
+                                    <div>
+                                        <div class="font-bold text-gray-900 text-xs" x-text="mTier.description"></div>
+                                        <div class="text-[10px] text-amber-800 font-medium" x-text="'Syarat: Minimal ' + mTier.min_stamps + ' Cap Stempel (Terpenuhi)'"></div>
+                                    </div>
+                                    <button type="button"
+                                            @click="$wire.claimPhysicalGiftDirectly(selectedCustomerDetail.customer_phone, mTier.description);"
+                                            class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs transition cursor-pointer flex items-center gap-1">
+                                        <span>🎁 Serahkan Hadiah</span>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- Log / Riwayat Transaksi Per Baris -->
                 <div>
@@ -6047,7 +6255,31 @@
 
                 resumeCart(id, holdItem = null) {
                     const doResume = (holdData) => {
-                        this.cart = holdData.cart;
+                        const updatedCart = (holdData.cart || []).map(item => {
+                            if (!item.product_id) return item;
+                            const p = (this.allProducts || []).find(prod => prod.id === item.product_id);
+                            let currentStock = item.stock;
+                            if (p) {
+                                if (item.product_variant_id && p.variants) {
+                                    const v = p.variants.find(varItem => varItem.id === item.product_variant_id);
+                                    if (v) currentStock = v.stock;
+                                } else {
+                                    currentStock = p.stock;
+                                }
+                            }
+                            const itemStock = parseInt(currentStock !== undefined && currentStock !== null ? currentStock : 999999);
+                            const clampedQty = Math.min(item.quantity, itemStock);
+                            if (clampedQty < item.quantity) {
+                                this.showToast(`Qty ${item.name} disesuaikan ke ${clampedQty} pcs sesuai stok terbaru.`, 'warning');
+                            }
+                            return {
+                                ...item,
+                                stock: itemStock,
+                                quantity: clampedQty
+                            };
+                        });
+
+                        this.cart = updatedCart;
                         this.activeVoucher = holdData.activeVoucher || null;
                         this.manualDiscountType = holdData.manualDiscountType || 'rp';
                         this.manualDiscountValue = holdData.manualDiscountValue || 0;
@@ -6157,6 +6389,15 @@
                     processSave();
                 },
 
+                getCartItemQty(productId, variantId) {
+                    return (this.cart || []).reduce((sum, item) => {
+                        if (item.product_id === productId && item.product_variant_id === variantId) {
+                            return sum + (parseInt(item.quantity) || 0);
+                        }
+                        return sum;
+                    }, 0);
+                },
+
                 confirmCustomNegoAddToCart() {
                     if (!this.customNegoProduct || !this.customNegoProduct.id) {
                         this.showCustomNegoModal = false;
@@ -6166,17 +6407,29 @@
                     const p = this.customNegoProduct;
                     const negoPrice = parseFloat(p.negoPrice || 0);
                     const qty = parseInt(p.qty || 1);
+                    const stock = parseInt(p.stock !== undefined ? p.stock : 999999);
 
                     if (isNaN(negoPrice) || negoPrice < 0) {
                         this.showToast('Harga nego tidak valid.', 'error');
                         return;
                     }
 
+                    const inCartQty = this.getCartItemQty(p.id, null);
+                    if (inCartQty + qty > stock) {
+                        const avail = Math.max(0, stock - inCartQty);
+                        if (avail === 0) {
+                            this.showToast(`Stok ${p.name} sudah habis terpakai di keranjang.`, 'error');
+                        } else {
+                            this.showToast(`Hanya bisa menambah maksimal ${avail} pcs lagi. (Stok: ${stock}, Di keranjang: ${inCartQty})`, 'warning');
+                        }
+                        return;
+                    }
+
                     const purchasePrice = parseFloat(p.purchasePrice || 0);
                     const processAddToCart = () => {
-                        this.addToCart(p.id, null, p.name, negoPrice, qty, p.originalPrice, purchasePrice);
+                        this.addToCart(p.id, null, p.name, negoPrice, qty, p.originalPrice, purchasePrice, stock);
                         this.showCustomNegoModal = false;
-                        this.showToast(`Produk kustom ${p.name} berhasil ditambahkan ke keranjang!`, 'success');
+                        this.showToast(`Produk ${p.name} berhasil ditambahkan ke keranjang!`, 'success');
                     };
 
                     if (purchasePrice > 0 && negoPrice < purchasePrice) {
@@ -6219,9 +6472,7 @@
                     this.calculateVoucherDiscount();
                 },
 
-
-
-                addProduct(id, name, price, hasVariants, variants = null, defaultImage = null, isCustom = false, purchasePrice = 0, originalPrice = null, promoPrice = null) {
+                addProduct(id, name, price, hasVariants, variants = null, defaultImage = null, isCustom = false, purchasePrice = 0, originalPrice = null, promoPrice = null, stock = 999999) {
                     if (hasVariants && variants) {
                         this.initVariantSelector(id, name, price, variants, defaultImage, originalPrice);
                         return;
@@ -6235,7 +6486,8 @@
                         purchasePrice: parseFloat(purchasePrice || 0),
                         negoPrice: price,
                         qty: 1,
-                        defaultImage: defaultImage || ''
+                        defaultImage: defaultImage || '',
+                        stock: parseInt(stock !== null && stock !== undefined ? stock : 999999)
                     };
                     this.showCustomNegoModal = true;
                 },
@@ -6364,13 +6616,18 @@
                         this.showToast('Stok varian terpilih sedang habis.', 'error');
                         return;
                     }
-                    this.addVariantToCart(matched.id, matched.name, matched.price, matched.original_price);
+                    const inCartQty = this.getCartItemQty(this.currentProductForVariant.id, matched.id);
+                    if (inCartQty + 1 > matched.stock) {
+                        this.showToast(`Stok varian ${matched.name} tidak mencukupi! (Stok: ${matched.stock}, Di keranjang: ${inCartQty})`, 'warning');
+                        return;
+                    }
+                    this.addVariantToCart(matched.id, matched.name, matched.price, matched.original_price, matched.stock);
                 },
 
-                addVariantToCart(variantId, variantName, variantPrice, variantOriginalPrice = null) {
+                addVariantToCart(variantId, variantName, variantPrice, variantOriginalPrice = null, variantStock = 999999) {
                     const fullName = this.currentProductForVariant.name + ' - ' + variantName;
                     const finalOrigPrice = variantOriginalPrice !== null ? parseFloat(variantOriginalPrice) : (this.currentProductForVariant ? this.currentProductForVariant.originalPrice : variantPrice);
-                    this.addToCart(this.currentProductForVariant.id, variantId, fullName, variantPrice, 1, finalOrigPrice);
+                    this.addToCart(this.currentProductForVariant.id, variantId, fullName, variantPrice, 1, finalOrigPrice, 0, variantStock);
                     this.showVariantModal = false;
                 },
 
@@ -7121,32 +7378,79 @@
                     this.bounceTimeout = setTimeout(() => { this.cartBouncing = false; }, 500);
                 },
 
-                addToCart(productId, variantId, name, price, qty = 1, originalPrice = null, purchasePrice = 0) {
+                addToCart(productId, variantId, name, price, qty = 1, originalPrice = null, purchasePrice = 0, stock = 999999) {
                     this.triggerCartBounce();
                     const itemQty = parseInt(qty) || 1;
                     const itemPrice = parseFloat(price) || 0;
-                    // Cek jika produk sudah ada di keranjang dengan harga nego yang sama
+                    const itemStock = parseInt(stock !== null && stock !== undefined ? stock : 999999);
+
                     const existingIndex = this.cart.findIndex(item => item.product_id === productId && item.product_variant_id === variantId && item.price === itemPrice);
                     if (existingIndex > -1) {
-                        this.cart[existingIndex].quantity += itemQty;
+                        const currentQty = parseInt(this.cart[existingIndex].quantity) || 0;
+                        const newQty = currentQty + itemQty;
+                        const maxStock = this.cart[existingIndex].stock !== undefined ? parseInt(this.cart[existingIndex].stock) : itemStock;
+                        
+                        if (newQty > maxStock) {
+                            this.cart[existingIndex].quantity = maxStock;
+                            this.showToast(`Jumlah produk ${name} telah mencapai stok maksimal (${maxStock} pcs).`, 'warning');
+                        } else {
+                            this.cart[existingIndex].quantity = newQty;
+                        }
                     } else {
-                        this.cart.unshift({ // Add to top
+                        const addedQty = Math.min(itemQty, itemStock);
+                        this.cart.unshift({
                             product_id: productId,
                             product_variant_id: variantId,
                             name: name,
                             price: itemPrice,
                             original_price: originalPrice !== null ? parseFloat(originalPrice) : itemPrice,
                             purchase_price: parseFloat(purchasePrice) || 0,
-                            quantity: itemQty
+                            quantity: addedQty,
+                            stock: itemStock
                         });
+
+                        if (addedQty < itemQty) {
+                            this.showToast(`Hanya dapat memasukkan ${addedQty} pcs ${name} sesuai sisa stok.`, 'warning');
+                        }
                     }
                     this.calculateVoucherDiscount();
                 },
 
                 updateQty(index, change) {
-                    let newQty = this.cart[index].quantity + change;
+                    if (!this.cart[index]) return;
+                    const item = this.cart[index];
+                    const changeNum = parseInt(change) || 0;
+                    let newQty = parseInt(item.quantity) + changeNum;
+                    const maxStock = item.stock !== undefined ? parseInt(item.stock) : 999999;
+
+                    if (newQty > maxStock) {
+                        this.cart[index].quantity = maxStock;
+                        this.showToast(`Jumlah melebihi stok yang tersedia (${maxStock} pcs).`, 'warning');
+                        this.calculateVoucherDiscount();
+                        return;
+                    }
+
                     if (newQty > 0) {
                         this.cart[index].quantity = newQty;
+                    }
+                    this.calculateVoucherDiscount();
+                },
+
+                validateCartItemQty(index) {
+                    if (!this.cart[index]) return;
+                    const item = this.cart[index];
+                    let qty = parseInt(item.quantity);
+                    const maxStock = item.stock !== undefined ? parseInt(item.stock) : 999999;
+
+                    if (isNaN(qty) || qty < 1) {
+                        this.cart[index].quantity = 1;
+                        this.calculateVoucherDiscount();
+                        return;
+                    }
+
+                    if (qty > maxStock) {
+                        this.cart[index].quantity = maxStock;
+                        this.showToast(`Jumlah melebihi stok yang tersedia (${maxStock} pcs).`, 'warning');
                     }
                     this.calculateVoucherDiscount();
                 },
@@ -7250,12 +7554,103 @@
                     return 'Diskon ' + dVal + '%';
                 },
 
-                isVoucherUsedByActiveCustomer(v) {
-                    if (!this.activeCustomerLoyalty || !v) return false;
-                    const usedIds = this.activeCustomerLoyalty.used_voucher_ids || [];
-                    const timesUsed = usedIds.filter(id => id == v.id).length;
-                    const maxPerUser = v.max_uses_per_user || 1;
-                    return timesUsed >= maxPerUser;
+                customerSortCol: 'total_spent',
+                customerSortDir: 'desc',
+
+                sortCustomersClient(col) {
+                    if (this.customerSortCol === col) {
+                        this.customerSortDir = this.customerSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.customerSortCol = col;
+                        this.customerSortDir = 'desc';
+                    }
+
+                    const tableBody = document.getElementById('posCustomerTableBody');
+                    if (!tableBody) return;
+
+                    const rows = Array.from(tableBody.querySelectorAll('tr[data-cust-row]'));
+                    const isAsc = this.customerSortDir === 'asc';
+
+                    rows.sort((a, b) => {
+                        let valA = a.getAttribute('data-sort-' + col);
+                        let valB = b.getAttribute('data-sort-' + col);
+
+                        if (col === 'name') {
+                            return isAsc ? (valA || '').localeCompare(valB || '') : (valB || '').localeCompare(valA || '');
+                        }
+
+                        let numA = parseFloat(valA) || 0;
+                        let numB = parseFloat(valB) || 0;
+                        return isAsc ? numA - numB : numB - numA;
+                    });
+
+                    rows.forEach(r => tableBody.appendChild(r));
+                },
+
+                historySortCol: 'created_at',
+                historySortDir: 'desc',
+
+                sortHistoryClient(col) {
+                    if (this.historySortCol === col) {
+                        this.historySortDir = this.historySortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.historySortCol = col;
+                        this.historySortDir = 'desc';
+                    }
+
+                    const tableBody = document.getElementById('posHistoryTableBody');
+                    if (!tableBody) return;
+
+                    const rows = Array.from(tableBody.querySelectorAll('tr[data-history-row]'));
+                    const isAsc = this.historySortDir === 'asc';
+
+                    rows.sort((a, b) => {
+                        let valA = a.getAttribute('data-sort-' + col);
+                        let valB = b.getAttribute('data-sort-' + col);
+
+                        if (col === 'customer' || col === 'method' || col === 'status') {
+                            return isAsc ? (valA || '').localeCompare(valB || '') : (valB || '').localeCompare(valA || '');
+                        }
+
+                        let numA = parseFloat(valA) || 0;
+                        let numB = parseFloat(valB) || 0;
+                        return isAsc ? numA - numB : numB - numA;
+                    });
+
+                    rows.forEach(r => tableBody.appendChild(r));
+                },
+
+                returnSortCol: 'created_at',
+                returnSortDir: 'desc',
+
+                sortReturnClient(col) {
+                    if (this.returnSortCol === col) {
+                        this.returnSortDir = this.returnSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.returnSortCol = col;
+                        this.returnSortDir = 'desc';
+                    }
+
+                    const tableBody = document.getElementById('posReturnTableBody');
+                    if (!tableBody) return;
+
+                    const rows = Array.from(tableBody.querySelectorAll('tr[data-return-row]'));
+                    const isAsc = this.returnSortDir === 'asc';
+
+                    rows.sort((a, b) => {
+                        let valA = a.getAttribute('data-sort-' + col);
+                        let valB = b.getAttribute('data-sort-' + col);
+
+                        if (col === 'type' || col === 'cashier') {
+                            return isAsc ? (valA || '').localeCompare(valB || '') : (valB || '').localeCompare(valA || '');
+                        }
+
+                        let numA = parseFloat(valA) || 0;
+                        let numB = parseFloat(valB) || 0;
+                        return isAsc ? numA - numB : numB - numA;
+                    });
+
+                    rows.forEach(r => tableBody.appendChild(r));
                 },
 
                 get availableLoyaltyVouchersForCustomer() {
@@ -7265,6 +7660,20 @@
                         const isLocked = this.isVoucherLoyaltyLocked(v);
                         const isUsed = this.isVoucherUsedByActiveCustomer(v);
                         return tier && !isLocked && !isUsed;
+                    });
+                },
+
+                get availableLoyaltyManualRewardsForCustomer() {
+                    if (!this.activeCustomerLoyalty || !this.posLoyaltyTiers || !Array.isArray(this.posLoyaltyTiers)) return [];
+                    const currentStamps = parseInt(this.activeCustomerLoyalty.stamp_count || 0);
+                    const minSpend = currentStamps === 0 ? 150000 : 100000;
+                    const willEarnStamp = (this.grandTotal || 0) >= minSpend ? 1 : 0;
+                    const projectedStamps = currentStamps + willEarnStamp;
+
+                    return this.posLoyaltyTiers.filter(tier => {
+                        const minStamps = parseInt(tier.min_stamps || 0);
+                        const isVoucher = tier.is_voucher === undefined || tier.is_voucher === true || tier.is_voucher === '1' || tier.is_voucher === 1;
+                        return !isVoucher && projectedStamps >= minStamps && tier.description;
                     });
                 },
                 
@@ -7579,6 +7988,7 @@
                         cash_change: this.cashChange,
                         customer_name: this.customerName,
                         customer_phone: this.customerPhone,
+                        claimed_physical_gifts: this.availableLoyaltyManualRewardsForCustomer ? this.availableLoyaltyManualRewardsForCustomer.map(r => r.description) : [],
                         is_reserved: this.isReserved,
                         pickup_date: this.pickupDate,
                         payment_details: {

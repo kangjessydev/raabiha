@@ -76,32 +76,40 @@ class PosLoyaltySettings extends Page implements HasForms
                     ]),
 
                 \Filament\Schemas\Components\Section::make('Pengaturan Cap Stempel Digital')
-                    ->description('Stempel diberikan berdasar kunjungan berbelanja yang dikaitkan dengan Nomor HP pelanggan. Setiap 9 cap = 1 Kartu Penuh.')
+                    ->description('Stempel diberikan berdasar kunjungan berbelanja yang dikaitkan dengan Nomor HP pelanggan. Setiap 12 cap (4 kolom × 3 baris) = 1 Kartu Penuh.')
                     ->icon('heroicon-o-sparkles')
-                    ->columns(['sm' => 1, 'md' => 2])
+                    ->columns(['sm' => 1, 'md' => 3])
                     ->components([
+                        Forms\Components\TextInput::make('pos_loyalty_min_spend_first')
+                            ->label('Minimal Belanja Cap Pertama (Rp)')
+                            ->helperText('Syarat minimal belanja untuk mendapatkan 1st Cap Stempel (Kartu Baru).')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->default(150000)
+                            ->required(),
                         Forms\Components\TextInput::make('pos_loyalty_min_spend')
-                            ->label('Minimal Belanja Untuk Cap Stempel (Rp)')
-                            ->helperText('Syarat minimal belanja agar pelanggan mendapat 1 cap stempel. (Wajib menautkan Nomor HP saat di Kasir!).')
+                            ->label('Minimal Belanja Cap Selanjutnya (Rp)')
+                            ->helperText('Syarat minimal belanja untuk mendapatkan Cap ke-2 s/d ke-12.')
                             ->numeric()
                             ->prefix('Rp')
                             ->default(100000)
                             ->required(),
                         Forms\Components\TextInput::make('pos_loyalty_stamps_to_points_ratio')
                             ->label('1 Stempel Setara Poin')
-                            ->helperText('Nilai konversi 1 buah stempel ke poin (Admin bebas mengatur nilai ini).')
+                            ->helperText('Nilai konversi 1 buah stempel ke poin bonus.')
                             ->numeric()
                             ->suffix('Poin')
                             ->default(10)
                             ->required(),
                         \Filament\Forms\Components\Placeholder::make('loyalty_stamp_rule')
-                            ->label('Catatan Aturan Stempel (1/9)')
+                            ->label('Catatan Aturan Stempel (1/12)')
                             ->columnSpan('full')
                             ->content(new \Illuminate\Support\HtmlString('
                                 <div class="text-sm text-gray-500">
                                     <ul class="list-disc pl-4 space-y-1">
                                         <li>Pelanggan <b>wajib</b> memberikan <b>Nomor HP</b> di kasir. Jika tidak pakai Nomor HP, stempel tidak akan tercetak/masuk.</li>
-                                        <li>Pelanggan akan mendapat cap dengan format (X/9). Jika cap sudah mencapai 9, sistem akan me-reset ke 1 dan pelanggan tersebut mendapatkan <b>Badge 1 Kartu</b>.</li>
+                                        <li>Cap Pertama membutuhkan minimal belanja <b>Rp 150.000</b>. Cap ke-2 s/d ke-12 membutuhkan minimal belanja <b>Rp 100.000</b> per transaksi.</li>
+                                        <li>Pelanggan akan mendapat cap dengan format (X/12). Jika cap sudah mencapai 12, sistem akan me-reset ke 1 dan pelanggan tersebut mendapatkan <b>Badge 1 Kartu Penuh</b>.</li>
                                     </ul>
                                 </div>
                             ')),
@@ -113,25 +121,32 @@ class PosLoyaltySettings extends Page implements HasForms
                     ->components([
                         \Filament\Forms\Components\Repeater::make('pos_loyalty_tiers')
                             ->label('🎁 Daftar Tier Hadiah Penukaran Stempel POS')
-                            ->helperText('Pilih Voucher Promo yang sudah Anda buat di menu Voucher, lalu tentukan syarat minimal stempel yang harus dimiliki pelanggan di POS untuk membuka voucher tersebut.')
+                            ->helperText('Tentukan jenis hadiah (Voucher Promo atau Hadiah Barang Fisik/Manual) serta syarat minimal stempel yang harus dimiliki pelanggan.')
                             ->schema([
                                 Forms\Components\TextInput::make('min_stamps')
                                     ->label('Jumlah Stempel Wajib (Syarat)')
-                                    ->helperText('Jumlah stempel minimal yang dipotong saat klaim')
+                                    ->helperText('Syarat minimal stempel')
                                     ->numeric()
                                     ->required()
                                     ->default(3),
+                                Forms\Components\Toggle::make('is_voucher')
+                                    ->label('Gunakan Voucher Promo?')
+                                    ->helperText('Aktif = Voucher Promo, Mati = Input Hadiah Manual')
+                                    ->default(true)
+                                    ->reactive(),
                                 Forms\Components\Select::make('voucher_id')
                                     ->label('Voucher Promo Hadiah')
                                     ->options(fn () => \App\Models\Voucher::where('is_active', true)->pluck('name', 'id'))
                                     ->searchable()
-                                    ->required(),
+                                    ->required(fn ($get) => $get('is_voucher') ?? true)
+                                    ->visible(fn ($get) => $get('is_voucher') ?? true),
                                 Forms\Components\TextInput::make('description')
-                                    ->label('Keterangan Tier Hadiah (Tampil di POS)')
-                                    ->placeholder('Contoh: Diskon Member Tier 1 (Potong 3 Cap)')
+                                    ->label('Nama Hadiah / Keterangan Tier')
+                                    ->placeholder(fn ($get) => ($get('is_voucher') ?? true) ? 'Contoh: Diskon Member Tier 1 (3 Cap)' : 'Contoh: Gratis 1 Pouch Cantik Raabiha')
+                                    ->required(fn ($get) => !($get('is_voucher') ?? true))
                                     ->maxLength(255),
                             ])
-                            ->columns(3)
+                            ->columns(4)
                             ->default([]),
                     ]),
             ])

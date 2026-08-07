@@ -190,6 +190,9 @@ class PosTransactionService
             $paymentDetails['item_discounts'] = $itemDiscountsTotal;
             $paymentDetails['manual_discount'] = $manualDiscount;
             $paymentDetails['voucher_discount'] = $voucherDiscount;
+            if (!empty($data['claimed_physical_gifts']) && is_array($data['claimed_physical_gifts'])) {
+                $paymentDetails['claimed_physical_gifts'] = $data['claimed_physical_gifts'];
+            }
             
             $paymentStatus = 'paid';
             $orderCashPaid = $cashPaid;
@@ -385,7 +388,7 @@ class PosTransactionService
                 throw new \Exception("Stempel pelanggan tidak mencukupi untuk menggunakan voucher ini. Syarat: {$redeemedStamps} Cap, Saldo Pelanggan: {$customer->stamp_count} Cap.");
             }
 
-            // Pemakaian voucher hadiah loyalti TIDAK memotong stamp_count (stempel tetap terakumulasi sampai 9 cap)
+            // Pemakaian voucher hadiah loyalti TIDAK memotong stamp_count
             \App\Models\PosStampLog::create([
                 'pos_customer_id' => $customer->id,
                 'order_id'        => $order->id,
@@ -396,8 +399,24 @@ class PosTransactionService
             ]);
         }
 
+        // Catat log penyerahan hadiah fisik (non-voucher)
+        if (!empty($data['claimed_physical_gifts']) && is_array($data['claimed_physical_gifts'])) {
+            foreach ($data['claimed_physical_gifts'] as $giftDesc) {
+                \App\Models\PosStampLog::create([
+                    'pos_customer_id' => $customer->id,
+                    'order_id'        => $order->id,
+                    'type'            => 'redeemed',
+                    'stamps'          => 0,
+                    'points'          => 0,
+                    'description'     => "Penyerahan Hadiah Fisik: {$giftDesc} pada Nota #{$order->order_number}.",
+                ]);
+            }
+        }
+
         // 3. Proses Perolehan Stempel & Poin Baru (Earning)
-        $minSpend = (float) (\App\Models\SiteSetting::where('key', 'pos_loyalty_min_spend')->value('value') ?? 100000);
+        $minSpendFirst = (float) (\App\Models\SiteSetting::where('key', 'pos_loyalty_min_spend_first')->value('value') ?? 150000);
+        $minSpendSubsequent = (float) (\App\Models\SiteSetting::where('key', 'pos_loyalty_min_spend')->value('value') ?? 100000);
+        
         $pointsSpendMultiplier = (float) (\App\Models\SiteSetting::where('key', 'pos_point_spend_multiplier')->value('value') ?? 10000);
         $pointsEarnedPerMultiplier = (int) (\App\Models\SiteSetting::where('key', 'pos_point_earned_per_multiplier')->value('value') ?? 1);
         $pointsRatio = (int) (\App\Models\SiteSetting::where('key', 'pos_loyalty_stamps_to_points_ratio')->value('value') ?? 10);
@@ -411,17 +430,20 @@ class PosTransactionService
         }
 
         // B. Cap Stempel dari Minimal Transaksi Kunjungan
-        if ($order->grand_total >= $minSpend) {
-            $stampsEarned = 1; // Selalu 1 cap stempel per kunjungan yang memenuhi syarat (Sistem 1/9)
+        // Cap 1 (Kartu Baru): Syarat Rp 150.000, Cap ke-2 s/d ke-12: Syarat Rp 100.000
+        $requiredMinSpend = ($customer->stamp_count == 0) ? $minSpendFirst : $minSpendSubsequent;
+
+        if ($order->grand_total >= $requiredMinSpend) {
+            $stampsEarned = 1; // Selalu 1 cap stempel per kunjungan yang memenuhi syarat (Sistem 1/12)
             $pointsEarned += ($stampsEarned * $pointsRatio); // Poin bonus dari stempel
         }
             
         if ($stampsEarned > 0 || $pointsEarned > 0) {
             $newStampCount = $customer->stamp_count + $stampsEarned;
             
-            // Hitung kartu penuh (tiap 9 cap)
-            $completedCardsAdd = (int) floor($newStampCount / 9);
-            $finalStampCount = $newStampCount % 9;
+            // Hitung kartu penuh (tiap 12 cap)
+            $completedCardsAdd = (int) floor($newStampCount / 12);
+            $finalStampCount = $newStampCount % 12;
 
             $customer->update([
                 'stamp_count'           => $finalStampCount,
@@ -441,6 +463,40 @@ class PosTransactionService
                 'points'          => $pointsEarned,
                 'description'     => "Perolehan {$stampsEarned} Stempel & {$pointsEarned} Poin dari Nota POS #{$order->order_number}.",
             ]);
+
+            // Cek jika penambahan stempel ini otomatis memenuhi syarat Hadiah Fisik (Non-Voucher Tier)
+            $tiersSetting = \App\Models\SiteSetting::where('key', 'pos_loyalty_tiers')->value('value');
+            if ($tiersSetting && $stampsEarned > 0) {
+                $tiers = is_string($tiersSetting) ? json_decode($tiersSetting, true) : $tiersSetting;
+                if (is_array($tiers)) {
+                    $payDetails = is_string($order->payment_details) ? json_decode($order->payment_details, true) : ($order->payment_details ?: []);
+                    $existingClaimed = $payDetails['claimed_physical_gifts'] ?? [];
+                    $newClaimedGifts = [];
+
+                    foreach ($tiers as $tier) {
+                        $isVoucher = isset($tier['is_voucher']) ? filter_var($tier['is_voucher'], FILTER_VALIDATE_BOOLEAN) : true;
+                        $minStamps = (int)($tier['min_stamps'] ?? 0);
+                        $desc = $tier['description'] ?? '';
+
+                        if (!$isVoucher && $desc && $newStampCount >= $minStamps && !in_array($desc, $existingClaimed)) {
+                            $newClaimedGifts[] = $desc;
+                            \App\Models\PosStampLog::create([
+                                'pos_customer_id' => $customer->id,
+                                'order_id'        => $order->id,
+                                'type'            => 'redeemed',
+                                'stamps'          => 0,
+                                'points'          => 0,
+                                'description'     => "Penyerahan Hadiah Fisik (Stempel Terpenuhi {$newStampCount}/12): {$desc} pada Nota #{$order->order_number}.",
+                            ]);
+                        }
+                    }
+
+                    if (!empty($newClaimedGifts)) {
+                        $payDetails['claimed_physical_gifts'] = array_values(array_unique(array_merge($existingClaimed, $newClaimedGifts)));
+                        $order->update(['payment_details' => json_encode($payDetails)]);
+                    }
+                }
+            }
         } else {
             // Tetap update last_visit & total_spent walau tidak dapet stempel
             $customer->update([

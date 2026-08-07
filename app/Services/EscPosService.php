@@ -257,23 +257,42 @@ class EscPosService
                 $lastVisit = $customer->last_visit_at ?? $order->created_at ?? now();
                 $expiryDate = $lastVisit->copy()->addMonths($expiryMonths)->format('d/m/Y');
 
-                $this->divider();
-                $this->add(self::ALIGN_CENTER);
-                $this->add(self::BOLD_ON);
-                $this->line("KARTU CAP DIGITAL RAABIHA");
-                $this->add(self::BOLD_OFF);
-                $this->line("Total Cap: " . $customer->stamp_count . " dari 9 Cap");
-                
-                // Visual Cap 3 baris x 3 kolom
-                $c = $customer->stamp_count;
-                $row1 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [1,2,3]));
-                $row2 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [4,5,6]));
-                $row3 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [7,8,9]));
+                $payDetails = is_string($order->payment_details) ? json_decode($order->payment_details, true) : (is_array($order->payment_details) ? $order->payment_details : []);
+                $hasClaimedGifts = !empty($payDetails['claimed_physical_gifts']) && is_array($payDetails['claimed_physical_gifts']);
 
-                $this->line("Voucher 1 (15k): " . $row1);
-                $this->line("Voucher 2 (20k): " . $row2);
-                $this->line("Voucher 3 (25k): " . $row3);
-                $this->line("Masa Berlaku: s/d " . $expiryDate);
+                // Tampilkan Kartu Cap Digital hanya jika saldo stempel > 0 (sedang mengumpulkan stempel)
+                if ($customer->stamp_count > 0) {
+                    $this->divider();
+                    $this->add(self::ALIGN_CENTER);
+                    $this->add(self::BOLD_ON);
+                    $this->line("KARTU CAP DIGITAL RAABIHA");
+                    $this->add(self::BOLD_OFF);
+                    $this->line("Pelanggan: " . ($customer->name ?: $customer->phone));
+                    $this->line("Total Cap: " . $customer->stamp_count . " dari 12 Cap");
+                    
+                    // Visual Cap 3 baris x 4 kolom (12 Cap)
+                    $c = $customer->stamp_count;
+                    $row1 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [1,2,3,4]));
+                    $row2 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [5,6,7,8]));
+                    $row3 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [9,10,11,12]));
+
+                    $this->line("Cap 1-4   : " . $row1);
+                    $this->line("Cap 5-8   : " . $row2);
+                    $this->line("Cap 9-12  : " . $row3);
+                    $this->line("Masa Berlaku: s/d " . $expiryDate);
+                }
+
+                // Cetak Bukti Hadiah Fisik Diserahkan (jika ada penyerahan hadiah)
+                if ($hasClaimedGifts) {
+                    $this->divider();
+                    $this->add(self::ALIGN_CENTER);
+                    $this->add(self::BOLD_ON);
+                    $this->line("HADIAH LOYALTI DISERAHKAN:");
+                    $this->add(self::BOLD_OFF);
+                    foreach ($payDetails['claimed_physical_gifts'] as $gName) {
+                        $this->line("1x " . $gName . " (GRATIS)");
+                    }
+                }
             }
         }
 
@@ -483,20 +502,35 @@ class EscPosService
                 $lastVisit = $customer->last_visit_at ?? $order->created_at ?? now();
                 $expiryDate = $lastVisit->copy()->addMonths($expiryMonths)->format('d/m/Y');
 
-                $lines[] = str_repeat('-', $width);
-                $lines[] = str_pad("KARTU CAP DIGITAL RAABIHA", $width, ' ', STR_PAD_BOTH);
-                $lines[] = "Pelanggan: " . ($customer->name ?: $customer->phone);
-                $lines[] = "Total Cap: " . $customer->stamp_count . " dari 9 Cap";
+                $payDetails = is_string($order->payment_details) ? json_decode($order->payment_details, true) : (is_array($order->payment_details) ? $order->payment_details : []);
+                $hasClaimedGifts = !empty($payDetails['claimed_physical_gifts']) && is_array($payDetails['claimed_physical_gifts']);
 
-                $c = $customer->stamp_count;
-                $row1 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [1,2,3]));
-                $row2 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [4,5,6]));
-                $row3 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [7,8,9]));
+                // Tampilkan Kartu Cap Digital pada struk teks jika saldo stempel > 0
+                if ($customer->stamp_count > 0) {
+                    $lines[] = str_repeat('-', $width);
+                    $lines[] = str_pad("KARTU CAP DIGITAL RAABIHA", $width, ' ', STR_PAD_BOTH);
+                    $lines[] = "Pelanggan: " . ($customer->name ?: $customer->phone);
+                    $lines[] = "Total Cap: " . $customer->stamp_count . " dari 12 Cap";
 
-                $lines[] = "Voucher 1 (15k): " . $row1;
-                $lines[] = "Voucher 2 (20k): " . $row2;
-                $lines[] = "Voucher 3 (25k): " . $row3;
-                $lines[] = "Masa Berlaku: s/d " . $expiryDate;
+                    $c = $customer->stamp_count;
+                    $row1 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [1,2,3,4]));
+                    $row2 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [5,6,7,8]));
+                    $row3 = implode(" ", array_map(fn($i) => $i <= $c ? "[X]" : "[ ]", [9,10,11,12]));
+
+                    $lines[] = "Cap 1-4   : " . $row1;
+                    $lines[] = "Cap 5-8   : " . $row2;
+                    $lines[] = "Cap 9-12  : " . $row3;
+                    $lines[] = "Masa Berlaku: s/d " . $expiryDate;
+                }
+
+                // Cetak Bukti Hadiah Fisik Diserahkan pada Struk Teks
+                if ($hasClaimedGifts) {
+                    $lines[] = str_repeat('-', $width);
+                    $lines[] = str_pad("HADIAH LOYALTI DISERAHKAN:", $width, ' ', STR_PAD_BOTH);
+                    foreach ($payDetails['claimed_physical_gifts'] as $gName) {
+                        $lines[] = str_pad("1x " . $gName . " (GRATIS)", $width, ' ', STR_PAD_BOTH);
+                    }
+                }
             }
         }
 

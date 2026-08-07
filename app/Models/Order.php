@@ -119,14 +119,14 @@ class Order extends Model
                 $parts = [];
                 foreach ($details['split_payments'] as $sp) {
                     $m = strtolower($sp['method'] ?? '');
-                    if ($m === 'cash' || $m === 'tunai') {
-                        $parts[] = 'TUNAI';
-                    } else {
-                        $parts[] = strtoupper($m);
-                    }
+                    $label = ($m === 'cash' || $m === 'tunai') ? 'TUNAI' : strtoupper($m);
+                    $amt = isset($sp['amount']) && (float)$sp['amount'] > 0 
+                        ? ' (Rp ' . number_format((float)$sp['amount'], 0, ',', '.') . ')' 
+                        : '';
+                    $parts[] = $label . $amt;
                 }
                 if (!empty($parts)) {
-                    return implode(' + ', array_unique($parts));
+                    return 'SPLIT: ' . implode(' + ', $parts);
                 }
             }
             return 'SPLIT PAYMENT';

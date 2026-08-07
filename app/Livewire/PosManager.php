@@ -49,7 +49,24 @@ class PosManager extends Component
 
     // State Filter & Search Pelanggan POS
     public string $customerSearch = '';
-    public string $customerDateFilter = 'shift';
+    public string $customerDateFilter = 'all';
+    public string $customerStampFilter = 'all'; // all, ready_gift, completed_card
+    public string $customerSortColumn = 'total_spent'; // name, stamp_count, points, completed_cards, total_spent
+    public string $customerSortDirection = 'desc'; // asc, desc
+    public string $customerMinSpend = '';
+    public string $customerMaxSpend = '';
+    public string $customerMinStamps = '';
+    public string $customerMinPoints = '';
+
+    public function sortCustomersBy(string $column)
+    {
+        if ($this->customerSortColumn === $column) {
+            $this->customerSortDirection = $this->customerSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->customerSortColumn = $column;
+            $this->customerSortDirection = 'desc';
+        }
+    }
 
     // State Filter & Search Pesanan Dipesan (Reserved)
     public string $reservedSearch = '';
@@ -79,7 +96,14 @@ class PosManager extends Component
     public function resetCustomerFilters()
     {
         $this->customerSearch = '';
-        $this->customerDateFilter = 'shift';
+        $this->customerDateFilter = 'all';
+        $this->customerStampFilter = 'all';
+        $this->customerSortColumn = 'total_spent';
+        $this->customerSortDirection = 'desc';
+        $this->customerMinSpend = '';
+        $this->customerMaxSpend = '';
+        $this->customerMinStamps = '';
+        $this->customerMinPoints = '';
     }
 
     public function addPettyCash($supervisorId = null, $supervisorPin = null)
@@ -948,6 +972,27 @@ class PosManager extends Component
         ];
     }
 
+    public function claimPhysicalGiftDirectly($phone, $giftDescription)
+    {
+        $normalized = \App\Models\PosCustomer::normalizePhone($phone);
+        $customer = $normalized ? \App\Models\PosCustomer::where('phone', $normalized)->first() : null;
+        if (!$customer) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Pelanggan tidak ditemukan.']);
+            return;
+        }
+
+        \App\Models\PosStampLog::create([
+            'pos_customer_id' => $customer->id,
+            'order_id'        => null,
+            'type'            => 'redeemed',
+            'stamps'          => 0,
+            'points'          => 0,
+            'description'     => "Penyerahan Hadiah Fisik Langsung: {$giftDescription} oleh Kasir " . (Auth::user()->name ?? 'Kasir') . ".",
+        ]);
+
+        $this->dispatch('notify', ['type' => 'success', 'message' => "Hadiah fisik \"{$giftDescription}\" berhasil diserahkan ke pelanggan!"]);
+    }
+
     public function processReturn($payload)
     {
         if (!$this->activeSession) {
@@ -1448,40 +1493,104 @@ class PosManager extends Component
             $sessionOrders = $ordersQuery->latest()->limit(100)->get();
 
             /* ---------- Pelanggan POS (dinamis filter & search) ---------- */
-            $custQuery = Order::where('status', '!=', 'cancelled')
-                ->whereNotNull('customer_name')
-                ->where('customer_name', '!=', '');
+            if ($this->customerDateFilter === 'all') {
+                $allPosCustomers = \App\Models\PosCustomer::all();
+                
+                $orderAggregates = Order::where('status', '!=', 'cancelled')
+                    ->whereNotNull('customer_name')
+                    ->where('customer_name', '!=', '')
+                    ->select(
+                        'customer_name',
+                        'customer_phone',
+                        DB::raw('COUNT(*) as total_orders'),
+                        DB::raw('SUM(grand_total) as total_spent'),
+                        DB::raw('MAX(created_at) as last_visit')
+                    )
+                    ->groupBy('customer_name', 'customer_phone')
+                    ->get();
 
-            if ($this->customerDateFilter === 'shift' && $this->activeSession) {
-                $custQuery->where('pos_session_id', $this->activeSession->id);
-            } elseif ($this->customerDateFilter === 'today') {
-                $custQuery->whereDate('created_at', now()->toDateString());
-            } elseif ($this->customerDateFilter === 'yesterday') {
-                $custQuery->whereDate('created_at', now()->subDay()->toDateString());
-            } elseif ($this->customerDateFilter === '7days') {
-                $custQuery->where('created_at', '>=', now()->subDays(7)->startOfDay());
-            } elseif ($this->customerDateFilter === '30days') {
-                $custQuery->where('created_at', '>=', now()->subDays(30)->startOfDay());
+                $orderMapByPhone = $orderAggregates->keyBy(fn($o) => $o->customer_phone);
+                $orderMapByName  = $orderAggregates->keyBy(fn($o) => strtolower($o->customer_name));
+
+                $customerList = collect();
+
+                foreach ($allPosCustomers as $pCust) {
+                    $agg = ($pCust->phone ? $orderMapByPhone->get($pCust->phone) : null) ?? $orderMapByName->get(strtolower($pCust->name));
+                    
+                    $customerList->push((object)[
+                        'customer_name'  => $pCust->name,
+                        'customer_phone' => $pCust->phone,
+                        'total_orders'   => $agg ? (int)$agg->total_orders : ($pCust->total_visits ?: 0),
+                        'total_spent'    => $agg ? (float)$agg->total_spent : (float)($pCust->total_spent ?: 0),
+                        'last_visit'     => $agg ? $agg->last_visit : $pCust->last_visit_at,
+                        'stamp_count'    => (int)$pCust->stamp_count,
+                        'active_stamps'  => (int)($pCust->stamp_count % 12),
+                        'completed_cards_count' => (int)($pCust->completed_cards_count ?? floor($pCust->stamp_count / 12)),
+                        'loyalty_points' => (int)$pCust->points_balance,
+                        'customer_email' => $pCust->email,
+                        'customer_address' => $pCust->address,
+                    ]);
+                }
+
+                $existingPhones = $allPosCustomers->pluck('phone')->filter()->toArray();
+                $existingNames  = $allPosCustomers->pluck('name')->map(fn($n) => strtolower($n))->toArray();
+
+                foreach ($orderAggregates as $oAgg) {
+                    $phoneKey = $oAgg->customer_phone;
+                    $nameKey  = strtolower($oAgg->customer_name);
+                    if (($phoneKey && !in_array($phoneKey, $existingPhones)) || (!in_array($nameKey, $existingNames))) {
+                        $customerList->push((object)[
+                            'customer_name'  => $oAgg->customer_name,
+                            'customer_phone' => $oAgg->customer_phone,
+                            'total_orders'   => (int)$oAgg->total_orders,
+                            'total_spent'    => (float)$oAgg->total_spent,
+                            'last_visit'     => $oAgg->last_visit,
+                            'stamp_count'    => 0,
+                            'active_stamps'  => 0,
+                            'completed_cards_count' => 0,
+                            'loyalty_points' => 0,
+                            'customer_email' => null,
+                            'customer_address' => null,
+                        ]);
+                    }
+                }
+
+                $sessionCustomers = $customerList;
+            } else {
+                $custQuery = Order::where('status', '!=', 'cancelled')
+                    ->whereNotNull('customer_name')
+                    ->where('customer_name', '!=', '');
+
+                if ($this->customerDateFilter === 'shift' && $this->activeSession) {
+                    $custQuery->where('pos_session_id', $this->activeSession->id);
+                } elseif ($this->customerDateFilter === 'today') {
+                    $custQuery->whereDate('created_at', now()->toDateString());
+                } elseif ($this->customerDateFilter === 'yesterday') {
+                    $custQuery->whereDate('created_at', now()->subDay()->toDateString());
+                } elseif ($this->customerDateFilter === '7days') {
+                    $custQuery->where('created_at', '>=', now()->subDays(7)->startOfDay());
+                } elseif ($this->customerDateFilter === '30days') {
+                    $custQuery->where('created_at', '>=', now()->subDays(30)->startOfDay());
+                }
+
+                $sessionCustomers = $custQuery->select(
+                        'customer_name',
+                        'customer_phone',
+                        DB::raw('COUNT(*) as total_orders'),
+                        DB::raw('SUM(grand_total) as total_spent'),
+                        DB::raw('MAX(created_at) as last_visit')
+                    )
+                    ->groupBy('customer_name', 'customer_phone')
+                    ->orderByDesc('total_spent')
+                    ->get();
             }
 
-            if (!empty(trim($this->customerSearch))) {
-                $term = '%' . trim($this->customerSearch) . '%';
-                $custQuery->where(function ($q) use ($term) {
-                    $q->where('customer_name', 'like', $term)
-                      ->orWhere('customer_phone', 'like', $term);
-                });
+            // Filter Stempel (ready_gift / completed_card)
+            if ($this->customerStampFilter === 'ready_gift') {
+                $sessionCustomers = $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= 3 || ($c->completed_cards_count ?? 0) > 0);
+            } elseif ($this->customerStampFilter === 'completed_card') {
+                $sessionCustomers = $sessionCustomers->filter(fn($c) => ($c->completed_cards_count ?? 0) > 0);
             }
-
-            $sessionCustomers = $custQuery->select(
-                    'customer_name',
-                    'customer_phone',
-                    DB::raw('COUNT(*) as total_orders'),
-                    DB::raw('SUM(grand_total) as total_spent'),
-                    DB::raw('MAX(created_at) as last_visit')
-                )
-                ->groupBy('customer_name', 'customer_phone')
-                ->orderByDesc('total_spent')
-                ->get();
 
             $posCustomerMap = \App\Models\PosCustomer::all()->keyBy(fn($c) => $c->phone ?: strtolower($c->name));
 
@@ -1489,8 +1598,8 @@ class PosManager extends Component
                 $key = $c->customer_phone ?: strtolower($c->customer_name);
                 $posCust = $posCustomerMap->get($key) ?? \App\Models\PosCustomer::where('name', $c->customer_name)->first();
                 $c->stamp_count = $posCust ? (int)$posCust->stamp_count : 0;
-                $c->active_stamps = $c->stamp_count % 9;
-                $c->completed_cards_count = $posCust ? (int)($posCust->completed_cards_count ?? floor($c->stamp_count / 9)) : (int)floor($c->stamp_count / 9);
+                $c->active_stamps = $c->stamp_count % 12;
+                $c->completed_cards_count = $posCust ? (int)($posCust->completed_cards_count ?? floor($c->stamp_count / 12)) : (int)floor($c->stamp_count / 12);
                 $c->loyalty_points = $posCust ? (int)($posCust->points_balance ?? 0) : 0;
                 $c->customer_email = $posCust ? $posCust->email : null;
                 $c->customer_address = $posCust ? $posCust->address : null;
@@ -1536,6 +1645,34 @@ class PosManager extends Component
 
                 return $c;
             });
+
+            // Apply range filters
+            if ($this->customerMinSpend !== '') {
+                $sessionCustomers = $sessionCustomers->filter(fn($c) => ($c->total_spent ?? 0) >= (float)$this->customerMinSpend);
+            }
+            if ($this->customerMaxSpend !== '') {
+                $sessionCustomers = $sessionCustomers->filter(fn($c) => ($c->total_spent ?? 0) <= (float)$this->customerMaxSpend);
+            }
+            if ($this->customerMinStamps !== '') {
+                $sessionCustomers = $sessionCustomers->filter(fn($c) => ($c->stamp_count ?? 0) >= (int)$this->customerMinStamps);
+            }
+            if ($this->customerMinPoints !== '') {
+                $sessionCustomers = $sessionCustomers->filter(fn($c) => ($c->loyalty_points ?? 0) >= (int)$this->customerMinPoints);
+            }
+
+            // Apply dynamic sorting based on $this->customerSortColumn & $this->customerSortDirection
+            $col = $this->customerSortColumn;
+            $isAsc = $this->customerSortDirection === 'asc';
+
+            $sessionCustomers = match($col) {
+                'name'            => $isAsc ? $sessionCustomers->sortBy('customer_name') : $sessionCustomers->sortByDesc('customer_name'),
+                'stamp_count'     => $isAsc ? $sessionCustomers->sortBy('stamp_count') : $sessionCustomers->sortByDesc('stamp_count'),
+                'points'          => $isAsc ? $sessionCustomers->sortBy('loyalty_points') : $sessionCustomers->sortByDesc('loyalty_points'),
+                'completed_cards' => $isAsc ? $sessionCustomers->sortBy('completed_cards_count') : $sessionCustomers->sortByDesc('completed_cards_count'),
+                default           => $isAsc ? $sessionCustomers->sortBy('total_spent') : $sessionCustomers->sortByDesc('total_spent'),
+            };
+
+            $sessionCustomers = $sessionCustomers->values();
 
             /* ---------- Rekap Kas ---------- */
             $validOrders  = $sessionOrders->where('status', '!=', 'cancelled');

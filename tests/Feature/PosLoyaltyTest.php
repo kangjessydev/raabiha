@@ -28,6 +28,7 @@ class PosLoyaltyTest extends TestCase
 
         // Default loyalty settings
         SiteSetting::updateOrCreate(['key' => 'pos_loyalty_enabled'], ['value' => '1']);
+        SiteSetting::updateOrCreate(['key' => 'pos_loyalty_min_spend_first'], ['value' => '150000']);
         SiteSetting::updateOrCreate(['key' => 'pos_loyalty_min_spend'], ['value' => '100000']);
         SiteSetting::updateOrCreate(['key' => 'pos_loyalty_stamps_to_points_ratio'], ['value' => '10']);
         SiteSetting::updateOrCreate(['key' => 'pos_loyalty_stamp_expiry_months'], ['value' => '6']);
@@ -328,9 +329,8 @@ class PosLoyaltyTest extends TestCase
 
         $this->assertStringContainsString('KARTU CAP DIGITAL RAABIHA', $text);
         $this->assertStringContainsString('Budi Stamp', $text);
-        $this->assertStringContainsString('Total Cap: 4 dari 9 Cap', $text);
-        $this->assertStringContainsString('[X] [X] [X]', $text); // Row 1 complete
-        $this->assertStringContainsString('[X] [ ] [ ]', $text); // Row 2 (1 stamp)
+        $this->assertStringContainsString('Total Cap: 4 dari 12 Cap', $text);
+        $this->assertStringContainsString('[X] [X] [X] [X]', $text); // Row 1 complete (4 stamps)
     }
 
     public function test_pos_transaction_redeems_loyalty_tier_voucher_and_deducts_stamps()

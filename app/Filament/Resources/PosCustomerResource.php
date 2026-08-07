@@ -75,7 +75,7 @@ class PosCustomerResource extends Resource
                     ->default(0)
                     ->required(),
                 TextInput::make('completed_cards_count')
-                    ->label('Kartu 9 Cap Selesai')
+                    ->label('Kartu 12 Cap Selesai')
                     ->numeric()
                     ->default(0)
                     ->disabled(),
@@ -103,14 +103,14 @@ class PosCustomerResource extends Resource
                     ->label('Stempel Aktif')
                     ->badge()
                     ->color('success')
-                    ->formatStateUsing(fn ($state) => "{$state} / 9 Cap")
+                    ->formatStateUsing(fn ($state) => "{$state} / 12 Cap")
                     ->sortable(),
                 TextColumn::make('points_balance')
                     ->label('Saldo Poin')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('completed_cards_count')
-                    ->label('Kartu Selesai (9 Cap)')
+                    ->label('Kartu Selesai (12 Cap)')
                     ->badge()
                     ->color(fn ($state) => $state > 0 ? 'warning' : 'gray')
                     ->formatStateUsing(fn ($state) => $state > 0 ? "{$state} Kartu" : "0 Kartu")
@@ -146,13 +146,13 @@ class PosCustomerResource extends Resource
                             ->label('Stempel Aktif')
                             ->badge()
                             ->color('success')
-                            ->formatStateUsing(fn ($state) => "{$state} / 9 Cap"),
+                            ->formatStateUsing(fn ($state) => "{$state} / 12 Cap"),
                         \Filament\Infolists\Components\TextEntry::make('points_balance')
                             ->label('Saldo Poin')
                             ->numeric()
                             ->weight('bold'),
                         \Filament\Infolists\Components\TextEntry::make('completed_cards_count')
-                            ->label('Kartu Selesai (9 Cap)')
+                            ->label('Kartu Selesai (12 Cap)')
                             ->badge()
                             ->color(fn ($state) => $state > 0 ? 'warning' : 'gray')
                             ->formatStateUsing(fn ($state) => $state > 0 ? "{$state} Kartu" : "0 Kartu"),
