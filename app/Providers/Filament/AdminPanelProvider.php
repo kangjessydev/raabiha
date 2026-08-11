@@ -49,7 +49,8 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            ->path('')
+            ->domain('admin.' . env('APP_DOMAIN', 'raabiha.com'))
             ->font('Inter')
             ->darkMode(false)
             ->login(\App\Filament\Pages\Auth\Login::class)

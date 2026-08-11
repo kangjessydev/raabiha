@@ -107,7 +107,7 @@
                                     class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Wishlist
                                     Saya</a>
                                 @if(auth()->user()->hasRole('super_admin'))
-                                    <a href="/admin"
+                                    <a href="{{ route('filament.admin.pages.dashboard') }}"
                                         class="block px-4 py-2 text-sm font-sans text-[#1c1c1a] hover:bg-[#f0ede9] hover:text-[#064e3b] transition-colors">Admin
                                         Panel</a>
                                 @elseif(auth()->user()->hasRole('reseller'))

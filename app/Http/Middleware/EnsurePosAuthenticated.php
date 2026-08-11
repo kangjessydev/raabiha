@@ -36,6 +36,6 @@ class EnsurePosAuthenticated
             return response()->json(['message' => 'Akun Anda tidak memiliki hak akses ke Terminal POS Kasir.'], 403);
         }
 
-        return redirect('/admin')->with('error', 'Akun Anda tidak memiliki hak akses ke Terminal POS Kasir. Minta Admin mendaftarkan akun Anda di Whitelist POS.');
+        return redirect()->route('filament.admin.pages.dashboard')->with('error', 'Akun Anda tidak memiliki hak akses ke Terminal POS Kasir. Minta Admin mendaftarkan akun Anda di Whitelist POS.');
     }
 }
