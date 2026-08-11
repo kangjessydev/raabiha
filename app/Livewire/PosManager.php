@@ -518,6 +518,12 @@ class PosManager extends Component
         foreach ($shiftsToValidate as $shift) {
             $startTimeStr = $shift['start_time'] ?? '08:00';
             $endTimeStr = $shift['end_time'] ?? '16:00';
+            $workingDays = $shift['working_days'] ?? [1, 2, 3, 4, 5, 6, 7];
+            $currentDay = (int) $now->format('N');
+
+            if (!in_array($currentDay, $workingDays)) {
+                continue;
+            }
 
             try {
                 $shiftStart = \Carbon\Carbon::createFromFormat('H:i', substr($startTimeStr, 0, 5))->subMinutes($graceMinutes);
@@ -593,28 +599,23 @@ class PosManager extends Component
             ]);
         }
 
+        $isOffSchedule = false;
         // Check Shift Schedule restriction
         $shiftCheck = $this->isCurrentShiftAllowed();
         if (!$shiftCheck['allowed']) {
-            if (!$supervisorId || !$supervisorPin) {
-                $this->dispatch('require-supervisor-pin', [
-                    'actionType' => 'out_of_hours_shift',
-                    'message'    => $shiftCheck['message'],
-                ]);
-                return;
-            }
-
-            $supervisor = $this->validateSupervisorPin($supervisorId, $supervisorPin, 'notify');
-            if (!$supervisor) {
-                return;
-            }
+            $isOffSchedule = true;
+            $this->dispatch('notify', [
+                'type'    => 'warning',
+                'message' => 'Perhatian: Anda membuka shift di luar jadwal hari kerja Anda (Lembur).',
+            ]);
         }
 
         PosSession::create([
-            'cashier_id'   => Auth::id(),
-            'opened_at'    => now(),
-            'opening_cash' => $this->openingCash,
-            'status'       => 'open',
+            'cashier_id'      => Auth::id(),
+            'opened_at'       => now(),
+            'opening_cash'    => $this->openingCash,
+            'status'          => 'open',
+            'is_off_schedule' => $isOffSchedule,
         ]);
 
         $this->loadActiveSession();
@@ -1198,9 +1199,16 @@ class PosManager extends Component
             return;
         }
 
-        $supervisor = $this->validateSupervisorPin($supervisorId, $supervisorPin, 'notify');
-        if (!$supervisor) {
-            return;
+        $requirePin = \App\Models\SiteSetting::where('key', 'pos_require_pin_for_void')->value('value');
+        // Default to true if not set
+        $requirePin = $requirePin === null || $requirePin === '1' || $requirePin === 'true' || $requirePin === true;
+
+        $supervisor = null;
+        if ($requirePin) {
+            $supervisor = $this->validateSupervisorPin($supervisorId, $supervisorPin, 'notify');
+            if (!$supervisor) {
+                return;
+            }
         }
 
         try {
@@ -1209,7 +1217,7 @@ class PosManager extends Component
                 $order->update([
                     'status'         => 'cancelled',
                     'payment_status' => 'failed',
-                    'void_by_id'     => $supervisor->id,
+                    'void_by_id'     => $supervisor ? $supervisor->id : Auth::id(),
                     'void_reason'    => $reason ?: 'Void Kasir POS',
                     'void_at'        => now(),
                 ]);

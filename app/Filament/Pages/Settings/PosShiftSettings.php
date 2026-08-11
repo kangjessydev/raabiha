@@ -89,6 +89,21 @@ class PosShiftSettings extends Page implements HasForms
                                     ->label('Nama Shift')
                                     ->placeholder('Contoh: Shift 1 - Pagi')
                                     ->required(),
+                                Forms\Components\CheckboxList::make('working_days')
+                                    ->label('Hari Kerja')
+                                    ->options([
+                                        1 => 'Senin',
+                                        2 => 'Selasa',
+                                        3 => 'Rabu',
+                                        4 => 'Kamis',
+                                        5 => 'Jumat',
+                                        6 => 'Sabtu',
+                                        7 => 'Minggu',
+                                    ])
+                                    ->columns(4)
+                                    ->columnSpanFull()
+                                    ->default([1,2,3,4,5,6,7])
+                                    ->required(),
                                 Forms\Components\TimePicker::make('start_time')
                                     ->label('Jam Masuk')
                                     ->required(),

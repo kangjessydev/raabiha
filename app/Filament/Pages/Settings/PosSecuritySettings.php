@@ -47,9 +47,23 @@ class PosSecuritySettings extends Page implements HasForms
                     ->components([
                         \Filament\Schemas\Components\Grid::make(['sm' => 1, 'xl' => 2])
                             ->components([
+                                \Filament\Schemas\Components\Fieldset::make('Pembatalan Transaksi (Void)')
+                                    ->columns(1)
+                                    ->components([
+                                        Forms\Components\Toggle::make('pos_require_pin_for_void')
+                                            ->label('Wajib PIN Supervisor untuk Void Pesanan')
+                                            ->helperText('Jika dinonaktifkan, kasir dapat membatalkan pesanan (Void) tanpa otorisasi Supervisor.')
+                                            ->default(true),
+                                    ]),
+
                                 \Filament\Schemas\Components\Fieldset::make('Batasan Diskon')
                                     ->columns(1)
                                     ->components([
+                                        Forms\Components\Toggle::make('pos_require_pin_for_manual_discount')
+                                            ->label('Wajib PIN Supervisor untuk Diskon Manual')
+                                            ->helperText('Aktifkan untuk mewajibkan PIN Supervisor jika diskon melebihi batas.')
+                                            ->default(true)
+                                            ->live(),
                                         Forms\Components\Radio::make('pos_discount_limit_type')
                                             ->label('Gunakan Batasan Diskon Berdasarkan:')
                                             ->options([
@@ -67,7 +81,7 @@ class PosSecuritySettings extends Page implements HasForms
                                             ->suffix('%')
                                             ->default(20)
                                             ->required()
-                                            ->visible(fn($get) => $get('pos_discount_limit_type') === 'percent'),
+                                            ->visible(fn($get) => $get('pos_require_pin_for_manual_discount') && $get('pos_discount_limit_type') === 'percent'),
 
                                         Forms\Components\TextInput::make('pos_manual_discount_max_rp_without_pin')
                                             ->label('Batas Diskon (Nominal)')
@@ -76,19 +90,26 @@ class PosSecuritySettings extends Page implements HasForms
                                             ->prefix('Rp')
                                             ->default(50000)
                                             ->required()
-                                            ->visible(fn($get) => $get('pos_discount_limit_type') === 'nominal'),
+                                            ->visible(fn($get) => $get('pos_require_pin_for_manual_discount') && $get('pos_discount_limit_type') === 'nominal'),
                                     ]),
 
                                 \Filament\Schemas\Components\Fieldset::make('Batasan Refund')
                                     ->columns(1)
                                     ->components([
+                                        Forms\Components\Toggle::make('pos_require_pin_for_return')
+                                            ->label('Wajib PIN Supervisor untuk Retur Uang')
+                                            ->helperText('Aktifkan untuk mewajibkan PIN Supervisor jika retur melebihi batas.')
+                                            ->default(true)
+                                            ->live(),
+
                                         Forms\Components\TextInput::make('pos_refund_max_without_pin')
                                             ->label('Batas Maksimal Refund (Kasir Mandiri)')
                                             ->helperText('Batas uang pengembalian (refund) yang boleh dilakukan kasir mandiri. Isi 0 jika SELURUH pengembalian barang wajib menggunakan PIN Supervisor.')
                                             ->numeric()
                                             ->prefix('Rp')
                                             ->default(0)
-                                            ->required(),
+                                            ->required()
+                                            ->visible(fn($get) => $get('pos_require_pin_for_return')),
                                     ]),
                             ]),
                     ]),

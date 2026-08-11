@@ -58,7 +58,18 @@ class UserForm
                         \Filament\Forms\Components\Toggle::make('is_pos_supervisor')
                             ->label('Jadikan Supervisor POS (Akses Bypass)')
                             ->helperText('Berikan hak akses untuk mengambil alih sesi kasir secara paksa atau validasi aksi darurat.')
+                            ->live()
                             ->default(false),
+                        \Filament\Forms\Components\TextInput::make('pos_pin')
+                            ->label('PIN Supervisor POS (6 Angka)')
+                            ->password()
+                            ->revealable()
+                            ->numeric()
+                            ->length(6)
+                            ->dehydrated(fn($state) => filled($state))
+                            ->dehydrateStateUsing(fn($state) => \Illuminate\Support\Facades\Hash::make($state))
+                            ->helperText('Wajib diisi jika fitur PIN Supervisor aktif. Kosongkan jika tidak ingin mengubah PIN.')
+                            ->visible(fn($get) => $get('is_pos_supervisor')),
                     ])->columns(2)->collapsed(),
 
                 \Filament\Schemas\Components\Section::make('Jadwal Shift POS Kasir')

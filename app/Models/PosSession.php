@@ -19,6 +19,7 @@ class PosSession extends Model
         'actual_ending_cash',
         'difference_cash',
         'status',
+        'is_off_schedule',
         'notes',
     ];
 

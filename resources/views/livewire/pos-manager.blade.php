@@ -5653,6 +5653,7 @@
                 showReturnModal: false,
                 showReturnSupervisorModal: false,
                 refundMaxWithoutPin: {{ (int) (\App\Models\SiteSetting::where('key', 'pos_refund_max_without_pin')->value('value') ?? 0) }},
+                requirePinForReturn: {{ (\App\Models\SiteSetting::where('key', 'pos_require_pin_for_return')->value('value') ?? 'true') === 'true' || (\App\Models\SiteSetting::where('key', 'pos_require_pin_for_return')->value('value') ?? '1') === '1' ? 'true' : 'false' }},
                 returnStep: 1,
                 refundPaymentMethod: 'cash', // 'cash' or 'bank'
                 refundBankName: 'BCA',
@@ -5751,7 +5752,7 @@
                     // Alur eksekusi langsung (Refund murni ATAU Exchange yang harganya lebih murah/sama)
                     const refundAmount = Math.abs(net);
                     const isRefundOrNegative = (this.returnType === 'refund' || net < 0);
-                    const requiresSupervisor = isRefundOrNegative && (refundAmount > this.refundMaxWithoutPin);
+                    const requiresSupervisor = isRefundOrNegative && (refundAmount > this.refundMaxWithoutPin) && this.requirePinForReturn;
 
                     if (isRefundOrNegative && this.refundPaymentMethod === 'bank' && !(this.refundBankAccount || '').trim()) {
                         this.showToast('Masukkan Nomor Rekening / E-Wallet & Nama Pemilik untuk Refund Transfer Bank', 'error');
@@ -7796,6 +7797,7 @@
                 tempManualDiscountValue: '',
                 manualDiscountMaxPercentWithoutPin: {{ (float) (\App\Models\SiteSetting::where('key', 'pos_manual_discount_max_percent_without_pin')->value('value') ?? 20) }},
                 manualDiscountMaxRpWithoutPin: {{ (float) (\App\Models\SiteSetting::where('key', 'pos_manual_discount_max_rp_without_pin')->value('value') ?? 50000) }},
+                requirePinForManualDiscount: {{ (\App\Models\SiteSetting::where('key', 'pos_require_pin_for_manual_discount')->value('value') ?? 'true') === 'true' || (\App\Models\SiteSetting::where('key', 'pos_require_pin_for_manual_discount')->value('value') ?? '1') === '1' ? 'true' : 'false' }},
 
                 openManualDiscountModal() {
                     this.tempManualDiscountType = this.manualDiscountType;
@@ -7821,7 +7823,7 @@
 
                     const isHighDiscount = (this.tempManualDiscountType === 'percent' && val > maxPercent) || (this.tempManualDiscountType === 'rp' && val > maxRp);
 
-                    if (val > 0 && isHighDiscount) {
+                    if (val > 0 && isHighDiscount && this.requirePinForManualDiscount) {
                         const limitLabel = this.tempManualDiscountType === 'percent' ? maxPercent + '%' : 'Rp ' + this.formatMoney(maxRp);
                         const reasonText = `Diskon manual ${this.tempManualDiscountType === 'percent' ? val + '%' : 'Rp ' + this.formatMoney(val)} memerlukan otorisasi Supervisor (Batas Mandiri: > ${limitLabel}).`;
                         this.requestSupervisorAuth(reasonText, () => {

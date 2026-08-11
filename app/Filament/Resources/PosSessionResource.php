@@ -54,6 +54,14 @@ class PosSessionResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
+                \Filament\Tables\Columns\IconColumn::make('is_off_schedule')
+                    ->label('Luar Jadwal')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-exclamation-triangle')
+                    ->falseIcon('heroicon-o-check-circle')
+                    ->trueColor('danger')
+                    ->falseColor('success')
+                    ->tooltip(fn ($state) => $state ? 'Kasir membuka shift di luar jadwal harinya (Lembur)' : 'Shift normal'),
                 TextColumn::make('status')
                     ->label('Status Shift')
                     ->badge()
@@ -206,6 +214,15 @@ class PosSessionResource extends Resource
                             'closed' => 'Shift Selesai (Tutup)',
                             default  => ucwords($state ?? '-'),
                         }),
+                        \Filament\Infolists\Components\IconEntry::make('is_off_schedule')
+                            ->label('Jadwal Shift')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-exclamation-triangle')
+                            ->falseIcon('heroicon-o-check-circle')
+                            ->trueColor('danger')
+                            ->falseColor('success')
+                            ->formatStateUsing(fn($state) => $state)
+                            ->tooltip(fn ($state) => $state ? 'Di Luar Jadwal (Lembur)' : 'Shift Normal'),
                         TextEntry::make('opened_at')->label('Waktu Buka (Jam Masuk)')->dateTime('d M Y H:i:s'),
                         TextEntry::make('closed_at')->label('Waktu Tutup (Jam Keluar)')->dateTime('d M Y H:i:s')->placeholder('Shift Masih Berlangsung'),
                         TextEntry::make('duration')
