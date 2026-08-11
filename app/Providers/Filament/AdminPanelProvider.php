@@ -62,7 +62,7 @@ class AdminPanelProvider extends PanelProvider
                     ->openUrlInNewTab(),
                 \Filament\Navigation\MenuItem::make()
                     ->label('Profil')
-                    ->url(fn (): string => \App\Filament\Pages\MyProfile::getUrl())
+                    ->url(fn(): string => \App\Filament\Pages\MyProfile::getUrl())
                     ->icon('heroicon-m-user-circle'),
                 \Filament\Navigation\MenuItem::make()
                     ->label('Kunjungi Toko')
@@ -80,16 +80,17 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => \Filament\Support\Colors\Color::Emerald,
                 'gray' => \Filament\Support\Colors\Color::Stone,
             ])
-            ->brandName(fn () => 
-                (Schema::hasTable('site_settings') 
-                    ? SiteSetting::where('key', 'site_name')->value('value') 
+            ->brandName(
+                fn() =>
+                (Schema::hasTable('site_settings')
+                    ? SiteSetting::where('key', 'site_name')->value('value')
                     : null) ?: 'Raabiha Admin'
             )
             ->homeUrl('/')
-            ->brandLogo(fn () => $resolveMediaUrl('site_logo_light'))
-            ->darkModeBrandLogo(fn () => $resolveMediaUrl('site_logo_dark'))
+            ->brandLogo(fn() => $resolveMediaUrl('site_logo_light'))
+            ->darkModeBrandLogo(fn() => $resolveMediaUrl('site_logo_dark'))
             ->brandLogoHeight('2.5rem')
-            ->favicon(fn () => $resolveMediaUrl('site_favicon'))
+            ->favicon(fn() => $resolveMediaUrl('site_favicon'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->sidebarCollapsibleOnDesktop()

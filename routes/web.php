@@ -41,20 +41,22 @@ Route::middleware(['auth'])->group(function () {
     })->name('logout');
 });
 
-// Dedicated POS Auth Routes
-Route::get('/pos/login', \App\Livewire\Auth\PosLogin::class)
-    ->middleware('guest')
-    ->name('pos.login');
+// Dedicated POS Auth Routes (Subdomain)
+Route::domain('pos.' . env('APP_DOMAIN', 'raabiha.com'))->group(function () {
+    Route::get('/login', \App\Livewire\Auth\PosLogin::class)
+        ->middleware('guest')
+        ->name('pos.login');
 
-Route::middleware([\App\Http\Middleware\EnsurePosAuthenticated::class])->group(function () {
-    Route::get('/pos', \App\Livewire\PosManager::class)->name('pos.index');
-    
-    Route::post('/pos/logout', function (\Illuminate\Http\Request $request) {
-        auth()->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return redirect()->route('pos.login');
-    })->name('pos.logout');
+    Route::middleware([\App\Http\Middleware\EnsurePosAuthenticated::class])->group(function () {
+        Route::get('/', \App\Livewire\PosManager::class)->name('pos.index');
+        
+        Route::post('/logout', function (\Illuminate\Http\Request $request) {
+            auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('pos.login');
+        })->name('pos.logout');
+    });
 });
 
 Route::get('/checkout', \App\Livewire\Checkout::class)->name('checkout');
