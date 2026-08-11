@@ -4935,7 +4935,7 @@
                     <h3 class="font-bold text-lg text-gray-900 leading-tight">Pengaturan Printer Thermal POS</h3>
                     <p class="text-xs text-gray-500 font-medium mt-0.5">Sambungkan printer cetak struk via Bluetooth atau Kabel USB</p>
                 </div>
-                <button @click="showPrinterModal = false" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-xl text-lg font-bold transition">&times;</button>
+                <button @click="showPrinterModal = false; if (printerConnected && pendingReceiptData) { previewReceiptData = pendingReceiptData; pendingReceiptData = null; showReceiptPreviewModal = true; }" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-xl text-lg font-bold transition">&times;</button>
             </div>
 
             <!-- Content Area -->
@@ -5202,7 +5202,7 @@
 
             <!-- Footer Actions -->
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-2xl flex-shrink-0">
-                <button type="button" @click="showPrinterModal = false" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition duration-150 cursor-pointer">
+                <button type="button" @click="showPrinterModal = false; if (printerConnected && pendingReceiptData) { previewReceiptData = pendingReceiptData; pendingReceiptData = null; showReceiptPreviewModal = true; }" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition duration-150 cursor-pointer">
                     Selesai & Tutup
                 </button>
             </div>
@@ -5570,6 +5570,7 @@
                 showHoldModal: false,
                 showReceiptPreviewModal: false,
                 previewReceiptData: { orderNumber: '', cashChange: 0, text: '', base64: '' },
+                pendingReceiptData: null, // simpan sementara jika printer belum konek saat mau cetak
 
                 // Confirmation Modal State
                 showConfirmModal: false,
@@ -5577,6 +5578,31 @@
                 confirmMessage: '',
                 confirmAction: null,
                 
+                // Buka modal pratinjau struk, atau tampilkan modal printer dulu jika belum konek
+                _openReceiptOrPrinterModal() {
+                    if (!this.printerConnected) {
+                        this.pendingReceiptData = this.previewReceiptData;
+                        this.showPrinterModal = true;
+                        this.showToast('Hubungkan printer terlebih dahulu untuk mencetak struk.', 'warning');
+                    } else {
+                        this.showReceiptPreviewModal = true;
+                        this.pendingReceiptData = null;
+                    }
+                },
+
+                // Dipanggil setiap kali printer berhasil konek
+                // Jika ada pendingReceiptData → tutup modal printer & buka pratinjau struk
+                // Jika tidak ada (buka dari icon biasa) → biarkan modal tetap terbuka
+                _afterPrinterConnected() {
+                    if (this.pendingReceiptData) {
+                        this.showPrinterModal = false;
+                        this.previewReceiptData = this.pendingReceiptData;
+                        this.pendingReceiptData = null;
+                        this.showReceiptPreviewModal = true;
+                    }
+                    // Tidak ada pendingReceiptData: modal tetap terbuka, admin bisa test printer
+                },
+
                 askConfirm(title, message, callback) {
                     this.confirmTitle = title;
                     this.confirmMessage = message;
@@ -5791,7 +5817,7 @@
 
                     this.isProcessing = true;
                     this.showReturnModal = false;
-                    this.showReceiptPreviewModal = true;
+                    this.showReceiptPreviewModal = true; // tetap buka untuk loading state
                     @this.call('processReturn', JSON.stringify(payload));
                 },
 
@@ -6091,7 +6117,7 @@
                                 }
                             }
                         }
-                        this.showReceiptPreviewModal = true;
+                        this._openReceiptOrPrinterModal();
                         this.clearCart(true);
                         this.broadcastCrossTabSync('checkout-success');
                         this.showToast('Pembayaran Berhasil! Kembalian: Rp ' + this.formatMoney(e.detail[0].cash_change), 'success');
@@ -6127,7 +6153,7 @@
                                 return_base64: detail.return_base64 || '',
                                 activeTab: 'sales'
                             };
-                            this.showReceiptPreviewModal = true;
+                            this._openReceiptOrPrinterModal();
                         }
                     });
                     window.addEventListener('print-z-report', (e) => {
@@ -6149,7 +6175,7 @@
                                 activeTab: 'sales'
                             };
                             this.showCloseSession = false;
-                            this.showReceiptPreviewModal = true;
+                            this._openReceiptOrPrinterModal();
 
                             // Auto-print Z-Report saat tutup shift (jika opsi auto-print aktif)
                             if (this.autoPrintReceipt) {
@@ -6729,7 +6755,7 @@
 
                         if (result.success) {
                             this.showToast('Printer ' + this.printerDeviceName + ' berhasil terhubung!', 'success');
-                            this.showPrinterModal = false;
+                            this._afterPrinterConnected();
                         } else {
                             const msg = result.message || 'Gagal terhubung. Pastikan alamat benar dan printer menyala.';
                             this.showToast(msg, 'error');
@@ -6845,7 +6871,7 @@
                         });
 
                         this.showToast('Printer ' + name + ' berhasil terhubung!', 'success');
-                        this.showPrinterModal = false;
+                        this._afterPrinterConnected();
                     } catch (err) {
                         this.showToast(err.message, 'error');
                     } finally {
@@ -6940,7 +6966,7 @@
 
                         if (bridgeResult.success) {
                             this.showToast('Printer ' + this.printerDeviceName + ' berhasil terhubung!', 'success');
-                            this.showPrinterModal = false;
+                            this._afterPrinterConnected();
                             return;
                         }
 
@@ -7018,7 +7044,7 @@
                         localStorage.setItem('pos_printer_type', 'bluetooth');
                         
                         this.showToast('Printer Bluetooth ' + this.printerDeviceName + ' terhubung!', 'success');
-                        this.showPrinterModal = false;
+                        this._afterPrinterConnected();
                         
                         device.addEventListener('gattserverdisconnected', () => {
                             this.printerConnected = false;
@@ -7110,7 +7136,7 @@
 
                         if (bridgeResult.success) {
                             this.showToast('Printer USB ' + this.printerDeviceName + ' berhasil terhubung!', 'success');
-                            this.showPrinterModal = false;
+                            this._afterPrinterConnected();
                             return;
                         }
 
@@ -7132,7 +7158,7 @@
                         localStorage.setItem('pos_printer_type', 'serial');
 
                         this.showToast('Printer USB/Serial berhasil terhubung!', 'success');
-                        this.showPrinterModal = false;
+                        this._afterPrinterConnected();
                     } catch (error) {
                         console.error(error);
                         if (error.name === 'NotFoundError' || error.message.includes('No port selected')) {
@@ -7163,7 +7189,7 @@
                                         this.printerConnected = msg.connected;
                                         if (msg.connected) {
                                             this.showToast('Terhubung via Raabiha Print Agent!', 'success');
-                                            this.showPrinterModal = false;
+                                            this._afterPrinterConnected();
                                             resolve();
                                         } else {
                                             this.showToast('Print Agent berjalan, tetapi printer belum terhubung. Nyalakan printer.', 'warning');

@@ -32,13 +32,13 @@ class ProductsTable
                         $mediaIds = $record->images ?? [];
                         $firstMediaId = is_array($mediaIds) ? ($mediaIds[0] ?? null) : $mediaIds;
                         $media = $firstMediaId ? \Awcodes\Curator\Models\Media::find($firstMediaId) : null;
-                        
+
                         $imgSrc = $media ? $media->url : null;
-                        
+
                         $catName = e($record->category?->name ?? 'Tanpa Kategori');
                         $name = e($record->name);
-                        
-                        $imgHtml = $imgSrc 
+
+                        $imgHtml = $imgSrc
                             ? "<img src='{$imgSrc}' alt='{$name}' style='width:2.5rem; height:2.5rem; border-radius:9999px; object-fit:cover; border: 2px solid #e5e7eb; flex-shrink: 0;' />"
                             : "<div style='width:2.5rem; height:2.5rem; border-radius:9999px; background-color:#f3f4f6; display:flex; align-items:center; justify-content:center; flex-shrink:0;'><svg style='width:1.25rem; height:1.25rem; color:#6b7280;' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' d='M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z' /></svg></div>";
 
@@ -70,34 +70,38 @@ class ProductsTable
                     ->label('Berat')
                     ->numeric()
                     ->sortable(),
+                TextColumn::make('stock')
+                    ->label('Stock')
+                    ->numeric()
+                    ->sortable(),
                 TextColumn::make('variants_count')
                     ->counts('variants')
                     ->label('Jumlah Varian')
-                    ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
+                    ->formatStateUsing(fn($state) => $state > 0 ? $state : '-'),
                 TextColumn::make('is_custom')
                     ->label('Asal Produk')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state ? 'Dibuat via POS' : 'Admin Panel')
-                    ->color(fn ($state) => $state ? 'warning' : 'success')
-                    ->icon(fn ($state) => $state ? 'heroicon-m-shopping-bag' : 'heroicon-m-computer-desktop')
+                    ->formatStateUsing(fn($state) => $state ? 'Dibuat via POS' : 'Admin Panel')
+                    ->color(fn($state) => $state ? 'warning' : 'success')
+                    ->icon(fn($state) => $state ? 'heroicon-m-shopping-bag' : 'heroicon-m-computer-desktop')
                     ->sortable(),
                 TextColumn::make('channel_visibility')
                     ->label('Kanal Penjualan')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        'pos_only'    => 'POS Kasir',
+                    ->formatStateUsing(fn($state) => match ($state) {
+                        'pos_only' => 'POS Kasir',
                         'online_only' => 'E-Commerce',
-                        default       => ucwords($state ?? '-'),
+                        default => ucwords($state ?? '-'),
                     })
-                    ->color(fn ($state) => match ($state) {
-                        'pos_only'    => 'warning',
+                    ->color(fn($state) => match ($state) {
+                        'pos_only' => 'warning',
                         'online_only' => 'info',
-                        default       => 'secondary',
+                        default => 'secondary',
                     })
                     ->sortable(),
                 \Filament\Tables\Columns\ToggleColumn::make('is_active')
                     ->label('Aktif?')
-                    ->disabled(fn () => ! auth()->user()->can('Update:Product')),
+                    ->disabled(fn() => !auth()->user()->can('Update:Product')),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -112,7 +116,7 @@ class ProductsTable
                     ->label('Kanal Penjualan')
                     ->native(false)
                     ->options([
-                        'pos_only'    => 'POS Kasir Saja (Toko Fisik)',
+                        'pos_only' => 'POS Kasir Saja (Toko Fisik)',
                         'online_only' => 'E-Commerce Saja (Website Online)',
                     ]),
                 \Filament\Tables\Filters\SelectFilter::make('category_id')
@@ -170,7 +174,7 @@ class ProductsTable
                 \Filament\Actions\Action::make('view_frontend')
                     ->label('Lihat di Toko')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (\App\Models\Product $record): string => url('/product/' . $record->slug))
+                    ->url(fn(\App\Models\Product $record): string => url('/product/' . $record->slug))
                     ->openUrlInNewTab()
                     ->color('info')
                     ->iconButton()

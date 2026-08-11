@@ -28,7 +28,7 @@ class PosEventPromotionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Point of Sale (POS)';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
 
     protected static ?string $navigationLabel = 'Promo Event POS';
 
@@ -36,7 +36,7 @@ class PosEventPromotionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Promo Event POS';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {
@@ -90,14 +90,14 @@ class PosEventPromotionResource extends Resource
                             ->label('Daftar Produk yang BERHAK Diskon (Inklusi)')
                             ->multiple()
                             ->options(\App\Models\Product::pluck('name', 'id'))
-                            ->visible(fn ($get) => $get('applies_to') === 'specific_products')
+                            ->visible(fn($get) => $get('applies_to') === 'specific_products')
                             ->searchable(),
 
                         Select::make('included_category_ids')
                             ->label('Daftar Kategori yang BERHAK Diskon (Inklusi)')
                             ->multiple()
                             ->options(\App\Models\Category::pluck('name', 'id'))
-                            ->visible(fn ($get) => $get('applies_to') === 'specific_categories')
+                            ->visible(fn($get) => $get('applies_to') === 'specific_categories')
                             ->searchable(),
 
                         Select::make('excluded_product_ids')
@@ -147,7 +147,7 @@ class PosEventPromotionResource extends Resource
 
                 TextColumn::make('discount_amount')
                     ->label('Besar Diskon')
-                    ->formatStateUsing(fn ($record) => $record->discount_type === 'percent'
+                    ->formatStateUsing(fn($record) => $record->discount_type === 'percent'
                         ? round($record->discount_amount) . '%'
                         : 'Rp ' . number_format($record->discount_amount, 0, ',', '.'))
                     ->badge()
@@ -155,7 +155,7 @@ class PosEventPromotionResource extends Resource
 
                 TextColumn::make('applies_to')
                     ->label('Cakupan')
-                    ->formatStateUsing(fn (string $state) => match ($state) {
+                    ->formatStateUsing(fn(string $state) => match ($state) {
                         'all_items' => 'Semua Produk',
                         'specific_products' => 'Khusus Produk',
                         'specific_categories' => 'Khusus Kategori',
