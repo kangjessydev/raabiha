@@ -19,7 +19,7 @@ class NotificationSettings extends Page implements HasForms
     use InteractsWithForms;
 
     protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-envelope';
-    protected static \UnitEnum|string|null $navigationGroup = null;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pengaturan Toko & Sistem';
     protected static ?string $navigationLabel = 'Notifikasi & Email';
     protected static ?string $title = 'Pengaturan Notifikasi & Email';
     protected static ?int $navigationSort = 6;

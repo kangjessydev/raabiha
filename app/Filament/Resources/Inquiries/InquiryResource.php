@@ -16,7 +16,7 @@ class InquiryResource extends Resource
     protected static ?string $model = Inquiry::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-envelope';
-    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
+    protected static \UnitEnum|string|null $navigationGroup = null;
     protected static ?string $navigationLabel = 'Pesan Masuk';
     protected static ?string $modelLabel = 'Pesan Masuk';
     protected static ?string $pluralModelLabel = 'Pesan Masuk';
