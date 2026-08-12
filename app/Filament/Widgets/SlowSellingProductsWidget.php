@@ -2,18 +2,17 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Widgets\Widget;
-use App\Models\OrderItem;
+use Filament\Widgets\TableWidget as BaseWidget;
+use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
-class ProductPerformanceWidget extends Widget
+class SlowSellingProductsWidget extends BaseWidget
 {
     protected static bool $isDiscovered = false;
 
-    protected string $view = 'filament.widgets.product-performance-widget';
-
-    protected int | string | array $columnSpan = 'full';
+    protected static ?string $heading = '🐢 Produk Paling Lambat Laku (Slow Movers)';
 
     public ?array $filters = null;
 
@@ -25,34 +24,13 @@ class ProductPerformanceWidget extends Widget
         $this->dispatch('$refresh');
     }
 
-    public function getViewData(): array
+    public function table(Table $table): Table
     {
         $from = $this->filters['created_from'] ?? now()->subDays(29)->toDateString();
         $until = $this->filters['created_until'] ?? now()->toDateString();
         $channel = $this->filters['channel'] ?? 'all';
 
-        // 1. Produk Paling Laku (Top Sellers)
-        $topProductsQuery = OrderItem::query()
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->whereBetween('orders.created_at', [$from . ' 00:00:00', $until . ' 23:59:59'])
-            ->where('orders.payment_status', 'paid');
-
-        if ($channel === 'online') {
-            $topProductsQuery->whereNull('orders.pos_session_id');
-        } elseif ($channel === 'pos') {
-            $topProductsQuery->whereNotNull('orders.pos_session_id');
-        }
-
-        $topProducts = $topProductsQuery
-            ->select('products.name', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.total) as total_revenue'))
-            ->groupBy('products.id', 'products.name')
-            ->orderByDesc('total_qty')
-            ->limit(5)
-            ->get();
-
-        // 2. Produk Paling Lambat Laku / Dead Stock dalam rentang terpilih
-        $slowProducts = Product::query()
+        $query = Product::query()
             ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
             ->leftJoin('orders', function ($join) use ($from, $until, $channel) {
                 $join->on('order_items.order_id', '=', 'orders.id')
@@ -68,12 +46,25 @@ class ProductPerformanceWidget extends Widget
             ->groupBy('products.id', 'products.name', 'products.stock')
             ->orderBy('total_qty', 'asc')
             ->orderBy('products.stock', 'desc')
-            ->limit(5)
-            ->get();
+            ->limit(5);
 
-        return [
-            'topProducts' => $topProducts,
-            'slowProducts' => $slowProducts,
-        ];
+        return $table
+            ->query($query)
+            ->columns([
+                TextColumn::make('name')
+                    ->label('Nama Produk')
+                    ->searchable(),
+                TextColumn::make('total_qty')
+                    ->label('Terjual')
+                    ->badge()
+                    ->color('danger')
+                    ->formatStateUsing(fn ($state) => number_format($state) . ' Pcs'),
+                TextColumn::make('stock')
+                    ->label('Sisa Stok')
+                    ->badge()
+                    ->color(fn ($state) => $state <= 5 ? 'warning' : 'secondary')
+                    ->formatStateUsing(fn ($state) => number_format($state) . ' Unit'),
+            ])
+            ->paginated(false);
     }
 }

@@ -5,8 +5,11 @@
             {{ $this->form }}
         </form>
 
-        <!-- Product Performance Widget (Paling Laku vs Paling Lambat Laku) -->
-        @livewire(\App\Filament\Widgets\ProductPerformanceWidget::class, ['filters' => $filters])
+        <!-- Native Filament Widgets for Top vs Slow Selling Products -->
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            @livewire(\App\Filament\Widgets\TopSellingProductsWidget::class, ['filters' => $filters])
+            @livewire(\App\Filament\Widgets\SlowSellingProductsWidget::class, ['filters' => $filters])
+        </div>
 
         <!-- Tabel Detail Transaksi Penjualan -->
         <div>
