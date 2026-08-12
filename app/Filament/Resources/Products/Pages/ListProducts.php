@@ -18,8 +18,7 @@ class ListProducts extends ListRecords
         return [
             ImportAction::make()
                 ->label('Impor Produk')
-                ->importer(ProductImporter::class)
-                ->jobConnection('sync'),
+                ->importer(ProductImporter::class),
 
             \Filament\Actions\Action::make('export_products')
                 ->label('Ekspor Produk')

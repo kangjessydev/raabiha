@@ -12,6 +12,11 @@ class ProductImporter extends Importer
 {
     protected static ?string $model = Product::class;
 
+    public function getJobConnection(): ?string
+    {
+        return 'sync';
+    }
+
     public static function getColumns(): array
     {
         // Auto-detect and create attributes from uploaded CSV headers

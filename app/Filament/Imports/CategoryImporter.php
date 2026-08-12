@@ -12,6 +12,11 @@ class CategoryImporter extends Importer
 {
     protected static ?string $model = Category::class;
 
+    public function getJobConnection(): ?string
+    {
+        return 'sync';
+    }
+
     public static function getColumns(): array
     {
         return [
