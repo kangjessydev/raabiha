@@ -139,6 +139,16 @@ class AppServiceProvider extends ServiceProvider
         });
 
         \Filament\Support\Facades\FilamentView::registerRenderHook(
+            \Filament\View\PanelsRenderHook::HEAD_END,
+            fn (): string => '@livewireStyles'
+        );
+
+        \Filament\Support\Facades\FilamentView::registerRenderHook(
+            \Filament\View\PanelsRenderHook::SCRIPTS_AFTER,
+            fn (): string => '@livewireScripts'
+        );
+
+        \Filament\Support\Facades\FilamentView::registerRenderHook(
             \Filament\View\PanelsRenderHook::BODY_END,
             fn (): string => \Illuminate\Support\Facades\Blade::render('
                 @auth
