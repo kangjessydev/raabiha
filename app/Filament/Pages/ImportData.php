@@ -42,6 +42,7 @@ class ImportData extends Page
                 ImportAction::make('import_products')
                     ->label('Impor Produk')
                     ->importer(ProductImporter::class)
+                    ->jobConnection('sync')
                     ->icon('heroicon-o-shopping-bag')
                     ->color('primary')
                     ->modalDescription(new \Illuminate\Support\HtmlString('
@@ -58,6 +59,7 @@ class ImportData extends Page
                 ImportAction::make('import_orders')
                     ->label('Impor Pesanan')
                     ->importer(OrderImporter::class)
+                    ->jobConnection('sync')
                     ->icon('heroicon-o-clipboard-document-list')
                     ->color('success')
                     ->modalDescription(''),
@@ -65,6 +67,7 @@ class ImportData extends Page
                 ImportAction::make('import_users')
                     ->label('Impor Pengguna')
                     ->importer(UserImporter::class)
+                    ->jobConnection('sync')
                     ->icon('heroicon-o-users')
                     ->color('info')
                     ->modalDescription(''),
@@ -72,6 +75,7 @@ class ImportData extends Page
                 ImportAction::make('import_categories')
                     ->label('Impor Kategori')
                     ->importer(CategoryImporter::class)
+                    ->jobConnection('sync')
                     ->icon('heroicon-o-folder')
                     ->color('warning')
                     ->modalDescription(''),
@@ -79,6 +83,7 @@ class ImportData extends Page
                 ImportAction::make('import_posts')
                     ->label('Impor Artikel Blog')
                     ->importer(PostImporter::class)
+                    ->jobConnection('sync')
                     ->icon('heroicon-o-document-text')
                     ->color('gray')
                     ->modalDescription(''),
@@ -86,6 +91,7 @@ class ImportData extends Page
                 ImportAction::make('import_vouchers')
                     ->label('Impor Voucher')
                     ->importer(VoucherImporter::class)
+                    ->jobConnection('sync')
                     ->icon('heroicon-o-ticket')
                     ->color('danger')
                     ->modalDescription(''),
