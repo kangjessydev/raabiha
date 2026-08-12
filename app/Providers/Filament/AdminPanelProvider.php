@@ -53,9 +53,12 @@ class AdminPanelProvider extends PanelProvider
             ->domain('admin.' . env('APP_DOMAIN', 'raabiha.com'))
             ->font('Inter')
             ->darkMode(false)
-            ->profile(\App\Filament\Pages\MyProfile::class)
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->userMenuItems([
+                'profile' => \Filament\Navigation\MenuItem::make()
+                    ->label('Profil Saya')
+                    ->url(fn (): string => \App\Filament\Pages\MyProfile::getUrl())
+                    ->icon('heroicon-m-user-circle'),
                 \Filament\Navigation\MenuItem::make()
                     ->label('Terminal POS Kasir')
                     ->url(fn(): string => route('pos.index'))
