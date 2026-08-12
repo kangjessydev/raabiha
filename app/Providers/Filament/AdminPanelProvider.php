@@ -53,6 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ->domain('admin.' . env('APP_DOMAIN', 'raabiha.com'))
             ->font('Inter')
             ->darkMode(false)
+            ->profile(\App\Filament\Pages\MyProfile::class)
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->userMenuItems([
                 \Filament\Navigation\MenuItem::make()
@@ -60,10 +61,6 @@ class AdminPanelProvider extends PanelProvider
                     ->url(fn(): string => route('pos.index'))
                     ->icon('heroicon-m-computer-desktop')
                     ->openUrlInNewTab(),
-                \Filament\Navigation\MenuItem::make()
-                    ->label('Profil')
-                    ->url(fn(): string => \App\Filament\Pages\MyProfile::getUrl())
-                    ->icon('heroicon-m-user-circle'),
                 \Filament\Navigation\MenuItem::make()
                     ->label('Kunjungi Website')
                     ->url(fn(): string => config('app.url'))
