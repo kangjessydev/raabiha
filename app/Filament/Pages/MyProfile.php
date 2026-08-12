@@ -15,6 +15,7 @@ class MyProfile extends Page implements HasForms
 {
     use InteractsWithForms;
 
+    public static function getLabel(): string { return 'Profil Saya'; }
     public static function getNavigationIcon(): ?string { return 'heroicon-o-user-circle'; }
     public static function getNavigationGroup(): string|\BackedEnum|null { return 'Pengguna & Hak Akses'; }
     public static function getNavigationLabel(): string { return 'Profil Saya'; }

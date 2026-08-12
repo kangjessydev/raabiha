@@ -81,7 +81,7 @@ class AdminPanelProvider extends PanelProvider
                 fn() =>
                 (Schema::hasTable('site_settings')
                     ? SiteSetting::where('key', 'site_name')->value('value')
-                    : null) ?: 'Raabiha Admin'
+                    : null) ?: 'Raabiha Dashboard'
             )
             ->homeUrl('/')
             ->brandLogo(fn() => $resolveMediaUrl('site_logo_light'))
