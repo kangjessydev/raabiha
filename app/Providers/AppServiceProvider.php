@@ -140,12 +140,12 @@ class AppServiceProvider extends ServiceProvider
 
         \Filament\Support\Facades\FilamentView::registerRenderHook(
             \Filament\View\PanelsRenderHook::HEAD_END,
-            fn (): string => '@livewireStyles'
+            fn (): string => \Illuminate\Support\Facades\Blade::render('@livewireStyles')
         );
 
         \Filament\Support\Facades\FilamentView::registerRenderHook(
             \Filament\View\PanelsRenderHook::SCRIPTS_AFTER,
-            fn (): string => '@livewireScripts'
+            fn (): string => \Illuminate\Support\Facades\Blade::render('@livewireScripts')
         );
 
         \Filament\Support\Facades\FilamentView::registerRenderHook(
