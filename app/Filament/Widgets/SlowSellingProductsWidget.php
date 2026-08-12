@@ -12,7 +12,7 @@ class SlowSellingProductsWidget extends BaseWidget
 {
     protected static bool $isDiscovered = false;
 
-    protected static ?string $heading = '🐢 Produk Paling Lambat Laku (Slow Movers)';
+    protected static ?string $heading = 'Produk Lambat Terjual (Slow Movers)';
 
     public ?array $filters = null;
 

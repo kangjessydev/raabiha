@@ -60,8 +60,8 @@ class LaporanPenjualan extends Page implements HasTable, HasForms
                                     ->label('Kanal Penjualan (Channel)')
                                     ->options([
                                         'all' => 'Semua Channel (Omnichannel)',
-                                        'online' => '🛒 E-Commerce Website',
-                                        'pos' => '🏪 POS Toko Fisik',
+                                        'online' => 'E-Commerce Website',
+                                        'pos' => 'POS Toko Fisik',
                                     ])
                                     ->default('all')
                                     ->reactive()
@@ -161,7 +161,7 @@ class LaporanPenjualan extends Page implements HasTable, HasForms
                 TextColumn::make('pos_session_id')
                     ->label('Channel')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state ? '🏪 POS Kasir' : '🛒 E-Commerce')
+                    ->formatStateUsing(fn ($state) => $state ? 'POS Kasir' : 'E-Commerce')
                     ->color(fn ($state) => $state ? 'success' : 'info'),
                 TextColumn::make('customer_name')
                     ->label('Pelanggan')

@@ -12,7 +12,7 @@ class TopSellingProductsWidget extends BaseWidget
 {
     protected static bool $isDiscovered = false;
 
-    protected static ?string $heading = '🏆 Produk Paling Laku (Top Sellers)';
+    protected static ?string $heading = 'Produk Terlaris (Top Sellers)';
 
     public ?array $filters = null;
 
