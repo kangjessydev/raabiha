@@ -3,7 +3,6 @@
 namespace App\Filament\Pages;
 
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
-
 use Filament\Pages\Page;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -21,27 +20,23 @@ use Filament\Schemas\Components\Section;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 
-class LaporanBisnis extends Page implements HasTable, HasForms
+class LaporanPenjualan extends Page implements HasTable, HasForms
 {
     use HasPageShield;
-
     use InteractsWithTable;
     use InteractsWithForms;
 
-    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-presentation-chart-bar';
-
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-shopping-cart';
     protected static \UnitEnum|string|null $navigationGroup = 'Laporan & Keuangan';
+    protected static ?string $title = 'Laporan Penjualan & Performa Produk';
+    protected static ?string $navigationLabel = 'Laporan Penjualan';
+    protected static ?int $navigationSort = 2;
 
-    protected static ?string $title = 'Ringkasan Eksekutif';
-
-    protected static ?string $navigationLabel = 'Ringkasan Eksekutif';
-
-    protected static ?int $navigationSort = 1;
-
-    protected string $view = 'filament.pages.laporan-bisnis';
+    protected string $view = 'filament.pages.laporan-penjualan';
 
     public ?array $filters = [
         'preset' => '30_days',
+        'channel' => 'all',
         'created_from' => null,
         'created_until' => null,
     ];
@@ -57,10 +52,20 @@ class LaporanBisnis extends Page implements HasTable, HasForms
     {
         return $schema
             ->components([
-                Section::make('Filter Rentang Laporan')
+                Section::make('Filter Segmentasi Penjualan')
                     ->schema([
-                        FormGrid::make(3)
+                        FormGrid::make(4)
                             ->schema([
+                                Select::make('channel')
+                                    ->label('Kanal Penjualan (Channel)')
+                                    ->options([
+                                        'all' => 'Semua Channel (Omnichannel)',
+                                        'online' => '🛒 E-Commerce Website',
+                                        'pos' => '🏪 POS Toko Fisik',
+                                    ])
+                                    ->default('all')
+                                    ->reactive()
+                                    ->afterStateUpdated(fn () => $this->applyFilters()),
                                 Select::make('preset')
                                     ->label('Rentang Waktu')
                                     ->options([
@@ -128,7 +133,7 @@ class LaporanBisnis extends Page implements HasTable, HasForms
         return [
             ExportAction::make()
                 ->exporter(OrderExporter::class)
-                ->label('Ekspor Data (Excel/CSV)')
+                ->label('Ekspor Penjualan (Excel/CSV)')
                 ->icon('heroicon-o-arrow-down-tray')
         ];
     }
@@ -138,29 +143,32 @@ class LaporanBisnis extends Page implements HasTable, HasForms
         return $table
             ->query(
                 Order::query()
-                    ->when($this->filters['created_from'], fn (Builder $query, $date) => $query->whereDate('created_at', '>=', $date))
-                    ->when($this->filters['created_until'], fn (Builder $query, $date) => $query->whereDate('created_at', '<=', $date))
+                    ->when($this->filters['channel'] === 'online', fn (Builder $q) => $q->whereNull('pos_session_id'))
+                    ->when($this->filters['channel'] === 'pos', fn (Builder $q) => $q->whereNotNull('pos_session_id'))
+                    ->when($this->filters['created_from'], fn (Builder $q, $date) => $q->whereDate('created_at', '>=', $date))
+                    ->when($this->filters['created_until'], fn (Builder $q, $date) => $q->whereDate('created_at', '<=', $date))
                     ->latest()
             )
             ->columns([
                 TextColumn::make('order_number')
-                    ->label('No. Pesanan')
+                    ->label('No. Transaksi')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('created_at')
-                    ->label('Tanggal')
+                    ->label('Waktu WIB')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
-                TextColumn::make('user.name')
-                    ->label('Pelanggan')
-                    ->placeholder(fn ($record) => $record->shipping_address['name'] ?? 'Guest User')
-                    ->searchable(),
-                TextColumn::make('items.product.name')
-                    ->label('Produk')
+                TextColumn::make('pos_session_id')
+                    ->label('Channel')
                     ->badge()
-                    ->separator(', '),
+                    ->formatStateUsing(fn ($state) => $state ? '🏪 POS Kasir' : '🛒 E-Commerce')
+                    ->color(fn ($state) => $state ? 'success' : 'info'),
+                TextColumn::make('customer_name')
+                    ->label('Pelanggan')
+                    ->placeholder(fn ($record) => $record->user?->name ?? 'Tamu Kasir')
+                    ->searchable(),
                 TextColumn::make('grand_total')
-                    ->label('Total Belanja')
+                    ->label('Total Pembayaran')
                     ->money('IDR')
                     ->sortable(),
                 TextColumn::make('payment_status')
@@ -175,17 +183,6 @@ class LaporanBisnis extends Page implements HasTable, HasForms
                 TextColumn::make('payment_method')
                     ->label('Metode Bayar')
                     ->badge(),
-                TextColumn::make('status')
-                    ->label('Status Pesanan')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
-                        'pending' => 'warning',
-                        'processing' => 'info',
-                        'shipped' => 'primary',
-                        default => 'secondary',
-                    }),
             ]);
     }
 }

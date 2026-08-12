@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class CashflowResource extends Resource
 {
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
     protected static \UnitEnum|string|null $navigationGroup = 'Laporan & Keuangan';
 
     protected static ?string $modelLabel = 'Buku Kas (Arus Kas)';

@@ -13,7 +13,7 @@ class VisitorAnalytics extends Page
     use HasPageShield;
 
     protected static \UnitEnum|string|null $navigationGroup = 'Laporan & Keuangan';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
     protected static ?string $navigationLabel = 'Laporan Pengunjung';
     protected static ?string $title = 'Laporan Pengunjung';
