@@ -45,7 +45,7 @@ class ProductPerformanceWidget extends Widget
         }
 
         $topProducts = $topProductsQuery
-            ->select('products.name', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.subtotal) as total_revenue'))
+            ->select('products.name', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.total) as total_revenue'))
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_qty')
             ->limit(5)
