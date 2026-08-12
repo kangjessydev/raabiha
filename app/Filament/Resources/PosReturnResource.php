@@ -21,9 +21,9 @@ class PosReturnResource extends Resource
 
     protected static \UnitEnum|string|null $navigationGroup = 'Kasir & Toko Fisik (POS)';
 
-    protected static ?string $navigationLabel = 'Retur/Refund POS';
-    protected static ?string $modelLabel = 'Retur/Refund POS';
-    protected static ?string $pluralModelLabel = 'Retur/Refund POS';
+    protected static ?string $navigationLabel = 'Retur Kasir (POS)';
+    protected static ?string $modelLabel = 'Retur Kasir';
+    protected static ?string $pluralModelLabel = 'Retur Kasir Toko Fisik';
 
     protected static ?int $navigationSort = 3;
 

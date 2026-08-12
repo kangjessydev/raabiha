@@ -125,12 +125,6 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
-            ->navigationItems([
-                NavigationItem::make('Terminal POS Kasir')
-                    ->url(fn(): string => route('pos.index'), shouldOpenInNewTab: true)
-                    ->icon('heroicon-o-computer-desktop')
-                    ->sort(3),
-            ])
             ->plugins([
                 FilamentShieldPlugin::make(),
                 \Awcodes\Curator\CuratorPlugin::make()

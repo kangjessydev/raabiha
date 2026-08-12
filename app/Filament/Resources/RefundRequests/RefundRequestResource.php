@@ -32,9 +32,9 @@ class RefundRequestResource extends Resource
 
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptRefund;
     protected static \UnitEnum|string|null $navigationGroup = 'Penjualan & Transaksi';
-    protected static ?string $navigationLabel = 'Pengajuan Refund';
-    protected static ?string $modelLabel = 'Pengajuan Refund';
-    protected static ?string $pluralModelLabel = 'Pengajuan Refund';
+    protected static ?string $navigationLabel = 'Refund Online (E-Commerce)';
+    protected static ?string $modelLabel = 'Pengajuan Refund Online';
+    protected static ?string $pluralModelLabel = 'Pengajuan Refund Online';
     protected static ?int $navigationSort = 2;
 
     public static function getNavigationBadge(): ?string
