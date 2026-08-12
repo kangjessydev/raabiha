@@ -52,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('')
             ->domain('admin.' . env('APP_DOMAIN', 'raabiha.com'))
             ->font('Inter')
-            ->darkMode(true)
+            ->darkMode(false)
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->userMenuItems([
                 'profile' => \Filament\Navigation\MenuItem::make()
