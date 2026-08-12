@@ -77,7 +77,7 @@ class AdminPanelProvider extends PanelProvider
             ])
 
             ->colors([
-                'primary' => \Filament\Support\Colors\Color::Emerald,
+                'primary' => \Filament\Support\Colors\Color::Red,
                 'gray' => \Filament\Support\Colors\Color::Stone,
             ])
             ->brandName(
