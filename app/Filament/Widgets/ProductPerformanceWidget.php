@@ -11,7 +11,7 @@ class ProductPerformanceWidget extends Widget
 {
     protected static bool $isDiscovered = false;
 
-    protected static string $view = 'filament.widgets.product-performance-widget';
+    protected string $view = 'filament.widgets.product-performance-widget';
 
     protected int | string | array $columnSpan = 'full';
 
