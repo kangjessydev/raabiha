@@ -18,7 +18,7 @@ class PromoBannerResource extends Resource
 {
     protected static ?int $navigationSort = 2;
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran';
     protected static ?string $navigationLabel = 'Banner Promosi';
     
     protected static ?string $model = PromoBanner::class;

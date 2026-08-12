@@ -28,7 +28,7 @@ class PosEventPromotionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran';
 
     protected static ?string $navigationLabel = 'Promo Event POS';
 

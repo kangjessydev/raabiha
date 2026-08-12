@@ -23,7 +23,7 @@ class TopbarAnnouncement extends Page implements HasForms
     use InteractsWithForms;
 
     public static function getNavigationIcon(): ?string { return 'heroicon-o-megaphone'; }
-    public static function getNavigationGroup(): string|\BackedEnum|null { return 'Pemasaran & Website'; }
+    public static function getNavigationGroup(): string|\BackedEnum|null { return 'Pemasaran'; }
     public static function getNavigationSort(): ?int { return 8; }
     public static function getNavigationLabel(): string { return 'Pengumuman Bilah Atas'; }
     public function getTitle(): string { return 'Pengumuman Topbar'; }

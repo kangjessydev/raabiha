@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class PostResource extends Resource
 {
-    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
+    protected static \UnitEnum|string|null $navigationGroup = 'Manajemen Konten';
     protected static ?int $navigationSort = 6;
     protected static ?string $model = Post::class;
 

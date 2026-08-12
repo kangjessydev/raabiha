@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class PostTagResource extends Resource
 {
-    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
+    protected static \UnitEnum|string|null $navigationGroup = 'Manajemen Konten';
     protected static ?string $navigationParentItem = 'Artikel & Berita';
     protected static ?int $navigationSort = 2;
     protected static ?string $model = PostTag::class;

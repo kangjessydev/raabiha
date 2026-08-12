@@ -20,7 +20,7 @@ class SalesPageResource extends Resource
 {
     protected static ?string $model = SalesPage::class;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Pemasaran & Website';
+    protected static string|\UnitEnum|null $navigationGroup = 'Manajemen Konten';
     protected static ?int $navigationSort = 4;
     
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

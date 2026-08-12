@@ -25,7 +25,7 @@ class MainPageSettings extends Page implements HasForms
 
     use InteractsWithForms;
 
-    protected static string | \UnitEnum | null $navigationGroup = 'Pemasaran & Website';
+    protected static string | \UnitEnum | null $navigationGroup = 'Manajemen Konten';
     protected static ?string $navigationLabel = 'Halaman Utama';
     protected static ?string $title = 'Pengaturan Halaman Utama';
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-document-text';

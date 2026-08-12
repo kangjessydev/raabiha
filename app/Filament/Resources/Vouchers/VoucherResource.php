@@ -18,7 +18,7 @@ class VoucherResource extends Resource
 {
     protected static ?int $navigationSort = 3;
 
-    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Website';
+    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran';
     
     protected static ?string $model = Voucher::class;
 
