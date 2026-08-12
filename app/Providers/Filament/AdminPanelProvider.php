@@ -57,7 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ->userMenuItems([
                 \Filament\Navigation\MenuItem::make()
                     ->label('Terminal POS Kasir')
-                    ->url(fn (): string => route('pos.index'))
+                    ->url(fn(): string => route('pos.index'))
                     ->icon('heroicon-m-computer-desktop')
                     ->openUrlInNewTab(),
                 \Filament\Navigation\MenuItem::make()
@@ -65,13 +65,13 @@ class AdminPanelProvider extends PanelProvider
                     ->url(fn(): string => \App\Filament\Pages\MyProfile::getUrl())
                     ->icon('heroicon-m-user-circle'),
                 \Filament\Navigation\MenuItem::make()
-                    ->label('Kunjungi Toko')
-                    ->url(fn (): string => config('app.url'))
+                    ->label('Kunjungi Website')
+                    ->url(fn(): string => config('app.url'))
                     ->icon('heroicon-m-arrow-top-right-on-square')
                     ->openUrlInNewTab(),
                 \Filament\Navigation\MenuItem::make()
-                    ->label('Kunjungi Shop')
-                    ->url(fn (): string => config('app.url') . '/shop')
+                    ->label('Lihat Katalog')
+                    ->url(fn(): string => config('app.url') . '/shop')
                     ->icon('heroicon-m-shopping-bag')
                     ->openUrlInNewTab(),
             ])
@@ -127,7 +127,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationItems([
                 NavigationItem::make('Terminal POS Kasir')
-                    ->url(fn (): string => route('pos.index'), shouldOpenInNewTab: true)
+                    ->url(fn(): string => route('pos.index'), shouldOpenInNewTab: true)
                     ->icon('heroicon-o-computer-desktop')
                     ->sort(3),
             ])
