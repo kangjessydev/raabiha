@@ -1941,7 +1941,7 @@ class PosManager extends Component
     #[\Livewire\Attributes\Computed]
     public function vouchers()
     {
-        return \App\Models\Voucher::whereIn('usable_channel', ['pos_only', 'both'])
+        return \App\Models\Voucher::forPos()
             ->where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());

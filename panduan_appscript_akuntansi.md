@@ -625,23 +625,25 @@ function buildLabaRugi(ss) {
   const sh = makeSheet(ss, 'Laba Rugi');
 
   title(sh, 'LAPORAN LABA RUGI', 1, 8);
-  sh.getRange('A2:H2').merge().setValue('RAABIHA CLOTHING & KONVEKSI — Periode: ' + new Date().getFullYear())
+  sh.getRange('A2:H2').merge().setFormula('="RAABIHA CLOTHING & KONVEKSI — Periode: " & TEXT(\'Dashboard\'!H2;"dd/mm/yyyy") & " s/d " & TEXT(\'Dashboard\'!H3;"dd/mm/yyyy")')
     .setHorizontalAlignment('center').setFontSize(11);
 
   // Header kolom: Label | POS | Web | Shopee | Lazada | Tokopedia | TikTok | TOTAL
   headerRow(sh, 3, ['Uraian', 'POS Toko', 'Web Raabiha', 'Shopee', 'Lazada', 'Tokopedia', 'TikTok Shop', 'TOTAL']);
 
-  // Helper: SUMIF pada INPUT: Penjualan per channel
-  const penjCols = { 'POS Toko': 2, 'Web Raabiha': 3, 'Shopee': 4, 'Lazada': 5, 'Tokopedia': 6, 'TikTok Shop': 7 };
+  // Helper: SUMIFS pada INPUT: Penjualan per channel dengan filter tanggal Dashboard H2 s/d H3
   function salesFormula(channel, field) {
-    // field: K=net_sales, H=gross_sales, I=diskon, J=biaya_marketplace
     const colMap = { net: 'K', gross: 'H', diskon: 'I', biaya: 'J' };
     const col = colMap[field];
-    return `=SUMIF('INPUT: Penjualan'!C4:C1000,"${channel}",'INPUT: Penjualan'!${col}4:${col}1000)`;
+    return `=SUMIFS('INPUT: Penjualan'!${col}4:${col}1000; 'INPUT: Penjualan'!C4:C1000; "${channel}"; 'INPUT: Penjualan'!A4:A1000; ">="&'Dashboard'!$H$2; 'INPUT: Penjualan'!A4:A1000; "<="&'Dashboard'!$H$3)`;
+  }
+  function hppFormula(jenisItem) {
+    return `=SUMIFS('INPUT: Pembelian & Produksi'!I4:I1000; 'INPUT: Pembelian & Produksi'!C4:C1000; "${jenisItem}"; 'INPUT: Pembelian & Produksi'!A4:A1000; ">="&'Dashboard'!$H$2; 'INPUT: Pembelian & Produksi'!A4:A1000; "<="&'Dashboard'!$H$3)`;
   }
   function bebanFormula(kodeAkun) {
-    return `=SUMIF('INPUT: Beban & Kas Keluar'!C4:C1000,"${kodeAkun}",'INPUT: Beban & Kas Keluar'!F4:F1000)+SUMIF('INPUT: Jurnal Penyesuaian'!D4:D500,"${kodeAkun}",'INPUT: Jurnal Penyesuaian'!H4:H500)`;
+    return `=SUMIFS('INPUT: Beban & Kas Keluar'!F4:F1000; 'INPUT: Beban & Kas Keluar'!C4:C1000; "${kodeAkun}"; 'INPUT: Beban & Kas Keluar'!A4:A1000; ">="&'Dashboard'!$H$2; 'INPUT: Beban & Kas Keluar'!A4:A1000; "<="&'Dashboard'!$H$3) + SUMIFS('INPUT: Jurnal Penyesuaian'!H4:H500; 'INPUT: Jurnal Penyesuaian'!D4:D500; "${kodeAkun}"; 'INPUT: Jurnal Penyesuaian'!A4:A500; ">="&'Dashboard'!$H$2; 'INPUT: Jurnal Penyesuaian'!A4:A500; "<="&'Dashboard'!$H$3)`;
   }
+
 
   let row = 4;
 
@@ -659,7 +661,7 @@ function buildLabaRugi(ss) {
 
   // Pendapatan Konveksi
   sh.getRange(row, 1).setValue('  Pendapatan Jasa Konveksi');
-  sh.getRange(row, 8).setFormula(`=SUMIF('INPUT: Penjualan'!F4:F1000;"4-201";'INPUT: Penjualan'!K4:K1000)`).setNumberFormat('#,##0');
+  sh.getRange(row, 8).setFormula(`=SUMIFS('INPUT: Penjualan'!K4:K1000; 'INPUT: Penjualan'!F4:F1000; "4-201"; 'INPUT: Penjualan'!A4:A1000; ">="&$J$2; 'INPUT: Penjualan'!A4:A1000; "<="&$J$3)`).setNumberFormat('#,##0');
   row++;
 
   const grossRow = row;
@@ -694,10 +696,10 @@ function buildLabaRugi(ss) {
   row++;
 
   const hppItems = [
-    ['  HPP Penjualan Barang Jadi', `=SUMIF('INPUT: Pembelian & Produksi'!C4:C1000,"Barang Jadi (Supplier)",'INPUT: Pembelian & Produksi'!I4:I1000)`],
-    ['  Biaya Bahan Baku Konveksi', `=SUMIF('INPUT: Pembelian & Produksi'!C4:C1000,"Bahan Baku",'INPUT: Pembelian & Produksi'!I4:I1000)`],
-    ['  Biaya Ongkos Jahit & Potong', `=SUMIF('INPUT: Pembelian & Produksi'!C4:C1000,"Ongkos Jahit",'INPUT: Pembelian & Produksi'!I4:I1000)`],
-    ['  Biaya Aksesoris Produksi', `=SUMIF('INPUT: Pembelian & Produksi'!C4:C1000,"Aksesoris",'INPUT: Pembelian & Produksi'!I4:I1000)`],
+    ['  HPP Penjualan Barang Jadi', hppFormula('Barang Jadi (Supplier)')],
+    ['  Biaya Bahan Baku Konveksi', hppFormula('Bahan Baku')],
+    ['  Biaya Ongkos Jahit & Potong', hppFormula('Ongkos Jahit')],
+    ['  Biaya Aksesoris Produksi', hppFormula('Aksesoris')],
   ];
   const hppStartRow = row;
   hppItems.forEach(([label, formula]) => {
@@ -768,33 +770,24 @@ function buildPosisiKeuangan(ss) {
   const sh = makeSheet(ss, 'Posisi Keuangan');
 
   title(sh, 'LAPORAN POSISI KEUANGAN (NERACA)', 1, 6);
-  sh.getRange('A2:F2').merge().setValue('RAABIHA CLOTHING & KONVEKSI — Per ' + Utilities.formatDate(new Date(), 'Asia/Jakarta', 'dd MMMM yyyy'))
+  sh.getRange('A2:F2').merge().setFormula('="RAABIHA CLOTHING & KONVEKSI — Per " & TEXT(\'Laba Rugi\'!K3; "dd MMMM yyyy")')
     .setHorizontalAlignment('center').setFontSize(11);
-
-  // Helper SUMIF dari semua input
-  function netAkun(kode, lebihDB) {
-    const dbSrc = `SUMIF('INPUT: Penjualan'!D4:D1000,"${kode}",'INPUT: Penjualan'!K4:K1000)+SUMIF('INPUT: Jurnal Penyesuaian'!D4:D500,"${kode}",'INPUT: Jurnal Penyesuaian'!H4:H500)`;
-    const crSrc = `SUMIF('INPUT: Penjualan'!D4:D1000,"${kode}",'INPUT: Penjualan'!K4:K1000)`;
-    // Simplified: use direct sumif per relevant input
-    return `=SUMIF('INPUT: Pembelian & Produksi'!K4:K1000,"${kode}",'INPUT: Pembelian & Produksi'!I4:I1000)-SUMIF('INPUT: Jurnal Penyesuaian'!F4:F500,"${kode}",'INPUT: Jurnal Penyesuaian'!H4:H500)`;
-  }
 
   headerRow(sh, 3, ['ASET (AKTIVA)', '', 'Jumlah (Rp)', '', 'KEWAJIBAN & EKUITAS', 'Jumlah (Rp)']);
 
   let leftRow = 4;
-  let rightRow = 4;
 
   const asetItems = [
     ['Aset Lancar', null, true],
-    ['  Kas Toko (POS)', `=SUMIF('INPUT: Penjualan'!C4:C1000,"POS Toko",'INPUT: Penjualan'!K4:K1000)-SUMIF('INPUT: Beban & Kas Keluar'!G4:G1000,"Kas Toko (POS)",'INPUT: Beban & Kas Keluar'!F4:F1000)`],
-    ['  Kas Bank BCA', `=SUMIF('INPUT: Penjualan'!D4:D1000,"1-102",'INPUT: Penjualan'!K4:K1000)-SUMIF('INPUT: Beban & Kas Keluar'!G4:G1000,"Kas Bank BCA",'INPUT: Beban & Kas Keluar'!F4:F1000)`],
-    ['  Kas Bank Mandiri', `=SUMIF('INPUT: Penjualan'!D4:D1000,"1-103",'INPUT: Penjualan'!K4:K1000)-SUMIF('INPUT: Beban & Kas Keluar'!G4:G1000,"Kas Bank Mandiri",'INPUT: Beban & Kas Keluar'!F4:F1000)`],
-    ['  Piutang Shopee', `=SUMIF('INPUT: Penjualan'!C4:C1000,"Shopee",'INPUT: Penjualan'!H4:H1000)-SUMIF('INPUT: Penjualan'!D4:D1000,"1-102",'INPUT: Penjualan'!K4:K1000)`],
-    ['  Piutang Lazada', `=SUMIF('INPUT: Penjualan'!C4:C1000,"Lazada",'INPUT: Penjualan'!H4:H1000)-SUMIF('INPUT: Penjualan'!D4:D1000,"1-103",'INPUT: Penjualan'!K4:K1000)`],
-    ['  Piutang Tokopedia', `=SUMIF('INPUT: Penjualan'!C4:C1000,"Tokopedia",'INPUT: Penjualan'!H4:H1000)`],
-    ['  Piutang TikTok Shop', `=SUMIF('INPUT: Penjualan'!C4:C1000,"TikTok Shop",'INPUT: Penjualan'!H4:H1000)`],
-    ['  Persediaan Bahan Baku', `=SUMIF('INPUT: Pembelian & Produksi'!C4:C1000,"Bahan Baku",'INPUT: Pembelian & Produksi'!I4:I1000)-SUMIF('INPUT: Pembelian & Produksi'!C4:C1000,"Ongkos Jahit",'INPUT: Pembelian & Produksi'!I4:I1000)`],
-    ['  Persediaan Barang Jadi', `=SUMIF('INPUT: Pembelian & Produksi'!C4:C1000,"Barang Jadi (Supplier)",'INPUT: Pembelian & Produksi'!I4:I1000)`],
+    ['  Kas Toko (POS)', `=SUMIFS('INPUT: Penjualan'!K4:K1000; 'INPUT: Penjualan'!C4:C1000; "POS Toko"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)-SUMIFS('INPUT: Beban & Kas Keluar'!F4:F1000; 'INPUT: Beban & Kas Keluar'!G4:G1000; "Kas Toko (POS)"; 'INPUT: Beban & Kas Keluar'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['  Kas Bank BCA', `=SUMIFS('INPUT: Penjualan'!K4:K1000; 'INPUT: Penjualan'!D4:D1000; "1-102"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)-SUMIFS('INPUT: Beban & Kas Keluar'!F4:F1000; 'INPUT: Beban & Kas Keluar'!G4:G1000; "Kas Bank BCA"; 'INPUT: Beban & Kas Keluar'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['  Kas Bank Mandiri', `=SUMIFS('INPUT: Penjualan'!K4:K1000; 'INPUT: Penjualan'!D4:D1000; "1-103"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)-SUMIFS('INPUT: Beban & Kas Keluar'!F4:F1000; 'INPUT: Beban & Kas Keluar'!G4:G1000; "Kas Bank Mandiri"; 'INPUT: Beban & Kas Keluar'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['  Piutang Shopee', `=SUMIFS('INPUT: Penjualan'!H4:H1000; 'INPUT: Penjualan'!C4:C1000; "Shopee"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)-SUMIFS('INPUT: Penjualan'!K4:K1000; 'INPUT: Penjualan'!D4:D1000; "1-102"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['  Piutang Lazada', `=SUMIFS('INPUT: Penjualan'!H4:H1000; 'INPUT: Penjualan'!C4:C1000; "Lazada"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)-SUMIFS('INPUT: Penjualan'!K4:K1000; 'INPUT: Penjualan'!D4:D1000; "1-103"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['  Piutang Tokopedia', `=SUMIFS('INPUT: Penjualan'!H4:H1000; 'INPUT: Penjualan'!C4:C1000; "Tokopedia"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['  Piutang TikTok Shop', `=SUMIFS('INPUT: Penjualan'!H4:H1000; 'INPUT: Penjualan'!C4:C1000; "TikTok Shop"; 'INPUT: Penjualan'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['  Persediaan Bahan Baku', `=SUMIFS('INPUT: Pembelian & Produksi'!I4:I1000; 'INPUT: Pembelian & Produksi'!C4:C1000; "Bahan Baku"; 'INPUT: Pembelian & Produksi'!A4:A1000; "<="&'Laba Rugi'!$K$3)-SUMIFS('INPUT: Pembelian & Produksi'!I4:I1000; 'INPUT: Pembelian & Produksi'!C4:C1000; "Ongkos Jahit"; 'INPUT: Pembelian & Produksi'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['  Persediaan Barang Jadi', `=SUMIFS('INPUT: Pembelian & Produksi'!I4:I1000; 'INPUT: Pembelian & Produksi'!C4:C1000; "Barang Jadi (Supplier)"; 'INPUT: Pembelian & Produksi'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
     ['Total Aset Lancar', null, false, true],
   ];
 
@@ -812,8 +805,7 @@ function buildPosisiKeuangan(ss) {
 
   sh.getRange(leftRow, 1).setValue('Aset Tetap').setFontWeight('bold');
   sh.getRange(leftRow + 1, 1).setValue('  Peralatan & Mesin (setelah penyusutan)');
-  sh.getRange(leftRow + 1, 3).setFormula(`=SUMIF('INPUT: Pembelian & Produksi'!K4:K1000;"1-401";'INPUT: Pembelian & Produksi'!I4:I1000)-SUMIF('INPUT: Jurnal Penyesuaian'!F4:F500;"1-402";'INPUT: Jurnal Penyesuaian'!H4:H500)`).setNumberFormat('#,##0');
-  const totalAsetRow = leftRow + 3;
+  sh.getRange(leftRow + 1, 3).setFormula(`=SUMIFS('INPUT: Pembelian & Produksi'!I4:I1000; 'INPUT: Pembelian & Produksi'!K4:K1000; "1-401"; 'INPUT: Pembelian & Produksi'!A4:A1000; "<="&'Laba Rugi'!$K$3)-SUMIFS('INPUT: Jurnal Penyesuaian'!H4:H500; 'INPUT: Jurnal Penyesuaian'!F4:F500; "1-402"; 'INPUT: Jurnal Penyesuaian'!A4:A500; "<="&'Laba Rugi'!$K$3)`).setNumberFormat('#,##0');
   sh.getRange(leftRow + 2, 1).setValue('Total Aset Tetap').setFontWeight('bold');
   sh.getRange(leftRow + 2, 3).setFormula(`=C${leftRow+1}`).setNumberFormat('#,##0').setFontWeight('bold').setBackground(C.LGRAY);
   sh.getRange(leftRow + 3, 1, 1, 3).setFontWeight('bold').setFontSize(11).setBackground(C.OK);
@@ -821,29 +813,15 @@ function buildPosisiKeuangan(ss) {
   sh.getRange(leftRow + 3, 3).setFormula(`=C${leftRow-1}+C${leftRow+2}`).setNumberFormat('#,##0');
 
   // PASIVA (kanan)
-  const pItems = [
-    ['Kewajiban Lancar', null, true],
-    ['  Hutang Dagang / Supplier', `=SUMIF('INPUT: Pembelian & Produksi'!J4:J1000,"Hutang Dagang",'INPUT: Pembelian & Produksi'!I4:I1000)`],
-    ['Total Kewajiban', null, false, true, 4, 5],
-    ['', null],
-    ['Ekuitas', null, true],
-    ['  Modal Pemilik', '=0'],
-    ['  Laba Bersih Tahun Ini', "='Laba Rugi'!H" + (sh.getLastRow() + 5)],
-    ['Total Ekuitas', null, false, true, 6, 7],
-    ['', null],
-    ['TOTAL KEWAJIBAN & EKUITAS', null, false, false, null, null, true],
-  ];
-
-  // Sederhana: tuliskan di kolom E-F
   const pStartRow = 4;
   const pData = [
     ['Kewajiban Lancar', ''],
-    ['  Hutang Dagang / Supplier', `=SUMIF('INPUT: Pembelian & Produksi'!J4:J500;"Hutang Dagang";'INPUT: Pembelian & Produksi'!I4:I500)`],
+    ['  Hutang Dagang / Supplier', `=SUMIFS('INPUT: Pembelian & Produksi'!I4:I1000; 'INPUT: Pembelian & Produksi'!J4:J1000; "Hutang Dagang"; 'INPUT: Pembelian & Produksi'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
     ['Total Kewajiban', '=F5'],
     ['', ''],
     ['Ekuitas', ''],
     ['  Modal Pemilik (isi manual)', ''],
-    ["  Laba Bersih Tahun Ini", "='Laba Rugi'!H40"],
+    ["  Laba Bersih Periode Ini", '=VLOOKUP("LABA BERSIH (NET PROFIT)"; \'Laba Rugi\'!A:H; 8; FALSE)'],
     ['Total Ekuitas', '=SUM(F9:F10)'],
     ['', ''],
     ['TOTAL KEWAJIBAN & EKUITAS', '=F6+F11'],
@@ -859,6 +837,7 @@ function buildPosisiKeuangan(ss) {
   sh.setColumnWidth(4, 30); sh.setColumnWidth(5, 240); sh.setColumnWidth(6, 150);
 }
 
+
 // ─────────────────────────────────────────────────────────
 // 9. ARUS KAS
 // ─────────────────────────────────────────────────────────
@@ -866,26 +845,28 @@ function buildPosisiKeuangan(ss) {
 function buildArusKas(ss) {
   const sh = makeSheet(ss, 'Arus Kas');
   title(sh, 'LAPORAN ARUS KAS (CASH FLOW)', 1, 4);
+  sh.getRange('A2:D2').merge().setFormula('="RAABIHA CLOTHING & KONVEKSI — Periode: " & TEXT(\'Dashboard\'!H2;"dd/mm/yyyy") & " s/d " & TEXT(\'Dashboard\'!H3;"dd/mm/yyyy")')
+    .setHorizontalAlignment('center').setFontSize(10).setFontColor(C.MUTED);
 
   const items = [
     ['I. AKTIVITAS OPERASIONAL', null, true],
-    ['  Penerimaan dari Penjualan (semua channel)', `=SUMIF('INPUT: Penjualan'!C4:C1000,"POS Toko",'INPUT: Penjualan'!K4:K1000)+SUMIF('INPUT: Penjualan'!D4:D1000,"1-102",'INPUT: Penjualan'!K4:K1000)+SUMIF('INPUT: Penjualan'!D4:D1000,"1-103",'INPUT: Penjualan'!K4:K1000)`],
-    ['  Pembayaran Beban Operasional', `=-SUM('INPUT: Beban & Kas Keluar'!F4:F1000)`],
-    ['  Pembayaran ke Supplier (tunai)', `=-SUMIF('INPUT: Pembelian & Produksi'!J4:J1000,"Tunai",'INPUT: Pembelian & Produksi'!I4:I1000)`],
-    ['ARUS KAS BERSIH DARI OPERASIONAL', `=SUM(D3:D5)`, false, true],
+    ['  Penerimaan dari Penjualan (semua channel)', `=SUMIFS('INPUT: Penjualan'!K4:K1000; 'INPUT: Penjualan'!A4:A1000; ">="&'Dashboard'!$H$2; 'INPUT: Penjualan'!A4:A1000; "<="&'Dashboard'!$H$3)`],
+    ['  Pembayaran Beban Operasional', `=-SUMIFS('INPUT: Beban & Kas Keluar'!F4:F1000; 'INPUT: Beban & Kas Keluar'!A4:A1000; ">="&'Dashboard'!$H$2; 'INPUT: Beban & Kas Keluar'!A4:A1000; "<="&'Dashboard'!$H$3)`],
+    ['  Pembayaran ke Supplier (tunai)', `=-SUMIFS('INPUT: Pembelian & Produksi'!I4:I1000; 'INPUT: Pembelian & Produksi'!J4:J1000; "Tunai"; 'INPUT: Pembelian & Produksi'!A4:A1000; ">="&'Dashboard'!$H$2; 'INPUT: Pembelian & Produksi'!A4:A1000; "<="&'Dashboard'!$H$3)`],
+    ['ARUS KAS BERSIH DARI OPERASIONAL', `=SUM(D4:D6)`, false, true],
     ['', null],
     ['II. AKTIVITAS INVESTASI', null, true],
-    ['  Pembelian Aset Tetap', `=-SUMIF('INPUT: Pembelian & Produksi'!K4:K1000,"1-401",'INPUT: Pembelian & Produksi'!I4:I1000)`],
-    ['ARUS KAS BERSIH DARI INVESTASI', `=D9`, false, true],
+    ['  Pembelian Aset Tetap', `=-SUMIFS('INPUT: Pembelian & Produksi'!I4:I1000; 'INPUT: Pembelian & Produksi'!K4:K1000; "1-401"; 'INPUT: Pembelian & Produksi'!A4:A1000; ">="&'Dashboard'!$H$2; 'INPUT: Pembelian & Produksi'!A4:A1000; "<="&'Dashboard'!$H$3)`],
+    ['ARUS KAS BERSIH DARI INVESTASI', `=D10`, false, true],
     ['', null],
     ['III. AKTIVITAS PENDANAAN', null, true],
-    ['  Setoran Modal Pemilik', '=0'],
-    ['  Prive / Pengambilan Pemilik', '=0'],
-    ['ARUS KAS BERSIH DARI PENDANAAN', `=SUM(D13:D14)`, false, true],
+    ['  Setoran Modal Pemilik', `=SUMIFS('INPUT: Jurnal Penyesuaian'!H4:H500; 'INPUT: Jurnal Penyesuaian'!D4:D500; "3-101"; 'INPUT: Jurnal Penyesuaian'!A4:A500; ">="&'Dashboard'!$H$2; 'INPUT: Jurnal Penyesuaian'!A4:A500; "<="&'Dashboard'!$H$3)`],
+    ['  Prive / Pengambilan Pemilik', `=-SUMIFS('INPUT: Beban & Kas Keluar'!F4:F1000; 'INPUT: Beban & Kas Keluar'!C4:C1000; "3-102"; 'INPUT: Beban & Kas Keluar'!A4:A1000; ">="&'Dashboard'!$H$2; 'INPUT: Beban & Kas Keluar'!A4:A1000; "<="&'Dashboard'!$H$3)`],
+    ['ARUS KAS BERSIH DARI PENDANAAN', `=SUM(D14:D15)`, false, true],
     ['', null],
-    ['KENAIKAN / (PENURUNAN) KAS BERSIH', `=D6+D10+D15`, false, false, true],
-    ['Saldo Kas Awal Periode', ''],
-    ['SALDO KAS AKHIR PERIODE', `=D17+D18`, false, false, true],
+    ['KENAIKAN / (PENURUNAN) KAS BERSIH', `=D7+D11+D16`, false, false, true],
+    ['Saldo Kas Awal Periode', '0'],
+    ['SALDO KAS AKHIR PERIODE', `=D18+D19`, false, false, true],
   ];
 
   items.forEach((item, i) => {
@@ -900,6 +881,7 @@ function buildArusKas(ss) {
   sh.setColumnWidth(1, 350); sh.setColumnWidths(2, 3, 30); sh.setColumnWidth(4, 150);
 }
 
+
 // ─────────────────────────────────────────────────────────
 // 10. PERUBAHAN EKUITAS
 // ─────────────────────────────────────────────────────────
@@ -907,28 +889,27 @@ function buildArusKas(ss) {
 function buildPerubahanEkuitas(ss) {
   const sh = makeSheet(ss, 'Perubahan Ekuitas');
   title(sh, 'LAPORAN PERUBAHAN EKUITAS', 1, 3);
+  sh.getRange('A2:C2').merge().setFormula('="RAABIHA CLOTHING & KONVEKSI — Periode: " & TEXT(\'Laba Rugi\'!K2;"dd/mm/yyyy") & " s/d " & TEXT(\'Laba Rugi\'!K3;"dd/mm/yyyy")')
+    .setHorizontalAlignment('center').setFontSize(10).setFontColor(C.MUTED);
 
   const items = [
-    ['Modal Awal Periode (isi manual)', '', 0],
-    ['(+) Tambahan Setoran Modal', '', 0],
-    ["(+) Laba Bersih Tahun Ini", '', "='Laba Rugi'!H40"],
-    ['(-) Prive / Pengambilan Pemilik', '', 0],
-    ['MODAL AKHIR PERIODE', '', '=SUM(C3:C6)'],
+    ['Modal Awal Periode', '', `=SUMIFS('INPUT: Jurnal Penyesuaian'!H4:H500; 'INPUT: Jurnal Penyesuaian'!D4:D500; "3-101"; 'INPUT: Jurnal Penyesuaian'!A4:A500; "<"&'Laba Rugi'!$K$2)`],
+    ['(+) Tambahan Setoran Modal', '', `=SUMIFS('INPUT: Jurnal Penyesuaian'!H4:H500; 'INPUT: Jurnal Penyesuaian'!D4:D500; "3-101"; 'INPUT: Jurnal Penyesuaian'!A4:A500; ">="&'Laba Rugi'!$K$2; 'INPUT: Jurnal Penyesuaian'!A4:A500; "<="&'Laba Rugi'!$K$3)`],
+    ['(+) Laba Bersih Periode Ini', '', '=VLOOKUP("LABA BERSIH (NET PROFIT)"; \'Laba Rugi\'!A:H; 8; FALSE)'],
+    ['(-) Prive / Pengambilan Pemilik', '', `=SUMIFS('INPUT: Beban & Kas Keluar'!F4:F1000; 'INPUT: Beban & Kas Keluar'!C4:C1000; "3-102"; 'INPUT: Beban & Kas Keluar'!A4:A1000; ">="&'Laba Rugi'!$K$2; 'INPUT: Beban & Kas Keluar'!A4:A1000; "<="&'Laba Rugi'!$K$3)`],
+    ['MODAL AKHIR PERIODE', '', '=C4+C5+C6-C7'],
   ];
 
   items.forEach((item, i) => {
-    const r = 3 + i;
+    const r = 4 + i;
     sh.getRange(r, 1).setValue(item[0]);
-    if (typeof item[2] === 'string' && item[2].startsWith('=')) {
-      sh.getRange(r, 3).setFormula(item[2]).setNumberFormat('#,##0');
-    } else {
-      sh.getRange(r, 3).setValue(item[2]).setNumberFormat('#,##0');
-    }
+    sh.getRange(r, 3).setFormula(item[2]).setNumberFormat('#,##0');
   });
 
-  sh.getRange(7, 1, 1, 3).setFontWeight('bold').setFontSize(11).setBackground(C.OK);
+  sh.getRange(8, 1, 1, 3).setFontWeight('bold').setFontSize(11).setBackground(C.OK);
   sh.setColumnWidth(1, 320); sh.setColumnWidth(2, 30); sh.setColumnWidth(3, 160);
 }
+
 
 // ─────────────────────────────────────────────────────────
 // 11. KALKULATOR PAJAK
@@ -948,7 +929,9 @@ function buildKalkulatorPajak(ss) {
                   'Juli','Agustus','September','Oktober','November','Desember'];
   months.forEach((m, i) => {
     const r = 4 + i;
+    const mNum = i + 1;
     sh.getRange(r, 1).setValue(m);
+    sh.getRange(r, 2).setFormula(`=SUMIFS('INPUT: Penjualan'!K4:K1000; 'INPUT: Penjualan'!A4:A1000; ">="&DATE(YEAR('Laba Rugi'!$J$3); ${mNum}; 1); 'INPUT: Penjualan'!A4:A1000; "<="&EOMONTH(DATE(YEAR('Laba Rugi'!$J$3); ${mNum}; 1); 0))`).setNumberFormat('#,##0');
     sh.getRange(r, 3).setFormula(`=SUM(B$4:B${r})`).setNumberFormat('#,##0');
     sh.getRange(r, 4).setFormula(`=IF(C${r}<=500000000;0;B${r}*0.005)`).setNumberFormat('#,##0');
     sh.getRange(r, 5).setFormula(`=IF(C${r}<=500000000;"Bebas pajak (< Rp 500 Jt)";"Wajib setor PPh Final 0,5%")`);
@@ -967,6 +950,95 @@ function buildKalkulatorPajak(ss) {
 
   sh.setColumnWidths(1, 5, 200);
 }
+
+// ─────────────────────────────────────────────────────────
+// 13. UTILITY: INSPEKSI STRUKTUR & FORMULA AKTUAL
+// ─────────────────────────────────────────────────────────
+
+/**
+ * Fungsi Inspeksi Kondisi Aktual Spreadsheet (Aman Limit 50.000 Karakter)
+ * Jalankan fungsi ini di Apps Script untuk memindai semua Sheet, Tabel, Header, Formula, dan Data Aktual.
+ * Hasilnya akan dipecah secara otomatis di sheet '_INSPEKSI_JSON'.
+ */
+function exportSpreadsheetStructure() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  const result = {
+    title: ss.getName(),
+    time: new Date().toISOString(),
+    sheets: []
+  };
+
+  sheets.forEach(sheet => {
+    const sheetName = sheet.getName();
+    if (sheetName === '_INSPEKSI_JSON') return;
+
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+
+    if (lastRow === 0 || lastCol === 0) {
+      result.sheets.push({ name: sheetName, empty: true });
+      return;
+    }
+
+    const inspectRows = Math.min(lastRow, 6);
+    const inspectCols = Math.min(lastCol, 15);
+    const range = sheet.getRange(1, 1, inspectRows, inspectCols);
+    const values = range.getDisplayValues();
+    const formulas = range.getFormulas();
+
+    const keyFormulas = [];
+    for (let r = 0; r < inspectRows; r++) {
+      for (let c = 0; c < inspectCols; c++) {
+        if (formulas[r][c] && formulas[r][c] !== '') {
+          let colStr = '';
+          let tempCol = c + 1;
+          while (tempCol > 0) {
+            let rem = (tempCol - 1) % 26;
+            colStr = String.fromCharCode(65 + rem) + colStr;
+            tempCol = Math.floor((tempCol - rem) / 26);
+          }
+          keyFormulas.push({
+            cell: colStr + (r + 1),
+            formula: formulas[r][c]
+          });
+        }
+      }
+    }
+
+    result.sheets.push({
+      name: sheetName,
+      rows: lastRow,
+      cols: lastCol,
+      sample: values.slice(0, 5),
+      formulas: keyFormulas
+    });
+  });
+
+  const jsonString = JSON.stringify(result);
+
+  let inspectSheet = ss.getSheetByName('_INSPEKSI_JSON');
+  if (!inspectSheet) {
+    inspectSheet = ss.insertSheet('_INSPEKSI_JSON');
+  } else {
+    inspectSheet.clear();
+  }
+
+  inspectSheet.getRange('A1').setValue('SALIN TEKS DI SEL A2 (DAN A3 JIKA ADA) DAN BERIKAN KE CHAT:').setFontWeight('bold');
+
+  const chunkSize = 30000;
+  let row = 2;
+  for (let i = 0; i < jsonString.length; i += chunkSize) {
+    const chunk = jsonString.substring(i, i + chunkSize);
+    inspectSheet.getRange(row, 1).setValue(chunk);
+    row++;
+  }
+
+  inspectSheet.setColumnWidth(1, 1000);
+  SpreadsheetApp.getUi().alert('Inspeksi Berhasil!\n\nData JSON tersimpan di sheet "_INSPEKSI_JSON" pada sel A2 (dan A3 jika panjang). Silakan salin dan paste ke chat!');
+}
+
+
 
 // ─────────────────────────────────────────────────────────
 // 12. DASHBOARD

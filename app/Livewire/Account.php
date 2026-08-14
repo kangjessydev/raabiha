@@ -580,6 +580,7 @@ class Account extends Component
         $isReseller = Auth::user()->hasRole('reseller');
 
         return \App\Models\Voucher::where('is_active', true)
+            ->forOnline()
             ->where(function($q) {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })

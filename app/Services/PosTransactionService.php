@@ -177,6 +177,9 @@ class PosTransactionService
             if ($voucherId) {
                 $voucher = \App\Models\Voucher::find($voucherId);
                 if ($voucher) {
+                    if ($voucher->usable_channel === 'online_only') {
+                        throw new Exception("Voucher {$voucher->name} hanya berlaku untuk transaksi Toko Online (Web).");
+                    }
                     if ($voucher->max_uses && $voucher->used_count >= $voucher->max_uses) {
                         throw new Exception("Voucher {$voucher->name} sudah mencapai batas maksimum kuota penggunaan.");
                     }

@@ -58,10 +58,21 @@ class Voucher extends Model
         });
     }
 
+    public function scopeForOnline($query)
+    {
+        return $query->whereIn('usable_channel', ['online_only', 'both']);
+    }
+
+    public function scopeForPos($query)
+    {
+        return $query->whereIn('usable_channel', ['pos_only', 'both']);
+    }
+
     public static function getGlobalPromoLabels(): array
     {
         return cache()->remember('global_promo_labels', 300, function () {
             $vouchers = self::where('is_active', true)
+                ->forOnline()
                 ->where(function($q) {
                     $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
                 })
