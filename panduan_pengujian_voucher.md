@@ -1,6 +1,6 @@
-# 📋 Checklist & Panduan Pengujian Sistem (Voucher & Laporan Penjualan)
+# 📋 Checklist & Panduan Pengujian Sistem (Voucher, Laporan, & Produk)
 
-Dokumen ini berisi daftar pengujian (*QA Checklist*) menyeluruh yang dapat Anda centang satu per satu untuk memastikan seluruh fungsi voucher dan filter laporan penjualan di Admin Panel berjalan sesuai ekspektasi.
+Dokumen ini berisi daftar pengujian (*QA Checklist*) menyeluruh yang dapat Anda centang satu per satu untuk memastikan seluruh fungsi voucher, filter laporan penjualan, dan visibilitas produk di Admin Panel berjalan sesuai ekspektasi.
 
 ---
 
@@ -163,3 +163,28 @@ Dokumen ini berisi daftar pengujian (*QA Checklist*) menyeluruh yang dapat Anda 
     2. Transaksi Kasir POS & Toko Offline TIDAK muncul.
     3. Badge kolom `Channel` pada tabel berwarna **Biru (`E-Commerce`)**.
     4. Widget Produk Terlaris & Lambat Terjual memperhitungkan omset & item khusus transaksi Web.
+
+---
+
+## 11. Pengujian Visibilitas Produk (`channel_visibility` & `is_hidden`)
+
+- [ ] **11.1 Produk Hanya POS Kasir (`pos_only`)**
+  * **Pengaturan Form:** `channel_visibility = POS Kasir Saja (Toko Fisik)` (`pos_only`)
+  * **Langkah Pengujian:**
+    1. Buka Halaman Katalog (`/shop`) -> **Ekspektasi:** Produk TIDAK muncul di katalog.
+    2. Cari nama produk di Search Bar Web (`/search?q=...`) -> **Ekspektasi:** Produk TIDAK muncul di hasil pencarian.
+    3. Cek bagian "Produk Serupa" pada detail produk lain -> **Ekspektasi:** Produk TIDAK muncul sebagai rekomendasi.
+    4. Cek Sitemap XML Google (`/sitemap.xml`) -> **Ekspektasi:** Link produk TIDAK terdaftar di sitemap.
+    5. Buka Kasir (POS) -> **Ekspektasi:** Produk muncul dan bisa ditransaksikan.
+
+- [ ] **11.2 Produk Hanya E-Commerce (`online_only`)**
+  * **Pengaturan Form:** `channel_visibility = E-Commerce Saja (Website Online)` (`online_only`)
+  * **Langkah Pengujian:**
+    1. Buka Kasir (POS) -> **Ekspektasi:** Produk TIDAK muncul di daftar produk POS.
+    2. Buka E-Commerce Web (`/shop` & `/search`) -> **Ekspektasi:** Produk muncul dan dapat dibeli.
+
+- [ ] **11.3 Produk Custom Tersembunyi (`is_hidden = True`)**
+  * **Pengaturan Form:** `is_hidden = True` (Sembunyikan dari Katalog)
+  * **Langkah Pengujian:**
+    1. Buka Katalog (`/shop`), Search Bar (`/search`), dan Sitemap (`/sitemap.xml`) -> **Ekspektasi:** Produk TIDAK muncul.
+    2. Buka URL produk secara langsung (`/product/slug-produk-custom`) -> **Ekspektasi:** Halaman produk BISA DIBUKA dan di-checkout bagi pemegang link.

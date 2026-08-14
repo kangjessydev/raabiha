@@ -23,6 +23,7 @@ class Search extends Component
             $products = Product::with(['category', 'variants'])
                 ->where('is_active', true)
                 ->where('is_hidden', false)
+                ->whereIn('channel_visibility', ['online_only', 'both'])
                 ->where(function($query) {
                     $query->where('name', 'like', '%' . $this->q . '%')
                           ->orWhere('description', 'like', '%' . $this->q . '%');

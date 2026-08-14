@@ -523,6 +523,7 @@ class ProductDetail extends Component
     {
         return Product::where('is_active', true)
             ->where('is_hidden', false)
+            ->whereIn('channel_visibility', ['online_only', 'both'])
             ->where('category_id', $this->product->category_id)
             ->where('id', '!=', $this->product->id)
             ->inRandomOrder()

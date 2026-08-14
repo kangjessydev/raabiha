@@ -37,6 +37,7 @@ class SitemapController extends Controller
         // Active and visible products
         $products = Product::where('is_active', true)
             ->where('is_hidden', false)
+            ->whereIn('channel_visibility', ['online_only', 'both'])
             ->get();
 
         foreach ($products as $product) {
