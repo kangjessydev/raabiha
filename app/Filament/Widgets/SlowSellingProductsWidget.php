@@ -37,9 +37,20 @@ class SlowSellingProductsWidget extends BaseWidget
                     ->whereBetween('orders.created_at', [$from . ' 00:00:00', $until . ' 23:59:59'])
                     ->where('orders.payment_status', 'paid');
                 if ($channel === 'online') {
-                    $join->whereNull('orders.pos_session_id');
+                    $join->where(function ($sub) {
+                        $sub->whereIn('orders.source', ['ecommerce', 'online'])
+                            ->orWhere(function ($s) {
+                                $s->whereNull('orders.source')
+                                  ->whereNull('orders.pos_session_id')
+                                  ->whereNull('orders.cashier_id');
+                            });
+                    });
                 } elseif ($channel === 'pos') {
-                    $join->whereNotNull('orders.pos_session_id');
+                    $join->where(function ($sub) {
+                        $sub->whereIn('orders.source', ['pos', 'offline'])
+                            ->orWhereNotNull('orders.pos_session_id')
+                            ->orWhereNotNull('orders.cashier_id');
+                    });
                 }
             })
             ->select('products.id', 'products.name', 'products.stock', DB::raw('COALESCE(SUM(order_items.quantity), 0) as total_qty'))

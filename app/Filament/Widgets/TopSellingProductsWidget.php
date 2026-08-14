@@ -37,9 +37,20 @@ class TopSellingProductsWidget extends BaseWidget
             ->where('orders.payment_status', 'paid');
 
         if ($channel === 'online') {
-            $query->whereNull('orders.pos_session_id');
+            $query->where(function ($sub) {
+                $sub->whereIn('orders.source', ['ecommerce', 'online'])
+                    ->orWhere(function ($s) {
+                        $s->whereNull('orders.source')
+                          ->whereNull('orders.pos_session_id')
+                          ->whereNull('orders.cashier_id');
+                    });
+            });
         } elseif ($channel === 'pos') {
-            $query->whereNotNull('orders.pos_session_id');
+            $query->where(function ($sub) {
+                $sub->whereIn('orders.source', ['pos', 'offline'])
+                    ->orWhereNotNull('orders.pos_session_id')
+                    ->orWhereNotNull('orders.cashier_id');
+            });
         }
 
         $query->select('products.id', 'products.name', DB::raw('SUM(order_items.quantity) as total_qty'), DB::raw('SUM(order_items.total) as total_revenue'))

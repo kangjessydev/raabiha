@@ -143,8 +143,19 @@ class LaporanPenjualan extends Page implements HasTable, HasForms
         return $table
             ->query(
                 Order::query()
-                    ->when($this->filters['channel'] === 'online', fn (Builder $q) => $q->whereNull('pos_session_id'))
-                    ->when($this->filters['channel'] === 'pos', fn (Builder $q) => $q->whereNotNull('pos_session_id'))
+                    ->when($this->filters['channel'] === 'online', fn (Builder $q) => $q->where(function (Builder $sub) {
+                        $sub->whereIn('source', ['ecommerce', 'online'])
+                            ->orWhere(function ($s) {
+                                $s->whereNull('source')
+                                  ->whereNull('pos_session_id')
+                                  ->whereNull('cashier_id');
+                            });
+                    }))
+                    ->when($this->filters['channel'] === 'pos', fn (Builder $q) => $q->where(function (Builder $sub) {
+                        $sub->whereIn('source', ['pos', 'offline'])
+                            ->orWhereNotNull('pos_session_id')
+                            ->orWhereNotNull('cashier_id');
+                    }))
                     ->when($this->filters['created_from'], fn (Builder $q, $date) => $q->whereDate('created_at', '>=', $date))
                     ->when($this->filters['created_until'], fn (Builder $q, $date) => $q->whereDate('created_at', '<=', $date))
                     ->latest()
@@ -158,11 +169,11 @@ class LaporanPenjualan extends Page implements HasTable, HasForms
                     ->label('Waktu WIB')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
-                TextColumn::make('pos_session_id')
+                TextColumn::make('source')
                     ->label('Channel')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state ? 'POS Kasir' : 'E-Commerce')
-                    ->color(fn ($state) => $state ? 'success' : 'info'),
+                    ->state(fn ($record) => (in_array($record->source, ['pos', 'offline']) || $record->pos_session_id || $record->cashier_id) ? 'POS Kasir' : 'E-Commerce')
+                    ->color(fn (string $state) => $state === 'POS Kasir' ? 'success' : 'info'),
                 TextColumn::make('customer_name')
                     ->label('Pelanggan')
                     ->placeholder(fn ($record) => $record->user?->name ?? 'Tamu Kasir')

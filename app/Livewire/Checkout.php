@@ -1273,6 +1273,7 @@ class Checkout extends Component
             $order = Order::create([
                 'user_id' => auth()->id() ?? null,
                 'order_number' => $orderNumber,
+                'source' => 'ecommerce',
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'shipping_address' => $shippingAddressData,

@@ -55,10 +55,19 @@ class DashboardStatsOverview extends StatsOverviewWidget
             $applyOrderChannel = function ($query) use ($channel) {
                 if ($channel === 'online') {
                     $query->where(function ($sub) {
-                        $sub->where('orders.source', 'online')->orWhereNull('orders.source');
+                        $sub->whereIn('orders.source', ['ecommerce', 'online'])
+                            ->orWhere(function ($s) {
+                                $s->whereNull('orders.source')
+                                  ->whereNull('orders.pos_session_id')
+                                  ->whereNull('orders.cashier_id');
+                            });
                     });
                 } elseif ($channel === 'pos') {
-                    $query->where('orders.source', 'pos');
+                    $query->where(function ($sub) {
+                        $sub->whereIn('orders.source', ['pos', 'offline'])
+                            ->orWhereNotNull('orders.pos_session_id')
+                            ->orWhereNotNull('orders.cashier_id');
+                    });
                 }
             };
 
