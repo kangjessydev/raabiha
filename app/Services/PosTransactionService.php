@@ -292,26 +292,28 @@ class PosTransactionService
                     if ($splitAmount > 0) {
                         Cashflow::create([
                             'transaction_date' => now()->toDateString(),
-                            'type' => 'in',
-                            'category'     => 'pos_sale',
-                            'amount'       => $splitAmount,
-                            'description'  => 'Penjualan POS #' . $order->order_number . ' (' . strtoupper($splitMethod) . ')',
-                            'order_id' => $order->id,
-                            'source' => 'pos',
-                            'is_reversed' => false,
+                            'type'             => 'in',
+                            'category'         => 'pos_sale',
+                            'amount'           => $splitAmount,
+                            'description'      => 'Penjualan POS #' . $order->order_number . ' (' . strtoupper($splitMethod) . ')',
+                            'order_id'         => $order->id,
+                            'source'           => 'pos',
+                            'payment_channel'  => strtolower($splitMethod),
+                            'is_reversed'      => false,
                         ]);
                     }
                 }
             } else {
                 Cashflow::create([
                     'transaction_date' => now()->toDateString(),
-                    'type' => 'in',
-                    'category'     => 'pos_sale',
-                    'amount'       => $grandTotal,
-                    'description'  => 'Penjualan POS #' . $order->order_number,
-                    'order_id' => $order->id,
-                    'source' => 'pos',
-                    'is_reversed' => false,
+                    'type'             => 'in',
+                    'category'         => 'pos_sale',
+                    'amount'           => $grandTotal,
+                    'description'      => 'Penjualan POS #' . $order->order_number,
+                    'order_id'         => $order->id,
+                    'source'           => 'pos',
+                    'payment_channel'  => strtolower($data['payment_method'] ?? 'cash'),
+                    'is_reversed'      => false,
                 ]);
             }
 
@@ -777,6 +779,7 @@ class PosTransactionService
                     'description'      => 'Selisih Tambah Penukaran Barang POS #' . $posReturn->return_number . ' (Nota #' . $order->order_number . ')',
                     'order_id'         => null,
                     'source'           => 'pos',
+                    'payment_channel'  => strtolower($refundPaymentMethod ?? 'cash'),
                     'is_reversed'      => false,
                 ]);
             } elseif ($netAmount < 0) {
@@ -792,6 +795,7 @@ class PosTransactionService
                     'description'      => 'Pengembalian Uang Retur POS #' . $posReturn->return_number . ' (' . ($isBankRefund ? 'Transfer Bank' : 'Tunai Kasir') . ')' . $bankDetailStr . ' (Disetujui Supervisor: ' . ($supervisor ? $supervisor->name : '-') . ')',
                     'order_id'         => $order->id,
                     'source'           => 'pos',
+                    'payment_channel'  => strtolower($refundPaymentMethod ?? 'cash'),
                     'is_reversed'      => false,
                 ]);
             }

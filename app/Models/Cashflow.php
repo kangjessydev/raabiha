@@ -15,6 +15,7 @@ class Cashflow extends Model
         'description',
         'order_id',
         'source',
+        'payment_channel',
         'is_reversed',
         'reversal_note',
     ];

@@ -188,3 +188,29 @@ Dokumen ini berisi daftar pengujian (*QA Checklist*) menyeluruh yang dapat Anda 
   * **Langkah Pengujian:**
     1. Buka Katalog (`/shop`), Search Bar (`/search`), dan Sitemap (`/sitemap.xml`) -> **Ekspektasi:** Produk TIDAK muncul.
     2. Buka URL produk secara langsung (`/product/slug-produk-custom`) -> **Ekspektasi:** Halaman produk BISA DIBUKA dan di-checkout bagi pemegang link.
+
+---
+
+## 12. Pengujian Pencatatan Arus Kas POS (`cashflows.payment_channel`)
+
+- [ ] **12.1 Transaksi POS Bayar Single Method (Cash / QRIS / Transfer)**
+  * **Langkah Pengujian:** Selesaikan transaksi POS dengan satu metode bayar (misal: QRIS saja).
+  * **Ekspektasi di Admin -> Buku Arus Kas:**
+    1. Muncul **1 baris** cashflow baru dengan `source = pos`.
+    2. Kolom `payment_channel` terisi sesuai metode bayar (misal: `qris`).
+    3. Tidak ada entri duplikat untuk transaksi yang sama.
+
+- [ ] **12.2 Transaksi POS Bayar Split (Cash + QRIS / Cash + Transfer)**
+  * **Langkah Pengujian:** Selesaikan transaksi POS dengan Split Payment (misal: Rp 50.000 Cash + Rp 50.000 QRIS dari total Rp 100.000).
+  * **Ekspektasi di Admin -> Buku Arus Kas:**
+    1. Muncul **2 baris** cashflow terpisah untuk order yang sama:
+       - Baris pertama: `payment_channel = cash`, amount = Rp 50.000
+       - Baris kedua: `payment_channel = qris`, amount = Rp 50.000
+    2. Total kedua baris = total transaksi (Rp 100.000).
+    3. Tidak ada pesan error duplikasi dari database.
+
+- [ ] **12.3 Transaksi E-Commerce Tidak Membuat Duplikasi Cashflow**
+  * **Langkah Pengujian:** Selesaikan 1 transaksi Web E-Commerce hingga status `paid`. Cek Buku Arus Kas.
+  * **Ekspektasi:**
+    1. Muncul tepat **1 baris** cashflow dengan `source = order`, `payment_channel = NULL`.
+    2. Jika webhook Xendit/Tripay terpicu lebih dari sekali (simulasi double callback), cashflow tetap hanya **1 baris** (tidak duplikat).
