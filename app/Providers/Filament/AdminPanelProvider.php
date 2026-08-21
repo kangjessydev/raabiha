@@ -50,7 +50,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('')
-            ->domain('admin.' . env('APP_DOMAIN', 'raabiha.com'))
+            ->domain('admin.' . config('app.domain', 'raabiha.com'))
             ->font('Inter')
             ->darkMode(false)
             ->login(\App\Filament\Pages\Auth\Login::class)

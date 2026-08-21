@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 // Dedicated POS Auth Routes (Subdomain)
-Route::domain('pos.' . env('APP_DOMAIN', 'raabiha.com'))->group(function () {
+Route::domain('pos.' . config('app.domain', 'raabiha.com'))->group(function () {
     Route::get('/login', \App\Livewire\Auth\PosLogin::class)
         ->middleware('guest')
         ->name('pos.login');
