@@ -72,4 +72,14 @@ class CategoryPolicy
         return $authUser->can('Reorder:Category');
     }
 
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('Create:Category') || $authUser->can('ViewAny:Category');
+    }
+
+    public function export(AuthUser $authUser): bool
+    {
+        return $authUser->can('ViewAny:Category');
+    }
+
 }

@@ -20,11 +20,12 @@ class StaticPageResource extends Resource
 {
     protected static ?string $model = StaticPage::class;
 
-    protected static ?string $cluster = \App\Filament\Clusters\Marketing\MarketingCluster::class;
-    protected static string|\UnitEnum|null $navigationGroup = 'CMS';
+    protected static string|\UnitEnum|null $navigationGroup = 'Manajemen Konten';
     protected static ?int $navigationSort = 5;
     
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
+
+    protected static ?string $navigationLabel = 'Halaman Statis';
 
     protected static ?string $modelLabel = 'Halaman Statis';
     protected static ?string $pluralModelLabel = 'Halaman Statis';

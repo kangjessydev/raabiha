@@ -48,7 +48,7 @@ class Login extends Component
             // Check if the user is an admin/staff role
             $adminRoles = ['super_admin', 'owner', 'kasir', 'finance', 'marketing', 'gudang', 'cs'];
             if ($user->hasAnyRole($adminRoles)) {
-                return redirect()->intended(url('/admin'));
+                return redirect()->intended(route('filament.admin.pages.dashboard'));
             }
 
             return redirect()->intended(route('account'));

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Products;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
@@ -18,20 +17,34 @@ use Filament\Tables\Table;
 
 class ProductResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 21;
-
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Katalog;
+    protected static ?int $navigationSort = 1;
+    protected static \UnitEnum|string|null $navigationGroup = 'Katalog & Stok Barang';
     protected static ?string $model = Product::class;
 
+    protected static ?string $navigationLabel = 'Daftar Produk';
     protected static ?string $modelLabel = 'Produk';
-    protected static ?string $pluralModelLabel = 'Produk';
+    protected static ?string $pluralModelLabel = 'Daftar Produk';
 
 
     
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shopping-bag';
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'sku'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        /** @var \App\Models\Product $record */
+        return [
+            'SKU' => $record->sku ?? '-',
+            'Kategori' => $record->category?->name ?? 'Tanpa Kategori',
+            'Harga' => 'Rp ' . number_format($record->price, 0, ',', '.'),
+        ];
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\PostCategories;
 
-use App\Filament\Clusters\Marketing\MarketingCluster;
 use App\Filament\Resources\PostCategories\Pages\CreatePostCategory;
 use App\Filament\Resources\PostCategories\Pages\EditPostCategory;
 use App\Filament\Resources\PostCategories\Pages\ListPostCategories;
@@ -17,15 +16,16 @@ use Filament\Tables\Table;
 
 class PostCategoryResource extends Resource
 {
-    protected static ?string $cluster = MarketingCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Blog';
-    protected static ?int $navigationSort = 2;
+    protected static \UnitEnum|string|null $navigationGroup = 'Manajemen Konten';
+    protected static ?string $navigationParentItem = 'Artikel & Berita';
+    protected static ?int $navigationSort = 1;
     protected static ?string $model = PostCategory::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-folder';
 
-    protected static ?string $modelLabel = 'Kategori Blog';
-    protected static ?string $pluralModelLabel = 'Kategori Blog';
+    protected static ?string $navigationLabel = 'Kategori Artikel';
+    protected static ?string $modelLabel = 'Kategori Artikel';
+    protected static ?string $pluralModelLabel = 'Kategori Artikel';
 
     protected static ?string $recordTitleAttribute = 'name';
 

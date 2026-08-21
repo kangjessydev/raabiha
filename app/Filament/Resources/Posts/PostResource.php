@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Posts;
 
-use App\Filament\Clusters\Marketing\MarketingCluster;
 use App\Filament\Resources\Posts\Pages\CreatePost;
 use App\Filament\Resources\Posts\Pages\EditPost;
 use App\Filament\Resources\Posts\Pages\ListPosts;
@@ -17,17 +16,31 @@ use Filament\Tables\Table;
 
 class PostResource extends Resource
 {
-    protected static ?string $cluster = MarketingCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Blog';
-    protected static ?int $navigationSort = 1;
+    protected static \UnitEnum|string|null $navigationGroup = 'Manajemen Konten';
+    protected static ?int $navigationSort = 6;
     protected static ?string $model = Post::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $modelLabel = 'Artikel Blog';
-    protected static ?string $pluralModelLabel = 'Artikel Blog';
+    protected static ?string $navigationLabel = 'Artikel & Berita';
+    protected static ?string $modelLabel = 'Artikel';
+    protected static ?string $pluralModelLabel = 'Artikel & Berita';
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['title', 'slug', 'meta_title'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        /** @var \App\Models\Post $record */
+        return [
+            'Kategori' => $record->category?->name ?? 'Tanpa Kategori',
+            'Penulis' => $record->author?->name ?? 'Admin',
+        ];
+    }
 
     public static function form(Schema $schema): Schema
     {

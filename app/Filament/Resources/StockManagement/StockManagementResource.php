@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\StockManagement;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
-use App\Filament\Clusters\ECommerce\ECommerceNavigationGroup;
 use App\Filament\Resources\StockManagement\Pages\ListStockManagement;
 use App\Models\Product;
 use Filament\Resources\Resource;
@@ -12,12 +10,12 @@ use Filament\Tables\Table;
 
 class StockManagementResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 25;
-    protected static \UnitEnum|string|null $navigationGroup = ECommerceNavigationGroup::Katalog;
+    protected static ?int $navigationSort = 4;
+    protected static \UnitEnum|string|null $navigationGroup = 'Katalog & Stok Barang';
 
     protected static ?string $model = Product::class;
 
+    protected static ?string $navigationLabel = 'Manajemen Stok';
     protected static ?string $modelLabel = 'Manajemen Stok';
     public static function canViewAny(): bool
     {

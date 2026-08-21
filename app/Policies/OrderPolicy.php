@@ -72,4 +72,14 @@ class OrderPolicy
         return $authUser->can('Reorder:Order');
     }
 
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('Create:Order') || $authUser->can('ViewAny:Order');
+    }
+
+    public function export(AuthUser $authUser): bool
+    {
+        return $authUser->can('ViewAny:Order');
+    }
+
 }

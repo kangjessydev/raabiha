@@ -74,6 +74,11 @@ class OrderObserver
      */
     public function created(Order $order): void
     {
+        if ($order->source === 'pos') return; // Transaksi POS ditangani terpisah oleh PosTransactionService
+
+        // Sync data pelanggan e-commerce ke Daftar Pelanggan (Anti-Duplikasi)
+        $this->syncEcommerceCustomer($order);
+
         // Notifikasi Filament ke semua admin — pesanan baru masuk
         // Email dikirim dari Checkout.php SETELAH semua item dibuat agar $order->items tidak kosong.
         $this->sendOrderNotification(
@@ -94,6 +99,8 @@ class OrderObserver
      */
     public function sendNewOrderEmails(Order $order): void
     {
+        if ($order->source === 'pos') return; // Transaksi POS tidak perlu email konfirmasi
+
         // 1. Kirim Email Konfirmasi ke Customer
         $customerEmail = $this->getCustomerEmail($order);
         if ($customerEmail) {
@@ -144,6 +151,11 @@ class OrderObserver
      */
     public function updated(Order $order): void
     {
+        if ($order->source === 'pos') return; // Transaksi POS ditangani terpisah oleh PosTransactionService
+
+        // Sync data pelanggan e-commerce ke Daftar Pelanggan (Anti-Duplikasi)
+        $this->syncEcommerceCustomer($order);
+
         $customerEmail = $this->getCustomerEmail($order);
 
         // Notif saat payment_status berubah ke paid
@@ -366,7 +378,7 @@ class OrderObserver
                     \Filament\Actions\Action::make('view')
                         ->label('Lihat Pesan' === $title ? 'Lihat Pesan' : 'Lihat Pesanan')
                         ->button()
-                        ->url(route('filament.admin.e-commerce.resources.orders.index')),
+                        ->url(route('filament.admin.resources.orders.index')),
                 ])
                 ->sendToDatabase($admin);
         }
@@ -377,6 +389,8 @@ class OrderObserver
      */
     private function recordCashIn(Order $order): void
     {
+        if ($order->source === 'pos') return; // POS handles its own cashflow
+
         Cashflow::updateOrCreate(
             [
                 'order_id' => $order->id,
@@ -391,5 +405,45 @@ class OrderObserver
                 'is_reversed'      => false,
             ]
         );
+    }
+
+    /**
+     * Sync data pelanggan e-commerce ke tabel pos_customers (Daftar Pelanggan)
+     */
+    private function syncEcommerceCustomer(Order $order): void
+    {
+        if ($order->source === 'pos') return; // Transaksi POS ditangani terpisah oleh PosTransactionService
+
+        $rawPhone = $order->customer_phone ?: ($order->shipping_address['phone'] ?? null);
+        if (!$rawPhone) return;
+
+        $phone = \App\Models\PosCustomer::normalizePhone($rawPhone);
+        if (!$phone) return;
+
+        $customerName = $order->customer_name ?: ($order->user->name ?? 'Pelanggan Online');
+
+        $customer = \App\Models\PosCustomer::firstOrCreate(
+            ['phone' => $phone],
+            [
+                'name'                  => $customerName,
+                'stamp_count'           => 0,
+                'points_balance'        => 0,
+                'total_stamps_earned'   => 0,
+                'completed_cards_count' => 0,
+                'total_visits'          => 0,
+                'total_spent'           => 0,
+                'last_visit_at'         => $order->created_at ?: now(),
+            ]
+        );
+
+        // Jika nama pelanggan sebelumnya default "Pelanggan POS" atau kosong, perbarui dengan nama pelanggan e-commerce
+        if (($customer->name === 'Pelanggan POS' || empty($customer->name)) && !empty($customerName)) {
+            $customer->update(['name' => $customerName]);
+        }
+
+        // Perbarui last_visit_at jika transaksi ini lebih baru
+        if ($order->created_at && (!$customer->last_visit_at || $order->created_at->gt($customer->last_visit_at))) {
+            $customer->update(['last_visit_at' => $order->created_at]);
+        }
     }
 }

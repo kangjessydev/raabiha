@@ -46,6 +46,11 @@ class Cart extends Component
             return;
         }
 
+        if ($voucher->usable_channel === 'pos_only') {
+            session()->flash('voucher_error', 'Kode voucher ini hanya berlaku untuk transaksi di Kasir / POS.');
+            return;
+        }
+
         if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
             session()->flash('voucher_error', 'Kode voucher sudah melewati batas penggunaan.');
             return;
@@ -245,6 +250,7 @@ class Cart extends Component
         $grandTotal = max(0, $baseTotalForVoucher - $discountAmount);
         
         $vouchers = \App\Models\Voucher::where('is_active', true)
+            ->forOnline()
             ->where(function($query) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })

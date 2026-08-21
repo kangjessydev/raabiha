@@ -145,6 +145,33 @@ class ProductForm
                             ->numeric()
                             ->placeholder('Kosongkan untuk pakai default global (5)')
                             ->visible(fn(Get $get) => $get('has_variants') === false),
+                    ])->columns(2),
+
+                Section::make('Pengaturan POS & Harga Kasir')
+                    ->description('Atur apakah produk ini tampil di Mesin Kasir fisik dan harganya.')
+                    ->schema([
+                        Select::make('channel_visibility')
+                            ->label('Tampil di Kanal')
+                            ->options([
+                                'pos_only'    => 'POS Kasir Saja (Toko Fisik)',
+                                'online_only' => 'E-Commerce Saja (Website Online)',
+                            ])
+                            ->default('online_only')
+                            ->required(),
+                        TextInput::make('pos_price')
+                            ->label('Harga Khusus POS (Opsional)')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->helperText('Kosongkan jika harga di Kasir SAMA dengan harga Normal Web. Harga ini juga akan otomatis berlaku untuk semua Varian dari produk ini.'),
+                        TextInput::make('pos_discount_price')
+                            ->label('Harga Promo POS (Opsional)')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->helperText('Kosongkan jika tidak ada promo khusus di Kasir.'),
+                    ])->columns(3),
+
+                Section::make('Pengaturan Tambahan')
+                    ->schema([
                         Toggle::make('has_variants')
                             ->label('Punya Varian?')
                             ->live()

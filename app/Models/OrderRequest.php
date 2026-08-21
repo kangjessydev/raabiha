@@ -49,7 +49,7 @@ class OrderRequest extends Model
                         data: [
                             'greeting' => "Halo Admin Raabiha!",
                             'messageBody' => "Kasir <strong>{$cashierName}</strong> mengajukan permintaan <strong>{$typeLabel}</strong> untuk pesanan <strong>#{$orderNumber}</strong> dengan alasan:<br><br><em>\"{$orderRequest->reason}\"</em>.<br><br>Silakan masuk ke panel admin untuk meninjau dan memberikan keputusan persetujuan.",
-                            'actionUrl' => route('filament.admin.e-commerce.resources.order-requests.index'),
+                            'actionUrl' => route('filament.admin.resources.order-requests.index'),
                             'actionText' => 'Tinjau Pengajuan'
                         ]
                     ));
@@ -70,7 +70,7 @@ class OrderRequest extends Model
                         \Filament\Actions\Action::make('view')
                             ->label('Tinjau')
                             ->button()
-                            ->url(route('filament.admin.e-commerce.resources.order-requests.index')),
+                            ->url(route('filament.admin.resources.order-requests.index')),
                     ])
                     ->sendToDatabase($recipient);
  
@@ -86,7 +86,7 @@ class OrderRequest extends Model
                         data: [
                             'greeting' => "Halo, {$recipient->name}!",
                             'messageBody' => "Kasir <strong>{$cashierName}</strong> mengajukan permintaan <strong>{$typeLabel}</strong> untuk pesanan <strong>#{$orderNumber}</strong> dengan alasan:<br><br><em>\"{$orderRequest->reason}\"</em>.<br><br>Silakan masuk ke panel admin untuk meninjau dan memberikan keputusan persetujuan.",
-                            'actionUrl' => route('filament.admin.e-commerce.resources.order-requests.index'),
+                            'actionUrl' => route('filament.admin.resources.order-requests.index'),
                             'actionText' => 'Tinjau Pengajuan'
                         ]
                     ));

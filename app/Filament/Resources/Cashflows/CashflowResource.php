@@ -16,12 +16,12 @@ use Filament\Tables\Table;
 
 class CashflowResource extends Resource
 {
-    protected static ?string $cluster = \App\Filament\Clusters\ECommerce\ECommerceCluster::class;
-    protected static ?int $navigationSort = 3;
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Transaksi;
+    protected static ?int $navigationSort = 4;
+    protected static \UnitEnum|string|null $navigationGroup = 'Laporan & Keuangan';
 
-    protected static ?string $modelLabel = 'Buku Kas';
-    protected static ?string $pluralModelLabel = 'Buku Kas';
+    protected static ?string $modelLabel = 'Buku Kas (Arus Kas)';
+    protected static ?string $pluralModelLabel = 'Buku Kas (Arus Kas)';
+    protected static ?string $navigationLabel = 'Buku Kas (Arus Kas)';
 
     protected static ?string $model = Cashflow::class;
 

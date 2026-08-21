@@ -51,6 +51,20 @@ class StockManagementTable
                             return '— (lihat varian)';
                         return $state . ' pcs';
                     }),
+                TextColumn::make('channel_visibility')
+                    ->label('Kanal Penjualan')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'pos_only'    => 'POS Kasir',
+                        'online_only' => 'E-Commerce',
+                        default       => ucwords($state ?? '-'),
+                    })
+                    ->color(fn ($state) => match ($state) {
+                        'pos_only'    => 'warning',
+                        'online_only' => 'info',
+                        default       => 'secondary',
+                    })
+                    ->sortable(),
                 TextColumn::make('variants_count')
                     ->label('Jumlah Varian')
                     ->counts('variants')
@@ -76,13 +90,35 @@ class StockManagementTable
                         Select::make('reason')
                             ->label('Alasan Perubahan')
                             ->required()
-                            ->options([
-                                'Restock' => 'Restock / Barang Masuk',
-                                'Retur' => 'Retur dari Pembeli',
-                                'Koreksi' => 'Koreksi / Inventarisasi Fisik',
-                                'Rusak' => 'Barang Rusak / Cacat',
-                                'Lainnya' => 'Lainnya',
-                            ]),
+                            ->searchable()
+                            ->native(false)
+                            ->options(fn () => \App\Models\StockLog::getReasonOptions())
+                            ->createOptionForm([
+                                TextInput::make('reason_name')
+                                    ->label('Nama Alasan Custom Baru')
+                                    ->placeholder('Contoh: Giveaway Event, Transfer Cabang')
+                                    ->required(),
+                            ])
+                            ->createOptionAction(
+                                fn (\Filament\Actions\Action $action) => $action
+                                    ->modalHeading('Tambah Alasan Custom Baru')
+                                    ->modalDescription('Masukkan nama alasan perubahan baru untuk disimpan ke daftar pilihan')
+                                    ->modalWidth('sm')
+                            )
+                            ->createOptionUsing(function (array $data): string {
+                                $newName = trim($data['reason_name'] ?? '');
+                                if (!empty($newName)) {
+                                    $raw = \App\Models\SiteSetting::where('key', 'stock_custom_reasons')->value('value');
+                                    $arr = is_string($raw) ? (json_decode($raw, true) ?: []) : (is_array($raw) ? $raw : []);
+                                    $arr[] = ['reason_name' => $newName];
+
+                                    \App\Models\SiteSetting::updateOrCreate(
+                                        ['key' => 'stock_custom_reasons'],
+                                        ['value' => json_encode($arr)]
+                                    );
+                                }
+                                return $newName;
+                            }),
                         Textarea::make('notes')
                             ->label('Catatan (Opsional)'),
                     ])
@@ -138,14 +174,35 @@ class StockManagementTable
                         $schema[] = Select::make('reason')
                             ->label('Alasan Perubahan (Berlaku untuk semua varian yang diubah)')
                             ->required()
-                            ->options([
-                                'Restock' => 'Restock / Barang Masuk',
-                                'Retur' => 'Retur dari Pembeli',
-                                'Koreksi' => 'Koreksi / Inventarisasi Fisik',
-                                'Rusak' => 'Barang Rusak / Cacat',
-                                'Lainnya' => 'Lainnya',
+                            ->searchable()
+                            ->native(false)
+                            ->options(fn () => \App\Models\StockLog::getReasonOptions())
+                            ->createOptionForm([
+                                TextInput::make('reason_name')
+                                    ->label('Nama Alasan Custom Baru')
+                                    ->placeholder('Contoh: Giveaway Event, Transfer Cabang')
+                                    ->required(),
                             ])
-                            ->native(false);
+                            ->createOptionAction(
+                                fn (\Filament\Actions\Action $action) => $action
+                                    ->modalHeading('Tambah Alasan Custom Baru')
+                                    ->modalDescription('Masukkan nama alasan perubahan baru untuk disimpan ke daftar pilihan')
+                                    ->modalWidth('sm')
+                            )
+                            ->createOptionUsing(function (array $data): string {
+                                $newName = trim($data['reason_name'] ?? '');
+                                if (!empty($newName)) {
+                                    $raw = \App\Models\SiteSetting::where('key', 'stock_custom_reasons')->value('value');
+                                    $arr = is_string($raw) ? (json_decode($raw, true) ?: []) : (is_array($raw) ? $raw : []);
+                                    $arr[] = ['reason_name' => $newName];
+
+                                    \App\Models\SiteSetting::updateOrCreate(
+                                        ['key' => 'stock_custom_reasons'],
+                                        ['value' => json_encode($arr)]
+                                    );
+                                }
+                                return $newName;
+                            });
 
                         $schema[] = Textarea::make('notes')
                             ->label('Catatan (Opsional)');
@@ -198,6 +255,13 @@ class StockManagementTable
                     ->successNotificationTitle('Stok varian berhasil diperbarui dan log tersimpan!'),
             ])
             ->filters([
+                \Filament\Tables\Filters\SelectFilter::make('channel_visibility')
+                    ->label('Kanal Penjualan')
+                    ->native(false)
+                    ->options([
+                        'pos_only'    => 'POS Kasir Saja (Toko Fisik)',
+                        'online_only' => 'E-Commerce Saja (Website Online)',
+                    ]),
                 \Filament\Tables\Filters\SelectFilter::make('has_variants')
                     ->label('Tipe Produk')
                     ->options([

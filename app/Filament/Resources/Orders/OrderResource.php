@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Orders;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
-
 use App\Filament\Resources\Orders\Pages\CreateOrder;
 use App\Filament\Resources\Orders\Pages\EditOrder;
 use App\Filament\Resources\Orders\Pages\ListOrders;
@@ -18,17 +16,33 @@ use Filament\Tables\Table;
 
 class OrderResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
     protected static ?int $navigationSort = 1;
-
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Transaksi;
+    protected static \UnitEnum|string|null $navigationGroup = 'Penjualan & Transaksi';
     protected static ?string $model = Order::class;
 
-    protected static ?string $modelLabel = 'Pesanan';
-    protected static ?string $pluralModelLabel = 'Pesanan';
+    protected static ?string $navigationLabel = 'Daftar Transaksi';
+    protected static ?string $modelLabel = 'Transaksi';
+    protected static ?string $pluralModelLabel = 'Daftar Transaksi';
 
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shopping-cart';
+
+    protected static ?string $recordTitleAttribute = 'order_number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['order_number', 'customer_name', 'customer_phone'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        /** @var \App\Models\Order $record */
+        return [
+            'Pelanggan' => $record->customer_name ?? '-',
+            'Total' => 'Rp ' . number_format($record->total_amount, 0, ',', '.'),
+            'Channel' => strtoupper($record->channel ?? 'ONLINE'),
+        ];
+    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -95,6 +109,14 @@ class OrderResource extends Resource
                         \Filament\Infolists\Components\TextEntry::make('payment_method')->label('Metode Bayar'),
                         \Filament\Infolists\Components\TextEntry::make('source')->label('Sumber Pesanan')->badge(),
                     ])->columns(3),
+
+                \Filament\Schemas\Components\Section::make('Informasi Pembatalan Nota (Void POS)')
+                    ->visible(fn ($record) => $record->status === 'cancelled')
+                    ->schema([
+                        \Filament\Infolists\Components\TextEntry::make('voidBy.name')->label('Supervisor Pengizin')->default('-'),
+                        \Filament\Infolists\Components\TextEntry::make('void_at')->label('Waktu Dibatalkan')->dateTime('d M Y H:i')->default('-'),
+                        \Filament\Infolists\Components\TextEntry::make('void_reason')->label('Alasan Pembatalan (Void)')->columnSpanFull()->default('-'),
+                    ])->columns(2),
 
                 \Filament\Schemas\Components\Section::make('Informasi Pelanggan & Pengiriman')
                     ->schema([

@@ -20,6 +20,11 @@ class Product extends Model
         'images',
         'price',
         'discount_price',
+        'channel_visibility',
+        'is_custom',
+        'pos_price',
+        'pos_discount_price',
+
         'reseller_price',
         'stock',
         'weight',
@@ -40,6 +45,7 @@ class Product extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'is_hidden' => 'boolean',
+        'is_custom' => 'boolean',
         'has_variants' => 'boolean',
         'has_free_shipping' => 'boolean',
         'wholesale_pricing' => 'array',

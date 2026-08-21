@@ -90,13 +90,16 @@ class ListStockManagement extends ListRecords
                         ->success()
                         ->send();
                 }),
+            \Filament\Actions\Action::make('viewLogs')
+                ->label('Log & Audit Stok')
+                ->icon('heroicon-o-document-magnifying-glass')
+                ->color('warning')
+                ->url(fn () => \App\Filament\Resources\StockLogResource::getUrl('index')),
         ];
     }
 
     protected function getHeaderWidgets(): array
     {
-        return [
-            \App\Filament\Resources\StockManagement\Widgets\StockLogWidget::class,
-        ];
+        return [];
     }
 }

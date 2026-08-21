@@ -164,7 +164,7 @@ class ProductVariantPriceTest extends TestCase
             'is_variant' => 'ya',
             'name' => 'Baju Keren', // Matches parent name
             'variant_name' => 'Warna Merah',
-            'variant_sku' => 'BAJU-RED',
+            'sku' => 'BAJU-RED',
             'price' => '', // Empty price
             'discount_price' => '',
             'purchase_price' => '',
@@ -193,7 +193,7 @@ class ProductVariantPriceTest extends TestCase
             'is_variant' => 'ya',
             'name' => 'Baju Keren',
             'variant_name' => 'Warna Biru',
-            'variant_sku' => 'BAJU-BLUE',
+            'sku' => 'BAJU-BLUE',
             'price' => '120000',
             'discount_price' => '110000',
             'purchase_price' => '80000',

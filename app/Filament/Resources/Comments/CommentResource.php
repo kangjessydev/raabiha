@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Comments;
 
-use App\Filament\Clusters\Marketing\MarketingCluster;
 use App\Filament\Resources\Comments\Pages\CreateComment;
 use App\Filament\Resources\Comments\Pages\EditComment;
 use App\Filament\Resources\Comments\Pages\ListComments;
@@ -17,8 +16,8 @@ use Filament\Tables\Table;
 
 class CommentResource extends Resource
 {
-    protected static ?string $cluster = MarketingCluster::class;
-    protected static \UnitEnum|string|null $navigationGroup = 'Blog';
+    protected static bool $shouldRegisterNavigation = false;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran & Konten Website';
     protected static ?int $navigationSort = 4;
     protected static ?string $model = Comment::class;
 

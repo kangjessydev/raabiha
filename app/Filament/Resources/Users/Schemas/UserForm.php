@@ -55,7 +55,37 @@ class UserForm
                                 'approved' => 'Reseller Aktif',
                             ])
                             ->default('none'),
+                        \Filament\Forms\Components\Toggle::make('is_pos_supervisor')
+                            ->label('Jadikan Supervisor POS (Akses Bypass)')
+                            ->helperText('Berikan hak akses untuk mengambil alih sesi kasir secara paksa atau validasi aksi darurat.')
+                            ->live()
+                            ->default(false),
+                        \Filament\Forms\Components\TextInput::make('pos_pin')
+                            ->label('PIN Supervisor POS (6 Angka)')
+                            ->password()
+                            ->revealable()
+                            ->numeric()
+                            ->length(6)
+                            ->dehydrated(fn($state) => filled($state))
+                            ->dehydrateStateUsing(fn($state) => \Illuminate\Support\Facades\Hash::make($state))
+                            ->helperText('Wajib diisi jika fitur PIN Supervisor aktif. Kosongkan jika tidak ingin mengubah PIN.')
+                            ->visible(fn($get) => $get('is_pos_supervisor')),
                     ])->columns(2)->collapsed(),
+
+                \Filament\Schemas\Components\Section::make('Jadwal Shift POS Kasir')
+                    ->description('Opsional. Kosongkan untuk menggunakan penugasan Master Shift dari menu Pengaturan Kasir (POS).')
+                    ->schema([
+                        \Filament\Forms\Components\TimePicker::make('pos_shift_start')
+                            ->label('Jam Shift Awal (Jam Masuk)')
+                            ->helperText('Diisi jika pengguna memiliki jam shift khusus di luar Master Shift.')
+                            ->seconds(false)
+                            ->placeholder('08:00'),
+                        \Filament\Forms\Components\TimePicker::make('pos_shift_end')
+                            ->label('Jam Shift Akhir (Jam Pulang)')
+                            ->helperText('Diisi jika pengguna memiliki jam shift khusus di luar Master Shift.')
+                            ->seconds(false)
+                            ->placeholder('16:00'),
+                    ])->columns(2),
 
                 \Filament\Schemas\Components\Section::make('Alamat & Kontak')
                     ->description('Daftar alamat pengiriman dan nomor telepon pelanggan.')

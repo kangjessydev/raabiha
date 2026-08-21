@@ -7,6 +7,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -25,7 +26,7 @@ class OrdersTable
                 TextColumn::make('customer_name')
                     ->label('Nama Pelanggan')
                     ->state(function ($record) {
-                        return $record->user_id ? $record->user->name : ($record->shipping_address['name'] ?? 'Guest User');
+                        return $record->customer_name ?: ($record->user_id ? $record->user->name : ($record->shipping_address['name'] ?? 'Guest User'));
                     })
                     ->description(function ($record) {
                         $isGuest = !$record->user_id;
@@ -37,7 +38,14 @@ class OrdersTable
                             "<span class='inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset {$classes}'>{$label}</span>"
                         );
                     })
-                    ->searchable(['user.name'])
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where(function (Builder $q) use ($search) {
+                            $q->where('customer_name', 'like', "%{$search}%")
+                              ->orWhereHas('user', function (Builder $q2) use ($search) {
+                                  $q2->where('name', 'like', "%{$search}%");
+                              });
+                        });
+                    })
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
@@ -57,6 +65,13 @@ class OrdersTable
                 TextColumn::make('grand_total')
                     ->money('IDR')
                     ->sortable(),
+                TextColumn::make('print_count')
+                    ->label('Print')
+                    ->badge()
+                    ->color(fn ($state): string => $state > 0 ? 'success' : 'gray')
+                    ->formatStateUsing(fn ($state) => $state > 0 ? $state . 'x' : 'Belum')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y H:i')

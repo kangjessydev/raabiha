@@ -29,6 +29,16 @@ class ProductVariantExporter extends Exporter
             ExportColumn::make('is_weight_override')->label('Berat Berbeda dari Induk?'),
             ExportColumn::make('weight')->label('Berat (gram)'),
             ExportColumn::make('is_active')->label('Aktif?'),
+            ExportColumn::make('channel_visibility')
+                ->label('Tampil Di (Channel)')
+                ->formatStateUsing(fn ($state) => match($state) {
+                    'online_only' => 'online_only',
+                    'pos_only'    => 'pos_only',
+                    default       => 'both',
+                }),
+            ExportColumn::make('pos_price')->label('Harga POS'),
+            ExportColumn::make('pos_discount_price')->label('Harga Diskon POS'),
+
         ];
     }
 

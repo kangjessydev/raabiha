@@ -1,0 +1,23 @@
+# Raabiha Print Agent — systemd service (Linux auto-start)
+# Install:
+#   sudo cp raabiha-agent.service /etc/systemd/system/
+#   sudo systemctl enable raabiha-agent
+#   sudo systemctl start raabiha-agent
+
+[Unit]
+Description=Raabiha Print Agent — Bluetooth Printer Bridge
+After=bluetooth.target network.target
+Wants=bluetooth.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/opt/raabiha-agent
+ExecStart=/usr/bin/node /opt/raabiha-agent/src/index.js
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

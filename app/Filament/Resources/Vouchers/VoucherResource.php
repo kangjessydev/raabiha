@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Vouchers;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 use App\Filament\Resources\Vouchers\Pages\CreateVoucher;
 use App\Filament\Resources\Vouchers\Pages\EditVoucher;
 use App\Filament\Resources\Vouchers\Pages\ListVouchers;
@@ -17,17 +16,17 @@ use Filament\Tables\Table;
 
 class VoucherResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 32;
+    protected static ?int $navigationSort = 3;
 
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Promosi;
+    protected static \UnitEnum|string|null $navigationGroup = 'Pemasaran';
     
     protected static ?string $model = Voucher::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-ticket';
 
-    protected static ?string $modelLabel = 'Voucher';
-    protected static ?string $pluralModelLabel = 'Voucher';
+    protected static ?string $navigationLabel = 'Voucher Diskon';
+    protected static ?string $modelLabel = 'Voucher Diskon';
+    protected static ?string $pluralModelLabel = 'Voucher Diskon';
 
     protected static ?string $recordTitleAttribute = 'code';
 

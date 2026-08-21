@@ -13,16 +13,16 @@ use Filament\Tables\Table;
 class PostCommentResource extends Resource
 {
     protected static ?string $model = PostComment::class;
-    protected static ?string $cluster = \App\Filament\Clusters\Marketing\MarketingCluster::class;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-chat-bubble-left-ellipsis';
     
-    protected static \UnitEnum|string|null $navigationGroup = 'Blog';
-    protected static ?int $navigationSort = 4;
+    protected static \UnitEnum|string|null $navigationGroup = 'Manajemen Konten';
+    protected static ?string $navigationParentItem = 'Artikel & Berita';
+    protected static ?int $navigationSort = 3;
     
-    protected static ?string $modelLabel = 'Komentar';
-    protected static ?string $pluralModelLabel = 'Komentar';
-    protected static ?string $navigationLabel = 'Komentar';
+    protected static ?string $navigationLabel = 'Komentar Artikel';
+    protected static ?string $modelLabel = 'Komentar Artikel';
+    protected static ?string $pluralModelLabel = 'Komentar Artikel';
 
     public static function schema(Schema $schema): Schema
     {

@@ -16,6 +16,7 @@ class OrderItem extends Model
         'product_variant_id',
         'name',
         'price',
+        'original_price',
         'quantity',
         'total',
         'purchase_price',
@@ -23,6 +24,7 @@ class OrderItem extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'original_price' => 'decimal:2',
         'total' => 'decimal:2',
         'purchase_price' => 'decimal:2',
     ];

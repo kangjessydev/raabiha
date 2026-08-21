@@ -56,7 +56,7 @@ class RefundRequest extends Model
                         data: [
                             'greeting' => "Halo, {$recipientName}!",
                             'messageBody' => "Pelanggan <strong>{$customerName}</strong> mengajukan permintaan pengembalian dana (refund) untuk pesanan <strong>#{$orderNumber}</strong> sebesar <strong>Rp" . number_format($refundRequest->refund_amount, 0, ',', '.') . "</strong>.<br><br>Alasan Pengajuan:<br><em>\"{$refundRequest->reason}\"</em>.<br><br>Detail Rekening:<br>Bank: {$refundRequest->bank_name}<br>Nama Rekening: {$refundRequest->bank_account_name}<br>No Rekening: {$refundRequest->bank_account_number}<br><br>Silakan masuk ke panel admin untuk memproses refund ini.",
-                            'actionUrl' => route('filament.admin.e-commerce.resources.refund-requests.index'),
+                            'actionUrl' => route('filament.admin.resources.refund-requests.index'),
                             'actionText' => 'Tinjau Pengajuan Refund'
                         ]
                     ));

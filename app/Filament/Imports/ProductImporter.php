@@ -12,6 +12,11 @@ class ProductImporter extends Importer
 {
     protected static ?string $model = Product::class;
 
+    public function getJobConnection(): ?string
+    {
+        return 'sync';
+    }
+
     public static function getColumns(): array
     {
         // Auto-detect and create attributes from uploaded CSV headers
@@ -71,7 +76,10 @@ class ProductImporter extends Importer
                 ->exampleHeader('SKU')
                 ->rules(['nullable', 'string']),
             ImportColumn::make('category')
-                ->relationship(resolveUsing: function (string $state): ?\App\Models\Category {
+                ->relationship(resolveUsing: function (?string $state): ?\App\Models\Category {
+                    if (blank($state)) {
+                        return null;
+                    }
                     return \App\Models\Category::firstOrCreate(
                         ['slug' => \Illuminate\Support\Str::slug($state)],
                         ['name' => $state]
@@ -84,13 +92,13 @@ class ProductImporter extends Importer
                 ->label('Nama Produk')
                 ->exampleHeader('Nama Produk')
                 ->requiredMapping()
-                ->rules(['required', 'max:255']),
+                ->rules(['nullable', 'max:255']),
             ImportColumn::make('slug')
                 ->label('Slug')
                 ->exampleHeader('Slug')
                 ->rules(['nullable', 'max:255'])
                 ->fillRecordUsing(function (\App\Models\Product $record, ?string $state, array $data): void {
-                    $record->slug = filled($state) ? $state : \Illuminate\Support\Str::slug($data['name']);
+                    $record->slug = filled($state) ? $state : \Illuminate\Support\Str::slug($data['name'] ?? 'produk');
                 }),
             ImportColumn::make('description')
                 ->label('Deskripsi')
@@ -140,7 +148,10 @@ class ProductImporter extends Importer
             ImportColumn::make('has_variants')
                 ->label('Punya Varian?')
                 ->exampleHeader('Punya Varian?')
-                ->boolean()
+                ->castStateUsing(function (string $state): bool {
+                    $state = strtolower(trim($state));
+                    return in_array($state, ['1', 'ya', 'yes', 'true', 'y']);
+                })
                 ->rules(['boolean', 'nullable']),
             ImportColumn::make('is_active')
                 ->label('Aktif?')
@@ -170,6 +181,31 @@ class ProductImporter extends Importer
                 ->label('Meta Description')
                 ->exampleHeader('Meta Description')
                 ->rules(['nullable', 'max:160']),
+            ImportColumn::make('channel_visibility')
+                ->label('Tampil Di (Channel)')
+                ->exampleHeader('Tampil Di (Channel) [both/online_only/pos_only]')
+                ->rules(['nullable', 'in:both,online_only,pos_only'])
+                ->fillRecordUsing(function (Product $record, ?string $state): void {
+                    $record->channel_visibility = in_array($state, ['both', 'online_only', 'pos_only'])
+                        ? $state
+                        : 'both';
+                }),
+            ImportColumn::make('is_custom')
+                ->label('Asal Produk (Dibuat via POS?)')
+                ->exampleHeader('Asal Produk (1: POS, 0: Admin)')
+                ->boolean()
+                ->rules(['boolean', 'nullable']),
+            ImportColumn::make('pos_price')
+                ->label('Harga POS')
+                ->exampleHeader('Harga POS')
+                ->numeric()
+                ->rules(['nullable', 'numeric']),
+            ImportColumn::make('pos_discount_price')
+                ->label('Harga Diskon POS')
+                ->exampleHeader('Harga Diskon POS')
+                ->numeric()
+                ->rules(['nullable', 'numeric']),
+
         ];
 
         // Dynamically append attribute columns for import
@@ -223,7 +259,13 @@ class ProductImporter extends Importer
         $isVariant = in_array(strtolower((string)($this->data['is_variant'] ?? '')), ['1', 'ya', 'varian', 'yes', 'true']);
 
         if ($isVariant) {
-            $parent = \App\Models\Product::where('name', $this->data['name'])->latest()->first();
+            $parentId = \Illuminate\Support\Facades\Cache::get('last_imported_product_parent_' . $this->import->id);
+            $parent = $parentId ? \App\Models\Product::find($parentId) : null;
+            
+            // Fallback: Jika cache tidak ada, cari berdasarkan nama
+            if (!$parent && filled($this->data['name'] ?? null)) {
+                $parent = \App\Models\Product::where('name', $this->data['name'])->latest()->first();
+            }
             
             if ($parent) {
                 // Pastikan parent tertandai punya varian
@@ -252,6 +294,11 @@ class ProductImporter extends Importer
                 $variant->stock = $this->data['stock'] ?? 0;
                 $variant->minimum_stock = $this->data['minimum_stock'] ?? null;
                 $variant->is_active = $this->data['is_active'] ?? true;
+                $variant->channel_visibility = in_array($this->data['channel_visibility'] ?? '', ['both', 'online_only', 'pos_only'])
+                    ? $this->data['channel_visibility']
+                    : 'both';
+                $variant->pos_price = filled($this->data['pos_price'] ?? null) ? $this->data['pos_price'] : null;
+                $variant->pos_discount_price = filled($this->data['pos_discount_price'] ?? null) ? $this->data['pos_discount_price'] : null;
                 $variant->save();
 
                 // Assign dynamic attributes
@@ -287,6 +334,8 @@ class ProductImporter extends Importer
         }
 
         $this->record->save();
+        
+        \Illuminate\Support\Facades\Cache::put('last_imported_product_parent_' . $this->import->id, $this->record->id, now()->addHours(1));
 
         foreach ($this->getCachedColumns() as $column) {
             $columnName = $column->getName();

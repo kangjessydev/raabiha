@@ -30,13 +30,13 @@ class LaporanBisnis extends Page implements HasTable, HasForms
 
     protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-presentation-chart-bar';
 
-    protected static ?string $cluster = \App\Filament\Clusters\Dashboard\DashboardCluster::class;
+    protected static \UnitEnum|string|null $navigationGroup = 'Laporan & Keuangan';
 
-    protected static ?string $title = 'Laporan Bisnis';
+    protected static ?string $title = 'Ringkasan Eksekutif';
 
-    protected static ?string $navigationLabel = 'Laporan Bisnis';
+    protected static ?string $navigationLabel = 'Ringkasan Eksekutif';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     protected string $view = 'filament.pages.laporan-bisnis';
 

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 use App\Filament\Resources\OrderRequestResource\Pages;
 use App\Models\OrderRequest;
 use Filament\Resources\Resource;
@@ -12,11 +11,11 @@ use Filament\Actions\Action;
 
 class OrderRequestResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 3;
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Transaksi;
+    protected static ?int $navigationSort = 2;
+    protected static \UnitEnum|string|null $navigationGroup = 'Kasir & Toko Fisik (POS)';
 
     protected static ?string $model = OrderRequest::class;
+    protected static ?string $navigationLabel = 'Permintaan Kasir';
     protected static ?string $modelLabel = 'Permintaan Kasir';
     protected static ?string $pluralModelLabel = 'Permintaan Kasir';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
@@ -195,7 +194,7 @@ class OrderRequestResource extends Resource
                                     \Filament\Actions\Action::make('view')
                                         ->label('Lihat Pesanan')
                                         ->button()
-                                        ->url(route('filament.admin.e-commerce.resources.orders.index') . '?tableSearch=' . urlencode($orderNumber)),
+                                        ->url(route('filament.admin.resources.orders.index') . '?tableSearch=' . urlencode($orderNumber)),
                                 ])
                                 ->sendToDatabase($record->user);
                         }
@@ -242,7 +241,7 @@ class OrderRequestResource extends Resource
                                     \Filament\Actions\Action::make('view')
                                         ->label('Lihat Pesanan')
                                         ->button()
-                                        ->url(route('filament.admin.e-commerce.resources.orders.index') . '?tableSearch=' . urlencode($orderNumber)),
+                                        ->url(route('filament.admin.resources.orders.index') . '?tableSearch=' . urlencode($orderNumber)),
                                 ])
                                 ->sendToDatabase($record->user);
                         }

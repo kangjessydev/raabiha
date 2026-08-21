@@ -37,17 +37,54 @@ class CashflowsTable
                     ->label('Kategori')
                     ->searchable()
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'Sales'       => 'Penjualan',
-                        'Deposit'     => 'Deposit',
-                        'Other_In'    => 'Pemasukan Lainnya',
-                        'Operational' => 'Operasional',
-                        'Marketing'   => 'Marketing & Iklan',
-                        'Packaging'   => 'Packaging',
-                        'Salary'      => 'Gaji Pegawai',
-                        'Shipping'    => 'Biaya Kurir',
-                        'Other_Out'   => 'Pengeluaran Lainnya',
-                        'Order_Reversal' => 'Pembatalan Pesanan',
-                        default       => $state,
+                        'Sales'                  => 'Penjualan Online',
+                        'pos_sale'               => 'Penjualan POS',
+                        'pos_exchange_pay'       => 'Selisih Retur POS',
+                        'pos_petty_cash'         => 'Kas Laci POS',
+                        'Deposit'                => 'Deposit / Modal',
+                        'Other_In'               => 'Pemasukan Lainnya',
+                        'pos_return_refund'      => 'Refund Retur POS (Tunai)',
+                        'pos_return_refund_bank' => 'Refund Retur POS (Transfer)',
+                        'pos_void'               => 'Void / Batal POS',
+                        'Order_Reversal'         => 'Pembatalan Pesanan Online',
+                        'Operational'            => 'Operasional',
+                        'Marketing'              => 'Marketing & Iklan',
+                        'Packaging'              => 'Packaging',
+                        'Salary'                 => 'Gaji Pegawai',
+                        'Shipping'               => 'Biaya Kurir',
+                        'Other_Out'              => 'Pengeluaran Lainnya',
+                        'pos_drawer_open'        => 'Buka Laci Manual',
+                        'pos_takeover_force'     => 'Pengambilalihan Sesi POS',
+                        default                  => ucwords(str_replace('_', ' ', $state)),
+                    }),
+                \Filament\Tables\Columns\TextColumn::make('payment_method')
+                    ->label('Metode Bayar')
+                    ->badge()
+                    ->state(function ($record) {
+                        if (preg_match('/\((CASH|TUNAI|EDC[_\w]*|QRIS|TRANSFER|BANK[_\w]*)\)/i', $record->description, $matches)) {
+                            $pm = strtoupper(str_replace('_', ' ', $matches[1]));
+                            return $pm === 'CASH' ? 'TUNAI' : $pm;
+                        }
+
+                        if (preg_match('/\((Tunai Kasir|Transfer Bank|Transfer|Tunai)\)/i', $record->description, $matches)) {
+                            return strtoupper($matches[1]);
+                        }
+
+                        if ($record->order) {
+                            $pm = $record->order->payment_method;
+                            if ($pm === 'split' && $record->order->formatted_payment_method) {
+                                return strtoupper($record->order->formatted_payment_method);
+                            }
+                            return strtoupper(str_replace('_', ' ', $pm ?? '-'));
+                        }
+
+                        return '-';
+                    })
+                    ->color(fn ($state) => match (true) {
+                        str_contains($state, 'TUNAI') || str_contains($state, 'CASH') => 'success',
+                        str_contains($state, 'QRIS') || str_contains($state, 'EDC') => 'info',
+                        str_contains($state, 'TRANSFER') || str_contains($state, 'BANK') => 'warning',
+                        default => 'gray',
                     }),
                 \Filament\Tables\Columns\TextColumn::make('amount')
                     ->label('Nominal')
@@ -74,15 +111,22 @@ class CashflowsTable
                 \Filament\Tables\Filters\SelectFilter::make('category')
                     ->label('Kategori')
                     ->options([
-                        'Sales'       => 'Penjualan',
-                        'Deposit'     => 'Deposit',
-                        'Other_In'    => 'Pemasukan Lainnya',
-                        'Operational' => 'Operasional',
-                        'Marketing'   => 'Marketing & Iklan',
-                        'Packaging'   => 'Packaging',
-                        'Salary'      => 'Gaji Pegawai',
-                        'Shipping'    => 'Biaya Kurir',
-                        'Other_Out'   => 'Pengeluaran Lainnya',
+                        'Sales'                  => 'Penjualan Online',
+                        'pos_sale'               => 'Penjualan POS',
+                        'pos_exchange_pay'       => 'Selisih Retur POS',
+                        'pos_petty_cash'         => 'Kas Laci POS',
+                        'Deposit'                => 'Deposit / Modal',
+                        'Other_In'               => 'Pemasukan Lainnya',
+                        'pos_return_refund'      => 'Refund Retur POS (Tunai)',
+                        'pos_return_refund_bank' => 'Refund Retur POS (Transfer)',
+                        'pos_void'               => 'Void / Batal POS',
+                        'Order_Reversal'         => 'Pembatalan Pesanan Online',
+                        'Operational'            => 'Operasional',
+                        'Marketing'              => 'Marketing & Iklan',
+                        'Packaging'              => 'Packaging',
+                        'Salary'                 => 'Gaji Pegawai',
+                        'Shipping'               => 'Biaya Kurir',
+                        'Other_Out'              => 'Pengeluaran Lainnya',
                     ]),
                 \Filament\Tables\Filters\Filter::make('transaction_date')
                     ->label('Rentang Tanggal')
@@ -118,6 +162,35 @@ class CashflowsTable
                                     ->color(fn ($state) => $state === 'order' ? 'info' : 'gray'),
                                 \Filament\Infolists\Components\TextEntry::make('category')
                                     ->label('Kategori'),
+                                \Filament\Infolists\Components\TextEntry::make('payment_method')
+                                    ->label('Metode Bayar')
+                                    ->badge()
+                                    ->state(function ($record) {
+                                        if (preg_match('/\((CASH|TUNAI|EDC[_\w]*|QRIS|TRANSFER|BANK[_\w]*)\)/i', $record->description, $matches)) {
+                                            $pm = strtoupper(str_replace('_', ' ', $matches[1]));
+                                            return $pm === 'CASH' ? 'TUNAI' : $pm;
+                                        }
+
+                                        if (preg_match('/\((Tunai Kasir|Transfer Bank|Transfer|Tunai)\)/i', $record->description, $matches)) {
+                                            return strtoupper($matches[1]);
+                                        }
+
+                                        if ($record->order) {
+                                            $pm = $record->order->payment_method;
+                                            if ($pm === 'split' && $record->order->formatted_payment_method) {
+                                                return strtoupper($record->order->formatted_payment_method);
+                                            }
+                                            return strtoupper(str_replace('_', ' ', $pm ?? '-'));
+                                        }
+
+                                        return '-';
+                                    })
+                                    ->color(fn ($state) => match (true) {
+                                        str_contains($state, 'TUNAI') || str_contains($state, 'CASH') => 'success',
+                                        str_contains($state, 'QRIS') || str_contains($state, 'EDC') => 'info',
+                                        str_contains($state, 'TRANSFER') || str_contains($state, 'BANK') => 'warning',
+                                        default => 'gray',
+                                    }),
                                 \Filament\Infolists\Components\TextEntry::make('amount')
                                     ->label('Nominal')
                                     ->money('IDR')

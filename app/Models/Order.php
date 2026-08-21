@@ -40,6 +40,18 @@ class Order extends Model
         'courier',
         'awb_number',
         'notes',
+        'pos_session_id',
+        'cashier_id',
+        'customer_name',
+        'customer_phone',
+        'cash_paid',
+        'cash_change',
+        'is_reserved',
+        'pickup_date',
+        'payment_details',
+        'void_by_id',
+        'void_reason',
+        'void_at',
     ];
 
     protected $casts = [
@@ -49,11 +61,24 @@ class Order extends Model
         'shipping_cost' => 'decimal:2',
         'discount_total' => 'decimal:2',
         'grand_total' => 'decimal:2',
+        'is_reserved' => 'boolean',
+        'pickup_date' => 'date',
+        'void_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function cashier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function voidBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'void_by_id');
     }
 
     public function voucher(): BelongsTo
@@ -66,6 +91,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function posReturns(): HasMany
+    {
+        return $this->hasMany(PosReturn::class);
+    }
+
     public function refundRequest(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(RefundRequest::class);
@@ -74,5 +104,38 @@ class Order extends Model
     public function orderRequests(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(OrderRequest::class);
+    }
+
+    public function getFormattedPaymentMethodAttribute(): string
+    {
+        $method = strtolower($this->payment_method ?? '');
+
+        if ($method === 'split') {
+            $details = is_string($this->payment_details) 
+                ? json_decode($this->payment_details, true) 
+                : ($this->payment_details ?? []);
+
+            if (!empty($details['split_payments']) && is_array($details['split_payments'])) {
+                $parts = [];
+                foreach ($details['split_payments'] as $sp) {
+                    $m = strtolower($sp['method'] ?? '');
+                    $label = ($m === 'cash' || $m === 'tunai') ? 'TUNAI' : strtoupper($m);
+                    $amt = isset($sp['amount']) && (float)$sp['amount'] > 0 
+                        ? ' (Rp ' . number_format((float)$sp['amount'], 0, ',', '.') . ')' 
+                        : '';
+                    $parts[] = $label . $amt;
+                }
+                if (!empty($parts)) {
+                    return 'SPLIT: ' . implode(' + ', $parts);
+                }
+            }
+            return 'SPLIT PAYMENT';
+        }
+
+        if (in_array($method, ['cash', 'tunai'])) {
+            return 'TUNAI';
+        }
+
+        return strtoupper($this->payment_method ?? 'TUNAI');
     }
 }

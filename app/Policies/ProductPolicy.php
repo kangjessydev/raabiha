@@ -72,4 +72,14 @@ class ProductPolicy
         return $authUser->can('Reorder:Product');
     }
 
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('Create:Product') || $authUser->can('ViewAny:Product');
+    }
+
+    public function export(AuthUser $authUser): bool
+    {
+        return $authUser->can('ViewAny:Product');
+    }
+
 }

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Attributes;
 
-use App\Filament\Clusters\ECommerce\ECommerceCluster;
 
 use App\Filament\Resources\Attributes\Pages\CreateAttribute;
 use App\Filament\Resources\Attributes\Pages\EditAttribute;
@@ -18,14 +17,13 @@ use Filament\Tables\Table;
 
 class AttributeResource extends Resource
 {
-    protected static ?string $cluster = ECommerceCluster::class;
-    protected static ?int $navigationSort = 23;
-
-    protected static \UnitEnum|string|null $navigationGroup = \App\Filament\Clusters\ECommerce\ECommerceNavigationGroup::Katalog;
+    protected static ?int $navigationSort = 3;
+    protected static \UnitEnum|string|null $navigationGroup = 'Katalog & Stok Barang';
     protected static ?string $model = Attribute::class;
 
-    protected static ?string $modelLabel = 'Atribut';
-    protected static ?string $pluralModelLabel = 'Atribut';
+    protected static ?string $navigationLabel = 'Varian & Atribut';
+    protected static ?string $modelLabel = 'Varian & Atribut';
+    protected static ?string $pluralModelLabel = 'Varian & Atribut';
 
 
     

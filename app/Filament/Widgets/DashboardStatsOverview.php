@@ -16,6 +16,8 @@ class DashboardStatsOverview extends StatsOverviewWidget
 
     public string $period = 'today';
 
+    public string $channel = 'all';
+
     protected string $view = 'filament.widgets.dashboard-stats-widget';
 
     protected function getPeriodDates(): array
@@ -34,53 +36,96 @@ class DashboardStatsOverview extends StatsOverviewWidget
         $this->cachedStats = null;
     }
 
+    public function updatedChannel(): void
+    {
+        $this->cachedStats = null;
+    }
+
     protected function getStats(): array
     {
         [$start, $end] = $this->getPeriodDates();
-        $cacheKey = 'dashboard_overview_' . $this->period . '_' . now()->format('Y-m-d_H');
+        $cacheKey = 'dashboard_overview_' . $this->period . '_' . $this->channel . '_' . now()->format('Y-m-d_H');
 
         // Cache 10 menit untuk periode panjang, 10 detik untuk today
         $cacheTime = $this->period === 'today' ? 10 : 600;
 
         $data = Cache::remember($cacheKey, $cacheTime, function () use ($start, $end) {
+            $channel = $this->channel;
+
+            $applyOrderChannel = function ($query) use ($channel) {
+                if ($channel === 'online') {
+                    $query->where(function ($sub) {
+                        $sub->whereIn('orders.source', ['ecommerce', 'online'])
+                            ->orWhere(function ($s) {
+                                $s->whereNull('orders.source')
+                                  ->whereNull('orders.pos_session_id')
+                                  ->whereNull('orders.cashier_id');
+                            });
+                    });
+                } elseif ($channel === 'pos') {
+                    $query->where(function ($sub) {
+                        $sub->whereIn('orders.source', ['pos', 'offline'])
+                            ->orWhereNotNull('orders.pos_session_id')
+                            ->orWhereNotNull('orders.cashier_id');
+                    });
+                }
+            };
+
+            $applyCashflowChannel = function ($query) use ($channel) {
+                if ($channel === 'online') {
+                    $query->where(function ($sub) {
+                        $sub->where('cashflows.source', 'order')->orWhere('cashflows.source', 'manual');
+                    });
+                } elseif ($channel === 'pos') {
+                    $query->where('cashflows.source', 'pos');
+                }
+            };
+
             // 1. Pesanan Menunggu Pembayaran
             $pendingPayment = Order::selectRaw('COUNT(*) as count, SUM(grand_total) as amount')
                 ->whereBetween('created_at', [$start, $end])
                 ->where('payment_status', 'pending')
+                ->tap($applyOrderChannel)
                 ->first();
 
             // 2. Pesanan Selesai
             $completed = Order::selectRaw('COUNT(*) as count, SUM(grand_total) as amount')
                 ->whereBetween('created_at', [$start, $end])
                 ->where('status', 'completed')
+                ->tap($applyOrderChannel)
                 ->first();
 
             // 3. Pesanan Batal
             $cancelled = Order::selectRaw('COUNT(*) as count, SUM(grand_total) as amount')
                 ->whereBetween('created_at', [$start, $end])
                 ->where('status', 'cancelled')
+                ->tap($applyOrderChannel)
                 ->first();
 
             // 4. Pengeluaran (Kas Keluar)
             $expense = Cashflow::whereBetween('transaction_date', [$start, $end])
                 ->where('type', 'out')
+                ->tap($applyCashflowChannel)
                 ->sum('amount');
 
             // 5. Voucher digunakan
             $vouchers = Order::selectRaw('COUNT(*) as count, SUM(discount_total) as discount')
                 ->whereBetween('created_at', [$start, $end])
                 ->whereNotNull('voucher_id')
+                ->tap($applyOrderChannel)
                 ->first();
 
             // 6. Laba Bersih
             $revenue = Cashflow::whereBetween('transaction_date', [$start, $end])
                 ->where('type', 'in')
                 ->where('is_reversed', false)
+                ->tap($applyCashflowChannel)
                 ->sum('amount');
 
             // 6b. HPP
             $hpp = (float) Order::where('orders.payment_status', 'paid')
                 ->whereBetween('orders.created_at', [$start, $end])
+                ->tap($applyOrderChannel)
                 ->join('order_items', 'orders.id', '=', 'order_items.order_id')
                 ->leftJoin('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
                 ->leftJoin('products', 'order_items.product_id', '=', 'products.id')
@@ -88,12 +133,18 @@ class DashboardStatsOverview extends StatsOverviewWidget
 
             // --- Query Tren untuk Sparkline ---
             // Grouping berdasarkan Hari atau Bulan tergantung periode
-            $dateFormat = $this->period === 'today' ? 'HOUR(created_at)' : 'DATE(created_at)';
-            $cashflowFormat = $this->period === 'today' ? 'HOUR(transaction_date)' : 'DATE(transaction_date)';
+            $isSqlite = DB::getDriverName() === 'sqlite';
+            $dateFormat = $this->period === 'today' 
+                ? ($isSqlite ? "cast(strftime('%H', created_at) as integer)" : "HOUR(created_at)") 
+                : ($isSqlite ? "strftime('%Y-%m-%d', created_at)" : "DATE(created_at)");
+            $cashflowFormat = $this->period === 'today' 
+                ? ($isSqlite ? "cast(strftime('%H', transaction_date) as integer)" : "HOUR(transaction_date)") 
+                : ($isSqlite ? "strftime('%Y-%m-%d', transaction_date)" : "DATE(transaction_date)");
 
             $pendingHourly = Order::selectRaw("{$dateFormat} as dt, COUNT(*) as count")
                 ->whereBetween('created_at', [$start, $end])
                 ->where('payment_status', 'pending')
+                ->tap($applyOrderChannel)
                 ->groupBy('dt')
                 ->pluck('count', 'dt')
                 ->toArray();
@@ -101,6 +152,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
             $completedHourly = Order::selectRaw("{$dateFormat} as dt, COUNT(*) as count")
                 ->whereBetween('created_at', [$start, $end])
                 ->where('status', 'completed')
+                ->tap($applyOrderChannel)
                 ->groupBy('dt')
                 ->pluck('count', 'dt')
                 ->toArray();
@@ -108,6 +160,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
             $cancelledHourly = Order::selectRaw("{$dateFormat} as dt, COUNT(*) as count")
                 ->whereBetween('created_at', [$start, $end])
                 ->where('status', 'cancelled')
+                ->tap($applyOrderChannel)
                 ->groupBy('dt')
                 ->pluck('count', 'dt')
                 ->toArray();
@@ -115,6 +168,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
             $hourlyExpenses = Cashflow::selectRaw("{$cashflowFormat} as dt, SUM(amount) as amount")
                 ->whereBetween('transaction_date', [$start, $end])
                 ->where('type', 'out')
+                ->tap($applyCashflowChannel)
                 ->groupBy('dt')
                 ->pluck('amount', 'dt')
                 ->toArray();
@@ -122,6 +176,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
             $voucherHourly = Order::selectRaw("{$dateFormat} as dt, COUNT(*) as count")
                 ->whereBetween('created_at', [$start, $end])
                 ->whereNotNull('voucher_id')
+                ->tap($applyOrderChannel)
                 ->groupBy('dt')
                 ->pluck('count', 'dt')
                 ->toArray();
@@ -130,6 +185,7 @@ class DashboardStatsOverview extends StatsOverviewWidget
                 ->whereBetween('transaction_date', [$start, $end])
                 ->where('type', 'in')
                 ->where('is_reversed', false)
+                ->tap($applyCashflowChannel)
                 ->groupBy('dt')
                 ->pluck('amount', 'dt')
                 ->toArray();

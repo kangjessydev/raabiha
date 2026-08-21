@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Product;
-use App\Filament\Exports\ProductExporter;
 
 class TestExportValidationCommand extends Command
 {
@@ -17,11 +16,10 @@ class TestExportValidationCommand extends Command
         $this->info("Memulai Uji Coba Validasi Export: " . strtoupper($type));
 
         $config = [
-            'product' => ['model' => \App\Models\Product::class, 'exporter' => \App\Filament\Exports\ProductExporter::class],
-            'order' => ['model' => \App\Models\Order::class, 'exporter' => \App\Filament\Exports\OrderExporter::class],
-            'user' => ['model' => \App\Models\User::class, 'exporter' => \App\Filament\Exports\UserExporter::class],
             'category' => ['model' => \App\Models\Category::class, 'exporter' => \App\Filament\Exports\CategoryExporter::class],
+            'order' => ['model' => \App\Models\Order::class, 'exporter' => \App\Filament\Exports\OrderExporter::class],
             'post' => ['model' => \App\Models\Post::class, 'exporter' => \App\Filament\Exports\PostExporter::class],
+            'user' => ['model' => \App\Models\User::class, 'exporter' => \App\Filament\Exports\UserExporter::class],
             'voucher' => ['model' => \App\Models\Voucher::class, 'exporter' => \App\Filament\Exports\VoucherExporter::class],
         ];
 

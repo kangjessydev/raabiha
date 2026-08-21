@@ -46,6 +46,17 @@ class VoucherForm
                                             ->numeric()
                                             ->prefix(fn ($get) => $get('discount_type') === 'percent' ? null : 'Rp')
                                             ->suffix(fn ($get) => $get('discount_type') === 'percent' ? '%' : null),
+                                        \Filament\Forms\Components\Radio::make('usable_channel')
+                                            ->label('Kanal Penggunaan')
+                                            ->options([
+                                                'online_only' => 'Hanya Toko Online (Web)',
+                                                'pos_only' => 'Hanya Kasir / Toko Fisik (POS)',
+                                                'both' => 'Keduanya (Web & POS)',
+                                            ])
+                                            ->default('both')
+                                            ->inline()
+                                            ->required()
+                                            ->columnSpanFull(),
                                         Toggle::make('is_shipping_voucher')
                                             ->label('Ini adalah Voucher Potongan Ongkir')
                                             ->helperText('Jika aktif, diskon akan memotong biaya pengiriman, bukan total produk. Bisa digabung dengan diskon produk.')

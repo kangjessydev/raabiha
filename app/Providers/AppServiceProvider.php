@@ -37,6 +37,15 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
+        // Konfigurasi route Livewire agar relatif dan bekerja di seluruh subdomain (admin, pos, & main domain)
+        \Livewire\Livewire::setScriptRoute(function ($handle) {
+            return \Illuminate\Support\Facades\Route::get('/livewire/livewire.js', $handle);
+        });
+
+        \Livewire\Livewire::setUpdateRoute(function ($handle) {
+            return \Illuminate\Support\Facades\Route::post('/livewire/update', $handle)->middleware(['web']);
+        });
+
         // Daftarkan Observer Order untuk auto-record Buku Kas & notifikasi lonceng
         Order::observe(OrderObserver::class);
 

@@ -84,6 +84,25 @@ class ProductVariantImporter extends Importer
                 ->requiredMapping()
                 ->boolean()
                 ->rules(['required', 'boolean']),
+            ImportColumn::make('channel_visibility')
+                ->label('Tampil Di (Channel)')
+                ->exampleHeader('Tampil Di (Channel) [both/online_only/pos_only]')
+                ->rules(['nullable', 'in:both,online_only,pos_only'])
+                ->fillRecordUsing(function (ProductVariant $record, ?string $state): void {
+                    $record->channel_visibility = in_array($state, ['both', 'online_only', 'pos_only'])
+                        ? $state
+                        : 'both';
+                }),
+            ImportColumn::make('pos_price')
+                ->label('Harga POS')
+                ->exampleHeader('Harga POS')
+                ->numeric()
+                ->rules(['nullable', 'numeric']),
+            ImportColumn::make('pos_discount_price')
+                ->label('Harga Diskon POS')
+                ->exampleHeader('Harga Diskon POS')
+                ->numeric()
+                ->rules(['nullable', 'numeric']),
         ];
     }
 

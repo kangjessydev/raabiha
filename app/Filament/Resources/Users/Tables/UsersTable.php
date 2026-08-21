@@ -39,6 +39,15 @@ class UsersTable
                     ->searchable(),
                 TextColumn::make('reseller_status')
                     ->searchable(),
+                TextColumn::make('shift_schedule')
+                    ->label('Jadwal Shift POS')
+                    ->state(function ($record) {
+                        if (!$record->pos_shift_start || !$record->pos_shift_end) return '-';
+                        return \Carbon\Carbon::parse($record->pos_shift_start)->format('H:i') . ' - ' . \Carbon\Carbon::parse($record->pos_shift_end)->format('H:i');
+                    })
+                    ->badge()
+                    ->color('info')
+                    ->toggleable(),
             ])
             ->filters([
                 //

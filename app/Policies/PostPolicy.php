@@ -72,4 +72,14 @@ class PostPolicy
         return $authUser->can('Reorder:Post');
     }
 
+    public function import(AuthUser $authUser): bool
+    {
+        return $authUser->can('Create:Post') || $authUser->can('ViewAny:Post');
+    }
+
+    public function export(AuthUser $authUser): bool
+    {
+        return $authUser->can('ViewAny:Post');
+    }
+
 }
