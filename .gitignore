@@ -27,3 +27,4 @@ Homestead.yaml
 Thumbs.db
 /storage/backups/*.sql.gz
 /.docs/
+LAPORAN_*.md
