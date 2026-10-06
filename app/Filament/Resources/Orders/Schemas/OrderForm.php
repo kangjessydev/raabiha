@@ -658,6 +658,12 @@ class OrderForm
                                         TextInput::make('awb_number')
                                             ->label('Nomor Resi')
                                             ->disabled(fn (string $operation) => self::isFieldDisabled('awb_number', $operation)),
+                                        TextInput::make('actual_shipping_cost')
+                                            ->label('Ongkir Riil Ekspedisi')
+                                            ->numeric()
+                                            ->prefix('Rp')
+                                            ->helperText('Biaya riil yang ditagihkan ekspedisi ke toko (otomatis dicatat sebagai pengeluaran kas).')
+                                            ->disabled(fn (string $operation) => self::isFieldDisabled('actual_shipping_cost', $operation)),
                                     ])->columns(1),
                                 Textarea::make('notes')
                                     ->label('Catatan Pesanan')
@@ -767,19 +773,19 @@ class OrderForm
                 }
 
                 // Normal Edit mode without request_change query parameter:
-                // Cashier can only edit: status, payment_status, awb_number
-                return ! in_array($fieldName, ['status', 'payment_status', 'awb_number']);
+                // Cashier can only edit: status, payment_status, awb_number, actual_shipping_cost
+                return ! in_array($fieldName, ['status', 'payment_status', 'awb_number', 'actual_shipping_cost']);
             }
         }
 
         if ($user->hasRole('logistics')) {
-            // Logistics can edit: status, awb_number
-            return ! in_array($fieldName, ['status', 'awb_number']);
+            // Logistics can edit: status, awb_number, actual_shipping_cost
+            return ! in_array($fieldName, ['status', 'awb_number', 'actual_shipping_cost']);
         }
 
         if ($user->hasRole('finance')) {
-            // Finance can edit: status, payment_status
-            return ! in_array($fieldName, ['status', 'payment_status']);
+            // Finance can edit: status, payment_status, actual_shipping_cost
+            return ! in_array($fieldName, ['status', 'payment_status', 'actual_shipping_cost']);
         }
 
         // Default: if role not recognized but has edit permission, disable everything

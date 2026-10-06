@@ -91,6 +91,10 @@ class OrderObserver
         if ($order->payment_status === 'paid') {
             $this->recordCashIn($order);
         }
+
+        if ($order->actual_shipping_cost && $order->actual_shipping_cost > 0) {
+            $this->syncShippingExpense($order);
+        }
     }
 
     /**
@@ -240,6 +244,21 @@ class OrderObserver
                 ]);
             }
 
+            // Reversal ongkir riil jika ada
+            $shippingExpense = Cashflow::where('order_id', $order->id)
+                ->where('type', 'out')
+                ->where('source', 'order')
+                ->where('payment_channel', 'shipping')
+                ->where('is_reversed', false)
+                ->first();
+
+            if ($shippingExpense) {
+                $shippingExpense->update([
+                    'is_reversed'   => true,
+                    'reversal_note' => 'Pesanan #' . $order->order_number . ' dibatalkan.',
+                ]);
+            }
+
             // Email pembatalan ke customer
             if ($customerEmail) {
                 try {
@@ -351,6 +370,11 @@ class OrderObserver
                 logger()->error("Gagal mengirim email selesai ke admin: " . $e->getMessage());
             }
         }
+
+        // Sinkronisasi ongkir riil ekspedisi ke Cashflow
+        if ($order->isDirty('actual_shipping_cost') || $order->isDirty('awb_number') || $order->isDirty('courier')) {
+            $this->syncShippingExpense($order);
+        }
     }
 
     public function deleted(Order $order): void {}
@@ -405,6 +429,39 @@ class OrderObserver
                 'is_reversed'      => false,
             ]
         );
+    }
+
+    /**
+     * Helper: sinkronisasi pengeluaran ongkir riil ekspedisi ke Cashflow.
+     */
+    private function syncShippingExpense(Order $order): void
+    {
+        if ($order->source === 'pos') return; // POS ditangani terpisah jika ada
+
+        if ($order->actual_shipping_cost && $order->actual_shipping_cost > 0 && $order->status !== 'cancelled') {
+            Cashflow::updateOrCreate(
+                [
+                    'order_id'        => $order->id,
+                    'type'            => 'out',
+                    'source'          => 'order',
+                    'payment_channel' => 'shipping',
+                ],
+                [
+                    'transaction_date' => now()->toDateString(),
+                    'category'         => 'Shipping',
+                    'amount'           => $order->actual_shipping_cost,
+                    'description'      => "Ongkos kirim riil ekspedisi pesanan #{$order->order_number} (" . strtoupper($order->courier ?? 'KURIR') . ($order->awb_number ? " - Resi: {$order->awb_number}" : '') . ")",
+                    'is_reversed'      => false,
+                ]
+            );
+        } else {
+            // Jika dikosongkan atau diset 0
+            Cashflow::where('order_id', $order->id)
+                ->where('type', 'out')
+                ->where('source', 'order')
+                ->where('payment_channel', 'shipping')
+                ->delete();
+        }
     }
 
     /**
