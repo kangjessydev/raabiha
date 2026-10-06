@@ -1035,73 +1035,26 @@ class Checkout extends Component
             return;
         }
 
-        $voucher = \App\Models\Voucher::where('code', $this->voucherCode)
-            ->where('is_active', true)
-            ->where(function($query) {
-                $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
-            })
-            ->where(function($query) {
-                $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
-            })
-            ->first();
-
+        $voucher = \App\Models\Voucher::where('code', $this->voucherCode)->first();
         if (!$voucher) {
             session()->flash('voucher_error', 'Kode voucher tidak valid atau sudah kadaluarsa.');
             return;
         }
 
-        if ($voucher->usable_channel === 'pos_only') {
-            session()->flash('voucher_error', 'Kode voucher ini hanya berlaku untuk transaksi di Kasir / POS.');
-            return;
-        }
-
-        if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
-            session()->flash('voucher_error', 'Kode voucher sudah melewati batas penggunaan.');
-            return;
-        }
-
         $cartQuantity = $this->checkoutItems->sum('quantity');
-        if ($voucher->min_items > 0 && $cartQuantity < $voucher->min_items) {
-            session()->flash('voucher_error', 'Minimal jumlah belanja tidak terpenuhi (' . $voucher->min_items . ' item).');
+        $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
+
+        $validation = app(\App\Services\VoucherService::class)->validateVoucher(
+            $voucher,
+            $baseTotalForVoucher,
+            $cartQuantity,
+            auth()->user(),
+            $this->email
+        );
+
+        if (!$validation['valid']) {
+            session()->flash('voucher_error', $validation['message']);
             return;
-        }
-        
-        if ($voucher->exclude_resellers && auth()->check() && auth()->user()->hasRole('reseller')) {
-            session()->flash('voucher_error', 'Maaf, voucher ini tidak berlaku untuk mitra Reseller.');
-            return;
-        }
-
-        if (!empty($voucher->specific_users) && auth()->check()) {
-            if (!in_array(auth()->user()->email, $voucher->specific_users)) {
-                session()->flash('voucher_error', 'Voucher ini tidak berlaku untuk akun Anda.');
-                return;
-            }
-        }
-
-        if ($voucher->max_uses_per_user > 0) {
-            $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
-                ->where(function ($q) {
-                    $q->where('payment_status', '!=', 'cancelled')
-                      ->where('status', '!=', 'cancelled');
-                });
-
-            if (auth()->check()) {
-                $userUsageQuery->where(function ($q) {
-                    $q->where('user_id', auth()->id())
-                      ->orWhere('shipping_address->email', auth()->user()->email);
-                });
-            } else {
-                if (!empty($this->email)) {
-                    $userUsageQuery->where('shipping_address->email', $this->email);
-                } else {
-                    $userUsageQuery = null;
-                }
-            }
-
-            if ($userUsageQuery && $userUsageQuery->count() >= $voucher->max_uses_per_user) {
-                session()->flash('voucher_error', 'Anda sudah melebihi batas penggunaan untuk voucher ini (' . $voucher->max_uses_per_user . ' kali).');
-                return;
-            }
         }
 
         $newVoucherData = $voucher->toArray();
@@ -1361,88 +1314,22 @@ class Checkout extends Component
             $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
 
             if (!empty($this->appliedVouchers)) {
-                foreach ($this->appliedVouchers as $vData) {
-                    $voucherCode = $vData['code'] ?? null;
-                    if (!$voucherCode) continue;
+                $voucherCalc = app(\App\Services\VoucherService::class)->verifyAndCalculate(
+                    $this->appliedVouchers,
+                    $baseTotalForVoucher,
+                    $actualRatePrice,
+                    $cartQuantity,
+                    auth()->user(),
+                    $this->email,
+                    lockForUpdate: true
+                );
 
-                    $voucherModel = \App\Models\Voucher::where('code', $voucherCode)
-                        ->where('is_active', true)
-                        ->where(function ($q) {
-                            $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
-                        })
-                        ->where(function ($q) {
-                            $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
-                        })
-                        ->lockForUpdate()
-                        ->first();
+                $recalculatedProductDiscount = $voucherCalc['product_discount'];
+                $recalculatedShippingDiscount = $voucherCalc['shipping_discount'];
 
-                    if (!$voucherModel) {
-                        throw new \Exception("Voucher '{$voucherCode}' tidak valid atau telah kadaluarsa.");
-                    }
-
-                    if ($voucherModel->usable_channel === 'pos_only') {
-                        throw new \Exception("Voucher '{$voucherCode}' hanya dapat digunakan di kasir/POS.");
-                    }
-
-                    if ($voucherModel->max_uses > 0 && $voucherModel->used_count >= $voucherModel->max_uses) {
-                        throw new \Exception("Kuota voucher '{$voucherCode}' telah habis.");
-                    }
-
-                    if ($voucherModel->min_items > 0 && $cartQuantity < $voucherModel->min_items) {
-                        throw new \Exception("Syarat minimal jumlah barang untuk voucher '{$voucherCode}' tidak terpenuhi.");
-                    }
-
-                    if ($voucherModel->min_purchase > 0 && $baseTotalForVoucher < $voucherModel->min_purchase) {
-                        throw new \Exception("Syarat minimal belanja untuk voucher '{$voucherCode}' tidak terpenuhi.");
-                    }
-
-                    if ($voucherModel->max_uses_per_user > 0) {
-                        $userUsageQuery = \App\Models\Order::where('voucher_id', $voucherModel->id)
-                            ->where(function ($q) {
-                                $q->where('payment_status', '!=', 'cancelled')
-                                  ->where('status', '!=', 'cancelled');
-                            });
-
-                        $customerEmail = auth()->check() ? auth()->user()->email : $this->email;
-                        if ($customerEmail) {
-                            $userUsageQuery->where(function ($q) use ($customerEmail) {
-                                if (auth()->check()) {
-                                    $q->where('user_id', auth()->id())
-                                      ->orWhere('shipping_address->email', $customerEmail);
-                                } else {
-                                    $q->where('shipping_address->email', $customerEmail);
-                                }
-                            });
-
-                            if ($userUsageQuery->count() >= $voucherModel->max_uses_per_user) {
-                                throw new \Exception("Batas penggunaan voucher '{$voucherCode}' untuk akun Anda telah tercapai.");
-                            }
-                        }
-                    }
-
-                    // Rekalkulasi nominal diskon secara deterministik dari database model
-                    $discount = 0;
-                    if ($voucherModel->discount_type === 'percent') {
-                        $discount = $baseTotalForVoucher * ($voucherModel->discount_amount / 100);
-                        if ($voucherModel->max_discount > 0 && $discount > $voucherModel->max_discount) {
-                            $discount = $voucherModel->max_discount;
-                        }
-                    } else {
-                        $discount = $voucherModel->discount_amount;
-                    }
-
-                    if ($voucherModel->is_shipping_voucher) {
-                        $remainingShipping = max(0, $actualRatePrice - $recalculatedShippingDiscount);
-                        $shipDiscount = min($remainingShipping, $discount);
-                        $recalculatedShippingDiscount += $shipDiscount;
-                    } else {
-                        $remainingProduct = max(0, $baseTotalForVoucher - $recalculatedProductDiscount);
-                        $productDiscount = min($remainingProduct, $discount);
-                        $recalculatedProductDiscount += $productDiscount;
-                    }
-
-                    $voucherModel->increment('used_count');
-                    $verifiedVoucherIds[] = $voucherModel->id;
+                foreach ($voucherCalc['verified_vouchers'] as $verifiedModel) {
+                    $verifiedModel->increment('used_count');
+                    $verifiedVoucherIds[] = $verifiedModel->id;
                 }
             }
 

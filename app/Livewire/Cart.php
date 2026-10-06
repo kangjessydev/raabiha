@@ -62,51 +62,27 @@ class Cart extends Component
         }
 
         $cartQuantity = 0;
+        $subtotal = 0;
         if ($this->cart && $this->cart->items) {
             foreach ($this->cart->items as $item) {
                 if (in_array((string)$item->id, $this->selectedItems)) {
                     $cartQuantity += $item->quantity;
+                    $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
+                    $subtotal += $price * $item->quantity;
                 }
             }
         }
-        
-        if ($voucher->min_items > 0 && $cartQuantity < $voucher->min_items) {
-            session()->flash('voucher_error', 'Minimal jumlah belanja tidak terpenuhi (' . $voucher->min_items . ' item).');
+
+        $validation = app(\App\Services\VoucherService::class)->validateVoucher(
+            $voucher,
+            $subtotal,
+            $cartQuantity,
+            auth()->user()
+        );
+
+        if (!$validation['valid']) {
+            session()->flash('voucher_error', $validation['message']);
             return;
-        }
-        
-        if ($voucher->exclude_resellers && auth()->check() && auth()->user()->hasRole('reseller')) {
-            session()->flash('voucher_error', 'Maaf, voucher ini tidak berlaku untuk mitra Reseller.');
-            return;
-        }
-
-        if (!empty($voucher->specific_users) && auth()->check()) {
-            if (!in_array(auth()->user()->email, $voucher->specific_users)) {
-                session()->flash('voucher_error', 'Voucher ini tidak berlaku untuk akun Anda.');
-                return;
-            }
-        }
-
-        if ($voucher->max_uses_per_user > 0) {
-            $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
-                ->where(function ($q) {
-                    $q->where('payment_status', '!=', 'cancelled')
-                      ->where('status', '!=', 'cancelled');
-                });
-
-            if (auth()->check()) {
-                $userUsageQuery->where(function ($q) {
-                    $q->where('user_id', auth()->id())
-                      ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [auth()->user()->email]);
-                });
-            } else {
-                $userUsageQuery = null;
-            }
-
-            if ($userUsageQuery && $userUsageQuery->count() >= $voucher->max_uses_per_user) {
-                session()->flash('voucher_error', 'Anda sudah melebihi batas penggunaan untuk voucher ini (' . $voucher->max_uses_per_user . ' kali).');
-                return;
-            }
         }
 
         $this->appliedVoucher = $voucher->toArray();
