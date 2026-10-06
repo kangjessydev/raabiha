@@ -33,6 +33,7 @@ class Checkout extends Component
     
     // Address Mode & Active Shipping Provider
     public $addressMode = 'api'; // 'api' atau 'manual'
+    #[Locked]
     public $activeShippingProvider = 'komerce'; // 'komerce' atau 'binderbyte'
 
     // BinderByte Cascading Dropdown States
@@ -50,6 +51,7 @@ class Checkout extends Component
     public $base_shipping_cost = 0;
     public $payment_method = 'bank_transfer';
     public $shipping_method = '';
+    #[Locked]
     public $isFallbackShipping = false;
     
     // Komerce Integration (Direct Autocomplete)
@@ -61,7 +63,9 @@ class Checkout extends Component
     
     // Coupon state - Nilai potongan dikunci #[Locked]
     public $voucherCode = '';
+    #[Locked]
     public $appliedVouchers = [];
+    #[Locked]
     public $appliedVoucher = null;
     #[Locked]
     public $discountAmount = 0;
@@ -970,29 +974,35 @@ class Checkout extends Component
 
         if (!empty($this->appliedVouchers)) {
             foreach ($this->appliedVouchers as $index => $v) {
-                if ($v['min_purchase'] > 0 && $baseTotalForVoucher < $v['min_purchase']) {
+                $minPurchase = (float) ($v['min_purchase'] ?? 0);
+                if ($minPurchase > 0 && $baseTotalForVoucher < $minPurchase) {
                     $this->removeVoucher($index);
-                    session()->flash('voucher_error', 'Voucher ' . $v['code'] . ' otomatis dilepas karena total belanja tidak memenuhi syarat minimum.');
+                    session()->flash('voucher_error', 'Voucher ' . ($v['code'] ?? '') . ' otomatis dilepas karena total belanja tidak memenuhi syarat minimum.');
                     continue;
                 }
 
-                if ($v['is_shipping_voucher']) {
-                    $discountValue = $v['discount_type'] === 'fixed' 
-                        ? $v['discount_amount'] 
-                        : $this->shipping_cost * ($v['discount_amount'] / 100);
+                $isShipping = !empty($v['is_shipping_voucher']);
+                $discountType = $v['discount_type'] ?? 'fixed';
+                $discountAmount = (float) ($v['discount_amount'] ?? 0);
+                $maxDiscount = (float) ($v['max_discount'] ?? 0);
+
+                if ($isShipping) {
+                    $discountValue = $discountType === 'fixed' 
+                        ? $discountAmount 
+                        : $this->shipping_cost * ($discountAmount / 100);
                     
-                    if ($v['max_discount'] > 0 && $discountValue > $v['max_discount']) {
-                        $discountValue = $v['max_discount'];
+                    if ($maxDiscount > 0 && $discountValue > $maxDiscount) {
+                        $discountValue = $maxDiscount;
                     }
                     
                     $this->shippingDiscountAmount = min($discountValue, $this->shipping_cost);
                 } else {
-                    if ($v['discount_type'] === 'fixed') {
-                        $this->discountAmount += $v['discount_amount'];
+                    if ($discountType === 'fixed') {
+                        $this->discountAmount += $discountAmount;
                     } else {
-                        $val = $baseTotalForVoucher * ($v['discount_amount'] / 100);
-                        if ($v['max_discount'] > 0 && $val > $v['max_discount']) {
-                            $val = $v['max_discount'];
+                        $val = $baseTotalForVoucher * ($discountAmount / 100);
+                        if ($maxDiscount > 0 && $val > $maxDiscount) {
+                            $val = $maxDiscount;
                         }
                         $this->discountAmount += $val;
                     }
@@ -1078,11 +1088,11 @@ class Checkout extends Component
             if (auth()->check()) {
                 $userUsageQuery->where(function ($q) {
                     $q->where('user_id', auth()->id())
-                      ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [auth()->user()->email]);
+                      ->orWhere('shipping_address->email', auth()->user()->email);
                 });
             } else {
                 if (!empty($this->email)) {
-                    $userUsageQuery->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$this->email]);
+                    $userUsageQuery->where('shipping_address->email', $this->email);
                 } else {
                     $userUsageQuery = null;
                 }
@@ -1230,10 +1240,10 @@ class Checkout extends Component
                     if (auth()->check()) {
                         $userUsageQuery->where(function ($q) {
                             $q->where('user_id', auth()->id())
-                              ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [auth()->user()->email]);
+                              ->orWhere('shipping_address->email', auth()->user()->email);
                         });
                     } else {
-                        $userUsageQuery->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$this->email]);
+                        $userUsageQuery->where('shipping_address->email', $this->email);
                     }
 
                     if ($userUsageQuery->count() >= $voucher->max_uses_per_user) {
@@ -1343,6 +1353,102 @@ class Checkout extends Component
                 'notes' => $this->notes,
             ];
 
+            // 2.5 Validasi & Rekalkulasi Voucher secara defensif langsung dari database dengan lockForUpdate
+            $verifiedVoucherIds = [];
+            $recalculatedProductDiscount = 0;
+            $recalculatedShippingDiscount = 0;
+            $cartQuantity = $items->sum('quantity');
+            $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
+
+            if (!empty($this->appliedVouchers)) {
+                foreach ($this->appliedVouchers as $vData) {
+                    $voucherCode = $vData['code'] ?? null;
+                    if (!$voucherCode) continue;
+
+                    $voucherModel = \App\Models\Voucher::where('code', $voucherCode)
+                        ->where('is_active', true)
+                        ->where(function ($q) {
+                            $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                        })
+                        ->where(function ($q) {
+                            $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+                        })
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$voucherModel) {
+                        throw new \Exception("Voucher '{$voucherCode}' tidak valid atau telah kadaluarsa.");
+                    }
+
+                    if ($voucherModel->usable_channel === 'pos_only') {
+                        throw new \Exception("Voucher '{$voucherCode}' hanya dapat digunakan di kasir/POS.");
+                    }
+
+                    if ($voucherModel->max_uses > 0 && $voucherModel->used_count >= $voucherModel->max_uses) {
+                        throw new \Exception("Kuota voucher '{$voucherCode}' telah habis.");
+                    }
+
+                    if ($voucherModel->min_items > 0 && $cartQuantity < $voucherModel->min_items) {
+                        throw new \Exception("Syarat minimal jumlah barang untuk voucher '{$voucherCode}' tidak terpenuhi.");
+                    }
+
+                    if ($voucherModel->min_purchase > 0 && $baseTotalForVoucher < $voucherModel->min_purchase) {
+                        throw new \Exception("Syarat minimal belanja untuk voucher '{$voucherCode}' tidak terpenuhi.");
+                    }
+
+                    if ($voucherModel->max_uses_per_user > 0) {
+                        $userUsageQuery = \App\Models\Order::where('voucher_id', $voucherModel->id)
+                            ->where(function ($q) {
+                                $q->where('payment_status', '!=', 'cancelled')
+                                  ->where('status', '!=', 'cancelled');
+                            });
+
+                        $customerEmail = auth()->check() ? auth()->user()->email : $this->email;
+                        if ($customerEmail) {
+                            $userUsageQuery->where(function ($q) use ($customerEmail) {
+                                if (auth()->check()) {
+                                    $q->where('user_id', auth()->id())
+                                      ->orWhere('shipping_address->email', $customerEmail);
+                                } else {
+                                    $q->where('shipping_address->email', $customerEmail);
+                                }
+                            });
+
+                            if ($userUsageQuery->count() >= $voucherModel->max_uses_per_user) {
+                                throw new \Exception("Batas penggunaan voucher '{$voucherCode}' untuk akun Anda telah tercapai.");
+                            }
+                        }
+                    }
+
+                    // Rekalkulasi nominal diskon secara deterministik dari database model
+                    $discount = 0;
+                    if ($voucherModel->discount_type === 'percent') {
+                        $discount = $baseTotalForVoucher * ($voucherModel->discount_amount / 100);
+                        if ($voucherModel->max_discount > 0 && $discount > $voucherModel->max_discount) {
+                            $discount = $voucherModel->max_discount;
+                        }
+                    } else {
+                        $discount = $voucherModel->discount_amount;
+                    }
+
+                    if ($voucherModel->is_shipping_voucher) {
+                        $remainingShipping = max(0, $actualRatePrice - $recalculatedShippingDiscount);
+                        $shipDiscount = min($remainingShipping, $discount);
+                        $recalculatedShippingDiscount += $shipDiscount;
+                    } else {
+                        $remainingProduct = max(0, $baseTotalForVoucher - $recalculatedProductDiscount);
+                        $productDiscount = min($remainingProduct, $discount);
+                        $recalculatedProductDiscount += $productDiscount;
+                    }
+
+                    $voucherModel->increment('used_count');
+                    $verifiedVoucherIds[] = $voucherModel->id;
+                }
+            }
+
+            $finalDiscountTotal = $recalculatedProductDiscount + $recalculatedShippingDiscount + $this->reseller_discount;
+            $grandTotal = max(0, ($this->subtotal - $this->reseller_discount - $recalculatedProductDiscount) + ($actualRatePrice - $recalculatedShippingDiscount) + $this->paymentFee);
+
             $order = Order::create([
                 'user_id' => auth()->id() ?? null,
                 'order_number' => $orderNumber,
@@ -1351,27 +1457,18 @@ class Checkout extends Component
                 'payment_status' => 'pending',
                 'shipping_address' => $shippingAddressData,
                 'courier' => $this->shipping_method,
-                'shipping_cost' => $this->shipping_cost,
+                'shipping_cost' => $actualRatePrice,
                 'payment_method' => $this->payment_method,
                 'subtotal' => $this->subtotal,
-                'discount_total' => $this->discountAmount + $this->shippingDiscountAmount + $this->reseller_discount,
-                'grand_total' => $this->total,
+                'discount_total' => $finalDiscountTotal,
+                'grand_total' => $grandTotal,
                 'notes' => $this->notes,
-                'voucher_id' => $this->appliedVoucher ? $this->appliedVoucher['id'] : null,
-                'applied_voucher_ids' => !empty($this->appliedVouchers) ? array_column($this->appliedVouchers, 'id') : null,
+                'voucher_id' => !empty($verifiedVoucherIds) ? $verifiedVoucherIds[0] : null,
+                'applied_voucher_ids' => !empty($verifiedVoucherIds) ? $verifiedVoucherIds : null,
             ]);
             
-            // Mark all applied vouchers as used
-            if (!empty($this->appliedVouchers)) {
-                foreach ($this->appliedVouchers as $v) {
-                    $voucherModel = \App\Models\Voucher::where('code', $v['code'])->first();
-                    if ($voucherModel) {
-                        $voucherModel->increment('used_count');
-                    }
-                }
-                session()->forget('applied_vouchers');
-                session()->forget('applied_voucher');
-            }
+            session()->forget('applied_vouchers');
+            session()->forget('applied_voucher');
 
             foreach ($items as $item) {
                 $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
@@ -1808,11 +1905,11 @@ class Checkout extends Component
                 if ($user) {
                     $userUsageQuery->where(function ($q) use ($user) {
                         $q->where('user_id', $user->id)
-                          ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$user->email]);
+                          ->orWhere('shipping_address->email', $user->email);
                     });
                 } else {
                     if (!empty($this->email)) {
-                        $userUsageQuery->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$this->email]);
+                        $userUsageQuery->where('shipping_address->email', $this->email);
                     } else {
                         $userUsageQuery = null;
                     }
