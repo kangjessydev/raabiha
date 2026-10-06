@@ -344,7 +344,37 @@
 
                         <!-- Section 3: Shipping Method -->
                         <section class="border-b border-[#e5e2de] pb-10">
-                            <h2 class="font-mono text-[10px] font-bold tracking-[0.2em] text-[#1c1c1a] uppercase mb-6">3. Metode Pengiriman</h2>
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="font-mono text-[10px] font-bold tracking-[0.2em] text-[#1c1c1a] uppercase">3. Metode Pengiriman</h2>
+                                @if($isFallbackShipping)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-mono rounded tracking-wider uppercase">
+                                        <svg class="w-3 h-3 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Tarif Toko
+                                    </span>
+                                @endif
+                            </div>
+
+                            <!-- Loading Indicator for Shipping Rates Calculation -->
+                            <div wire:loading wire:target="updatedSelectedDistrictId, selectDestination, generateShippingRates, switchToManualMode, switchToApiMode" class="w-full p-4 bg-[#fcf9f5] border border-[#e5e2de] rounded-lg mb-4 text-center">
+                                <div class="inline-flex items-center gap-2 text-xs font-mono tracking-wider uppercase text-[#064e3b]">
+                                    <svg class="animate-spin h-4 w-4 text-[#064e3b]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Menghitung Ongkos Kirim...
+                                </div>
+                            </div>
+
+                            @if($isFallbackShipping)
+                            <div class="mb-4 p-3 bg-[#fcf9f5] border border-amber-200 rounded-lg text-xs text-[#615e57] flex items-start gap-2.5 font-sans leading-relaxed">
+                                <svg class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div>
+                                    Pengiriman ke wilayah tujuan Anda dilayani dengan <strong>Tarif Standar Toko</strong> sesuai estimasi berat pesanan. Paket Anda tetap dikirimkan melalui ekspedisi terpercaya.
+                                </div>
+                            </div>
+                            @endif
                             <div class="flex flex-col gap-4">
                                 @php
                                     // Order categories logically: reguler, hemat, express, kargo
@@ -408,6 +438,9 @@
                                         Silakan lengkapi alamat pengiriman (Provinsi, Kota, Kecamatan) terlebih dahulu untuk melihat tarif ongkos kirim.
                                     </div>
                                 @endforelse
+                                @error('shipping_method')
+                                <span class="text-red-500 text-xs mt-2 block font-sans">{{ $message }}</span>
+                                @enderror
                             </div>
                         </section>
 
@@ -649,10 +682,12 @@
                             <button type="button" 
                                     wire:click="processCheckout" 
                                     wire:loading.attr="disabled"
-                                    :disabled="!agree"
+                                    wire:target="processCheckout, updatedSelectedDistrictId, selectDestination, generateShippingRates, switchToManualMode, switchToApiMode"
+                                    :disabled="!agree || {{ empty($shipping_method) || count($shippingRates) === 0 ? 'true' : 'false' }}"
                                     class="flex justify-center items-center gap-2 w-full py-5 px-6 bg-[#064e3b] text-white font-mono text-[10px] md:text-[12px] lg:text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors disabled:bg-[#e5e2de] disabled:text-[#a3a19b] disabled:cursor-not-allowed">
-                                <span class="block" wire:loading.remove wire:target="processCheckout">BAYAR SEKARANG</span>
+                                <span class="block" wire:loading.remove wire:target="processCheckout, updatedSelectedDistrictId, selectDestination, generateShippingRates">BAYAR SEKARANG</span>
                                 <span class="block" wire:loading wire:target="processCheckout">MEMPROSES...</span>
+                                <span class="block" wire:loading wire:target="updatedSelectedDistrictId, selectDestination, generateShippingRates">MENGHITUNG ONGKIR...</span>
                             </button>
                         </div>
                         
@@ -787,10 +822,12 @@
             <button type="button" 
                     wire:click="processCheckout" 
                     wire:loading.attr="disabled"
-                    :disabled="!agree"
-                    class="font-mono text-[10px] font-bold tracking-[0.1em] uppercase transition-colors flex-shrink-0 min-w-[130px] flex items-center justify-center py-4 px-5 bg-[#064e3b] text-white disabled:bg-[#e5e2de] disabled:text-[#a3a19b] disabled:cursor-not-allowed">
-                <span wire:loading.remove wire:target="processCheckout">BAYAR SEKARANG</span>
+                    wire:target="processCheckout, updatedSelectedDistrictId, selectDestination, generateShippingRates, switchToManualMode, switchToApiMode"
+                    :disabled="!agree || {{ empty($shipping_method) || count($shippingRates) === 0 ? 'true' : 'false' }}"
+                    class="font-mono text-[10px] font-bold tracking-[0.1em] uppercase transition-colors flex-shrink-0 min-w-[140px] flex items-center justify-center py-4 px-5 bg-[#064e3b] text-white disabled:bg-[#e5e2de] disabled:text-[#a3a19b] disabled:cursor-not-allowed">
+                <span wire:loading.remove wire:target="processCheckout, updatedSelectedDistrictId, selectDestination, generateShippingRates">BAYAR SEKARANG</span>
                 <span wire:loading wire:target="processCheckout">TUNGGU...</span>
+                <span wire:loading wire:target="updatedSelectedDistrictId, selectDestination, generateShippingRates">HITUNG ONGKIR...</span>
             </button>
         </div>
     </div>

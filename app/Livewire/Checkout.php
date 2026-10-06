@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 
 #[Layout('components.layouts.app')]
 class Checkout extends Component
@@ -42,11 +43,14 @@ class Checkout extends Component
     public $selectedCityId = '';
     public $selectedDistrictId = '';
     
-    // Checkout state
-    public $shipping_cost = 20000;
-    public $base_shipping_cost = 20000;
+    // Checkout state - Dikunci #[Locked] dari manipulasi client
+    #[Locked]
+    public $shipping_cost = 0;
+    #[Locked]
+    public $base_shipping_cost = 0;
     public $payment_method = 'bank_transfer';
-    public $shipping_method = 'jne_reg';
+    public $shipping_method = '';
+    public $isFallbackShipping = false;
     
     // Komerce Integration (Direct Autocomplete)
     public $searchLocation = '';
@@ -55,11 +59,13 @@ class Checkout extends Component
     public $selectedDestinationLabel = '';
     public $locationError = null;
     
-    // Coupon state
+    // Coupon state - Nilai potongan dikunci #[Locked]
     public $voucherCode = '';
     public $appliedVouchers = [];
     public $appliedVoucher = null;
+    #[Locked]
     public $discountAmount = 0;
+    #[Locked]
     public $shippingDiscountAmount = 0;
     
     // Guest checkout state: null = undecided, true = continue as guest, false = logged in
@@ -385,9 +391,130 @@ class Checkout extends Component
         $this->generateShippingRates();
     }
     
+    public function getManualShippingRates(int $totalWeight, $activeCouriers, string $provinceName = ''): array
+    {
+        $rates = [];
+        $billableKg = max(1, (int) ceil($totalWeight / 1000));
+
+        // Ambil manual_shipping_rules dari SiteSetting
+        $rulesJson = \App\Models\SiteSetting::where('key', 'manual_shipping_rules')->value('value');
+        $rules = $rulesJson ? json_decode($rulesJson, true) : [];
+
+        $provNameStr = strtoupper(trim($provinceName));
+
+        $islandMapping = [
+            'ACEH' => 'sumatera', 'SUMATERA UTARA' => 'sumatera', 'SUMATERA BARAT' => 'sumatera', 'RIAU' => 'sumatera', 'JAMBI' => 'sumatera', 'SUMATERA SELATAN' => 'sumatera', 'BENGKULU' => 'sumatera', 'LAMPUNG' => 'sumatera', 'KEPULAUAN BANGKA BELITUNG' => 'sumatera', 'KEPULAUAN RIAU' => 'sumatera',
+            'DKI JAKARTA' => 'jawa', 'JAWA BARAT' => 'jawa', 'JAWA TENGAH' => 'jawa', 'DI YOGYAKARTA' => 'jawa', 'JAWA TIMUR' => 'jawa', 'BANTEN' => 'jawa',
+            'BALI' => 'bali_nt', 'NUSA TENGGARA BARAT' => 'bali_nt', 'NUSA TENGGARA TIMUR' => 'bali_nt',
+            'KALIMANTAN BARAT' => 'kalimantan', 'KALIMANTAN TENGAH' => 'kalimantan', 'KALIMANTAN SELATAN' => 'kalimantan', 'KALIMANTAN TIMUR' => 'kalimantan', 'KALIMANTAN UTARA' => 'kalimantan',
+            'SULAWESI UTARA' => 'sulawesi', 'SULAWESI TENGAH' => 'sulawesi', 'SULAWESI SELATAN' => 'sulawesi', 'SULAWESI TENGGARA' => 'sulawesi', 'GORONTALO' => 'sulawesi', 'SULAWESI BARAT' => 'sulawesi',
+            'MALUKU' => 'maluku_papua', 'MALUKU UTARA' => 'maluku_papua', 'PAPUA' => 'maluku_papua', 'PAPUA BARAT' => 'maluku_papua', 'PAPUA SELATAN' => 'maluku_papua', 'PAPUA TENGAH' => 'maluku_papua', 'PAPUA PEGUNUNGAN' => 'maluku_papua', 'PAPUA BARAT DAYA' => 'maluku_papua'
+        ];
+
+        $islandStr = $islandMapping[$provNameStr] ?? '';
+        $courierBestRules = [];
+
+        if (!empty($rules)) {
+            foreach ($rules as $rule) {
+                $cCode = $rule['courier'] ?? 'REG';
+                $rScope = $rule['scope'] ?? 'national';
+                $rPrice = (float) ($rule['rate'] ?? 0);
+                $rName = $rule['name'] ?? 'Reguler';
+
+                $isMatch = false;
+                $priority = 0;
+
+                if ($rScope === 'province' && !empty($rule['province_name']) && strtoupper(trim($rule['province_name'])) === $provNameStr) {
+                    $isMatch = true;
+                    $priority = 3;
+                } elseif ($rScope === 'island' && !empty($rule['island_name']) && $rule['island_name'] === $islandStr) {
+                    $isMatch = true;
+                    $priority = 2;
+                } elseif ($rScope === 'national') {
+                    $isMatch = true;
+                    $priority = 1;
+                }
+
+                if ($isMatch && $rPrice > 0) {
+                    if (!isset($courierBestRules[$cCode]) || $courierBestRules[$cCode]['priority'] < $priority) {
+                        $courierBestRules[$cCode] = [
+                            'price' => $rPrice,
+                            'name' => $rName,
+                            'priority' => $priority
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Jika belum ada aturan admin yang cocok, terapkan tarif default terukur per pulau
+        if (empty($courierBestRules)) {
+            $defaultRates = [
+                'jawa' => 12000,
+                'sumatera' => 25000,
+                'bali_nt' => 25000,
+                'kalimantan' => 35000,
+                'sulawesi' => 35000,
+                'maluku_papua' => 55000,
+            ];
+            $fallbackBasePrice = $defaultRates[$islandStr] ?? 25000;
+            $courierBestRules['toko_reguler'] = [
+                'price' => $fallbackBasePrice,
+                'name' => 'Reguler (Tarif Toko)',
+                'priority' => 0,
+            ];
+        }
+
+        foreach ($courierBestRules as $cCode => $bestRule) {
+            $basePricePerKg = (float) $bestRule['price'];
+            $calculatedPrice = (int) ($basePricePerKg * $billableKg);
+            $price = (int) (ceil($calculatedPrice / 100) * 100);
+            $serviceName = $bestRule['name'];
+
+            $courierModel = $activeCouriers ? ($activeCouriers->firstWhere('code', $cCode) ?? $activeCouriers->firstWhere('name', $cCode)) : null;
+            $cNameDisplay = $courierModel ? $courierModel->name : 'Pengiriman Reguler';
+            $cLogo = $courierModel ? $courierModel->logo : null;
+
+            $discountedPrice = $price;
+            $shippingVoucher = null;
+            foreach ($this->appliedVouchers as $v) {
+                if (!empty($v['is_shipping_voucher'])) {
+                    $shippingVoucher = $v;
+                    break;
+                }
+            }
+            if ($shippingVoucher) {
+                $discountValue = $shippingVoucher['discount_type'] === 'fixed'
+                    ? $shippingVoucher['discount_amount']
+                    : $price * ($shippingVoucher['discount_amount'] / 100);
+
+                if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
+                    $discountValue = $shippingVoucher['max_discount'];
+                }
+
+                $discountedPrice = max(0, $price - $discountValue);
+            }
+
+            $rates[] = [
+                'id' => 'manual|' . $cCode . '|' . $price,
+                'courier_name' => $cNameDisplay,
+                'service_name' => $serviceName,
+                'duration' => '3-5 hari',
+                'price' => $price,
+                'original_price' => $price,
+                'discounted_price' => $discountedPrice,
+                'logo' => $cLogo,
+                'category' => 'reguler',
+            ];
+        }
+
+        return $rates;
+    }
+
     public function generateShippingRates()
     {
         $this->shippingRates = [];
+        $this->isFallbackShipping = false;
         
         $activeCouriers = \App\Models\ShippingMethod::where('is_active', true)->get();
         if ($activeCouriers->isEmpty()) {
@@ -434,100 +561,8 @@ class Checkout extends Component
                 return;
             }
 
-            // Ambil manual_shipping_rules dari database
-            $rulesJson = \App\Models\SiteSetting::where('key', 'manual_shipping_rules')->value('value');
-            $rules = $rulesJson ? json_decode($rulesJson, true) : [];
-            
-            if (empty($rules)) {
-                 $this->locationError = 'Belum ada tarif pengiriman yang tersedia untuk wilayah ini.';
-                 return;
-            }
-
-            $provNameStr = strtoupper(trim($this->province));
-
-            $islandMapping = [
-                'ACEH' => 'sumatera', 'SUMATERA UTARA' => 'sumatera', 'SUMATERA BARAT' => 'sumatera', 'RIAU' => 'sumatera', 'JAMBI' => 'sumatera', 'SUMATERA SELATAN' => 'sumatera', 'BENGKULU' => 'sumatera', 'LAMPUNG' => 'sumatera', 'KEPULAUAN BANGKA BELITUNG' => 'sumatera', 'KEPULAUAN RIAU' => 'sumatera',
-                'DKI JAKARTA' => 'jawa', 'JAWA BARAT' => 'jawa', 'JAWA TENGAH' => 'jawa', 'DI YOGYAKARTA' => 'jawa', 'JAWA TIMUR' => 'jawa', 'BANTEN' => 'jawa',
-                'BALI' => 'bali_nt', 'NUSA TENGGARA BARAT' => 'bali_nt', 'NUSA TENGGARA TIMUR' => 'bali_nt',
-                'KALIMANTAN BARAT' => 'kalimantan', 'KALIMANTAN TENGAH' => 'kalimantan', 'KALIMANTAN SELATAN' => 'kalimantan', 'KALIMANTAN TIMUR' => 'kalimantan', 'KALIMANTAN UTARA' => 'kalimantan',
-                'SULAWESI UTARA' => 'sulawesi', 'SULAWESI TENGAH' => 'sulawesi', 'SULAWESI SELATAN' => 'sulawesi', 'SULAWESI TENGGARA' => 'sulawesi', 'GORONTALO' => 'sulawesi', 'SULAWESI BARAT' => 'sulawesi',
-                'MALUKU' => 'maluku_papua', 'MALUKU UTARA' => 'maluku_papua', 'PAPUA' => 'maluku_papua', 'PAPUA BARAT' => 'maluku_papua', 'PAPUA SELATAN' => 'maluku_papua', 'PAPUA TENGAH' => 'maluku_papua', 'PAPUA PEGUNUNGAN' => 'maluku_papua', 'PAPUA BARAT DAYA' => 'maluku_papua'
-            ];
-            
-            $islandStr = $islandMapping[$provNameStr] ?? '';
-            $courierBestRules = [];
-            
-            foreach ($rules as $rule) {
-                $cCode = $rule['courier'];
-                $rScope = $rule['scope'];
-                $rPrice = (float) $rule['rate'];
-                $rName = $rule['name'];
-                
-                $isMatch = false;
-                $priority = 0;
-                
-                if ($rScope === 'province' && strtoupper(trim($rule['province_name'])) === $provNameStr) {
-                    $isMatch = true;
-                    $priority = 3;
-                } elseif ($rScope === 'island' && $rule['island_name'] === $islandStr) {
-                    $isMatch = true;
-                    $priority = 2;
-                } elseif ($rScope === 'national') {
-                    $isMatch = true;
-                    $priority = 1;
-                }
-                
-                if ($isMatch) {
-                    if (!isset($courierBestRules[$cCode]) || $courierBestRules[$cCode]['priority'] < $priority) {
-                        $courierBestRules[$cCode] = [
-                            'price' => $rPrice,
-                            'name' => $rName,
-                            'priority' => $priority
-                        ];
-                    }
-                }
-            }
-
-            foreach ($courierBestRules as $cCode => $bestRule) {
-                $price = (int) (ceil($bestRule['price'] / 100) * 100);
-                $serviceName = $bestRule['name'];
-                
-                $courierModel = $activeCouriers->firstWhere('code', $cCode) ?? $activeCouriers->firstWhere('name', $cCode);
-                
-                $cNameDisplay = $courierModel ? $courierModel->name : $cCode;
-                $cLogo = $courierModel ? $courierModel->logo : null;
-
-                $discountedPrice = $price;
-                $shippingVoucher = null;
-                foreach ($this->appliedVouchers as $v) {
-                    if (!empty($v['is_shipping_voucher'])) {
-                        $shippingVoucher = $v;
-                        break;
-                    }
-                }
-                if ($shippingVoucher) {
-                    $discountValue = $shippingVoucher['discount_type'] === 'fixed'
-                        ? $shippingVoucher['discount_amount']
-                        : $price * ($shippingVoucher['discount_amount'] / 100);
-
-                    if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
-                        $discountValue = $shippingVoucher['max_discount'];
-                    }
-
-                    $discountedPrice = max(0, $price - $discountValue);
-                }
-
-                $this->shippingRates[] = [
-                    'id' => 'manual|' . $cCode . '|' . $price,
-                    'courier_name' => $cNameDisplay,
-                    'service_name' => $serviceName,
-                    'duration' => '3-5 hari',
-                    'price' => $price,
-                    'original_price' => $price,
-                    'discounted_price' => $discountedPrice,
-                    'logo' => $cLogo,
-                ];
-            }
+            $this->shippingRates = $this->getManualShippingRates($totalWeight, $activeCouriers, $this->province);
+            $this->isFallbackShipping = true;
         }
         // Path 2: API Mode - BinderByte
         elseif ($this->activeShippingProvider === 'binderbyte') {
@@ -537,12 +572,8 @@ class Checkout extends Component
             }
 
             $originDistrict = \App\Models\SiteSetting::where('key', 'binderbyte_origin_district')->value('value');
-            if (!$originDistrict) {
-                $this->locationError = 'Kota asal pengiriman BinderByte belum dikonfigurasi di Pengaturan Toko.';
-                return;
-            }
-
-            $courierCodes = $activeCouriers->pluck('code')->implode(',');
+            if ($originDistrict) {
+                $courierCodes = $activeCouriers->pluck('code')->implode(',');
             
             try {
                 $results = \App\Services\BinderByteService::getShippingCost(
@@ -635,6 +666,7 @@ class Checkout extends Component
                 Log::error('BinderByte calculation error: ' . $e->getMessage());
                 $this->locationError = 'Gagal memuat tarif ongkir BinderByte. Silakan coba lagi atau gunakan Mode Manual.';
             }
+            }
         }
         // Path 3: API Mode - Komerce (RajaOngkir)
         else {
@@ -645,8 +677,8 @@ class Checkout extends Component
 
             $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
             $originCityRaw = \App\Models\SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
-            if (!$apiKey || !$originCityRaw) return;
-            $originCity = explode('::', $originCityRaw)[0];
+            if ($apiKey && $originCityRaw) {
+                $originCity = explode('::', $originCityRaw)[0];
 
             foreach ($activeCouriers as $courier) {
                 $courierCode = $courier->code;
@@ -753,8 +785,23 @@ class Checkout extends Component
                     // Log or ignore
                 }
             }
+            }
         }
 
+        // Path 4: Auto-Fallback jika mode API tetapi ongkir tidak tersedia atau gagal
+        if ($this->addressMode === 'api' && $this->selectedDestinationId && empty($this->shippingRates)) {
+            $provForFallback = $this->province;
+            if (empty($provForFallback) && !empty($this->selectedDestinationLabel)) {
+                $parts = array_map('trim', explode(',', $this->selectedDestinationLabel));
+                $provForFallback = end($parts) ?: '';
+            }
+            $manualFallbackRates = $this->getManualShippingRates($totalWeight, $activeCouriers, $provForFallback);
+            if (!empty($manualFallbackRates)) {
+                $this->shippingRates = $manualFallbackRates;
+                $this->isFallbackShipping = true;
+                $this->locationError = null;
+            }
+        }
 
         // Urutkan opsi pengiriman berdasarkan harga setelah diskon (dari termurah ke termahal)
         usort($this->shippingRates, function ($a, $b) {
@@ -816,26 +863,21 @@ class Checkout extends Component
         if (empty($this->shipping_method) || !collect($this->shippingRates)->contains('id', $this->shipping_method)) {
             if (count($this->shippingRates) > 0) {
                 $this->shipping_method = $this->shippingRates[0]['id'];
-                $this->updatedShippingMethod($this->shipping_method);
+                $this->shipping_cost = (int) $this->shippingRates[0]['price'];
+                $this->activeShippingCategory = $this->shippingRates[0]['category'] ?? 'reguler';
             } else {
                 $this->shipping_cost = 0;
                 $this->shipping_method = '';
             }
-        }
-
-        // Always synchronize shipping_cost and activeShippingCategory with the selected rate to prevent 0 cost issues
-        $selectedRate = collect($this->shippingRates)->firstWhere('id', $this->shipping_method);
-        if ($selectedRate) {
-            $this->shipping_cost = $selectedRate['price'];
-            $this->activeShippingCategory = $selectedRate['category'];
         } else {
-            $this->shipping_cost = 0;
-            // Fallback to first available category
-            $availableCats = collect($this->shippingRates)->pluck('category')->unique()->toArray();
-            if (count($availableCats) > 0) {
-                $this->activeShippingCategory = $availableCats[0];
+            // Always synchronize shipping_cost and activeShippingCategory with the selected rate to prevent 0 cost issues
+            $selectedRate = collect($this->shippingRates)->firstWhere('id', $this->shipping_method);
+            if ($selectedRate) {
+                $this->shipping_cost = (int) $selectedRate['price'];
+                $this->activeShippingCategory = $selectedRate['category'] ?? 'reguler';
             } else {
-                $this->activeShippingCategory = 'reguler';
+                $this->shipping_cost = 0;
+                $this->shipping_method = '';
             }
         }
     }
@@ -1112,6 +1154,7 @@ class Checkout extends Component
             'address' => 'required|string',
             'village' => 'required|string',
             'selectedDestinationId' => 'required',
+            'shipping_method' => 'required|string',
             'agree_terms' => 'accepted',
         ];
 
@@ -1124,6 +1167,7 @@ class Checkout extends Component
         $messages = [
             'email.required' => 'Email wajib diisi untuk menerima rincian invoice dan notifikasi pesanan.',
             'selectedDestinationId.required' => 'Silakan pilih lokasi tujuan pengiriman (Kecamatan/Kota).',
+            'shipping_method.required' => 'Silakan pilih opsi kurir / metode pengiriman.',
             'agree_terms.accepted' => 'Anda harus menyetujui Syarat dan Ketentuan untuk melanjutkan.',
             'village.required' => 'Kelurahan/Desa wajib diisi.',
             'province.required' => 'Provinsi wajib diisi.',
@@ -1132,6 +1176,35 @@ class Checkout extends Component
         ];
 
         $this->validate($rules, $messages);
+
+        // Verifikasi ketersediaan dan keabsahan ongkir
+        if (empty($this->shippingRates)) {
+            $this->generateShippingRates();
+        }
+
+        if (empty($this->shippingRates)) {
+            $this->addError('shipping_method', 'Tarif pengiriman untuk tujuan ini belum tersedia. Silakan hubungi admin toko.');
+            session()->flash('error', 'Tarif pengiriman untuk tujuan ini belum tersedia. Silakan hubungi admin toko.');
+            return;
+        }
+
+        $selectedRate = collect($this->shippingRates)->firstWhere('id', $this->shipping_method);
+        if (!$selectedRate) {
+            $this->addError('shipping_method', 'Metode pengiriman yang dipilih tidak valid. Silakan pilih kembali.');
+            session()->flash('error', 'Metode pengiriman yang dipilih tidak valid. Silakan pilih kembali.');
+            return;
+        }
+
+        $actualRatePrice = (int) ($selectedRate['price'] ?? 0);
+        if ($actualRatePrice <= 0) {
+            $this->addError('shipping_method', 'Tarif pengiriman tidak valid (Rp 0). Silakan hubungi admin toko.');
+            session()->flash('error', 'Tarif pengiriman tidak valid (Rp 0). Silakan hubungi admin toko.');
+            return;
+        }
+
+        // Sinkronisasi server-side source of truth
+        $this->shipping_cost = $actualRatePrice;
+        $this->calculateDiscount();
 
 
         if (auth()->check() && empty($this->email) && empty($this->phone)) {
@@ -1361,18 +1434,6 @@ class Checkout extends Component
                         'user_id'         => auth()->id(),
                     ]);
                 }
-                
-                // Delete the checkout item from cart
-                $item->delete();
-            }
-
-            // Kirim email konfirmasi pesanan setelah semua item selesai dibuat
-            // agar $order->items tidak kosong saat email digenerate
-            $order->load('items');
-            try {
-                (new \App\Observers\OrderObserver())->sendNewOrderEmails($order);
-            } catch (\Exception $e) {
-                logger()->error("Gagal mengirim email pesanan baru: " . $e->getMessage());
             }
 
             // Save address automatically if requested and user is authenticated
@@ -1401,34 +1462,62 @@ class Checkout extends Component
                 );
             }
 
-            // Clear cart if empty
+            // Fase 1: Commit transaksi lokal segera agar DB lock produk lepas dan pesanan aman tercatat
+            DB::commit();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $lock->release();
+            session()->flash('error', 'Terjadi kesalahan saat memproses pesanan Anda: ' . $e->getMessage());
+            return;
+        }
+
+        // ==========================================
+        // FASE 2: Panggilan Gateway di Luar DB Transaction
+        // ==========================================
+        $checkoutItemIds = $items->pluck('id')->toArray();
+        $order->load('items');
+
+        try {
+            (new \App\Observers\OrderObserver())->sendNewOrderEmails($order);
+        } catch (\Exception $e) {
+            logger()->error("Gagal mengirim email pesanan baru: " . $e->getMessage());
+        }
+
+        $activeGateway = \App\Models\SiteSetting::where('key', 'active_payment_gateway')->value('value') ?: 'tripay';
+
+        // Metode Tunai / Manual / Offline
+        if ($this->payment_method === 'tunai') {
+            CartItem::whereIn('id', $checkoutItemIds)->delete();
             $cart = $this->cart;
             if ($cart && $cart->items()->count() === 0) {
                 $cart->delete();
             }
-
-            // Clear session to prevent stale items on next visit
             session()->forget('checkout_item_ids');
 
-            // Check Active Payment Gateway
-            $activeGateway = \App\Models\SiteSetting::where('key', 'active_payment_gateway')->value('value') ?: 'tripay';
+            $lock->release();
+            return redirect()->to('/order-success?order=' . $order->order_number);
+        }
 
-            if ($this->payment_method != 'tunai') {
-                if ($activeGateway === 'tripay') {
-                    // Create Payment Transaction (Tripay)
-                    $apiKey = \App\Models\SiteSetting::where('key', 'tripay_api_key')->value('value') ?: env('TRIPAY_API_KEY');
-                    $privateKey = \App\Models\SiteSetting::where('key', 'tripay_private_key')->value('value') ?: env('TRIPAY_PRIVATE_KEY');
-                    $merchantCode = \App\Models\SiteSetting::where('key', 'tripay_merchant_code')->value('value') ?: env('TRIPAY_MERCHANT_CODE');
-                    $mode = \App\Models\SiteSetting::where('key', 'tripay_mode')->value('value') ?: env('TRIPAY_MODE', 'sandbox');
-                    
-                    if ($apiKey && $privateKey && $merchantCode) {
-                        $endpoint = $mode === 'production' 
-                            ? 'https://tripay.co.id/api/transaction/create'
-                            : 'https://tripay.co.id/api-sandbox/transaction/create';
+        // Metode Pembayaran Online Gateway
+        try {
+            if ($activeGateway === 'tripay') {
+                $apiKey = \App\Models\SiteSetting::where('key', 'tripay_api_key')->value('value') ?: env('TRIPAY_API_KEY');
+                $privateKey = \App\Models\SiteSetting::where('key', 'tripay_private_key')->value('value') ?: env('TRIPAY_PRIVATE_KEY');
+                $merchantCode = \App\Models\SiteSetting::where('key', 'tripay_merchant_code')->value('value') ?: env('TRIPAY_MERCHANT_CODE');
+                $mode = \App\Models\SiteSetting::where('key', 'tripay_mode')->value('value') ?: env('TRIPAY_MODE', 'sandbox');
+                
+                if (!$apiKey || !$privateKey || !$merchantCode) {
+                    throw new \Exception('Kredensial pembayaran Tripay belum dikonfigurasi di Pengaturan Toko.');
+                }
+
+                $endpoint = $mode === 'production' 
+                    ? 'https://tripay.co.id/api/transaction/create'
+                    : 'https://tripay.co.id/api-sandbox/transaction/create';
 
                 $method = $this->payment_method;
                 $merchantRef = $order->order_number;
-                $amount = (int) $order->grand_total; // Cast ke int agar cocok dengan payload & signature
+                $amount = (int) $order->grand_total;
                 
                 $signature = hash_hmac('sha256', $merchantCode . $merchantRef . $amount, $privateKey);
                 
@@ -1455,8 +1544,6 @@ class Checkout extends Component
                     ];
                 }
 
-                // Add payment fee as an item if applicable
-                // grand_total = subtotal - discount + shipping + paymentFee
                 $paymentFee = (int) $order->grand_total
                     - (int) $order->subtotal
                     + (int) ($order->discount_total ?? 0)
@@ -1480,147 +1567,220 @@ class Checkout extends Component
                     'customer_phone' => $this->phone ?: '080000000000',
                     'order_items'    => $orderItems,
                     'return_url'     => url('/order-success?order=' . $merchantRef),
-                    'expired_time'   => (time() + (24 * 60 * 60)), // 24 hours
+                    'expired_time'   => (time() + (24 * 60 * 60)),
                     'signature'      => $signature
                 ];
 
-                $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
+                $response = \Illuminate\Support\Facades\Http::timeout(10)
+                    ->withToken($apiKey)
                     ->post($endpoint, $data);
 
-                        if ($response->successful() && $response->json('success')) {
-                            $tripayData = $response->json('data');
-                            $order->update([
-                                'payment_id' => $tripayData['reference'],
-                                'payment_url' => $tripayData['checkout_url']
-                            ]);
-                            
-                            DB::commit();
-                            $this->redirect($tripayData['checkout_url'], navigate: false);
-                            return;
-                        } else {
-                            Log::error('Tripay Create Transaction Error', ['response' => $response->json()]);
-                            throw new \Exception('Gagal membuat transaksi Tripay: ' . ($response->json('message') ?? 'Internal Error'));
-                        }
-                    }
-                } elseif ($activeGateway === 'xendit') {
-                    // Create Payment Transaction (Xendit)
-                    $apiKey = \App\Models\SiteSetting::where('key', 'xendit_secret_key')->value('value') ?: env('XENDIT_SECRET_KEY');
+                if ($response->successful() && $response->json('success')) {
+                    $tripayData = $response->json('data');
+                    $order->update([
+                        'payment_id' => $tripayData['reference'],
+                        'payment_url' => $tripayData['checkout_url']
+                    ]);
                     
-                    if ($apiKey) {
-                        $endpoint = 'https://api.xendit.co/v2/invoices';
-                        $merchantRef = $order->order_number;
-                        $amount = $order->grand_total;
-                        
-                        // Format order items for Xendit
-                        $orderItems = [];
-                        foreach ($order->items as $item) {
-                            $orderItems[] = [
-                                'name' => mb_substr($item->name, 0, 255),
-                                'price' => (int) $item->price,
-                                'quantity' => $item->quantity,
-                            ];
-                        }
-                        
-                        if ($order->shipping_cost > 0) {
-                            $orderItems[] = [
-                                'name' => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
-                                'price' => (int) $order->shipping_cost,
-                                'quantity' => 1,
-                            ];
-                        }
-                        
-                        if ($this->paymentFee > 0) {
-                            $orderItems[] = [
-                                'name' => 'Biaya Layanan',
-                                'price' => (int) $this->paymentFee,
-                                'quantity' => 1,
-                            ];
-                        }
-
-                        $discountTotal = (int) $order->discount_total;
-                        if ($discountTotal > 0) {
-                            $orderItems[] = [
-                                'name' => 'Potongan Diskon / Voucher',
-                                'price' => -$discountTotal,
-                                'quantity' => 1,
-                            ];
-                        }
-
-                        $data = [
-                            'external_id'      => $merchantRef,
-                            'amount'           => (int) $amount,
-                            'description'      => 'Pembayaran Pesanan ' . $merchantRef,
-                            'invoice_duration' => 86400,
-                            'customer' => [
-                                'given_names'   => trim($this->first_name . ' ' . $this->last_name) ?: 'Guest',
-                                'email'         => $this->email ?: 'noemail@example.com',
-                                'mobile_number' => $this->phone ?: '080000000000',
-                            ],
-                            'success_redirect_url' => url('/order-success?order=' . $merchantRef),
-                            'failure_redirect_url' => url('/checkout'),
-                            'items' => $orderItems
-                        ];
-
-                        // Hanya tampilkan metode yang dipilih oleh pelanggan
-                        if ($this->payment_method && $this->payment_method !== 'XENDIT_AUTO') {
-                            $data['payment_methods'] = [$this->payment_method];
-                        }
-
-                        $response = \Illuminate\Support\Facades\Http::withBasicAuth($apiKey, '')
-                            ->post($endpoint, $data);
-
-                        // Fallback: If Xendit rejects the specific payment method, try again without restrictions
-                        if (!$response->successful() && $response->json('error_code') === 'UNAVAILABLE_PAYMENT_METHOD_ERROR') {
-                            Log::warning('Xendit Fallback triggered: Payment method ' . $this->payment_method . ' not active. Falling back to generic invoice.');
-                            unset($data['payment_methods']);
-                            $response = \Illuminate\Support\Facades\Http::withBasicAuth($apiKey, '')
-                                ->post($endpoint, $data);
-                        }
-
-                        if ($response->successful()) {
-                            $xenditData = $response->json();
-                            $order->update([
-                                'payment_id' => $xenditData['id'],
-                                'payment_url' => $xenditData['invoice_url']
-                            ]);
-                            DB::commit();
-                            $this->redirect($xenditData['invoice_url'], navigate: false);
-                            return;
-                        } else {
-                            Log::error('Xendit Create Invoice Error', ['response' => $response->json()]);
-                            throw new \Exception('Gagal membuat transaksi Xendit: ' . ($response->json('message') ?? 'Internal Error'));
-                        }
+                    CartItem::whereIn('id', $checkoutItemIds)->delete();
+                    $cart = $this->cart;
+                    if ($cart && $cart->items()->count() === 0) {
+                        $cart->delete();
                     }
+                    session()->forget('checkout_item_ids');
+
+                    $lock->release();
+                    $this->redirect($tripayData['checkout_url'], navigate: false);
+                    return;
+                } else {
+                    Log::error('Tripay Create Transaction Error', ['response' => $response->json()]);
+                    throw new \Exception($response->json('message') ?? 'Gagal membuat transaksi Tripay');
+                }
+            } elseif ($activeGateway === 'xendit') {
+                $apiKey = \App\Models\SiteSetting::where('key', 'xendit_secret_key')->value('value') ?: env('XENDIT_SECRET_KEY');
+                
+                if (!$apiKey) {
+                    throw new \Exception('Kredensial pembayaran Xendit belum dikonfigurasi di Pengaturan Toko.');
+                }
+
+                $endpoint = 'https://api.xendit.co/v2/invoices';
+                $merchantRef = $order->order_number;
+                $amount = $order->grand_total;
+                
+                $orderItems = [];
+                foreach ($order->items as $item) {
+                    $orderItems[] = [
+                        'name' => mb_substr($item->name, 0, 255),
+                        'price' => (int) $item->price,
+                        'quantity' => $item->quantity,
+                    ];
+                }
+                
+                if ($order->shipping_cost > 0) {
+                    $orderItems[] = [
+                        'name' => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
+                        'price' => (int) $order->shipping_cost,
+                        'quantity' => 1,
+                    ];
+                }
+                
+                if ($this->paymentFee > 0) {
+                    $orderItems[] = [
+                        'name' => 'Biaya Layanan',
+                        'price' => (int) $this->paymentFee,
+                        'quantity' => 1,
+                    ];
+                }
+
+                $discountTotal = (int) $order->discount_total;
+                if ($discountTotal > 0) {
+                    $orderItems[] = [
+                        'name' => 'Potongan Diskon / Voucher',
+                        'price' => -$discountTotal,
+                        'quantity' => 1,
+                    ];
+                }
+
+                $data = [
+                    'external_id'      => $merchantRef,
+                    'amount'           => (int) $amount,
+                    'description'      => 'Pembayaran Pesanan ' . $merchantRef,
+                    'invoice_duration' => 86400,
+                    'customer' => [
+                        'given_names'   => trim($this->first_name . ' ' . $this->last_name) ?: 'Guest',
+                        'email'         => $this->email ?: 'noemail@example.com',
+                        'mobile_number' => $this->phone ?: '080000000000',
+                    ],
+                    'success_redirect_url' => url('/order-success?order=' . $merchantRef),
+                    'failure_redirect_url' => url('/checkout'),
+                    'items' => $orderItems
+                ];
+
+                if ($this->payment_method && $this->payment_method !== 'XENDIT_AUTO') {
+                    $data['payment_methods'] = [$this->payment_method];
+                }
+
+                $response = \Illuminate\Support\Facades\Http::timeout(10)
+                    ->withBasicAuth($apiKey, '')
+                    ->post($endpoint, $data);
+
+                if (!$response->successful() && $response->json('error_code') === 'UNAVAILABLE_PAYMENT_METHOD_ERROR') {
+                    Log::warning('Xendit Fallback triggered: Payment method ' . $this->payment_method . ' not active. Falling back to generic invoice.');
+                    unset($data['payment_methods']);
+                    $response = \Illuminate\Support\Facades\Http::timeout(10)
+                        ->withBasicAuth($apiKey, '')
+                        ->post($endpoint, $data);
+                }
+
+                if ($response->successful()) {
+                    $xenditData = $response->json();
+                    $order->update([
+                        'payment_id' => $xenditData['id'],
+                        'payment_url' => $xenditData['invoice_url']
+                    ]);
+                    
+                    CartItem::whereIn('id', $checkoutItemIds)->delete();
+                    $cart = $this->cart;
+                    if ($cart && $cart->items()->count() === 0) {
+                        $cart->delete();
+                    }
+                    session()->forget('checkout_item_ids');
+
+                    $lock->release();
+                    $this->redirect($xenditData['invoice_url'], navigate: false);
+                    return;
+                } else {
+                    Log::error('Xendit Create Invoice Error', ['response' => $response->json()]);
+                    throw new \Exception($response->json('message') ?? 'Gagal membuat transaksi Xendit');
+                }
+            } else {
+                CartItem::whereIn('id', $checkoutItemIds)->delete();
+                $cart = $this->cart;
+                if ($cart && $cart->items()->count() === 0) {
+                    $cart->delete();
+                }
+                session()->forget('checkout_item_ids');
+
+                $lock->release();
+                return redirect()->to('/order-success?order=' . $order->order_number);
+            }
+        } catch (\Exception $gatewayEx) {
+            Log::error('Payment Gateway initialization failed: ' . $gatewayEx->getMessage(), [
+                'order_number' => $order->order_number,
+                'gateway' => $activeGateway,
+            ]);
+
+            $this->failOrderAndRestoreStock($order, $gatewayEx->getMessage());
+
+            session()->flash('error', 'Gagal memproses pembayaran via gateway: ' . $gatewayEx->getMessage() . '. Pesanan Anda telah dibatalkan dengan aman. Silakan pilih metode pembayaran lain atau coba kembali.');
+            $lock->release();
+            return;
+        }
+    }
+
+    protected function failOrderAndRestoreStock(Order $order, string $reason): void
+    {
+        $order->update([
+            'status' => 'cancelled',
+            'payment_status' => 'failed',
+            'notes' => trim(($order->notes ?? '') . " [Batal Otomatis Gateway: {$reason}]"),
+        ]);
+
+        foreach ($order->items as $orderItem) {
+            if ($orderItem->product_variant_id) {
+                $variant = \App\Models\ProductVariant::find($orderItem->product_variant_id);
+                if ($variant) {
+                    $before = $variant->stock;
+                    $variant->increment('stock', $orderItem->quantity);
+                    \App\Models\StockLog::create([
+                        'product_id'         => $orderItem->product_id,
+                        'product_variant_id' => $orderItem->product_variant_id,
+                        'type'               => 'in',
+                        'quantity_before'    => $before,
+                        'quantity_change'    => $orderItem->quantity,
+                        'quantity_after'     => $before + $orderItem->quantity,
+                        'reason'             => 'Payment Failed',
+                        'notes'              => 'Pengembalian stok pesanan #' . $order->order_number . ' (Gateway gagal)',
+                        'user_id'            => auth()->id(),
+                    ]);
+                }
+            } else {
+                $product = \App\Models\Product::find($orderItem->product_id);
+                if ($product) {
+                    $before = $product->stock;
+                    $product->increment('stock', $orderItem->quantity);
+                    \App\Models\StockLog::create([
+                        'product_id'      => $orderItem->product_id,
+                        'type'            => 'in',
+                        'quantity_before' => $before,
+                        'quantity_change' => $orderItem->quantity,
+                        'quantity_after'  => $before + $orderItem->quantity,
+                        'reason'          => 'Payment Failed',
+                        'notes'           => 'Pengembalian stok pesanan #' . $order->order_number . ' (Gateway gagal)',
+                        'user_id'         => auth()->id(),
+                    ]);
                 }
             }
+        }
 
-            DB::commit();
-            return redirect()->to('/order-success?order=' . $order->order_number);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            session()->flash('error', 'Terjadi kesalahan saat memproses pesanan Anda: ' . $e->getMessage());
-        } finally {
-            $lock->release();
+        if (!empty($order->applied_voucher_ids)) {
+            foreach ($order->applied_voucher_ids as $vId) {
+                \App\Models\Voucher::where('id', $vId)->where('used_count', '>', 0)->decrement('used_count');
+            }
+        } elseif ($order->voucher_id) {
+            \App\Models\Voucher::where('id', $order->voucher_id)->where('used_count', '>', 0)->decrement('used_count');
         }
     }
 
     public function updatedShippingMethod($value)
     {
-        if (!isset($this->base_shipping_cost)) {
-            $this->base_shipping_cost = 20000;
-        }
-        
         $rate = collect($this->shippingRates)->firstWhere('id', $value);
         if ($rate) {
-            $this->shipping_cost = $rate['price'];
+            $this->shipping_cost = (int) $rate['price'];
+            $this->activeShippingCategory = $rate['category'] ?? 'reguler';
         } else {
-            // Fallback logic if shippingRates is empty (e.g. before JS init)
-            if (str_ends_with($value, '_express')) {
-                $this->shipping_cost = $this->base_shipping_cost + 15000;
-            } else {
-                $this->shipping_cost = $this->base_shipping_cost;
-            }
+            $this->shipping_cost = 0;
+            $this->shipping_method = '';
         }
     }
 
