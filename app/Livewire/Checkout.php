@@ -1720,56 +1720,19 @@ class Checkout extends Component
 
     protected function failOrderAndRestoreStock(Order $order, string $reason): void
     {
+        // Pulihkan stok pesanan dan kuota voucher via centralized service terlebih dahulu dengan alasan spesifik
+        app(\App\Services\OrderStockService::class)->restoreStock(
+            $order,
+            reason: 'Payment Failed',
+            notes: 'Pengembalian stok pesanan #' . $order->order_number . " (Gateway gagal: {$reason})",
+            userId: auth()->id()
+        );
+
         $order->update([
             'status' => 'cancelled',
             'payment_status' => 'failed',
             'notes' => trim(($order->notes ?? '') . " [Batal Otomatis Gateway: {$reason}]"),
         ]);
-
-        foreach ($order->items as $orderItem) {
-            if ($orderItem->product_variant_id) {
-                $variant = \App\Models\ProductVariant::find($orderItem->product_variant_id);
-                if ($variant) {
-                    $before = $variant->stock;
-                    $variant->increment('stock', $orderItem->quantity);
-                    \App\Models\StockLog::create([
-                        'product_id'         => $orderItem->product_id,
-                        'product_variant_id' => $orderItem->product_variant_id,
-                        'type'               => 'in',
-                        'quantity_before'    => $before,
-                        'quantity_change'    => $orderItem->quantity,
-                        'quantity_after'     => $before + $orderItem->quantity,
-                        'reason'             => 'Payment Failed',
-                        'notes'              => 'Pengembalian stok pesanan #' . $order->order_number . ' (Gateway gagal)',
-                        'user_id'            => auth()->id(),
-                    ]);
-                }
-            } else {
-                $product = \App\Models\Product::find($orderItem->product_id);
-                if ($product) {
-                    $before = $product->stock;
-                    $product->increment('stock', $orderItem->quantity);
-                    \App\Models\StockLog::create([
-                        'product_id'      => $orderItem->product_id,
-                        'type'            => 'in',
-                        'quantity_before' => $before,
-                        'quantity_change' => $orderItem->quantity,
-                        'quantity_after'  => $before + $orderItem->quantity,
-                        'reason'          => 'Payment Failed',
-                        'notes'           => 'Pengembalian stok pesanan #' . $order->order_number . ' (Gateway gagal)',
-                        'user_id'         => auth()->id(),
-                    ]);
-                }
-            }
-        }
-
-        if (!empty($order->applied_voucher_ids)) {
-            foreach ($order->applied_voucher_ids as $vId) {
-                \App\Models\Voucher::where('id', $vId)->where('used_count', '>', 0)->decrement('used_count');
-            }
-        } elseif ($order->voucher_id) {
-            \App\Models\Voucher::where('id', $order->voucher_id)->where('used_count', '>', 0)->decrement('used_count');
-        }
     }
 
     public function updatedShippingMethod($value)

@@ -432,49 +432,19 @@ class Account extends Component
 
         try {
             \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
-                // Restore stock
-                foreach ($order->items as $item) {
-                    if ($item->product_variant_id) {
-                        $variant = \App\Models\ProductVariant::find($item->product_variant_id);
-                        if ($variant) {
-                            $before = $variant->stock;
-                            $variant->increment('stock', $item->quantity);
-                            \App\Models\StockLog::create([
-                                'product_id' => $item->product_id,
-                                'product_variant_id' => $item->product_variant_id,
-                                'type' => 'in',
-                                'quantity_before' => $before,
-                                'quantity_change' => $item->quantity,
-                                'quantity_after' => $before + $item->quantity,
-                                'reason' => 'Cancellation',
-                                'notes' => 'Pembayaran dibatalkan manual oleh pelanggan untuk pesanan #' . $order->order_number,
-                                'user_id' => Auth::id(),
-                            ]);
-                        }
-                    } else {
-                        $product = \App\Models\Product::find($item->product_id);
-                        if ($product) {
-                            $before = $product->stock;
-                            $product->increment('stock', $item->quantity);
-                            \App\Models\StockLog::create([
-                                'product_id' => $item->product_id,
-                                'type' => 'in',
-                                'quantity_before' => $before,
-                                'quantity_change' => $item->quantity,
-                                'quantity_after' => $before + $item->quantity,
-                                'reason' => 'Cancellation',
-                                'notes' => 'Pembayaran dibatalkan manual oleh pelanggan untuk pesanan #' . $order->order_number,
-                                'user_id' => Auth::id(),
-                            ]);
-                        }
-                    }
-                }
-
-                // Update order status to cancelled
+                // Update order status to cancelled (juga mentrigger OrderObserver)
                 $order->update([
                     'status' => 'cancelled',
                     'payment_status' => 'failed',
                 ]);
+
+                // Pulihkan stok pesanan dan kuota voucher via centralized service
+                app(\App\Services\OrderStockService::class)->restoreStock(
+                    $order,
+                    reason: 'order_cancelled',
+                    notes: 'Pembayaran dibatalkan manual oleh pelanggan untuk pesanan #' . $order->order_number,
+                    userId: Auth::id()
+                );
             });
 
             session()->flash('order_message', 'Pesanan #' . $order->order_number . ' telah berhasil dibatalkan.');

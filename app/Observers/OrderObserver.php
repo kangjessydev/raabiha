@@ -210,8 +210,16 @@ class OrderObserver
             }
         }
 
-        // Notif saat pesanan dibatalkan
+        // Notif & Restorasi saat pesanan dibatalkan
         if ($order->isDirty('status') && $order->status === 'cancelled') {
+            // Restore inventory & voucher atomically dan idempoten
+            app(\App\Services\OrderStockService::class)->restoreStock(
+                $order,
+                reason: 'order_cancelled',
+                notes: 'Pembatalan pesanan #' . $order->order_number,
+                userId: auth()->id()
+            );
+
             $this->sendOrderNotification(
                 icon: 'heroicon-o-x-circle',
                 iconColor: 'danger',

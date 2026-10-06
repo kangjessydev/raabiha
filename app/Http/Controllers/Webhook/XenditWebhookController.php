@@ -95,57 +95,19 @@ class XenditWebhookController extends Controller
                     return ['status' => 200, 'body' => ['success' => true, 'message' => 'Order already cancelled']];
                 }
 
-                // Restore stock only once if order is not yet cancelled
-                foreach ($order->items as $item) {
-                    if ($item->product_variant_id) {
-                        $variant = \App\Models\ProductVariant::find($item->product_variant_id);
-                        if ($variant) {
-                            $before = $variant->stock;
-                            $variant->increment('stock', $item->quantity);
-                            StockLog::create([
-                                'product_id'         => $item->product_id,
-                                'product_variant_id' => $item->product_variant_id,
-                                'type'               => 'in',
-                                'quantity_before'    => $before,
-                                'quantity_change'    => $item->quantity,
-                                'quantity_after'     => $before + $item->quantity,
-                                'reason'             => 'Expired/Failed Order',
-                                'notes'              => 'Pembayaran Xendit kedaluwarsa/gagal untuk pesanan #' . $order->order_number,
-                                'user_id'            => null,
-                            ]);
-                        }
-                    } else {
-                        $product = \App\Models\Product::find($item->product_id);
-                        if ($product) {
-                            $before = $product->stock;
-                            $product->increment('stock', $item->quantity);
-                            StockLog::create([
-                                'product_id'      => $item->product_id,
-                                'type'            => 'in',
-                                'quantity_before' => $before,
-                                'quantity_change' => $item->quantity,
-                                'quantity_after'  => $before + $item->quantity,
-                                'reason'          => 'Expired/Failed Order',
-                                'notes'           => 'Pembayaran Xendit kedaluwarsa/gagal untuk pesanan #' . $order->order_number,
-                                'user_id'         => null,
-                            ]);
-                        }
-                    }
-                }
-
-                // Pulihkan kuota voucher jika ada
-                if (!empty($order->applied_voucher_ids)) {
-                    foreach ($order->applied_voucher_ids as $vId) {
-                        Voucher::where('id', $vId)->where('used_count', '>', 0)->decrement('used_count');
-                    }
-                } elseif ($order->voucher_id) {
-                    Voucher::where('id', $order->voucher_id)->where('used_count', '>', 0)->decrement('used_count');
-                }
-
                 $order->update([
                     'status' => 'cancelled',
                     'payment_status' => 'failed',
                 ]);
+
+                // Pulihkan stok pesanan dan kuota voucher via centralized service
+                app(\App\Services\OrderStockService::class)->restoreStock(
+                    $order,
+                    reason: 'Expired/Failed Order',
+                    notes: 'Pembayaran Xendit kedaluwarsa/gagal untuk pesanan #' . $order->order_number,
+                    userId: null
+                );
+
                 Log::info('Order failed/expired via Xendit', ['order_id' => $order->id, 'invoice_id' => $xenditInvoiceId]);
 
                 foreach ($admins as $admin) {
