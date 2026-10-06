@@ -385,7 +385,7 @@ class ProductDetail extends Component
             $cartItem->quantity += $this->quantity;
             $cartItem->save();
         } else {
-            \App\Models\CartItem::create([
+            $cartItem = \App\Models\CartItem::create([
                 'cart_id' => $cart->id,
                 'product_id' => $this->product->id,
                 'product_variant_id' => $variantId,
@@ -401,27 +401,31 @@ class ProductDetail extends Component
         // Let's also dispatch an event to trigger the flying animation
         // and optionally open the mini cart right after.
         $this->dispatch('product-added-to-cart');
+
+        return $cartItem;
     }
 
     public function buyNow()
     {
-        // Add to cart first
-        $this->addToCart();
-        
-        // If there's an error (e.g. out of stock, no variant selected), stop
-        if (session()->has('error')) {
-            return;
-        }
-
         $holidayMode = \App\Models\SiteSetting::where('key', 'store_holiday_mode')->value('value');
         if ($holidayMode) {
             $holidayMessage = \App\Models\SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
             session()->flash('error', $holidayMessage);
             return;
         }
+
+        // Add to cart first
+        $cartItem = $this->addToCart();
         
-        // Mark as buy_now or just redirect to checkout since we just added it to the cart
-        return redirect()->to('/checkout');
+        // If there's an error (e.g. out of stock, no variant selected), stop
+        if (session()->has('error') || !$cartItem) {
+            return;
+        }
+
+        // Isolasi item checkout hanya untuk produk ini agar keranjang lama tidak tercampur
+        session(['checkout_item_ids' => [(string) $cartItem->id]]);
+        
+        return $this->redirect('/checkout', navigate: true);
     }
 
     public function submitReview()
