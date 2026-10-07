@@ -106,11 +106,15 @@ class BinderByteService
             return [];
         }
 
-        // Sanitasi origin & destination: bersihkan prefix dist_, titik, dan karakter non-digit
-        $cleanOrigin = preg_replace('/[^0-9]/', '', $origin);
-        $cleanDestination = preg_replace('/[^0-9]/', '', $destination);
+        // Pastikan origin & destination memiliki format valid dengan prefix 'dist_'
+        // Sanitasi: bersihkan prefix 'dist_', hanya izinkan angka dan titik, lalu pasang kembali 'dist_'
+        $rawOrigin = preg_replace('/^dist_/', '', trim($origin));
+        $rawDestination = preg_replace('/^dist_/', '', trim($destination));
 
-        if (empty($cleanOrigin) || empty($cleanDestination)) {
+        $sanitizedOrigin = preg_replace('/[^0-9.]/', '', $rawOrigin);
+        $sanitizedDestination = preg_replace('/[^0-9.]/', '', $rawDestination);
+
+        if (empty($sanitizedOrigin) || empty($sanitizedDestination)) {
             Log::warning('BinderByte origin or destination is invalid after sanitation', [
                 'origin' => $origin,
                 'destination' => $destination
@@ -118,26 +122,29 @@ class BinderByteService
             return [];
         }
 
+        $formattedOrigin = 'dist_' . $sanitizedOrigin;
+        $formattedDestination = 'dist_' . $sanitizedDestination;
+
         // Cache cost calculation for 6 hours to save API hits
         $cacheKey = sprintf(
             'binderbyte_cost_%s_%s_%d_%s',
-            $cleanOrigin,
-            $cleanDestination,
+            $formattedOrigin,
+            $formattedDestination,
             $weight,
             str_replace(',', '_', $couriers)
         );
 
         $weightInKg = $weight / 1000;
 
-        return Cache::remember($cacheKey, 6 * 60 * 60, function () use ($apiKey, $cleanOrigin, $cleanDestination, $weight, $weightInKg, $couriers) {
+        return Cache::remember($cacheKey, 6 * 60 * 60, function () use ($apiKey, $formattedOrigin, $formattedDestination, $weight, $weightInKg, $couriers) {
             try {
-                // Gunakan timeout ketat 2 detik agar checkout tidak hang
-                $response = Http::timeout(2)
+                // Timeout 5 detik agar aman dan tidak memblokir antrean
+                $response = Http::timeout(5)
                     ->asForm()
                     ->post('https://api.binderbyte.com/v1/cost', [
                         'api_key' => $apiKey,
-                        'origin' => $cleanOrigin,
-                        'destination' => $cleanDestination,
+                        'origin' => $formattedOrigin,
+                        'destination' => $formattedDestination,
                         'weight' => $weightInKg,
                         'courier' => $couriers,
                     ]);
@@ -157,8 +164,8 @@ class BinderByteService
                 }
 
                 Log::error('BinderByte API getShippingCost failed', [
-                    'origin' => $cleanOrigin,
-                    'destination' => $cleanDestination,
+                    'origin' => $formattedOrigin,
+                    'destination' => $formattedDestination,
                     'weight' => $weight,
                     'couriers' => $couriers,
                     'status' => $response->status(),

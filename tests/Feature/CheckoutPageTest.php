@@ -159,4 +159,42 @@ class CheckoutPageTest extends TestCase
         $this->assertEquals(2, $log->quantity_change);
         $this->assertEquals('Payment Failed', $log->reason);
     }
+
+    public function test_binderbyte_service_formats_origin_and_destination_with_dist_prefix(): void
+    {
+        SiteSetting::create([
+            'key' => 'binderbyte_api_key',
+            'value' => 'test-api-key',
+        ]);
+
+        \Illuminate\Support\Facades\Http::fake([
+            'https://api.binderbyte.com/v1/cost' => function (\Illuminate\Http\Client\Request $request) {
+                $this->assertEquals('dist_32.04.14', $request['origin']);
+                $this->assertEquals('dist_32.04.15', $request['destination']);
+                $this->assertEquals('test-api-key', $request['api_key']);
+                return \Illuminate\Support\Facades\Http::response([
+                    'code' => '200',
+                    'data' => [
+                        'results' => [
+                            [
+                                'code' => 'jnt',
+                                'name' => 'J&T Express',
+                                'costs' => [
+                                    [
+                                        'service' => 'EZ',
+                                        'price' => 7000,
+                                        'estimated' => '2-3 hari',
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ], 200);
+            }
+        ]);
+
+        $data = \App\Services\BinderByteService::getShippingCost('32.04.14', '32.04.15', 1000, 'jnt');
+        $this->assertNotEmpty($data['results']);
+        $this->assertEquals('jnt', $data['results'][0]['code']);
+    }
 }
