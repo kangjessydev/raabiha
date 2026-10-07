@@ -154,10 +154,6 @@
                                     <div class="flex flex-col gap-2 relative z-20">
                                     <div class="flex justify-between items-end mb-2">
                                         <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Kecamatan / Kota Tujuan *</label>
-                                        <button type="button" wire:click="switchToManualMode" class="group flex items-center gap-1.5 text-[9px] text-[#064e3b] font-mono uppercase tracking-wider font-bold hover:opacity-80 transition-opacity">
-                                            <svg class="w-3 h-3 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                            <span class="border-b border-transparent group-hover:border-[#064e3b]">Tidak menemukan lokasi? Klik di sini</span>
-                                        </button>
                                     </div>
                                     <div x-data="{
                                         open: false,
@@ -210,12 +206,6 @@
                                     </div>
 
                                     <div x-show="changeLocation">
-                                        <div class="flex justify-end mb-[-8px] relative z-20">
-                                            <button type="button" wire:click="switchToManualMode" class="group flex items-center gap-1.5 text-[9px] text-[#064e3b] font-mono uppercase tracking-wider font-bold hover:opacity-80 transition-opacity">
-                                                <svg class="w-3 h-3 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                                <span class="border-b border-transparent group-hover:border-[#064e3b]">Tidak menemukan lokasi? Klik di sini</span>
-                                            </button>
-                                        </div>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-20">
                                             <div class="flex flex-col gap-2">
                                                 <label class="font-mono text-[9px] uppercase tracking-widest text-[#615e57]">Provinsi Tujuan *</label>
