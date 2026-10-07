@@ -35,7 +35,7 @@ class VoucherService
         }
 
         if ($channel === 'ecommerce' && $voucher->usable_channel === 'pos_only') {
-            return ['valid' => false, 'message' => "Kode voucher '{$voucher->code}' hanya berlaku untuk kasir/POS."];
+            return ['valid' => false, 'message' => 'Kode voucher ini hanya berlaku untuk transaksi di Kasir / POS.'];
         }
 
         if ($channel === 'pos' && $voucher->usable_channel === 'ecommerce_only') {

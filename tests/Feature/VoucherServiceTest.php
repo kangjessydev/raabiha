@@ -60,7 +60,7 @@ class VoucherServiceTest extends TestCase
 
         $res = $this->voucherService->validateVoucher($posOnly, 100000, 1, channel: 'ecommerce');
         $this->assertFalse($res['valid']);
-        $this->assertStringContainsString('kasir/POS', $res['message']);
+        $this->assertStringContainsString('Kasir / POS', $res['message']);
 
         $resValid = $this->voucherService->validateVoucher($posOnly, 100000, 1, channel: 'pos');
         $this->assertTrue($resValid['valid']);
