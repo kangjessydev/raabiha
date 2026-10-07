@@ -385,6 +385,25 @@ class OrderObserver
         }
     }
 
+    /**
+     * Saat pesanan dihapus dari sistem (misal via tombol Hapus di admin).
+     */
+    public function deleting(Order $order): void
+    {
+        // 1. Jika stok belum pernah dipulihkan, pulihkan stok dan voucher sekarang sebelum data terhapus
+        if (!$order->is_stock_restored) {
+            app(\App\Services\OrderStockService::class)->restoreStock(
+                $order,
+                reason: 'order_deleted',
+                notes: 'Penghapusan pesanan #' . $order->order_number,
+                userId: auth()->id()
+            );
+        }
+
+        // 2. Bersihkan catatan arus kas terkait pesanan yang dihapus
+        Cashflow::where('order_id', $order->id)->delete();
+    }
+
     public function deleted(Order $order): void {}
     public function restored(Order $order): void {}
     public function forceDeleted(Order $order): void {}

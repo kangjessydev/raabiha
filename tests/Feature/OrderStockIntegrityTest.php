@@ -200,4 +200,48 @@ class OrderStockIntegrityTest extends TestCase
         $this->assertTrue((bool) $order->is_stock_restored);
         $this->assertEquals(10, $product->fresh()->stock); // 8 + 2
     }
+
+    public function test_deleting_order_restores_stock_if_not_already_restored(): void
+    {
+        $product = Product::create([
+            'name' => 'Tunik Harian',
+            'slug' => 'tunik-harian',
+            'stock' => 15,
+            'price' => 75000,
+            'is_active' => true,
+        ]);
+
+        $order = Order::create([
+            'order_number' => 'ORD-STOCK-DEL-01',
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'subtotal' => 75000,
+            'shipping_cost' => 10000,
+            'grand_total' => 85000,
+            'shipping_address' => [],
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'name' => 'Tunik Item',
+            'price' => 75000,
+            'quantity' => 3,
+            'total' => 75000,
+        ]);
+
+        $this->assertEquals(15, $product->fresh()->stock);
+
+        // Hapus pesanan langsung (simulasi DeleteAction di Filament)
+        $order->delete();
+
+        // Stok produk harus kembali bertambah (15 + 3 = 18)
+        $this->assertEquals(18, $product->fresh()->stock);
+
+        $log = StockLog::where('product_id', $product->id)->latest()->first();
+        $this->assertNotNull($log);
+        $this->assertEquals('in', $log->type);
+        $this->assertEquals(3, $log->quantity_change);
+        $this->assertEquals('order_deleted', $log->reason);
+    }
 }
