@@ -1,6 +1,6 @@
 # Project Brief
 
-_Terakhir diverifikasi: 2026-11-08, commit `c92fdee4` (tag `v1.0.5`)_
+_Terakhir diverifikasi: 2026-11-08 (tag `v1.0.6`)_
 
 ## Tujuan & Pengguna
 - **Tujuan Sistem:** Platform E-Commerce dan Point of Sale (POS) terpadu untuk Butik Raabiha (busana muslim/gamis/fashion). Mendukung penjualan omnichannel (Online Web Storefront & Toko Fisik POS), manajemen inventori terisolasi/sinkron (`pos_only`, `online_only`, `both`), pencetakan struk kasir thermal via Web Bluetooth/Web Serial ESC/POS, program loyalitas (stempel/cap digital & poin), serta sistem reseller.

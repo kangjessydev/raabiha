@@ -1,6 +1,6 @@
 # Project Map
 
-_Terakhir diverifikasi: 2026-11-08, commit `c92fdee4` (tag `v1.0.5`)_  
+_Terakhir diverifikasi: 2026-11-08 (tag `v1.0.6`)_  
 Jaga singkat. Detail panjang taruh di file lain dan rujuk di sini.
 
 ## Struktur Folder

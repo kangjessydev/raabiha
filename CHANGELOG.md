@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-11-08
+
 ### Ditambahkan
 - Dokumentasi pemetaan arsitektur proyek awal (`docs/project-brief.md`, `docs/project-map.md`, `docs/glossary.md`).
 - Laporan audit awal baseline pengujian (`docs/reports/2026-11-08-onboard-initial.md`).
