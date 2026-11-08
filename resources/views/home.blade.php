@@ -40,19 +40,30 @@
         // Helper untuk render image Curator or Fallback
         $resolveImage = function($curatorId, $fallback = null) {
             if ($curatorId) {
-                $media = \Awcodes\Curator\Models\Media::find($curatorId);
-                if ($media) return $media->url;
+                if (is_string($curatorId) && (str_starts_with($curatorId, 'http://') || str_starts_with($curatorId, 'https://'))) {
+                    return $curatorId;
+                }
+                if (is_numeric($curatorId)) {
+                    $media = \Awcodes\Curator\Models\Media::find($curatorId);
+                    if ($media) return $media->url;
+                }
+                if (is_string($curatorId)) {
+                    return asset('storage/' . ltrim($curatorId, '/'));
+                }
             }
             return $fallback ?: 'https://placehold.co/800x800/e5e2de/615e57?text=Image+Not+Available';
         };
 
         $resolveCatImage = function($imageValue, $fallback = null) {
-            if (is_numeric($imageValue)) {
-                $media = \Awcodes\Curator\Models\Media::find($imageValue);
-                if ($media) return $media->url;
-            }
             if ($imageValue) {
-                return asset('storage/' . $imageValue);
+                if (is_string($imageValue) && (str_starts_with($imageValue, 'http://') || str_starts_with($imageValue, 'https://'))) {
+                    return $imageValue;
+                }
+                if (is_numeric($imageValue)) {
+                    $media = \Awcodes\Curator\Models\Media::find($imageValue);
+                    if ($media) return $media->url;
+                }
+                return asset('storage/' . ltrim($imageValue, '/'));
             }
             return $fallback ?: 'https://placehold.co/800x800/e5e2de/615e57?text=Image+Not+Available';
         };

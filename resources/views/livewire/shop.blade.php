@@ -265,14 +265,19 @@
                                         @php
                                             $imageUrl = asset('assets/images/placeholder.webp');
                                             if (!empty($product->images)) {
-                                                if (is_numeric($product->images[0])) {
-                                                    $media = \Awcodes\Curator\Models\Media::find($product->images[0]);
+                                                $firstImg = $product->images[0];
+                                                if (is_numeric($firstImg)) {
+                                                    $media = \Awcodes\Curator\Models\Media::find($firstImg);
                                                     if ($media && Storage::disk('public')->exists($media->path)) {
                                                         $imageUrl = Storage::url($media->path);
                                                     }
-                                                } else {
-                                                    if (Storage::disk('public')->exists($product->images[0])) {
-                                                        $imageUrl = asset('storage/' . $product->images[0]);
+                                                } elseif (is_string($firstImg)) {
+                                                    if (str_starts_with($firstImg, 'http://') || str_starts_with($firstImg, 'https://')) {
+                                                        $imageUrl = $firstImg;
+                                                    } elseif (Storage::disk('public')->exists($firstImg)) {
+                                                        $imageUrl = asset('storage/' . $firstImg);
+                                                    } else {
+                                                        $imageUrl = asset($firstImg);
                                                     }
                                                 }
                                             }

@@ -2,27 +2,26 @@
 
 namespace App\Filament\Resources\Products\Widgets;
 
+use App\Filament\Resources\StockManagement\StockManagementResource;
 use App\Models\Product;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class ProductStatsWidget extends BaseWidget
 {
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected function getStats(): array
     {
         $totalProducts = Product::count();
         $activeProducts = Product::where('is_active', true)->count();
-        
-        // Simple stock calculation
-        $outOfStock = Product::where(function($query) {
+
+        // Accurate stock calculation (considers variants)
+        $outOfStock = Product::where(function ($query) {
             $query->where('has_variants', false)->where('stock', '<=', 0);
-        })->orWhere(function($query) {
-            $query->where('has_variants', true)->whereHas('variants', function($q) {
-                // Not perfectly accurate in a single query without complex joins, 
-                // but good enough for a dashboard flag
-                $q->where('stock', '<=', 0);
+        })->orWhere(function ($query) {
+            $query->where('has_variants', true)->whereDoesntHave('variants', function ($q) {
+                $q->where('stock', '>', 0);
             });
         })->count();
 
@@ -48,7 +47,7 @@ class ProductStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger')
                 ->icon('heroicon-o-exclamation-circle')
-                ->url(\App\Filament\Resources\StockManagement\StockManagementResource::getUrl('index'))
+                ->url(StockManagementResource::getUrl('index'))
                 ->extraAttributes([
                     'class' => 'bg-gradient-to-br from-rose-50/50 to-rose-100/50 rounded-xl cursor-pointer',
                 ]),

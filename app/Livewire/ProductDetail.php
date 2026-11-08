@@ -2,91 +2,118 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductReview;
+use App\Models\SiteSetting;
+use Awcodes\Curator\Models\Media;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
-
 use Livewire\Attributes\Layout;
+use Livewire\Component;
 
 #[Layout('components.layouts.app')]
 class ProductDetail extends Component
 {
     public $slug;
+
     public $product;
+
     public $selectedOptions = [];
+
     public $quantity = 1;
+
     public $galleryUrls = [];
+
     public $galleryMediaIds = [];
+
     public $bsOpen = false;
+
     public $bsMode = 'cart';
-    
+
     // Review Properties
     public $reviewRating = 0;
+
     public $reviewName = '';
+
     public $reviewComment = '';
+
     public $showReviewForm = false;
-
-
 
     #[Computed]
     public function availableAttributes()
     {
-        if (!isset($this->product) || !$this->product->has_variants) return [];
-        
+        if (! isset($this->product) || ! $this->product->has_variants) {
+            return [];
+        }
+
         $attributes = [];
         foreach ($this->product->variants as $variant) {
             foreach ($variant->attributeOptions as $option) {
                 $attrSlug = $option->attribute->slug;
-                if (!isset($attributes[$attrSlug])) {
+                if (! isset($attributes[$attrSlug])) {
                     $attributes[$attrSlug] = [
                         'name' => $option->attribute->name,
                         'slug' => $attrSlug,
                         'type' => $option->attribute->type,
-                        'options' => []
+                        'options' => [],
                     ];
                 }
-                if (!collect($attributes[$attrSlug]['options'])->contains('value', $option->value)) {
+                if (! collect($attributes[$attrSlug]['options'])->contains('value', $option->value)) {
                     $attributes[$attrSlug]['options'][] = [
                         'id' => $option->id,
                         'value' => $option->value,
-                        'meta' => $option->meta
+                        'meta' => $option->meta,
                     ];
                 }
             }
         }
+
         return $attributes;
     }
 
     public function isOptionAvailable($attrSlug, $optionValue)
     {
-        if (!$this->product->has_variants) return true;
+        if (! $this->product->has_variants) {
+            return true;
+        }
 
         $testSelection = $this->selectedOptions;
         $testSelection[$attrSlug] = $optionValue;
-        $testSelection = array_filter($testSelection, fn($val) => $val !== '');
+        $testSelection = array_filter($testSelection, fn ($val) => $val !== '');
 
         foreach ($this->product->variants as $variant) {
-            if ($variant->stock <= 0) continue;
+            if ($variant->stock <= 0) {
+                continue;
+            }
 
             $matchesAll = true;
             foreach ($testSelection as $testAttrSlug => $testOptionVal) {
-                $hasOption = $variant->attributeOptions->contains(function($opt) use ($testAttrSlug, $testOptionVal) {
+                $hasOption = $variant->attributeOptions->contains(function ($opt) use ($testAttrSlug, $testOptionVal) {
                     return $opt->attribute->slug === $testAttrSlug && $opt->value === $testOptionVal;
                 });
-                if (!$hasOption) {
+                if (! $hasOption) {
                     $matchesAll = false;
                     break;
                 }
             }
-            if ($matchesAll) return true;
+            if ($matchesAll) {
+                return true;
+            }
         }
+
         return false;
     }
 
     public function selectOption($attrSlug, $optionValue)
     {
-        if (!$this->isOptionAvailable($attrSlug, $optionValue)) return;
-        
+        if (! $this->isOptionAvailable($attrSlug, $optionValue)) {
+            return;
+        }
+
         if ($this->selectedOptions[$attrSlug] === $optionValue) {
             $this->selectedOptions[$attrSlug] = ''; // Deselect
         } else {
@@ -104,36 +131,52 @@ class ProductDetail extends Component
 
     public function getFirstVariantWithImage()
     {
-        if (!$this->product->has_variants) return null;
-        
-        $activeSelections = array_filter($this->selectedOptions, fn($val) => $val !== '');
-        if (empty($activeSelections)) return null;
+        if (! $this->product->has_variants) {
+            return null;
+        }
 
-        return $this->product->variants->first(function($variant) use ($activeSelections) {
-            if (!$variant->media_id) return false;
+        $activeSelections = array_filter($this->selectedOptions, fn ($val) => $val !== '');
+        if (empty($activeSelections)) {
+            return null;
+        }
+
+        return $this->product->variants->first(function ($variant) use ($activeSelections) {
+            if (! $variant->media_id) {
+                return false;
+            }
 
             foreach ($activeSelections as $slug => $val) {
-                $hasOption = $variant->attributeOptions->contains(function($opt) use ($slug, $val) {
+                $hasOption = $variant->attributeOptions->contains(function ($opt) use ($slug, $val) {
                     return $opt->attribute->slug === $slug && $opt->value === $val;
                 });
-                if (!$hasOption) return false;
+                if (! $hasOption) {
+                    return false;
+                }
             }
+
             return true;
         });
     }
 
     public function getMatchedVariant()
     {
-        if (!$this->product->has_variants) return null;
-        
-        return $this->product->variants->first(function($variant) {
+        if (! $this->product->has_variants) {
+            return null;
+        }
+
+        return $this->product->variants->first(function ($variant) {
             foreach ($this->selectedOptions as $slug => $val) {
-                if (empty($val)) return false;
-                $hasOption = $variant->attributeOptions->contains(function($opt) use ($slug, $val) {
+                if (empty($val)) {
+                    return false;
+                }
+                $hasOption = $variant->attributeOptions->contains(function ($opt) use ($slug, $val) {
                     return $opt->attribute->slug === $slug && $opt->value === $val;
                 });
-                if (!$hasOption) return false;
+                if (! $hasOption) {
+                    return false;
+                }
             }
+
             return true;
         });
     }
@@ -145,6 +188,7 @@ class ProductDetail extends Component
         if ($variant) {
             return $variant->effective_price * $this->quantity;
         }
+
         return $this->product->effective_price * $this->quantity;
     }
 
@@ -155,13 +199,14 @@ class ProductDetail extends Component
         if ($variant) {
             return $variant->price * $this->quantity;
         }
+
         return $this->product->price * $this->quantity;
     }
 
     #[Computed]
     public function priceRange()
     {
-        if (!$this->product->has_variants) {
+        if (! $this->product->has_variants) {
             return null;
         }
 
@@ -181,7 +226,7 @@ class ProductDetail extends Component
         $maxOriginal = $activeVariants->max('price') * $this->quantity;
 
         $isReseller = auth()->check() && auth()->user()->hasRole('reseller');
-        $hasDiscount = !$isReseller && ($minPrice < $minOriginal || $maxPrice < $maxOriginal);
+        $hasDiscount = ! $isReseller && ($minPrice < $minOriginal || $maxPrice < $maxOriginal);
 
         return [
             'min_price' => $minPrice,
@@ -197,11 +242,13 @@ class ProductDetail extends Component
     #[Computed]
     public function canReview()
     {
-        if (!auth()->check()) return false;
-        
-        return \App\Models\Order::where('user_id', auth()->id())
+        if (! auth()->check()) {
+            return false;
+        }
+
+        return Order::where('user_id', auth()->id())
             ->where('status', 'completed')
-            ->whereHas('items', function($q) {
+            ->whereHas('items', function ($q) {
                 $q->where('product_id', $this->product->id);
             })->exists();
     }
@@ -209,8 +256,11 @@ class ProductDetail extends Component
     #[Computed]
     public function hasReviewed()
     {
-        if (!auth()->check()) return false;
-        return \App\Models\ProductReview::where('user_id', auth()->id())
+        if (! auth()->check()) {
+            return false;
+        }
+
+        return ProductReview::where('user_id', auth()->id())
             ->where('product_id', $this->product->id)
             ->exists();
     }
@@ -218,8 +268,11 @@ class ProductDetail extends Component
     #[Computed]
     public function reviews()
     {
-        if (!isset($this->product)) return collect();
-        return \App\Models\ProductReview::where('product_id', $this->product->id)
+        if (! isset($this->product)) {
+            return collect();
+        }
+
+        return ProductReview::where('product_id', $this->product->id)
             ->where('is_approved', true)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -248,7 +301,7 @@ class ProductDetail extends Component
             }
         } else {
             // Generate dummy distribution based on effective rating
-            $rating = round($this->product->effective_rating * 2) / 2; 
+            $rating = round($this->product->effective_rating * 2) / 2;
             if ($rating >= 4.5) {
                 $distribution[5] = 85;
                 $distribution[4] = 15;
@@ -270,12 +323,12 @@ class ProductDetail extends Component
 
     public function mount($slug = null)
     {
-        \Log::info("ProductDetail mount called with slug: " . var_export($slug, true));
+        \Log::info('ProductDetail mount called with slug: '.var_export($slug, true));
         $this->slug = $slug;
         try {
             $this->product = Product::with(['variants.attributeOptions.attribute'])->where('slug', $slug)->firstOrFail();
         } catch (\Exception $e) {
-            \Log::error("ProductDetail mount failed: " . $e->getMessage());
+            \Log::error('ProductDetail mount failed: '.$e->getMessage());
             throw $e;
         }
 
@@ -283,26 +336,30 @@ class ProductDetail extends Component
         foreach ($this->availableAttributes() as $attrSlug => $data) {
             $this->selectedOptions[$attrSlug] = '';
         }
-        
+
         // Resolve Curator Media URLs
         $this->galleryUrls = [];
-        if (!empty($this->product->images) && is_array($this->product->images)) {
+        if (! empty($this->product->images) && is_array($this->product->images)) {
             // Check if it's new Curator ID format or old path format
             if (is_numeric($this->product->images[0])) {
-                $mediaItems = \Awcodes\Curator\Models\Media::whereIn('id', $this->product->images)->get();
+                $mediaItems = Media::whereIn('id', $this->product->images)->get();
                 // To maintain order
                 foreach ($this->product->images as $id) {
                     $media = $mediaItems->firstWhere('id', $id);
-                    if ($media && \Illuminate\Support\Facades\Storage::disk('public')->exists($media->path)) {
+                    if ($media && Storage::disk('public')->exists($media->path)) {
                         $this->galleryUrls[] = $media->url;
                         $this->galleryMediaIds[] = $id;
                     }
                 }
             } else {
-                // Fallback for old strings
+                // Fallback for strings (URL or relative path)
                 foreach ($this->product->images as $path) {
-                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                        $this->galleryUrls[] = asset('storage/' . $path);
+                    if (is_string($path) && (str_starts_with($path, 'http://') || str_starts_with($path, 'https://'))) {
+                        $this->galleryUrls[] = $path;
+                    } elseif (Storage::disk('public')->exists($path)) {
+                        $this->galleryUrls[] = asset('storage/'.$path);
+                    } else {
+                        $this->galleryUrls[] = asset($path);
                     }
                 }
             }
@@ -312,7 +369,7 @@ class ProductDetail extends Component
         if (empty($this->galleryUrls)) {
             $this->galleryUrls[] = asset('assets/images/placeholder.png');
         }
-        
+
         if (auth()->check()) {
             $this->reviewName = auth()->user()->name;
         }
@@ -339,6 +396,7 @@ class ProductDetail extends Component
             foreach ($this->availableAttributes() as $attrSlug => $data) {
                 if (empty($this->selectedOptions[$attrSlug])) {
                     session()->flash('error', 'Silakan lengkapi pilihan varian terlebih dahulu.');
+
                     return;
                 }
             }
@@ -349,34 +407,37 @@ class ProductDetail extends Component
         if ($this->product->has_variants) {
             $matchedVariant = $this->getMatchedVariant();
 
-            if (!$matchedVariant) {
+            if (! $matchedVariant) {
                 session()->flash('error', 'Kombinasi varian tidak ditemukan atau habis.');
+
                 return;
             }
             $variantId = $matchedVariant->id;
-            
+
             if ($matchedVariant->stock < $this->quantity) {
                 session()->flash('error', 'Stok varian tidak mencukupi.');
+
                 return;
             }
         } else {
             if ($this->product->stock < $this->quantity) {
                 session()->flash('error', 'Stok produk tidak mencukupi.');
+
                 return;
             }
         }
 
         // 3. Get or Create Cart
         if (auth()->check()) {
-            $cart = \App\Models\Cart::firstOrCreate(['user_id' => auth()->id(), 'is_buy_now' => false]);
+            $cart = Cart::firstOrCreate(['user_id' => auth()->id(), 'is_buy_now' => false]);
         } else {
             // Ensure session is started and persisted
             session()->put('cart_active', true);
-            $cart = \App\Models\Cart::firstOrCreate(['session_id' => session()->getId(), 'user_id' => null, 'is_buy_now' => false]);
+            $cart = Cart::firstOrCreate(['session_id' => session()->getId(), 'user_id' => null, 'is_buy_now' => false]);
         }
 
         // 4. Add or Update Item in Cart
-        $cartItem = \App\Models\CartItem::where('cart_id', $cart->id)
+        $cartItem = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $this->product->id)
             ->where('product_variant_id', $variantId)
             ->first();
@@ -385,7 +446,7 @@ class ProductDetail extends Component
             $cartItem->quantity += $this->quantity;
             $cartItem->save();
         } else {
-            $cartItem = \App\Models\CartItem::create([
+            $cartItem = CartItem::create([
                 'cart_id' => $cart->id,
                 'product_id' => $this->product->id,
                 'product_variant_id' => $variantId,
@@ -397,7 +458,7 @@ class ProductDetail extends Component
         $this->dispatch('cart-updated');
         session()->flash('success', 'Produk berhasil ditambahkan ke keranjang.');
         $this->bsOpen = false;
-        
+
         // Let's also dispatch an event to trigger the flying animation
         // and optionally open the mini cart right after.
         $this->dispatch('product-added-to-cart');
@@ -407,41 +468,45 @@ class ProductDetail extends Component
 
     public function buyNow()
     {
-        $holidayMode = \App\Models\SiteSetting::where('key', 'store_holiday_mode')->value('value');
+        $holidayMode = SiteSetting::where('key', 'store_holiday_mode')->value('value');
         if ($holidayMode) {
-            $holidayMessage = \App\Models\SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
+            $holidayMessage = SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
             session()->flash('error', $holidayMessage);
+
             return;
         }
 
         // Add to cart first
         $cartItem = $this->addToCart();
-        
+
         // If there's an error (e.g. out of stock, no variant selected), stop
-        if (session()->has('error') || !$cartItem) {
+        if (session()->has('error') || ! $cartItem) {
             return;
         }
 
         // Isolasi item checkout hanya untuk produk ini agar keranjang lama tidak tercampur
         session(['checkout_item_ids' => [(string) $cartItem->id]]);
-        
+
         return $this->redirect('/checkout', navigate: true);
     }
 
     public function submitReview()
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             session()->flash('review_error', 'Anda harus login untuk memberikan ulasan.');
+
             return;
         }
 
-        if (!$this->canReview) {
+        if (! $this->canReview) {
             session()->flash('review_error', 'Anda hanya dapat memberikan ulasan untuk produk yang telah Anda beli dan pesanan selesai.');
+
             return;
         }
 
         if ($this->hasReviewed) {
             session()->flash('review_error', 'Anda sudah memberikan ulasan untuk produk ini.');
+
             return;
         }
 
@@ -453,7 +518,7 @@ class ProductDetail extends Component
 
         $isApproved = $this->reviewRating >= 4;
 
-        \App\Models\ProductReview::create([
+        ProductReview::create([
             'product_id' => $this->product->id,
             'user_id' => auth()->id(),
             'customer_name' => $this->reviewName,
@@ -464,7 +529,7 @@ class ProductDetail extends Component
         ]);
 
         $this->reset(['reviewRating', 'reviewComment', 'showReviewForm']);
-        
+
         if ($isApproved) {
             session()->flash('review_success', 'Terima kasih! Ulasan Anda berhasil ditambahkan dan ditayangkan.');
         } else {
@@ -475,8 +540,8 @@ class ProductDetail extends Component
     public function render()
     {
         $title = $this->product->meta_title ?? $this->product->name;
-        $description = $this->product->meta_description ?? \Illuminate\Support\Str::limit(strip_tags($this->product->description), 160);
-        $image = !empty($this->galleryUrls) ? $this->galleryUrls[0] : null;
+        $description = $this->product->meta_description ?? Str::limit(strip_tags($this->product->description), 160);
+        $image = ! empty($this->galleryUrls) ? $this->galleryUrls[0] : null;
 
         // Build Product JSON-LD schema
         $price = $this->product->effective_price;
@@ -485,14 +550,14 @@ class ProductDetail extends Component
             $inStock = $this->product->variants->sum('stock') > 0;
         }
         $availability = $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
-        
+
         $schema = [
             '@context' => 'https://schema.org',
             '@type' => 'Product',
             'name' => $this->product->name,
             'image' => $image,
             'description' => $description,
-            'sku' => $this->product->sku ?? ('PROD-' . $this->product->id),
+            'sku' => $this->product->sku ?? ('PROD-'.$this->product->id),
             'offers' => [
                 '@type' => 'Offer',
                 'url' => url()->current(),
@@ -500,7 +565,7 @@ class ProductDetail extends Component
                 'price' => $price,
                 'availability' => $availability,
                 'priceValidUntil' => now()->addYear()->toDateString(),
-            ]
+            ],
         ];
 
         $reviewCount = $this->reviews->count();
@@ -518,7 +583,7 @@ class ProductDetail extends Component
                 'title' => $title,
                 'description' => $description,
                 'image' => $image,
-                'schema' => $schema
+                'schema' => $schema,
             ]);
     }
 

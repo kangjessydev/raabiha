@@ -2,24 +2,41 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use App\Models\Product;
+use Awcodes\Curator\Models\Media;
+use Carbon\Carbon;
+use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class ProductsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['category', 'variants']))
             ->poll('5s')
             ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('name')
                     ->label('Produk')
-                    ->searchable(query: function (\Illuminate\Database\Eloquent\Builder $query, string $search): \Illuminate\Database\Eloquent\Builder {
+                    ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->where('name', 'like', "%{$search}%")
                             ->orWhereHas('category', function ($q) use ($search) {
                                 $q->where('name', 'like', "%{$search}%");
@@ -28,12 +45,21 @@ class ProductsTable
                     ->sortable()
                     ->wrap()
                     ->html()
-                    ->formatStateUsing(function (\App\Models\Product $record) {
+                    ->formatStateUsing(function (Product $record) {
                         $mediaIds = $record->images ?? [];
                         $firstMediaId = is_array($mediaIds) ? ($mediaIds[0] ?? null) : $mediaIds;
-                        $media = $firstMediaId ? \Awcodes\Curator\Models\Media::find($firstMediaId) : null;
 
-                        $imgSrc = $media ? $media->url : null;
+                        $imgSrc = null;
+                        if (! empty($firstMediaId)) {
+                            if (is_string($firstMediaId) && (str_starts_with($firstMediaId, 'http://') || str_starts_with($firstMediaId, 'https://'))) {
+                                $imgSrc = $firstMediaId;
+                            } elseif (is_numeric($firstMediaId)) {
+                                $media = Media::find($firstMediaId);
+                                $imgSrc = $media ? $media->url : null;
+                            } elseif (is_string($firstMediaId)) {
+                                $imgSrc = asset('storage/'.ltrim($firstMediaId, '/'));
+                            }
+                        }
 
                         $catName = e($record->category?->name ?? 'Tanpa Kategori');
                         $name = e($record->name);
@@ -72,36 +98,53 @@ class ProductsTable
                     ->sortable(),
                 TextColumn::make('stock')
                     ->label('Stock')
-                    ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->formatStateUsing(function ($state, Product $record) {
+                        if ($record->has_variants) {
+                            $totalVariantStock = $record->variants->sum('stock');
+
+                            return $totalVariantStock.' pcs (varian)';
+                        }
+
+                        return ($state ?? 0).' pcs';
+                    })
+                    ->color(function ($state, Product $record) {
+                        $stock = $record->has_variants ? $record->variants->sum('stock') : ($state ?? 0);
+
+                        return match (true) {
+                            $stock <= 0 => 'danger',
+                            $stock <= 5 => 'warning',
+                            default => 'success',
+                        };
+                    }),
                 TextColumn::make('variants_count')
                     ->counts('variants')
                     ->label('Jumlah Varian')
-                    ->formatStateUsing(fn($state) => $state > 0 ? $state : '-'),
+                    ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
                 TextColumn::make('is_custom')
                     ->label('Asal Produk')
                     ->badge()
-                    ->formatStateUsing(fn($state) => $state ? 'Dibuat via POS' : 'Admin Panel')
-                    ->color(fn($state) => $state ? 'warning' : 'success')
-                    ->icon(fn($state) => $state ? 'heroicon-m-shopping-bag' : 'heroicon-m-computer-desktop')
+                    ->formatStateUsing(fn ($state) => $state ? 'Dibuat via POS' : 'Admin Panel')
+                    ->color(fn ($state) => $state ? 'warning' : 'success')
+                    ->icon(fn ($state) => $state ? 'heroicon-m-shopping-bag' : 'heroicon-m-computer-desktop')
                     ->sortable(),
                 TextColumn::make('channel_visibility')
                     ->label('Kanal Penjualan')
                     ->badge()
-                    ->formatStateUsing(fn($state) => match ($state) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'pos_only' => 'POS Kasir',
                         'online_only' => 'E-Commerce',
                         default => ucwords($state ?? '-'),
                     })
-                    ->color(fn($state) => match ($state) {
+                    ->color(fn ($state) => match ($state) {
                         'pos_only' => 'warning',
                         'online_only' => 'info',
                         default => 'secondary',
                     })
                     ->sortable(),
-                \Filament\Tables\Columns\ToggleColumn::make('is_active')
+                ToggleColumn::make('is_active')
                     ->label('Aktif?')
-                    ->disabled(fn() => !auth()->user()->can('Update:Product')),
+                    ->disabled(fn () => ! auth()->user()->can('Update:Product')),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -112,89 +155,90 @@ class ProductsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                \Filament\Tables\Filters\SelectFilter::make('channel_visibility')
+                SelectFilter::make('channel_visibility')
                     ->label('Kanal Penjualan')
                     ->native(false)
                     ->options([
                         'pos_only' => 'POS Kasir Saja (Toko Fisik)',
                         'online_only' => 'E-Commerce Saja (Website Online)',
                     ]),
-                \Filament\Tables\Filters\SelectFilter::make('category_id')
+                SelectFilter::make('category_id')
                     ->relationship('category', 'name')
                     ->label('Kategori')
                     ->searchable()
                     ->preload(),
-                \Filament\Tables\Filters\TernaryFilter::make('is_active')
+                TernaryFilter::make('is_active')
                     ->label('Status Aktif')
                     ->placeholder('Semua Status')
                     ->trueLabel('Aktif')
                     ->falseLabel('Tidak Aktif')
                     ->native(false),
-                \Filament\Tables\Filters\TernaryFilter::make('has_free_shipping')
+                TernaryFilter::make('has_free_shipping')
                     ->label('Gratis Ongkir')
                     ->placeholder('Semua')
                     ->trueLabel('Ya, Gratis Ongkir')
                     ->falseLabel('Tidak')
                     ->native(false),
-                \Filament\Tables\Filters\Filter::make('created_at')
+                Filter::make('created_at')
                     ->form([
-                        \Filament\Forms\Components\DatePicker::make('created_from')->label('Dari Tanggal'),
-                        \Filament\Forms\Components\DatePicker::make('created_until')->label('Sampai Tanggal'),
+                        DatePicker::make('created_from')->label('Dari Tanggal'),
+                        DatePicker::make('created_until')->label('Sampai Tanggal'),
                     ])
                     ->columns(2)
                     ->columnSpan('full')
-                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
+                    ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
                                 $data['created_from'],
-                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
                             )
                             ->when(
                                 $data['created_until'],
-                                fn(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder => $query->whereDate('created_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['created_from'] ?? null) {
-                            $indicators[] = \Filament\Tables\Filters\Indicator::make('Ditambahkan mulai ' . \Carbon\Carbon::parse($data['created_from'])->translatedFormat('d M Y'))
+                            $indicators[] = Indicator::make('Ditambahkan mulai '.Carbon::parse($data['created_from'])->translatedFormat('d M Y'))
                                 ->removeField('created_from');
                         }
                         if ($data['created_until'] ?? null) {
-                            $indicators[] = \Filament\Tables\Filters\Indicator::make('Ditambahkan sampai ' . \Carbon\Carbon::parse($data['created_until'])->translatedFormat('d M Y'))
+                            $indicators[] = Indicator::make('Ditambahkan sampai '.Carbon::parse($data['created_until'])->translatedFormat('d M Y'))
                                 ->removeField('created_until');
                         }
+
                         return $indicators;
                     }),
             ])
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::Dropdown)
-            ->filtersFormWidth(\Filament\Support\Enums\Width::FourExtraLarge)
+            ->filtersLayout(FiltersLayout::Dropdown)
+            ->filtersFormWidth(Width::FourExtraLarge)
             ->filtersFormColumns(3)
             ->recordActions([
-                \Filament\Actions\Action::make('view_frontend')
+                Action::make('view_frontend')
                     ->label('Lihat di Toko')
                     ->icon('heroicon-o-eye')
-                    ->url(fn(\App\Models\Product $record): string => url('/product/' . $record->slug))
+                    ->url(fn (Product $record): string => url('/product/'.$record->slug))
                     ->openUrlInNewTab()
                     ->color('info')
                     ->iconButton()
                     ->tooltip('Lihat di Toko'),
-                \Filament\Actions\EditAction::make()
+                EditAction::make()
                     ->iconButton()
                     ->tooltip('Ubah Produk'),
-                \Filament\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->iconButton()
                     ->tooltip('Hapus Produk'),
             ])
             ->bulkActions([
-                \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
-                    \Filament\Actions\BulkAction::make('change_channel_visibility')
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    BulkAction::make('change_channel_visibility')
                         ->label('Ubah Visibilitas (POS/Web)')
                         ->icon('heroicon-o-eye')
                         ->color('warning')
                         ->form([
-                            \Filament\Forms\Components\Select::make('channel_visibility')
+                            Select::make('channel_visibility')
                                 ->label('Tampil di')
                                 ->options([
                                     'both' => 'Web & POS Kasir',
@@ -203,7 +247,7 @@ class ProductsTable
                                 ])
                                 ->required(),
                         ])
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data): void {
+                        ->action(function (Collection $records, array $data): void {
                             foreach ($records as $record) {
                                 $record->update(['channel_visibility' => $data['channel_visibility']]);
                             }

@@ -683,8 +683,13 @@
                                                     $imgUrl = $media->url;
                                                 }
                                             } else {
-                                                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($related->images[0])) {
-                                                    $imgUrl = asset('storage/' . $related->images[0]);
+                                                $relImg = $related->images[0];
+                                                if (is_string($relImg) && (str_starts_with($relImg, 'http://') || str_starts_with($relImg, 'https://'))) {
+                                                    $imgUrl = $relImg;
+                                                } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($relImg)) {
+                                                    $imgUrl = asset('storage/' . $relImg);
+                                                } else {
+                                                    $imgUrl = asset($relImg);
                                                 }
                                             }
                                         }
