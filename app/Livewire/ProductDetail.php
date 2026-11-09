@@ -122,7 +122,22 @@ class ProductDetail extends Component
 
         $variantWithImage = $this->getFirstVariantWithImage();
         if ($variantWithImage && $variantWithImage->media_id) {
-            $index = array_search($variantWithImage->media_id, $this->galleryMediaIds);
+            $targetMediaId = (int) $variantWithImage->media_id;
+            $normalizedMediaIds = array_map(fn ($id) => $id !== null ? (int) $id : null, $this->galleryMediaIds);
+            $index = array_search($targetMediaId, $normalizedMediaIds);
+
+            // Fallback: jika media_id tidak cocok langsung di index, cocokkan melalui path/URL media varian
+            if ($index === false && $variantWithImage->media) {
+                $vPath = $variantWithImage->media->path;
+                $vUrl = $variantWithImage->media->url;
+                foreach ($this->galleryUrls as $gIdx => $gUrl) {
+                    if (str_contains($gUrl, $vPath) || $gUrl === $vUrl) {
+                        $index = $gIdx;
+                        break;
+                    }
+                }
+            }
+
             if ($index !== false) {
                 $this->dispatch('change-gallery-image', index: $index);
             }
@@ -326,7 +341,7 @@ class ProductDetail extends Component
         \Log::info('ProductDetail mount called with slug: '.var_export($slug, true));
         $this->slug = $slug;
         try {
-            $this->product = Product::with(['variants.attributeOptions.attribute'])->where('slug', $slug)->firstOrFail();
+            $this->product = Product::with(['variants.attributeOptions.attribute', 'variants.media'])->where('slug', $slug)->firstOrFail();
         } catch (\Exception $e) {
             \Log::error('ProductDetail mount failed: '.$e->getMessage());
             throw $e;
@@ -337,30 +352,64 @@ class ProductDetail extends Component
             $this->selectedOptions[$attrSlug] = '';
         }
 
-        // Resolve Curator Media URLs
+        // Resolve Curator Media URLs & Parallel Media IDs
         $this->galleryUrls = [];
+        $this->galleryMediaIds = [];
         if (! empty($this->product->images) && is_array($this->product->images)) {
             // Check if it's new Curator ID format or old path format
             if (is_numeric($this->product->images[0])) {
                 $mediaItems = Media::whereIn('id', $this->product->images)->get();
                 // To maintain order
                 foreach ($this->product->images as $id) {
-                    $media = $mediaItems->firstWhere('id', $id);
-                    if ($media && Storage::disk('public')->exists($media->path)) {
-                        $this->galleryUrls[] = $media->url;
-                        $this->galleryMediaIds[] = $id;
+                    $media = $mediaItems->firstWhere('id', (int) $id);
+                    if ($media) {
+                        $disk = $media->disk ?? 'public';
+                        $url = Storage::disk($disk)->exists($media->path)
+                            ? $media->url
+                            : asset('storage/'.$media->path);
+                        $this->galleryUrls[] = $url;
+                        $this->galleryMediaIds[] = (int) $id;
                     }
                 }
             } else {
                 // Fallback for strings (URL or relative path)
+                $searchPaths = [];
+                foreach ($this->product->images as $path) {
+                    if (is_string($path)) {
+                        $pathOnly = parse_url($path, PHP_URL_PATH) ?? $path;
+                        $clean = ltrim($pathOnly, '/');
+                        $searchPaths[] = $clean;
+                        $searchPaths[] = str_replace('storage/', '', $clean);
+                        $searchPaths[] = basename($pathOnly);
+                    }
+                }
+                $searchPaths = array_values(array_unique(array_filter($searchPaths)));
+
+                $mediaItems = ! empty($searchPaths)
+                    ? Media::whereIn('path', $searchPaths)->orWhereIn('name', $searchPaths)->get()
+                    : collect();
+
                 foreach ($this->product->images as $path) {
                     if (is_string($path) && (str_starts_with($path, 'http://') || str_starts_with($path, 'https://'))) {
                         $this->galleryUrls[] = $path;
-                    } elseif (Storage::disk('public')->exists($path)) {
+                    } elseif (is_string($path) && Storage::disk('public')->exists($path)) {
                         $this->galleryUrls[] = asset('storage/'.$path);
                     } else {
-                        $this->galleryUrls[] = asset($path);
+                        $this->galleryUrls[] = asset((string) $path);
                     }
+
+                    // Find matching Media ID
+                    $pathOnly = is_string($path) ? (parse_url($path, PHP_URL_PATH) ?? $path) : '';
+                    $clean = ltrim($pathOnly, '/');
+                    $storageClean = str_replace('storage/', '', $clean);
+                    $base = basename($pathOnly);
+
+                    $matchedMedia = $mediaItems->first(function ($m) use ($clean, $storageClean, $base) {
+                        return in_array($m->path, [$clean, $storageClean, $base])
+                            || in_array($m->name, [$clean, $storageClean, $base]);
+                    });
+
+                    $this->galleryMediaIds[] = $matchedMedia ? (int) $matchedMedia->id : null;
                 }
             }
         }

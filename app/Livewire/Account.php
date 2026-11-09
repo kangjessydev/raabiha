@@ -2,25 +2,38 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Livewire\Attributes\Layout;
-use Livewire\Attributes\Url;
-use Livewire\Attributes\On;
 use App\Models\Order;
+use App\Models\RefundRequest;
+use App\Models\SiteSetting;
+use App\Models\User;
+use App\Models\UserAddress;
+use App\Models\Voucher;
+use App\Models\Wishlist;
+use App\Services\BinderByteService;
+use App\Services\OrderStockService;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
+use Livewire\Component;
 
 #[Layout('components.layouts.app')]
 class Account extends Component
 {
     #[Url]
     public $activeTab = 'dasbor'; // dasbor, pesanan, alamat, voucher, akun
-    
+
     // Order Search
     public $searchPesanan = '';
 
     // Addresses
     public $showAddressForm = false;
+
     public $editingAddressId = null;
+
     public $addressForm = [
         'title' => '',
         'recipient_name' => '',
@@ -38,28 +51,37 @@ class Account extends Component
 
     // Location API
     public $provinces = [];
+
     public $cities = [];
+
     public $districts = [];
+
     public $selectedProvinceId = '';
+
     public $selectedCityId = '';
+
     public $selectedDistrictId = '';
+
     public $locationError = null;
 
     // Profile fields
     public $name;
+
     public $email;
-    
+
     // Password fields
     public $current_password;
+
     public $new_password;
+
     public $new_password_confirmation;
 
     public function mount()
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->to('/login');
         }
-        
+
         $user = Auth::user();
         $this->name = $user->name;
         $this->email = $user->email;
@@ -81,15 +103,15 @@ class Account extends Component
     // Address Methods
     public function toggleAddressForm()
     {
-        $this->showAddressForm = !$this->showAddressForm;
-        if (!$this->showAddressForm) {
+        $this->showAddressForm = ! $this->showAddressForm;
+        if (! $this->showAddressForm) {
             $this->resetAddressForm();
         } else {
             // Load provinces when form is opened
             try {
-                $this->provinces = \App\Services\BinderByteService::getProvinces();
+                $this->provinces = BinderByteService::getProvinces();
             } catch (\Exception $e) {
-                $this->locationError = 'Gagal memuat data provinsi: ' . $e->getMessage();
+                $this->locationError = 'Gagal memuat data provinsi: '.$e->getMessage();
             }
         }
     }
@@ -121,18 +143,18 @@ class Account extends Component
 
     public function editAddress($id)
     {
-        $address = \App\Models\UserAddress::where('user_id', Auth::id())->findOrFail($id);
+        $address = UserAddress::where('user_id', Auth::id())->findOrFail($id);
         $this->editingAddressId = $address->id;
         $this->addressForm = $address->toArray();
         $this->showAddressForm = true;
-        
-        // Reset location selectors since we don't have province/city IDs saved, 
+
+        // Reset location selectors since we don't have province/city IDs saved,
         // user will need to re-select if they want to change the location.
         // We'll keep the existing text values in addressForm so they are preserved if not changed.
         try {
-            $this->provinces = \App\Services\BinderByteService::getProvinces();
+            $this->provinces = BinderByteService::getProvinces();
         } catch (\Exception $e) {
-            $this->locationError = 'Gagal memuat data provinsi: ' . $e->getMessage();
+            $this->locationError = 'Gagal memuat data provinsi: '.$e->getMessage();
         }
     }
 
@@ -148,9 +170,9 @@ class Account extends Component
 
         if ($id) {
             try {
-                $this->cities = \App\Services\BinderByteService::getCities($id);
+                $this->cities = BinderByteService::getCities($id);
             } catch (\Exception $e) {
-                $this->locationError = 'Gagal memuat data kota: ' . $e->getMessage();
+                $this->locationError = 'Gagal memuat data kota: '.$e->getMessage();
             }
         }
     }
@@ -165,9 +187,9 @@ class Account extends Component
 
         if ($id) {
             try {
-                $this->districts = \App\Services\BinderByteService::getDistricts($id);
+                $this->districts = BinderByteService::getDistricts($id);
             } catch (\Exception $e) {
-                $this->locationError = 'Gagal memuat data kecamatan: ' . $e->getMessage();
+                $this->locationError = 'Gagal memuat data kecamatan: '.$e->getMessage();
             }
         }
     }
@@ -186,7 +208,7 @@ class Account extends Component
 
             $this->addressForm['destination_id'] = $id;
             $this->addressForm['destination_label'] = trim(sprintf('%s, %s, %s', $distName, $cityName, $provName), ', ');
-            
+
             $this->addressForm['province'] = $provName;
             $this->addressForm['city'] = $cityName;
             $this->addressForm['district'] = $distName;
@@ -195,12 +217,13 @@ class Account extends Component
 
     public function deleteAddress($id)
     {
-        \App\Models\UserAddress::where('user_id', Auth::id())->where('id', $id)->delete();
+        UserAddress::where('user_id', Auth::id())->where('id', $id)->delete();
         session()->flash('address_success', 'Alamat berhasil dihapus.');
     }
 
     // Cancel Order Confirmation Modal
     public $showCancelOrderModal = false;
+
     public $cancelOrderId = null;
 
     public function confirmCancelOrder($orderId)
@@ -217,7 +240,9 @@ class Account extends Component
 
     // Refund Methods
     public $showRefundForm = false;
+
     public $refundOrderId = null;
+
     public $refundForm = [
         'reason' => '',
         'description' => '',
@@ -246,26 +271,31 @@ class Account extends Component
     }
 
     public $showRefundStatusModal = false;
+
     public $refundStatusData = null;
 
     public function openRefundStatus($refundId)
     {
-        $refund = \App\Models\RefundRequest::with(['order', 'user'])->find($refundId);
-        if (!$refund) return;
-        
+        $refund = RefundRequest::with(['order', 'user'])
+            ->where('user_id', Auth::id())
+            ->find($refundId);
+        if (! $refund) {
+            return;
+        }
+
         $customerName = $refund->user ? $refund->user->name : 'Pelanggan';
         $orderNo = $refund->order ? $refund->order->order_number : '-';
         $amount = number_format($refund->refund_amount, 0, ',', '.');
         $status = $refund->status;
-        
+
         $defApproved = 'Halo {name}, pengajuan refund untuk pesanan #{order} senilai Rp{amount} telah DISETUJUI. Tim Finance kami akan segera memproses transfer ke rekening Anda.';
         $defRejected = 'Halo {name}, mohon maaf pengajuan refund untuk pesanan #{order} senilai Rp{amount} DITOLAK. Catatan: {notes}';
         $defCompleted = 'Halo {name}, dana refund untuk pesanan #{order} senilai Rp{amount} telah SELESAI DITRANSFER ke rekening {bank} Anda. Silakan cek mutasi rekening Anda.';
 
-        $tplApproved = \App\Models\SiteSetting::where('key', 'refund_template_approved')->value('value') ?: $defApproved;
-        $tplRejected = \App\Models\SiteSetting::where('key', 'refund_template_rejected')->value('value') ?: $defRejected;
-        $tplCompleted = \App\Models\SiteSetting::where('key', 'refund_template_completed')->value('value') ?: $defCompleted;
-        
+        $tplApproved = SiteSetting::where('key', 'refund_template_approved')->value('value') ?: $defApproved;
+        $tplRejected = SiteSetting::where('key', 'refund_template_rejected')->value('value') ?: $defRejected;
+        $tplCompleted = SiteSetting::where('key', 'refund_template_completed')->value('value') ?: $defCompleted;
+
         if ($status === 'approved') {
             $msg = str_replace(['{name}', '{order}', '{amount}'], [$customerName, $orderNo, $amount], $tplApproved);
         } elseif ($status === 'rejected') {
@@ -275,9 +305,9 @@ class Account extends Component
             $bank = $refund->bank_name ?? '-';
             $msg = str_replace(['{name}', '{order}', '{amount}', '{bank}'], [$customerName, $orderNo, $amount, $bank], $tplCompleted);
         } else {
-            $msg = "Pengajuan refund sedang dalam proses pengecekan oleh tim kami.";
+            $msg = 'Pengajuan refund sedang dalam proses pengecekan oleh tim kami.';
         }
-        
+
         $this->refundStatusData = [
             'status' => $status,
             'message' => $msg,
@@ -285,10 +315,10 @@ class Account extends Component
             'reason' => $refund->reason,
             'admin_notes' => $refund->admin_notes,
         ];
-        
+
         $this->showRefundStatusModal = true;
     }
-    
+
     public function closeRefundStatus()
     {
         $this->showRefundStatusModal = false;
@@ -307,7 +337,7 @@ class Account extends Component
 
         $order = Order::where('user_id', Auth::id())->findOrFail($this->refundOrderId);
 
-        \App\Models\RefundRequest::create([
+        RefundRequest::create([
             'user_id' => Auth::id(),
             'order_id' => $order->id,
             'reason' => $this->refundForm['reason'],
@@ -320,10 +350,10 @@ class Account extends Component
         ]);
 
         try {
-            $admins = \App\Models\User::role('super_admin')->get();
-            \Filament\Notifications\Notification::make()
+            $admins = User::role('super_admin')->get();
+            Notification::make()
                 ->title('Pengajuan Refund Baru')
-                ->body('Pelanggan ' . Auth::user()->name . ' mengajukan refund untuk pesanan #' . $order->order_number . '.')
+                ->body('Pelanggan '.Auth::user()->name.' mengajukan refund untuk pesanan #'.$order->order_number.'.')
                 ->icon('heroicon-o-receipt-refund')
                 ->warning()
                 ->sendToDatabase($admins);
@@ -337,8 +367,8 @@ class Account extends Component
 
     public function setPrimaryAddress($id)
     {
-        \App\Models\UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
-        \App\Models\UserAddress::where('user_id', Auth::id())->where('id', $id)->update(['is_primary' => true]);
+        UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
+        UserAddress::where('user_id', Auth::id())->where('id', $id)->update(['is_primary' => true]);
         session()->flash('address_success', 'Alamat utama diperbarui.');
     }
 
@@ -356,23 +386,23 @@ class Account extends Component
             'addressForm.postal_code' => 'nullable|string',
         ], [
             'addressForm.destination_id.required' => 'Silakan pilih lokasi (Provinsi, Kota, Kecamatan) dari pilihan yang tersedia.',
-            'addressForm.district.required' => 'Kecamatan harus diisi.'
+            'addressForm.district.required' => 'Kecamatan harus diisi.',
         ]);
 
         if ($this->addressForm['is_primary']) {
-            \App\Models\UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
+            UserAddress::where('user_id', Auth::id())->update(['is_primary' => false]);
         }
 
         if ($this->editingAddressId) {
-            $address = \App\Models\UserAddress::where('user_id', Auth::id())->findOrFail($this->editingAddressId);
+            $address = UserAddress::where('user_id', Auth::id())->findOrFail($this->editingAddressId);
             $address->update($this->addressForm);
         } else {
             // If first address, make it primary automatically
-            $count = \App\Models\UserAddress::where('user_id', Auth::id())->count();
+            $count = UserAddress::where('user_id', Auth::id())->count();
             if ($count === 0) {
                 $this->addressForm['is_primary'] = true;
             }
-            
+
             Auth::user()->addresses()->create($this->addressForm);
         }
 
@@ -385,7 +415,7 @@ class Account extends Component
     {
         $this->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . Auth::id(),
+            'email' => 'required|string|email|max:255|unique:users,email,'.Auth::id(),
         ]);
 
         $user = Auth::user();
@@ -404,7 +434,7 @@ class Account extends Component
         ]);
 
         $user = Auth::user();
-        $user->password = \Illuminate\Support\Facades\Hash::make($this->new_password);
+        $user->password = Hash::make($this->new_password);
         $user->save();
 
         $this->reset(['current_password', 'new_password', 'new_password_confirmation']);
@@ -422,7 +452,7 @@ class Account extends Component
 
     public function cancelOrder()
     {
-        if (!$this->cancelOrderId) {
+        if (! $this->cancelOrderId) {
             return;
         }
 
@@ -431,7 +461,7 @@ class Account extends Component
             ->findOrFail($this->cancelOrderId);
 
         try {
-            \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+            DB::transaction(function () use ($order) {
                 // Update order status to cancelled (juga mentrigger OrderObserver)
                 $order->update([
                     'status' => 'cancelled',
@@ -439,17 +469,17 @@ class Account extends Component
                 ]);
 
                 // Pulihkan stok pesanan dan kuota voucher via centralized service
-                app(\App\Services\OrderStockService::class)->restoreStock(
+                app(OrderStockService::class)->restoreStock(
                     $order,
                     reason: 'order_cancelled',
-                    notes: 'Pembayaran dibatalkan manual oleh pelanggan untuk pesanan #' . $order->order_number,
+                    notes: 'Pembayaran dibatalkan manual oleh pelanggan untuk pesanan #'.$order->order_number,
                     userId: Auth::id()
                 );
             });
 
-            session()->flash('order_message', 'Pesanan #' . $order->order_number . ' telah berhasil dibatalkan.');
+            session()->flash('order_message', 'Pesanan #'.$order->order_number.' telah berhasil dibatalkan.');
         } catch (\Exception $e) {
-            session()->flash('order_error', 'Gagal membatalkan pesanan: ' . $e->getMessage());
+            session()->flash('order_error', 'Gagal membatalkan pesanan: '.$e->getMessage());
         } finally {
             $this->closeCancelOrderModal();
         }
@@ -461,12 +491,12 @@ class Account extends Component
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc');
 
-        if (!empty($this->searchPesanan)) {
-            $query->where(function($q) {
-                $q->where('order_number', 'like', '%' . $this->searchPesanan . '%')
-                  ->orWhereHas('items.product', function($q2) {
-                      $q2->where('name', 'like', '%' . $this->searchPesanan . '%');
-                  });
+        if (! empty($this->searchPesanan)) {
+            $query->where(function ($q) {
+                $q->where('order_number', 'like', '%'.$this->searchPesanan.'%')
+                    ->orWhereHas('items.product', function ($q2) {
+                        $q2->where('name', 'like', '%'.$this->searchPesanan.'%');
+                    });
             });
         }
 
@@ -476,38 +506,38 @@ class Account extends Component
     public function getDashboardStatsProperty()
     {
         $orders = Order::where('user_id', Auth::id())->get();
-        
+
         // Calculate chart data (last 6 months spending)
         $chartData = [];
         $maxSpending = 0;
-        
+
         for ($i = 5; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $monthYear = $date->format('Y-m');
-            
+
             $spent = $orders->whereIn('status', ['paid', 'packed', 'sent', 'completed'])
-                ->filter(function($order) use ($monthYear) {
+                ->filter(function ($order) use ($monthYear) {
                     return $order->created_at->format('Y-m') === $monthYear;
                 })
                 ->sum('grand_total');
-                
+
             if ($spent > $maxSpending) {
                 $maxSpending = $spent;
             }
-                
+
             $chartData[] = [
                 'label' => $date->translatedFormat('M'),
                 'spent' => $spent,
-                'height' => '0%' // Will calculate relative to max later
+                'height' => '0%', // Will calculate relative to max later
             ];
         }
-        
+
         // Calculate heights relative to max
         if ($maxSpending > 0) {
             foreach ($chartData as &$data) {
                 // Minimum 5% height so the bar is visible even if spending is small
                 $percent = max(5, ($data['spent'] / $maxSpending) * 100);
-                $data['height'] = $percent . '%';
+                $data['height'] = $percent.'%';
             }
         }
 
@@ -522,7 +552,7 @@ class Account extends Component
 
     public function getAddressesProperty()
     {
-        return \App\Models\UserAddress::where('user_id', Auth::id())
+        return UserAddress::where('user_id', Auth::id())
             ->orderBy('is_primary', 'desc')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -530,16 +560,18 @@ class Account extends Component
 
     public function getResellerStatsProperty()
     {
-        if (!Auth::user()->hasRole('reseller')) return [];
+        if (! Auth::user()->hasRole('reseller')) {
+            return [];
+        }
         $orders = Order::where('user_id', Auth::id())->whereIn('status', ['paid', 'packed', 'sent', 'completed'])->get();
-        
-        $discountPercent = \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 0;
-        
+
+        $discountPercent = SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 0;
+
         // As a simple stat, let's show total purchases and total "hemat" (savings)
         return [
             'total_spent' => $orders->sum('grand_total'),
             'total_savings' => $orders->sum('discount_total'), // Or calculated based on logic
-            'discount_percent' => $discountPercent
+            'discount_percent' => $discountPercent,
         ];
     }
 
@@ -549,23 +581,23 @@ class Account extends Component
         $userEmail = Auth::user()->email;
         $isReseller = Auth::user()->hasRole('reseller');
 
-        return \App\Models\Voucher::where('is_active', true)
+        return Voucher::where('is_active', true)
             ->forOnline()
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('max_uses')->orWhereRaw('used_count < max_uses');
             })
-            ->where(function($q) use ($userId, $userEmail) {
+            ->where(function ($q) use ($userId, $userEmail) {
                 // Voucher umum (null) ATAU secara spesifik diberikan ke ID user ini ATAU ke email user
                 $q->whereNull('specific_users')
-                  ->orWhere('specific_users', '[]')
-                  ->orWhereJsonContains('specific_users', (string)$userId)
-                  ->orWhereJsonContains('specific_users', $userId)
-                  ->orWhereJsonContains('specific_users', $userEmail);
+                    ->orWhere('specific_users', '[]')
+                    ->orWhereJsonContains('specific_users', (string) $userId)
+                    ->orWhereJsonContains('specific_users', $userId)
+                    ->orWhereJsonContains('specific_users', $userEmail);
             })
-            ->when($isReseller, function($q) {
+            ->when($isReseller, function ($q) {
                 // Jika dia reseller, sembunyikan voucher yang mengecualikan reseller
                 $q->where('exclude_resellers', false);
             })
@@ -575,7 +607,7 @@ class Account extends Component
 
     public function getWishlistsProperty()
     {
-        return \App\Models\Wishlist::with('product')
+        return Wishlist::with('product')
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
@@ -591,7 +623,7 @@ class Account extends Component
     {
         return view('livewire.account')->layout('components.layouts.app', [
             'title' => 'Akun Saya',
-            'robots' => 'noindex, nofollow'
+            'robots' => 'noindex, nofollow',
         ]);
     }
 }

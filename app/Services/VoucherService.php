@@ -22,7 +22,7 @@ class VoucherService
         ?string $guestEmail = null,
         string $channel = 'ecommerce'
     ): array {
-        if (!$voucher->is_active) {
+        if (! $voucher->is_active) {
             return ['valid' => false, 'message' => "Kode voucher '{$voucher->code}' tidak aktif."];
         }
 
@@ -38,8 +38,8 @@ class VoucherService
             return ['valid' => false, 'message' => 'Kode voucher ini hanya berlaku untuk transaksi di Kasir / POS.'];
         }
 
-        if ($channel === 'pos' && $voucher->usable_channel === 'ecommerce_only') {
-            return ['valid' => false, 'message' => "Kode voucher '{$voucher->code}' hanya berlaku untuk toko online."];
+        if ($channel === 'pos' && in_array($voucher->usable_channel, ['online_only', 'ecommerce_only'])) {
+            return ['valid' => false, 'message' => "Kode voucher '{$voucher->code}' hanya berlaku untuk transaksi Toko Online (Web)."];
         }
 
         if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
@@ -52,6 +52,7 @@ class VoucherService
 
         if ($voucher->min_purchase > 0 && $subtotal < $voucher->min_purchase) {
             $formattedMin = number_format($voucher->min_purchase, 0, ',', '.');
+
             return ['valid' => false, 'message' => "Minimal belanja Rp {$formattedMin} untuk voucher '{$voucher->code}'."];
         }
 
@@ -59,9 +60,9 @@ class VoucherService
             return ['valid' => false, 'message' => 'Voucher ini tidak berlaku untuk akun Reseller.'];
         }
 
-        if (!empty($voucher->specific_users)) {
+        if (! empty($voucher->specific_users)) {
             $email = $user ? $user->email : $guestEmail;
-            if (!$email || !in_array($email, $voucher->specific_users)) {
+            if (! $email || ! in_array($email, $voucher->specific_users)) {
                 return ['valid' => false, 'message' => 'Voucher ini hanya berlaku untuk akun tertentu.'];
             }
         }
@@ -71,7 +72,7 @@ class VoucherService
             $userUsageQuery = Order::where('voucher_id', $voucher->id)
                 ->where(function ($q) {
                     $q->where('payment_status', '!=', 'cancelled')
-                      ->where('status', '!=', 'cancelled');
+                        ->where('status', '!=', 'cancelled');
                 });
 
             $emailToCheck = $user ? $user->email : $guestEmail;
@@ -92,7 +93,7 @@ class VoucherService
             if ($userUsageQuery && $userUsageQuery->count() >= $voucher->max_uses_per_user) {
                 return [
                     'valid' => false,
-                    'message' => "Anda sudah mencapai batas pemakaian ({$voucher->max_uses_per_user}x) untuk voucher '{$voucher->code}'."
+                    'message' => "Anda sudah mencapai batas pemakaian ({$voucher->max_uses_per_user}x) untuk voucher '{$voucher->code}'.",
                 ];
             }
         }
@@ -126,13 +127,14 @@ class VoucherService
      * Memvalidasi dan mereposisi diskon beberapa voucher secara deterministik
      * langsung dari database model (bisa dengan lockForUpdate untuk transaksi checkout).
      *
-     * @param array<int, array<string, mixed>> $appliedVouchersData
+     * @param  array<int, array<string, mixed>>  $appliedVouchersData
      * @return array{
      *     product_discount: float,
      *     shipping_discount: float,
      *     total_discount: float,
      *     verified_vouchers: array<int, Voucher>
      * }
+     *
      * @throws Exception
      */
     public function verifyAndCalculate(
@@ -150,7 +152,7 @@ class VoucherService
 
         foreach ($appliedVouchersData as $vData) {
             $voucherCode = $vData['code'] ?? null;
-            if (!$voucherCode) {
+            if (! $voucherCode) {
                 continue;
             }
 
@@ -160,7 +162,7 @@ class VoucherService
             }
             $voucherModel = $query->first();
 
-            if (!$voucherModel) {
+            if (! $voucherModel) {
                 throw new Exception("Voucher '{$voucherCode}' tidak ditemukan atau sudah tidak valid.");
             }
 
@@ -172,7 +174,7 @@ class VoucherService
                 $guestEmail
             );
 
-            if (!$validation['valid']) {
+            if (! $validation['valid']) {
                 throw new Exception($validation['message']);
             }
 

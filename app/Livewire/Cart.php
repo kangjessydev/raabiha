@@ -2,8 +2,12 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
+use App\Models\Order;
+use App\Models\SiteSetting;
+use App\Models\Voucher;
+use App\Services\VoucherService;
 use Livewire\Attributes\Layout;
+use Livewire\Component;
 
 #[Layout('components.layouts.app')]
 class Cart extends Component
@@ -11,15 +15,18 @@ class Cart extends Component
     public $cart;
 
     public $selectedItems = [];
+
     public $selectAll = true;
+
     public $voucherCode = '';
+
     public $appliedVoucher = null;
 
     public function mount()
     {
         $this->loadCart();
         if ($this->cart && $this->cart->items) {
-            $this->selectedItems = $this->cart->items->pluck('id')->map(fn($id) => (string)$id)->toArray();
+            $this->selectedItems = $this->cart->items->pluck('id')->map(fn ($id) => (string) $id)->toArray();
         }
         $this->appliedVoucher = session('applied_voucher', null);
     }
@@ -28,36 +35,41 @@ class Cart extends Component
     {
         if (empty($this->voucherCode)) {
             session()->flash('voucher_error', 'Masukkan kode voucher terlebih dahulu.');
+
             return;
         }
 
-        $voucher = \App\Models\Voucher::where('code', $this->voucherCode)
+        $voucher = Voucher::where('code', $this->voucherCode)
             ->where('is_active', true)
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->first();
 
-        if (!$voucher) {
+        if (! $voucher) {
             session()->flash('voucher_error', 'Kode voucher tidak valid atau sudah kadaluarsa.');
+
             return;
         }
 
         if ($voucher->usable_channel === 'pos_only') {
             session()->flash('voucher_error', 'Kode voucher ini hanya berlaku untuk transaksi di Kasir / POS.');
+
             return;
         }
 
         if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
             session()->flash('voucher_error', 'Kode voucher sudah melewati batas penggunaan.');
+
             return;
         }
 
         if ($voucher->is_shipping_voucher) {
             session()->flash('voucher_error', 'Voucher ongkir hanya dapat digunakan di halaman Checkout.');
+
             return;
         }
 
@@ -65,7 +77,7 @@ class Cart extends Component
         $subtotal = 0;
         if ($this->cart && $this->cart->items) {
             foreach ($this->cart->items as $item) {
-                if (in_array((string)$item->id, $this->selectedItems)) {
+                if (in_array((string) $item->id, $this->selectedItems)) {
                     $cartQuantity += $item->quantity;
                     $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
                     $subtotal += $price * $item->quantity;
@@ -73,15 +85,16 @@ class Cart extends Component
             }
         }
 
-        $validation = app(\App\Services\VoucherService::class)->validateVoucher(
+        $validation = app(VoucherService::class)->validateVoucher(
             $voucher,
             $subtotal,
             $cartQuantity,
             auth()->user()
         );
 
-        if (!$validation['valid']) {
+        if (! $validation['valid']) {
             session()->flash('voucher_error', $validation['message']);
+
             return;
         }
 
@@ -89,7 +102,7 @@ class Cart extends Component
         session(['applied_voucher' => $this->appliedVoucher]);
         session(['applied_vouchers' => [$this->appliedVoucher]]);
         $this->voucherCode = '';
-        
+
         $this->dispatch('close-voucher-sheet');
     }
 
@@ -109,7 +122,7 @@ class Cart extends Component
     public function updatedSelectAll($value)
     {
         if ($value) {
-            $this->selectedItems = $this->cart->items->pluck('id')->map(fn($id) => (string)$id)->toArray();
+            $this->selectedItems = $this->cart->items->pluck('id')->map(fn ($id) => (string) $id)->toArray();
         } else {
             $this->selectedItems = [];
         }
@@ -138,7 +151,11 @@ class Cart extends Component
 
     public function incrementQuantity($itemId)
     {
-        $item = \App\Models\CartItem::find($itemId);
+        if (! $this->cart) {
+            $this->loadCart();
+        }
+
+        $item = $this->cart ? $this->cart->items()->find($itemId) : null;
         if ($item) {
             $item->increment('quantity');
             $this->loadCart();
@@ -148,7 +165,11 @@ class Cart extends Component
 
     public function decrementQuantity($itemId)
     {
-        $item = \App\Models\CartItem::find($itemId);
+        if (! $this->cart) {
+            $this->loadCart();
+        }
+
+        $item = $this->cart ? $this->cart->items()->find($itemId) : null;
         if ($item && $item->quantity > 1) {
             $item->decrement('quantity');
             $this->loadCart();
@@ -158,31 +179,38 @@ class Cart extends Component
 
     public function removeItem($itemId)
     {
-        $item = \App\Models\CartItem::find($itemId);
+        if (! $this->cart) {
+            $this->loadCart();
+        }
+
+        $item = $this->cart ? $this->cart->items()->find($itemId) : null;
         if ($item) {
             $item->delete();
             $this->loadCart();
-            $this->selectedItems = array_values(array_diff($this->selectedItems, [(string)$itemId]));
+            $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $itemId]));
             $this->updatedSelectedItems();
             $this->dispatch('cart-updated');
         }
     }
-    
+
     public function proceedToCheckout()
     {
-        $holidayMode = \App\Models\SiteSetting::where('key', 'store_holiday_mode')->value('value');
+        $holidayMode = SiteSetting::where('key', 'store_holiday_mode')->value('value');
         if ($holidayMode) {
-            $holidayMessage = \App\Models\SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
+            $holidayMessage = SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
             session()->flash('error', $holidayMessage);
+
             return;
         }
 
         if (empty($this->selectedItems)) {
             session()->flash('error', 'Pilih minimal satu produk untuk di-checkout.');
+
             return;
         }
-        
+
         session(['checkout_item_ids' => $this->selectedItems]);
+
         return $this->redirect('/checkout', navigate: true);
     }
 
@@ -191,7 +219,7 @@ class Cart extends Component
         $subtotal = 0;
         if ($this->cart && $this->cart->items) {
             foreach ($this->cart->items as $item) {
-                if (in_array((string)$item->id, $this->selectedItems)) {
+                if (in_array((string) $item->id, $this->selectedItems)) {
                     $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
                     $subtotal += $price * $item->quantity;
                 }
@@ -200,7 +228,7 @@ class Cart extends Component
 
         $resellerDiscount = 0;
         if (auth()->check() && auth()->user()->hasRole('reseller') && auth()->user()->reseller_status === 'active') {
-            $discountPercent = \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 0;
+            $discountPercent = SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 0;
             $resellerDiscount = $subtotal * ($discountPercent / 100);
         }
 
@@ -222,41 +250,41 @@ class Cart extends Component
                 }
             }
         }
-        
+
         $grandTotal = max(0, $baseTotalForVoucher - $discountAmount);
-        
-        $vouchers = \App\Models\Voucher::where('is_active', true)
+
+        $vouchers = Voucher::where('is_active', true)
             ->forOnline()
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->get();
-            
+
         $availableVouchers = collect();
         $cartQuantity = 0;
         if ($this->cart && $this->cart->items) {
             foreach ($this->cart->items as $item) {
-                if (in_array((string)$item->id, $this->selectedItems)) {
+                if (in_array((string) $item->id, $this->selectedItems)) {
                     $cartQuantity += $item->quantity;
                 }
             }
         }
         $user = auth()->user();
-        
+
         foreach ($vouchers as $voucher) {
             // Cek voucher khusus user tertentu
-            if (!empty($voucher->specific_users)) {
-                if (!$user || !in_array($user->email, $voucher->specific_users)) {
+            if (! empty($voucher->specific_users)) {
+                if (! $user || ! in_array($user->email, $voucher->specific_users)) {
                     continue; // Jangan tampilkan sama sekali
                 }
             }
-            
+
             $isEligible = true;
             $reason = '';
-            
+
             if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
                 $isEligible = false;
                 $reason = 'Sudah melewati batas penggunaan maksimal.';
@@ -265,35 +293,35 @@ class Cart extends Component
                 $reason = 'Voucher ongkir hanya dapat digunakan di halaman Checkout.';
             } elseif ($voucher->min_items > 0 && $cartQuantity < $voucher->min_items) {
                 $isEligible = false;
-                $reason = 'Minimal belanja ' . $voucher->min_items . ' item.';
+                $reason = 'Minimal belanja '.$voucher->min_items.' item.';
             } elseif ($voucher->min_purchase > 0 && $baseTotalForVoucher < $voucher->min_purchase) {
                 $isEligible = false;
-                $reason = 'Minimal transaksi Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.';
+                $reason = 'Minimal transaksi Rp'.number_format($voucher->min_purchase, 0, ',', '.').'.';
             } elseif ($voucher->exclude_resellers && $user && $user->hasRole('reseller')) {
                 $isEligible = false;
                 $reason = 'Tidak berlaku untuk mitra Reseller.';
             }
-            
+
             if ($isEligible && $voucher->max_uses_per_user > 0) {
-                $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
+                $userUsageQuery = Order::where('voucher_id', $voucher->id)
                     ->where(function ($q) {
                         $q->where('payment_status', '!=', 'cancelled')
-                          ->where('status', '!=', 'cancelled');
+                            ->where('status', '!=', 'cancelled');
                     });
-                
+
                 if ($user) {
                     $userUsageQuery->where(function ($q) use ($user) {
                         $q->where('user_id', $user->id)
-                          ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$user->email]);
+                            ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.email')) = ?", [$user->email]);
                     });
-                    
+
                     if ($userUsageQuery->count() >= $voucher->max_uses_per_user) {
                         $isEligible = false;
-                        $reason = 'Telah melewati batas penggunaan untuk akun Anda (' . $voucher->max_uses_per_user . ' kali).';
+                        $reason = 'Telah melewati batas penggunaan untuk akun Anda ('.$voucher->max_uses_per_user.' kali).';
                     }
                 }
             }
-            
+
             $voucher->is_eligible = $isEligible;
             $voucher->ineligibility_reason = $reason;
             $availableVouchers->push($voucher);
@@ -307,7 +335,7 @@ class Cart extends Component
             'availableVouchers' => $availableVouchers,
         ])->layout('components.layouts.app', [
             'title' => 'Keranjang Belanja',
-            'robots' => 'noindex, nofollow'
+            'robots' => 'noindex, nofollow',
         ]);
     }
 }

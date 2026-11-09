@@ -2,93 +2,138 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PaymentMethod;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\ShippingMethod;
+use App\Models\SiteSetting;
+use App\Models\StockLog;
+use App\Models\UserAddress;
+use App\Models\Voucher;
+use App\Observers\OrderObserver;
+use App\Services\BinderByteService;
+use App\Services\EmsifaService;
+use App\Services\OrderStockService;
+use App\Services\VoucherService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
+use Livewire\Component;
 
 #[Layout('components.layouts.app')]
 class Checkout extends Component
 {
     // Form fields
     public $email;
+
     public $phone;
+
     public $first_name;
+
     public $last_name;
+
     public $address;
+
     public $village = '';
+
     public $agree_terms = false;
+
     public $province;
+
     public $city;
+
     public $district;
+
     public $postal_code;
+
     public $notes;
-    
+
     // Region Dropdown State removed, handled by Komerce Autocomplete
-    
+
     // Address Mode & Active Shipping Provider
     public $addressMode = 'api'; // 'api' atau 'manual'
+
     #[Locked]
     public $activeShippingProvider = 'komerce'; // 'komerce' atau 'binderbyte'
 
     // BinderByte Cascading Dropdown States
     public $provinces = [];
+
     public $cities = [];
+
     public $districts = [];
+
     public $selectedProvinceId = '';
+
     public $selectedCityId = '';
+
     public $selectedDistrictId = '';
-    
+
     // Checkout state - Dikunci #[Locked] dari manipulasi client
     #[Locked]
     public $shipping_cost = 0;
+
     #[Locked]
     public $base_shipping_cost = 0;
+
     public $payment_method = 'bank_transfer';
+
     public $shipping_method = '';
+
     #[Locked]
     public $isFallbackShipping = false;
-    
+
     // Komerce Integration (Direct Autocomplete)
     public $searchLocation = '';
+
     public $destinationOptions = [];
+
     public $selectedDestinationId = '';
+
     public $selectedDestinationLabel = '';
+
     public $locationError = null;
-    
+
     // Coupon state - Nilai potongan dikunci #[Locked]
     public $voucherCode = '';
+
     #[Locked]
     public $appliedVouchers = [];
+
     #[Locked]
     public $appliedVoucher = null;
+
     #[Locked]
     public $discountAmount = 0;
+
     #[Locked]
     public $shippingDiscountAmount = 0;
-    
+
     // Guest checkout state: null = undecided, true = continue as guest, false = logged in
     public $guest_mode = null;
-    
+
     // Save address state
     public $save_address = true;
 
     public function mount()
     {
-        $holidayMode = \App\Models\SiteSetting::where('key', 'store_holiday_mode')->value('value');
+        $holidayMode = SiteSetting::where('key', 'store_holiday_mode')->value('value');
         if ($holidayMode) {
-            $holidayMessage = \App\Models\SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
+            $holidayMessage = SiteSetting::where('key', 'store_holiday_message')->value('value') ?? 'Mohon maaf, toko kami sedang libur. Checkout tidak dapat dilakukan saat ini.';
             session()->flash('error', $holidayMessage);
+
             return redirect('/cart');
         }
 
         // Load active shipping provider
-        $this->activeShippingProvider = \App\Models\SiteSetting::where('key', 'active_shipping_provider')->value('value') ?? 'komerce';
+        $this->activeShippingProvider = SiteSetting::where('key', 'active_shipping_provider')->value('value') ?? 'komerce';
 
         if (auth()->check()) {
             $this->guest_mode = false;
@@ -100,12 +145,12 @@ class Checkout extends Component
             $address = $user->addresses()->where('is_primary', true)->first() ?? $user->addresses()->first();
             if ($address) {
                 $this->phone = $address->phone ?? '';
-                
+
                 // Clean the address text in case it had the village suffix saved previously
                 $cleanAddress = $address->full_address ?? '';
                 $cleanAddress = preg_replace('/\nKel\/Desa: .*/', '', $cleanAddress);
                 $this->address = $cleanAddress;
-                
+
                 $this->village = $address->village ?? '';
                 $this->postal_code = $address->postal_code ?? '';
 
@@ -131,7 +176,7 @@ class Checkout extends Component
             $this->loadProvinces();
         }
 
-        $firstMethod = \App\Models\PaymentMethod::where('is_active', true)
+        $firstMethod = PaymentMethod::where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('config->availability')
                     ->orWhere('config->availability', 'both')
@@ -141,7 +186,7 @@ class Checkout extends Component
         if ($firstMethod) {
             $this->payment_method = $firstMethod->code;
         }
-        
+
         $this->appliedVouchers = session('applied_vouchers', []);
         $legacy = session('applied_voucher', null);
         if ($legacy) {
@@ -151,20 +196,18 @@ class Checkout extends Component
                     $exists = true;
                 }
             }
-            if (!$exists) {
+            if (! $exists) {
                 $this->appliedVouchers[] = $legacy;
             }
             session(['applied_vouchers' => $this->appliedVouchers]);
             session()->forget('applied_voucher');
         }
-        $this->appliedVoucher = !empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
-        
+        $this->appliedVoucher = ! empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
+
         // Fetch rates if selectedDestinationId already exists (unlikely on fresh load)
         $this->generateShippingRates();
     }
-    
 
-    
     // Direct Autocomplete Logic
     public function updatedSearchLocation($value)
     {
@@ -172,36 +215,39 @@ class Checkout extends Component
         $value = trim($value);
         if (strlen($value) < 4) {
             $this->destinationOptions = [];
+
             return;
         }
 
-        $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
-        if (!$apiKey) {
+        $apiKey = SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
+        if (! $apiKey) {
             $this->locationError = 'API Key RajaOngkir belum dikonfigurasi di Pengaturan Admin.';
+
             return;
         }
 
-        $cacheKey = 'location_search_v1_' . md5(strtolower($value));
+        $cacheKey = 'location_search_v1_'.md5(strtolower($value));
 
         if (cache()->has($cacheKey)) {
             $cached = cache()->get($cacheKey);
-            if (is_array($cached) && !empty($cached)) {
+            if (is_array($cached) && ! empty($cached)) {
                 $this->destinationOptions = $cached;
+
                 return;
             }
         }
 
         try {
-            $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
+            $response = Http::withHeaders(['key' => $apiKey])
                 ->timeout(10)
                 ->get('https://rajaongkir.komerce.id/api/v1/destination/domestic-destination', [
-                    'search' => $value
+                    'search' => $value,
                 ]);
-                
+
             if ($response->successful()) {
                 $data = $response->json('data') ?? [];
                 $this->destinationOptions = $data;
-                if (!empty($data)) {
+                if (! empty($data)) {
                     cache()->put($cacheKey, $data, now()->addDays(7));
                 }
             } else {
@@ -211,15 +257,15 @@ class Checkout extends Component
                     if (str_contains(strtolower($json['meta']['message']), 'limit')) {
                         $this->locationError = 'Batas pencarian wilayah RajaOngkir (Daily Limit Exceeded) hari ini telah terlampaui. Silakan hubungi admin toko via WhatsApp untuk checkout manual.';
                     } else {
-                        $this->locationError = 'Gagal memuat lokasi: ' . $json['meta']['message'];
+                        $this->locationError = 'Gagal memuat lokasi: '.$json['meta']['message'];
                     }
                 } else {
-                    $this->locationError = 'Gagal menghubungi server kurir (Status ' . $response->status() . ').';
+                    $this->locationError = 'Gagal menghubungi server kurir (Status '.$response->status().').';
                 }
             }
         } catch (\Exception $e) {
             $this->destinationOptions = [];
-            $this->locationError = 'Masalah koneksi ke server RajaOngkir: ' . $e->getMessage();
+            $this->locationError = 'Masalah koneksi ke server RajaOngkir: '.$e->getMessage();
         }
     }
 
@@ -229,21 +275,21 @@ class Checkout extends Component
         $this->selectedDestinationLabel = $label;
         $this->searchLocation = '';
         $this->destinationOptions = [];
-        
+
         $this->generateShippingRates();
     }
-    
+
     // BinderByte Cascading Dropdown Logic
     public function loadProvinces()
     {
         $this->locationError = null;
         try {
-            $this->provinces = \App\Services\BinderByteService::getProvinces();
+            $this->provinces = BinderByteService::getProvinces();
             if (empty($this->provinces)) {
                 $this->locationError = 'Gagal memuat data provinsi. Silakan gunakan mode manual jika berlanjut.';
             }
         } catch (\Exception $e) {
-            $this->locationError = 'Masalah memuat wilayah BinderByte: ' . $e->getMessage();
+            $this->locationError = 'Masalah memuat wilayah BinderByte: '.$e->getMessage();
         }
     }
 
@@ -262,12 +308,12 @@ class Checkout extends Component
         if ($id) {
             try {
                 if ($this->addressMode === 'manual') {
-                    $this->cities = \App\Services\EmsifaService::getCities($id);
+                    $this->cities = EmsifaService::getCities($id);
                 } else {
-                    $this->cities = \App\Services\BinderByteService::getCities($id);
+                    $this->cities = BinderByteService::getCities($id);
                 }
             } catch (\Exception $e) {
-                $this->locationError = 'Gagal memuat data kota: ' . $e->getMessage();
+                $this->locationError = 'Gagal memuat data kota: '.$e->getMessage();
             }
         }
     }
@@ -285,12 +331,12 @@ class Checkout extends Component
         if ($id) {
             try {
                 if ($this->addressMode === 'manual') {
-                    $this->districts = \App\Services\EmsifaService::getDistricts($id);
+                    $this->districts = EmsifaService::getDistricts($id);
                 } else {
-                    $this->districts = \App\Services\BinderByteService::getDistricts($id);
+                    $this->districts = BinderByteService::getDistricts($id);
                 }
             } catch (\Exception $e) {
-                $this->locationError = 'Gagal memuat data kecamatan: ' . $e->getMessage();
+                $this->locationError = 'Gagal memuat data kecamatan: '.$e->getMessage();
             }
         }
     }
@@ -325,16 +371,16 @@ class Checkout extends Component
     {
         $this->locationError = null;
         try {
-            $this->provinces = \App\Services\EmsifaService::getProvinces();
+            $this->provinces = EmsifaService::getProvinces();
         } catch (\Exception $e) {
-            $this->locationError = 'Gagal memuat provinsi (Emsifa): ' . $e->getMessage();
+            $this->locationError = 'Gagal memuat provinsi (Emsifa): '.$e->getMessage();
         }
     }
 
     public function switchToManualMode()
     {
         $this->addressMode = 'manual';
-        
+
         // Reset API state
         $this->selectedDestinationId = '';
         $this->selectedDestinationLabel = '';
@@ -346,7 +392,7 @@ class Checkout extends Component
         $this->district = '';
         $this->shippingRates = [];
         $this->shipping_cost = 0;
-        
+
         $this->loadEmsifaProvinces();
         $this->generateShippingRates();
     }
@@ -354,7 +400,7 @@ class Checkout extends Component
     public function switchToApiMode()
     {
         $this->addressMode = 'api';
-        
+
         $this->selectedDestinationId = '';
         $this->selectedDestinationLabel = '';
         $this->province = '';
@@ -362,21 +408,23 @@ class Checkout extends Component
         $this->district = '';
         $this->shippingRates = [];
         $this->shipping_cost = 0;
-        
+
         if ($this->activeShippingProvider === 'binderbyte') {
             $this->loadProvinces();
         }
     }
-    
+
     public function updatedAddressMode($value)
     {
         $this->generateShippingRates();
     }
 
-    
     public $shippingRates = [];
+
     public $totalWeight = 0;
+
     public $activeShippingCategory = 'reguler';
+
     public $expandedCategories = [
         'reguler' => true,
         'hemat' => true,
@@ -386,7 +434,7 @@ class Checkout extends Component
 
     public function toggleCategory($category)
     {
-        $this->expandedCategories[$category] = !($this->expandedCategories[$category] ?? true);
+        $this->expandedCategories[$category] = ! ($this->expandedCategories[$category] ?? true);
     }
 
     public function calculateDynamicShipping()
@@ -394,14 +442,14 @@ class Checkout extends Component
         // Just call generateShippingRates, base_shipping_cost calculation is now dynamic from Komerce
         $this->generateShippingRates();
     }
-    
+
     public function getManualShippingRates(int $totalWeight, $activeCouriers, string $provinceName = ''): array
     {
         $rates = [];
         $billableKg = max(1, (int) ceil($totalWeight / 1000));
 
         // Ambil manual_shipping_rules dari SiteSetting
-        $rulesJson = \App\Models\SiteSetting::where('key', 'manual_shipping_rules')->value('value');
+        $rulesJson = SiteSetting::where('key', 'manual_shipping_rules')->value('value');
         $rules = $rulesJson ? json_decode($rulesJson, true) : [];
 
         $provNameStr = strtoupper(trim($provinceName));
@@ -412,13 +460,13 @@ class Checkout extends Component
             'BALI' => 'bali_nt', 'NUSA TENGGARA BARAT' => 'bali_nt', 'NUSA TENGGARA TIMUR' => 'bali_nt',
             'KALIMANTAN BARAT' => 'kalimantan', 'KALIMANTAN TENGAH' => 'kalimantan', 'KALIMANTAN SELATAN' => 'kalimantan', 'KALIMANTAN TIMUR' => 'kalimantan', 'KALIMANTAN UTARA' => 'kalimantan',
             'SULAWESI UTARA' => 'sulawesi', 'SULAWESI TENGAH' => 'sulawesi', 'SULAWESI SELATAN' => 'sulawesi', 'SULAWESI TENGGARA' => 'sulawesi', 'GORONTALO' => 'sulawesi', 'SULAWESI BARAT' => 'sulawesi',
-            'MALUKU' => 'maluku_papua', 'MALUKU UTARA' => 'maluku_papua', 'PAPUA' => 'maluku_papua', 'PAPUA BARAT' => 'maluku_papua', 'PAPUA SELATAN' => 'maluku_papua', 'PAPUA TENGAH' => 'maluku_papua', 'PAPUA PEGUNUNGAN' => 'maluku_papua', 'PAPUA BARAT DAYA' => 'maluku_papua'
+            'MALUKU' => 'maluku_papua', 'MALUKU UTARA' => 'maluku_papua', 'PAPUA' => 'maluku_papua', 'PAPUA BARAT' => 'maluku_papua', 'PAPUA SELATAN' => 'maluku_papua', 'PAPUA TENGAH' => 'maluku_papua', 'PAPUA PEGUNUNGAN' => 'maluku_papua', 'PAPUA BARAT DAYA' => 'maluku_papua',
         ];
 
         $islandStr = $islandMapping[$provNameStr] ?? '';
         $courierBestRules = [];
 
-        if (!empty($rules)) {
+        if (! empty($rules)) {
             foreach ($rules as $rule) {
                 $cCode = $rule['courier'] ?? 'REG';
                 $rScope = $rule['scope'] ?? 'national';
@@ -428,10 +476,10 @@ class Checkout extends Component
                 $isMatch = false;
                 $priority = 0;
 
-                if ($rScope === 'province' && !empty($rule['province_name']) && strtoupper(trim($rule['province_name'])) === $provNameStr) {
+                if ($rScope === 'province' && ! empty($rule['province_name']) && strtoupper(trim($rule['province_name'])) === $provNameStr) {
                     $isMatch = true;
                     $priority = 3;
-                } elseif ($rScope === 'island' && !empty($rule['island_name']) && $rule['island_name'] === $islandStr) {
+                } elseif ($rScope === 'island' && ! empty($rule['island_name']) && $rule['island_name'] === $islandStr) {
                     $isMatch = true;
                     $priority = 2;
                 } elseif ($rScope === 'national') {
@@ -440,11 +488,11 @@ class Checkout extends Component
                 }
 
                 if ($isMatch && $rPrice > 0) {
-                    if (!isset($courierBestRules[$cCode]) || $courierBestRules[$cCode]['priority'] < $priority) {
+                    if (! isset($courierBestRules[$cCode]) || $courierBestRules[$cCode]['priority'] < $priority) {
                         $courierBestRules[$cCode] = [
                             'price' => $rPrice,
                             'name' => $rName,
-                            'priority' => $priority
+                            'priority' => $priority,
                         ];
                     }
                 }
@@ -482,7 +530,7 @@ class Checkout extends Component
             $discountedPrice = $price;
             $shippingVoucher = null;
             foreach ($this->appliedVouchers as $v) {
-                if (!empty($v['is_shipping_voucher'])) {
+                if (! empty($v['is_shipping_voucher'])) {
                     $shippingVoucher = $v;
                     break;
                 }
@@ -500,7 +548,7 @@ class Checkout extends Component
             }
 
             $rates[] = [
-                'id' => 'manual|' . $cCode . '|' . $price,
+                'id' => 'manual|'.$cCode.'|'.$price,
                 'courier_name' => $cNameDisplay,
                 'service_name' => $serviceName,
                 'duration' => '3-5 hari',
@@ -519,8 +567,8 @@ class Checkout extends Component
     {
         $this->shippingRates = [];
         $this->isFallbackShipping = false;
-        
-        $activeCouriers = \App\Models\ShippingMethod::where('is_active', true)->get();
+
+        $activeCouriers = ShippingMethod::where('is_active', true)->get();
         if ($activeCouriers->isEmpty()) {
             return;
         }
@@ -534,11 +582,13 @@ class Checkout extends Component
                 $totalWeight += ($itemWeight * $item->quantity);
             }
         }
-        if ($totalWeight == 0) $totalWeight = 1000;
+        if ($totalWeight == 0) {
+            $totalWeight = 1000;
+        }
         // Round weight according to saved SiteSettings policies
-        $roundingMethod = \App\Models\SiteSetting::where('key', 'weight_rounding_method')->value('value') ?? 'ceiling';
-        $toleranceGrams = (int) (\App\Models\SiteSetting::where('key', 'weight_tolerance_grams')->value('value') ?? 300);
-        
+        $roundingMethod = SiteSetting::where('key', 'weight_rounding_method')->value('value') ?? 'ceiling';
+        $toleranceGrams = (int) (SiteSetting::where('key', 'weight_tolerance_grams')->value('value') ?? 300);
+
         if ($roundingMethod === 'ceiling') {
             $totalWeight = max(1000, (int) ceil($totalWeight / 1000) * 1000);
         } elseif ($roundingMethod === 'half_kg' || $roundingMethod === 'half_kg_ceil') {
@@ -560,8 +610,9 @@ class Checkout extends Component
 
         // Path 1: Manual Address Mode (Fallback)
         if ($this->addressMode === 'manual') {
-            if (!$this->selectedDestinationId) {
+            if (! $this->selectedDestinationId) {
                 $this->shipping_cost = 0;
+
                 return;
             }
 
@@ -570,237 +621,241 @@ class Checkout extends Component
         }
         // Path 2: API Mode - BinderByte
         elseif ($this->activeShippingProvider === 'binderbyte') {
-            if (!$this->selectedDestinationId) {
+            if (! $this->selectedDestinationId) {
                 $this->shipping_cost = 0;
+
                 return;
             }
 
-            $originDistrict = \App\Models\SiteSetting::where('key', 'binderbyte_origin_district')->value('value');
+            $originDistrict = SiteSetting::where('key', 'binderbyte_origin_district')->value('value');
             if ($originDistrict) {
                 $courierCodes = $activeCouriers->pluck('code')->implode(',');
-            
-            try {
-                $results = \App\Services\BinderByteService::getShippingCost(
-                    $originDistrict,
-                    $this->selectedDestinationId,
-                    $totalWeight,
-                    $courierCodes
-                );
 
-                if (!empty($results) && isset($results['results'])) {
-                    foreach ($results['results'] as $courierResult) {
-                        $courierCode = $courierResult['code'] ?? '';
-                        $courierModel = $activeCouriers->firstWhere('code', $courierCode);
-                        if (!$courierModel) continue;
+                try {
+                    $results = BinderByteService::getShippingCost(
+                        $originDistrict,
+                        $this->selectedDestinationId,
+                        $totalWeight,
+                        $courierCodes
+                    );
 
-                        $courierName = $courierModel->name;
-                        $courierConfig = $courierModel->config ?? [];
-                        $allowedServices = [];
-                        
-                        if (!empty($courierConfig['allowed_services'])) {
-                            if (is_array($courierConfig['allowed_services'])) {
-                                $allowedServices = array_map('strtoupper', array_map('trim', $courierConfig['allowed_services']));
-                            } else {
-                                $allowedServices = array_map('trim', explode(',', strtoupper($courierConfig['allowed_services'])));
+                    if (! empty($results) && isset($results['results'])) {
+                        foreach ($results['results'] as $courierResult) {
+                            $courierCode = $courierResult['code'] ?? '';
+                            $courierModel = $activeCouriers->firstWhere('code', $courierCode);
+                            if (! $courierModel) {
+                                continue;
                             }
-                        }
 
-                        foreach ($courierResult['costs'] ?? [] as $cost) {
-                            $rawServiceName = strtoupper($cost['service'] ?? '');
-                            $serviceName = $rawServiceName;
+                            $courierName = $courierModel->name;
+                            $courierConfig = $courierModel->config ?? [];
+                            $allowedServices = [];
 
-                            if (!empty($courierConfig['service_aliases']) && is_array($courierConfig['service_aliases'])) {
-                                foreach ($courierConfig['service_aliases'] as $rawCode => $alias) {
-                                    if (strtoupper($rawCode) === $rawServiceName) {
-                                        $serviceName = $alias;
+                            if (! empty($courierConfig['allowed_services'])) {
+                                if (is_array($courierConfig['allowed_services'])) {
+                                    $allowedServices = array_map('strtoupper', array_map('trim', $courierConfig['allowed_services']));
+                                } else {
+                                    $allowedServices = array_map('trim', explode(',', strtoupper($courierConfig['allowed_services'])));
+                                }
+                            }
+
+                            foreach ($courierResult['costs'] ?? [] as $cost) {
+                                $rawServiceName = strtoupper($cost['service'] ?? '');
+                                $serviceName = $rawServiceName;
+
+                                if (! empty($courierConfig['service_aliases']) && is_array($courierConfig['service_aliases'])) {
+                                    foreach ($courierConfig['service_aliases'] as $rawCode => $alias) {
+                                        if (strtoupper($rawCode) === $rawServiceName) {
+                                            $serviceName = $alias;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (! empty($allowedServices) && ! in_array($rawServiceName, $allowedServices)) {
+                                    continue;
+                                }
+
+                                // Dynamic shipping rule verification
+                                if (! $courierModel->shouldShowService($rawServiceName, $totalWeight, $originDistrict, $this->selectedDestinationLabel)) {
+                                    continue;
+                                }
+
+                                // Convert BinderByte cost format (divided by 1000 if raw price >= 1000000)
+                                $rawPrice = (int) ($cost['price'] ?? 0);
+                                $price = $rawPrice >= 1000000 ? $rawPrice / 1000 : $rawPrice;
+                                $price = (int) (ceil($price / 100) * 100);
+                                $etd = $cost['estimated'] ?? '';
+
+                                $discountedPrice = $price;
+                                $shippingVoucher = null;
+                                foreach ($this->appliedVouchers as $v) {
+                                    if (! empty($v['is_shipping_voucher'])) {
+                                        $shippingVoucher = $v;
                                         break;
                                     }
                                 }
-                            }
+                                if ($shippingVoucher) {
+                                    $discountValue = $shippingVoucher['discount_type'] === 'fixed'
+                                        ? $shippingVoucher['discount_amount']
+                                        : $price * ($shippingVoucher['discount_amount'] / 100);
 
-                            if (!empty($allowedServices) && !in_array($rawServiceName, $allowedServices)) {
-                                continue;
-                            }
+                                    if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
+                                        $discountValue = $shippingVoucher['max_discount'];
+                                    }
 
-                            // Dynamic shipping rule verification
-                            if (!$courierModel->shouldShowService($rawServiceName, $totalWeight, $originDistrict, $this->selectedDestinationLabel)) {
-                                continue;
-                            }
-
-                             // Convert BinderByte cost format (divided by 1000 if raw price >= 1000000)
-                             $rawPrice = (int)($cost['price'] ?? 0);
-                             $price = $rawPrice >= 1000000 ? $rawPrice / 1000 : $rawPrice;
-                             $price = (int) (ceil($price / 100) * 100);
-                             $etd = $cost['estimated'] ?? '';
-
-                            $discountedPrice = $price;
-                            $shippingVoucher = null;
-                            foreach ($this->appliedVouchers as $v) {
-                                if (!empty($v['is_shipping_voucher'])) {
-                                    $shippingVoucher = $v;
-                                    break;
-                                }
-                            }
-                            if ($shippingVoucher) {
-                                $discountValue = $shippingVoucher['discount_type'] === 'fixed'
-                                    ? $shippingVoucher['discount_amount']
-                                    : $price * ($shippingVoucher['discount_amount'] / 100);
-
-                                if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
-                                    $discountValue = $shippingVoucher['max_discount'];
+                                    $discountedPrice = max(0, $price - $discountValue);
                                 }
 
-                                $discountedPrice = max(0, $price - $discountValue);
+                                $this->shippingRates[] = [
+                                    'id' => $courierCode.'|'.$rawServiceName.'|'.$price,
+                                    'courier_name' => $courierName,
+                                    'service_name' => $serviceName,
+                                    'duration' => $etd,
+                                    'price' => $price,
+                                    'original_price' => $price,
+                                    'discounted_price' => $discountedPrice,
+                                    'logo' => $courierModel->logo,
+                                ];
                             }
-
-                            $this->shippingRates[] = [
-                                'id' => $courierCode . '|' . $rawServiceName . '|' . $price,
-                                'courier_name' => $courierName,
-                                'service_name' => $serviceName,
-                                'duration' => $etd,
-                                'price' => $price,
-                                'original_price' => $price,
-                                'discounted_price' => $discountedPrice,
-                                'logo' => $courierModel->logo,
-                            ];
                         }
                     }
+                } catch (\Exception $e) {
+                    Log::error('BinderByte calculation error: '.$e->getMessage());
+                    $this->locationError = 'Gagal memuat tarif ongkir BinderByte. Silakan coba lagi atau gunakan Mode Manual.';
                 }
-            } catch (\Exception $e) {
-                Log::error('BinderByte calculation error: ' . $e->getMessage());
-                $this->locationError = 'Gagal memuat tarif ongkir BinderByte. Silakan coba lagi atau gunakan Mode Manual.';
-            }
             }
         }
         // Path 3: API Mode - Komerce (RajaOngkir)
         else {
-            if (!$this->selectedDestinationId) {
+            if (! $this->selectedDestinationId) {
                 $this->shipping_cost = 0;
+
                 return;
             }
 
-            $apiKey = \App\Models\SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
-            $originCityRaw = \App\Models\SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
+            $apiKey = SiteSetting::where('key', 'rajaongkir_api_key')->value('value');
+            $originCityRaw = SiteSetting::where('key', 'rajaongkir_origin_city')->value('value');
             if ($apiKey && $originCityRaw) {
                 $originCity = explode('::', $originCityRaw)[0];
 
-            foreach ($activeCouriers as $courier) {
-                $courierCode = $courier->code;
-                $courierConfig = $courier->config ?? [];
-                $allowedServices = [];
-                
-                if (!empty($courierConfig['allowed_services'])) {
-                    if (is_array($courierConfig['allowed_services'])) {
-                        $allowedServices = array_map('strtoupper', array_map('trim', $courierConfig['allowed_services']));
-                    } else {
-                        $allowedServices = array_map('trim', explode(',', strtoupper($courierConfig['allowed_services'])));
-                    }
-                }
+                foreach ($activeCouriers as $courier) {
+                    $courierCode = $courier->code;
+                    $courierConfig = $courier->config ?? [];
+                    $allowedServices = [];
 
-                try {
-                    $cacheKey = 'ship_rate_v1_' . md5($originCity . '_' . $this->selectedDestinationId . '_' . $totalWeight . '_' . $courierCode);
-                    $results = null;
-
-                    if (cache()->has($cacheKey)) {
-                        $cachedCosts = cache()->get($cacheKey);
-                        if (is_array($cachedCosts)) {
-                            $results = $cachedCosts;
+                    if (! empty($courierConfig['allowed_services'])) {
+                        if (is_array($courierConfig['allowed_services'])) {
+                            $allowedServices = array_map('strtoupper', array_map('trim', $courierConfig['allowed_services']));
+                        } else {
+                            $allowedServices = array_map('trim', explode(',', strtoupper($courierConfig['allowed_services'])));
                         }
                     }
 
-                    if ($results === null) {
-                        $response = \Illuminate\Support\Facades\Http::withHeaders(['key' => $apiKey])
-                            ->asForm()
-                            ->timeout(10)
-                            ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
-                                'origin' => $originCity,
-                                'destination' => $this->selectedDestinationId,
-                                'weight' => $totalWeight,
-                                'courier' => $courierCode
-                            ]);
+                    try {
+                        $cacheKey = 'ship_rate_v1_'.md5($originCity.'_'.$this->selectedDestinationId.'_'.$totalWeight.'_'.$courierCode);
+                        $results = null;
 
-                        if ($response->successful()) {
-                            $results = $response->json('data') ?? [];
-                            if (!empty($results)) {
-                                cache()->put($cacheKey, $results, now()->addHours(6));
+                        if (cache()->has($cacheKey)) {
+                            $cachedCosts = cache()->get($cacheKey);
+                            if (is_array($cachedCosts)) {
+                                $results = $cachedCosts;
                             }
                         }
-                    }
 
-                    if (!empty($results)) {
-                        foreach ($results as $cost) {
-                            $courierName = $courier->name;
-                            $rawServiceName = strtoupper($cost['service']);
-                            
-                            $serviceName = $rawServiceName;
-                            if (!empty($courierConfig['service_aliases']) && is_array($courierConfig['service_aliases'])) {
-                                foreach ($courierConfig['service_aliases'] as $rawCode => $alias) {
-                                    if (strtoupper($rawCode) === $rawServiceName) {
-                                        $serviceName = $alias;
+                        if ($results === null) {
+                            $response = Http::withHeaders(['key' => $apiKey])
+                                ->asForm()
+                                ->timeout(10)
+                                ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
+                                    'origin' => $originCity,
+                                    'destination' => $this->selectedDestinationId,
+                                    'weight' => $totalWeight,
+                                    'courier' => $courierCode,
+                                ]);
+
+                            if ($response->successful()) {
+                                $results = $response->json('data') ?? [];
+                                if (! empty($results)) {
+                                    cache()->put($cacheKey, $results, now()->addHours(6));
+                                }
+                            }
+                        }
+
+                        if (! empty($results)) {
+                            foreach ($results as $cost) {
+                                $courierName = $courier->name;
+                                $rawServiceName = strtoupper($cost['service']);
+
+                                $serviceName = $rawServiceName;
+                                if (! empty($courierConfig['service_aliases']) && is_array($courierConfig['service_aliases'])) {
+                                    foreach ($courierConfig['service_aliases'] as $rawCode => $alias) {
+                                        if (strtoupper($rawCode) === $rawServiceName) {
+                                            $serviceName = $alias;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (! empty($allowedServices) && ! in_array($rawServiceName, $allowedServices)) {
+                                    continue;
+                                }
+
+                                if (! $courier->shouldShowService($rawServiceName, $totalWeight, $originCityRaw, $this->selectedDestinationLabel)) {
+                                    continue;
+                                }
+
+                                $price = (int) (ceil(($cost['cost'] ?? 0) / 100) * 100);
+                                $etd = $cost['etd'] ?? '';
+
+                                $discountedPrice = $price;
+                                $shippingVoucher = null;
+                                foreach ($this->appliedVouchers as $v) {
+                                    if (! empty($v['is_shipping_voucher'])) {
+                                        $shippingVoucher = $v;
                                         break;
                                     }
                                 }
-                            }
-                            
-                            if (!empty($allowedServices) && !in_array($rawServiceName, $allowedServices)) {
-                                continue;
-                            }
+                                if ($shippingVoucher) {
+                                    $discountValue = $shippingVoucher['discount_type'] === 'fixed'
+                                        ? $shippingVoucher['discount_amount']
+                                        : $price * ($shippingVoucher['discount_amount'] / 100);
 
-                            if (!$courier->shouldShowService($rawServiceName, $totalWeight, $originCityRaw, $this->selectedDestinationLabel)) {
-                                continue;
-                            }
-                            
-                            $price = (int) (ceil(($cost['cost'] ?? 0) / 100) * 100);
-                            $etd = $cost['etd'] ?? '';
+                                    if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
+                                        $discountValue = $shippingVoucher['max_discount'];
+                                    }
 
-                            $discountedPrice = $price;
-                            $shippingVoucher = null;
-                            foreach ($this->appliedVouchers as $v) {
-                                if (!empty($v['is_shipping_voucher'])) {
-                                    $shippingVoucher = $v;
-                                    break;
-                                }
-                            }
-                            if ($shippingVoucher) {
-                                $discountValue = $shippingVoucher['discount_type'] === 'fixed'
-                                    ? $shippingVoucher['discount_amount']
-                                    : $price * ($shippingVoucher['discount_amount'] / 100);
-
-                                if ($shippingVoucher['max_discount'] > 0 && $discountValue > $shippingVoucher['max_discount']) {
-                                    $discountValue = $shippingVoucher['max_discount'];
+                                    $discountedPrice = max(0, $price - $discountValue);
                                 }
 
-                                $discountedPrice = max(0, $price - $discountValue);
+                                $this->shippingRates[] = [
+                                    'id' => $courierCode.'|'.$rawServiceName.'|'.$price,
+                                    'courier_name' => $courierName,
+                                    'service_name' => $serviceName,
+                                    'duration' => $etd,
+                                    'price' => $price,
+                                    'original_price' => $price,
+                                    'discounted_price' => $discountedPrice,
+                                    'logo' => $courier->logo,
+                                ];
                             }
-                            
-                            $this->shippingRates[] = [
-                                'id' => $courierCode . '|' . $rawServiceName . '|' . $price,
-                                'courier_name' => $courierName,
-                                'service_name' => $serviceName,
-                                'duration' => $etd,
-                                'price' => $price,
-                                'original_price' => $price,
-                                'discounted_price' => $discountedPrice,
-                                'logo' => $courier->logo,
-                            ];
                         }
+                    } catch (\Exception $e) {
+                        // Log or ignore
                     }
-                } catch (\Exception $e) {
-                    // Log or ignore
                 }
-            }
             }
         }
 
         // Path 4: Auto-Fallback jika mode API tetapi ongkir tidak tersedia atau gagal
         if ($this->addressMode === 'api' && $this->selectedDestinationId && empty($this->shippingRates)) {
             $provForFallback = $this->province;
-            if (empty($provForFallback) && !empty($this->selectedDestinationLabel)) {
+            if (empty($provForFallback) && ! empty($this->selectedDestinationLabel)) {
                 $parts = array_map('trim', explode(',', $this->selectedDestinationLabel));
                 $provForFallback = end($parts) ?: '';
             }
             $manualFallbackRates = $this->getManualShippingRates($totalWeight, $activeCouriers, $provForFallback);
-            if (!empty($manualFallbackRates)) {
+            if (! empty($manualFallbackRates)) {
                 $this->shippingRates = $manualFallbackRates;
                 $this->isFallbackShipping = true;
                 $this->locationError = null;
@@ -820,7 +875,7 @@ class Checkout extends Component
         foreach ($this->shippingRates as $index => $rate) {
             $serviceUpper = strtoupper($rate['service_name']);
             $rawServiceUpper = '';
-            
+
             $parts = explode('|', $rate['id']);
             if (count($parts) >= 2) {
                 $rawServiceUpper = strtoupper($parts[1]);
@@ -862,9 +917,9 @@ class Checkout extends Component
 
             $this->shippingRates[$index]['category'] = $category;
         }
-        
+
         // Set default shipping method to the first available if not set or invalid
-        if (empty($this->shipping_method) || !collect($this->shippingRates)->contains('id', $this->shipping_method)) {
+        if (empty($this->shipping_method) || ! collect($this->shippingRates)->contains('id', $this->shipping_method)) {
             if (count($this->shippingRates) > 0) {
                 $this->shipping_method = $this->shippingRates[0]['id'];
                 $this->shipping_cost = (int) $this->shippingRates[0]['price'];
@@ -902,20 +957,23 @@ class Checkout extends Component
     public function getCheckoutItemsProperty()
     {
         $cart = $this->cart;
-        if (!$cart) return collect();
-        
+        if (! $cart) {
+            return collect();
+        }
+
         $selectedIds = session('checkout_item_ids', []);
-        
+
         if (empty($selectedIds)) {
             return $cart->items;
         }
-        
-        $filtered = $cart->items->filter(function($item) use ($selectedIds) {
-            return in_array((string)$item->id, $selectedIds);
+
+        $filtered = $cart->items->filter(function ($item) use ($selectedIds) {
+            return in_array((string) $item->id, $selectedIds);
         });
 
-        if ($filtered->isEmpty() && !empty($selectedIds)) {
+        if ($filtered->isEmpty() && ! empty($selectedIds)) {
             session()->forget('checkout_item_ids');
+
             return $cart->items;
         }
 
@@ -925,37 +983,45 @@ class Checkout extends Component
     public function getSubtotalProperty()
     {
         $items = $this->checkoutItems;
-        
+
         $total = 0;
         foreach ($items as $item) {
             $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
-                
+
             $total += $price * $item->quantity;
         }
+
         return $total;
     }
+
     public function getResellerDiscountProperty()
     {
         if (auth()->check() && auth()->user()->hasRole('reseller') && auth()->user()->reseller_status === 'active') {
-            $discountPercent = \App\Models\SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 0;
+            $discountPercent = SiteSetting::where('key', 'reseller_discount_percent')->value('value') ?? 0;
+
             return $this->subtotal * ($discountPercent / 100);
         }
+
         return 0;
     }
 
     public function getPaymentFeeProperty(): int
     {
-        if (!$this->payment_method) return 0;
-        $pm = \App\Models\PaymentMethod::where('code', $this->payment_method)->first();
-        if (!$pm || !$pm->config) return 0;
-        
+        if (! $this->payment_method) {
+            return 0;
+        }
+        $pm = PaymentMethod::where('code', $this->payment_method)->first();
+        if (! $pm || ! $pm->config) {
+            return 0;
+        }
+
         $feeCustomer = $pm->config['fee_customer'] ?? ['flat' => 0, 'percent' => 0];
-        $flat    = (int) ($feeCustomer['flat'] ?? 0);
+        $flat = (int) ($feeCustomer['flat'] ?? 0);
         $percent = (float) ($feeCustomer['percent'] ?? 0);
-        
+
         $base = max(0, $this->subtotal - $this->reseller_discount - $this->discountAmount) + max(0, $this->shipping_cost - $this->shippingDiscountAmount);
         $percentFee = $percent > 0 ? (int) ceil($base * ($percent / 100)) : 0;
-        
+
         return $flat + $percentFee;
     }
 
@@ -963,38 +1029,40 @@ class Checkout extends Component
     {
         $this->calculateDiscount();
         $baseForTotal = max(0, $this->subtotal - $this->reseller_discount);
+
         return max(0, $baseForTotal - $this->discountAmount) + max(0, $this->shipping_cost - $this->shippingDiscountAmount) + $this->paymentFee;
     }
-    
+
     public function calculateDiscount()
     {
         $this->discountAmount = 0;
         $this->shippingDiscountAmount = 0;
         $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
 
-        if (!empty($this->appliedVouchers)) {
+        if (! empty($this->appliedVouchers)) {
             foreach ($this->appliedVouchers as $index => $v) {
                 $minPurchase = (float) ($v['min_purchase'] ?? 0);
                 if ($minPurchase > 0 && $baseTotalForVoucher < $minPurchase) {
                     $this->removeVoucher($index);
-                    session()->flash('voucher_error', 'Voucher ' . ($v['code'] ?? '') . ' otomatis dilepas karena total belanja tidak memenuhi syarat minimum.');
+                    session()->flash('voucher_error', 'Voucher '.($v['code'] ?? '').' otomatis dilepas karena total belanja tidak memenuhi syarat minimum.');
+
                     continue;
                 }
 
-                $isShipping = !empty($v['is_shipping_voucher']);
+                $isShipping = ! empty($v['is_shipping_voucher']);
                 $discountType = $v['discount_type'] ?? 'fixed';
                 $discountAmount = (float) ($v['discount_amount'] ?? 0);
                 $maxDiscount = (float) ($v['max_discount'] ?? 0);
 
                 if ($isShipping) {
-                    $discountValue = $discountType === 'fixed' 
-                        ? $discountAmount 
+                    $discountValue = $discountType === 'fixed'
+                        ? $discountAmount
                         : $this->shipping_cost * ($discountAmount / 100);
-                    
+
                     if ($maxDiscount > 0 && $discountValue > $maxDiscount) {
                         $discountValue = $maxDiscount;
                     }
-                    
+
                     $this->shippingDiscountAmount = min($discountValue, $this->shipping_cost);
                 } else {
                     if ($discountType === 'fixed') {
@@ -1010,7 +1078,7 @@ class Checkout extends Component
             }
         }
     }
-    
+
     public function removeVoucher($index = null)
     {
         if ($index !== null && isset($this->appliedVouchers[$index])) {
@@ -1019,32 +1087,34 @@ class Checkout extends Component
         } else {
             $this->appliedVouchers = [];
         }
-        
+
         session(['applied_vouchers' => $this->appliedVouchers]);
         session()->forget('applied_voucher');
-        $this->appliedVoucher = !empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
+        $this->appliedVoucher = ! empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
         $this->discountAmount = 0;
         $this->shippingDiscountAmount = 0;
         $this->generateShippingRates();
     }
-    
+
     public function applyVoucher()
     {
         if (empty($this->voucherCode)) {
             session()->flash('voucher_error', 'Masukkan kode voucher terlebih dahulu.');
+
             return;
         }
 
-        $voucher = \App\Models\Voucher::where('code', $this->voucherCode)->first();
-        if (!$voucher) {
+        $voucher = Voucher::where('code', $this->voucherCode)->first();
+        if (! $voucher) {
             session()->flash('voucher_error', 'Kode voucher tidak valid atau sudah kadaluarsa.');
+
             return;
         }
 
         $cartQuantity = $this->checkoutItems->sum('quantity');
         $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
 
-        $validation = app(\App\Services\VoucherService::class)->validateVoucher(
+        $validation = app(VoucherService::class)->validateVoucher(
             $voucher,
             $baseTotalForVoucher,
             $cartQuantity,
@@ -1052,8 +1122,9 @@ class Checkout extends Component
             $this->email
         );
 
-        if (!$validation['valid']) {
+        if (! $validation['valid']) {
             session()->flash('voucher_error', $validation['message']);
+
             return;
         }
 
@@ -1061,13 +1132,13 @@ class Checkout extends Component
         $newIsStackable = (bool) ($newVoucherData['is_stackable'] ?? false);
         $newIsShipping = (bool) ($newVoucherData['is_shipping_voucher'] ?? false);
 
-        if (!$newIsStackable) {
+        if (! $newIsStackable) {
             $this->appliedVouchers = [$newVoucherData];
             session()->flash('voucher_success', 'Voucher berhasil dipasang (voucher lain dilepas karena tidak mendukung penggabungan).');
         } else {
             $filteredVouchers = [];
             foreach ($this->appliedVouchers as $v) {
-                if (!empty($v['is_stackable'])) {
+                if (! empty($v['is_stackable'])) {
                     $vIsShipping = (bool) ($v['is_shipping_voucher'] ?? false);
                     if ($vIsShipping !== $newIsShipping) {
                         $filteredVouchers[] = $v;
@@ -1080,9 +1151,9 @@ class Checkout extends Component
         }
 
         session(['applied_vouchers' => $this->appliedVouchers]);
-        $this->appliedVoucher = !empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
+        $this->appliedVoucher = ! empty($this->appliedVouchers) ? $this->appliedVouchers[0] : null;
         $this->voucherCode = '';
-        
+
         $this->generateShippingRates();
         $this->dispatch('close-voucher-sheet');
     }
@@ -1100,6 +1171,7 @@ class Checkout extends Component
         if ($index !== -1) {
             $this->removeVoucher($index);
             session()->flash('voucher_success', 'Voucher berhasil dilepas.');
+
             return;
         }
 
@@ -1148,13 +1220,15 @@ class Checkout extends Component
         if (empty($this->shippingRates)) {
             $this->addError('shipping_method', 'Tarif pengiriman untuk tujuan ini belum tersedia. Silakan hubungi admin toko.');
             session()->flash('error', 'Tarif pengiriman untuk tujuan ini belum tersedia. Silakan hubungi admin toko.');
+
             return;
         }
 
         $selectedRate = collect($this->shippingRates)->firstWhere('id', $this->shipping_method);
-        if (!$selectedRate) {
+        if (! $selectedRate) {
             $this->addError('shipping_method', 'Metode pengiriman yang dipilih tidak valid. Silakan pilih kembali.');
             session()->flash('error', 'Metode pengiriman yang dipilih tidak valid. Silakan pilih kembali.');
+
             return;
         }
 
@@ -1162,6 +1236,7 @@ class Checkout extends Component
         if ($actualRatePrice <= 0) {
             $this->addError('shipping_method', 'Tarif pengiriman tidak valid (Rp 0). Silakan hubungi admin toko.');
             session()->flash('error', 'Tarif pengiriman tidak valid (Rp 0). Silakan hubungi admin toko.');
+
             return;
         }
 
@@ -1169,38 +1244,40 @@ class Checkout extends Component
         $this->shipping_cost = $actualRatePrice;
         $this->calculateDiscount();
 
-
         if (auth()->check() && empty($this->email) && empty($this->phone)) {
             $this->addError('email', 'Isi salah satu: Email atau No. WhatsApp.');
+
             return;
         }
 
         if ($this->appliedVoucher) {
-            $voucher = \App\Models\Voucher::find($this->appliedVoucher['id']);
+            $voucher = Voucher::find($this->appliedVoucher['id']);
             if ($voucher) {
                 if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
                     session()->flash('error', 'Voucher yang Anda gunakan baru saja habis.');
+
                     return;
                 }
 
                 if ($voucher->max_uses_per_user > 0) {
-                    $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
+                    $userUsageQuery = Order::where('voucher_id', $voucher->id)
                         ->where(function ($q) {
                             $q->where('payment_status', '!=', 'cancelled')
-                              ->where('status', '!=', 'cancelled');
+                                ->where('status', '!=', 'cancelled');
                         });
 
                     if (auth()->check()) {
                         $userUsageQuery->where(function ($q) {
                             $q->where('user_id', auth()->id())
-                              ->orWhere('shipping_address->email', auth()->user()->email);
+                                ->orWhere('shipping_address->email', auth()->user()->email);
                         });
                     } else {
                         $userUsageQuery->where('shipping_address->email', $this->email);
                     }
 
                     if ($userUsageQuery->count() >= $voucher->max_uses_per_user) {
-                        session()->flash('error', 'Anda sudah melebihi batas penggunaan untuk voucher ini (' . $voucher->max_uses_per_user . ' kali).');
+                        session()->flash('error', 'Anda sudah melebihi batas penggunaan untuk voucher ini ('.$voucher->max_uses_per_user.' kali).');
+
                         return;
                     }
                 }
@@ -1210,15 +1287,17 @@ class Checkout extends Component
         $items = $this->checkoutItems;
         if ($items->count() === 0) {
             session()->flash('error', 'Keranjang belanja Anda kosong.');
+
             return;
         }
 
         // 1. Atomic Lock to prevent double submit (network/concurrency issues)
-        $lockKey = 'checkout_lock_' . (auth()->id() ?? session()->getId());
-        $lock = \Illuminate\Support\Facades\Cache::lock($lockKey, 30);
+        $lockKey = 'checkout_lock_'.(auth()->id() ?? session()->getId());
+        $lock = Cache::lock($lockKey, 30);
 
-        if (!$lock->get()) {
+        if (! $lock->get()) {
             session()->flash('error', 'Pesanan Anda sedang diproses. Silakan tunggu beberapa saat.');
+
             return;
         }
 
@@ -1232,20 +1311,20 @@ class Checkout extends Component
                 }
 
                 if ($item->product_variant_id) {
-                    $variant = \App\Models\ProductVariant::where('id', $item->product_variant_id)
+                    $variant = ProductVariant::where('id', $item->product_variant_id)
                         ->lockForUpdate()
                         ->first();
-                    if (!$variant) {
+                    if (! $variant) {
                         throw new \Exception("Varian produk '{$item->product->name}' tidak ditemukan.");
                     }
                     if ($variant->stock < $item->quantity) {
                         throw new \Exception("Stok produk '{$item->product->name}' (Varian: {$variant->name}) tidak mencukupi. Tersedia: {$variant->stock}.");
                     }
                 } else {
-                    $product = \App\Models\Product::where('id', $item->product_id)
+                    $product = Product::where('id', $item->product_id)
                         ->lockForUpdate()
                         ->first();
-                    if (!$product) {
+                    if (! $product) {
                         throw new \Exception("Produk '{$item->product->name}' tidak ditemukan.");
                     }
                     if ($product->stock < $item->quantity) {
@@ -1255,20 +1334,20 @@ class Checkout extends Component
             }
 
             // Generate order number
-            $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
+            $orderNumber = 'ORD-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -5));
 
             $city = '';
             $province = '';
             $districtValue = '';
-            
+
             if ($this->addressMode === 'manual') {
                 $city = $this->city;
                 $province = $this->province;
                 $this->selectedDestinationLabel = sprintf('%s, %s, %s', $this->district, $this->city, $this->province);
-                $districtValue = 'manual::' . $this->selectedDestinationLabel;
+                $districtValue = 'manual::'.$this->selectedDestinationLabel;
             } else {
-                $districtValue = $this->selectedDestinationId && $this->selectedDestinationLabel 
-                    ? $this->selectedDestinationId . '::' . $this->selectedDestinationLabel 
+                $districtValue = $this->selectedDestinationId && $this->selectedDestinationLabel
+                    ? $this->selectedDestinationId.'::'.$this->selectedDestinationLabel
                     : null;
 
                 if ($this->selectedDestinationLabel) {
@@ -1289,12 +1368,12 @@ class Checkout extends Component
             }
 
             $shippingAddressData = [
-                'name' => trim($this->first_name . ' ' . $this->last_name),
+                'name' => trim($this->first_name.' '.$this->last_name),
                 'first_name' => $this->first_name,
                 'last_name' => $this->last_name,
                 'phone' => $this->phone,
                 'email' => $this->email,
-                'address' => trim($this->address) . "\nKel/Desa: " . trim($this->village),
+                'address' => trim($this->address)."\nKel/Desa: ".trim($this->village),
                 'village' => trim($this->village),
                 'destination_id' => $this->selectedDestinationId,
                 'destination_label' => $this->selectedDestinationLabel,
@@ -1313,8 +1392,8 @@ class Checkout extends Component
             $cartQuantity = $items->sum('quantity');
             $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
 
-            if (!empty($this->appliedVouchers)) {
-                $voucherCalc = app(\App\Services\VoucherService::class)->verifyAndCalculate(
+            if (! empty($this->appliedVouchers)) {
+                $voucherCalc = app(VoucherService::class)->verifyAndCalculate(
                     $this->appliedVouchers,
                     $baseTotalForVoucher,
                     $actualRatePrice,
@@ -1350,12 +1429,14 @@ class Checkout extends Component
                 'discount_total' => $finalDiscountTotal,
                 'grand_total' => $grandTotal,
                 'notes' => $this->notes,
-                'voucher_id' => !empty($verifiedVoucherIds) ? $verifiedVoucherIds[0] : null,
-                'applied_voucher_ids' => !empty($verifiedVoucherIds) ? $verifiedVoucherIds : null,
+                'voucher_id' => ! empty($verifiedVoucherIds) ? $verifiedVoucherIds[0] : null,
+                'applied_voucher_ids' => ! empty($verifiedVoucherIds) ? $verifiedVoucherIds : null,
             ]);
-            
+
             session()->forget('applied_vouchers');
             session()->forget('applied_voucher');
+            session()->put('guest_order_'.$order->order_number, true);
+            session()->put('last_placed_order', $order->order_number);
 
             foreach ($items as $item) {
                 $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
@@ -1381,41 +1462,41 @@ class Checkout extends Component
 
                 // Reduce stock & Log it (using locked instances to ensure correct stock logs and prevent race condition data leakage)
                 if ($item->product_variant_id) {
-                    $lockedVariant = \App\Models\ProductVariant::where('id', $item->product_variant_id)
+                    $lockedVariant = ProductVariant::where('id', $item->product_variant_id)
                         ->lockForUpdate()
                         ->first();
                     $before = $lockedVariant->stock;
                     $lockedVariant->decrement('stock', $item->quantity);
                     $after = $before - $item->quantity;
 
-                    \App\Models\StockLog::create([
-                        'product_id'         => $item->product_id,
+                    StockLog::create([
+                        'product_id' => $item->product_id,
                         'product_variant_id' => $item->product_variant_id,
-                        'type'               => 'out',
-                        'quantity_before'    => $before,
-                        'quantity_change'    => -$item->quantity,
-                        'quantity_after'     => $after,
-                        'reason'             => 'Sales',
-                        'notes'              => 'Penjualan pesanan #' . $orderNumber,
-                        'user_id'            => auth()->id(),
+                        'type' => 'out',
+                        'quantity_before' => $before,
+                        'quantity_change' => -$item->quantity,
+                        'quantity_after' => $after,
+                        'reason' => 'Sales',
+                        'notes' => 'Penjualan pesanan #'.$orderNumber,
+                        'user_id' => auth()->id(),
                     ]);
                 } else {
-                    $lockedProduct = \App\Models\Product::where('id', $item->product_id)
+                    $lockedProduct = Product::where('id', $item->product_id)
                         ->lockForUpdate()
                         ->first();
                     $before = $lockedProduct->stock;
                     $lockedProduct->decrement('stock', $item->quantity);
                     $after = $before - $item->quantity;
 
-                    \App\Models\StockLog::create([
-                        'product_id'      => $item->product_id,
-                        'type'            => 'out',
+                    StockLog::create([
+                        'product_id' => $item->product_id,
+                        'type' => 'out',
                         'quantity_before' => $before,
                         'quantity_change' => -$item->quantity,
-                        'quantity_after'  => $after,
-                        'reason'          => 'Sales',
-                        'notes'           => 'Penjualan pesanan #' . $orderNumber,
-                        'user_id'         => auth()->id(),
+                        'quantity_after' => $after,
+                        'reason' => 'Sales',
+                        'notes' => 'Penjualan pesanan #'.$orderNumber,
+                        'user_id' => auth()->id(),
                     ]);
                 }
             }
@@ -1423,14 +1504,14 @@ class Checkout extends Component
             // Save address automatically if requested and user is authenticated
             if (auth()->check() && $this->save_address) {
                 // Set all other addresses to non-primary
-                \App\Models\UserAddress::where('user_id', auth()->id())->update(['is_primary' => false]);
-                
-                \App\Models\UserAddress::updateOrCreate(
+                UserAddress::where('user_id', auth()->id())->update(['is_primary' => false]);
+
+                UserAddress::updateOrCreate(
                     [
                         'user_id' => auth()->id(),
-                        'recipient_name' => trim($this->first_name . ' ' . $this->last_name),
+                        'recipient_name' => trim($this->first_name.' '.$this->last_name),
                         'phone' => $this->phone,
-                        'full_address' => trim($this->address) . "\nKel/Desa: " . trim($this->village),
+                        'full_address' => trim($this->address)."\nKel/Desa: ".trim($this->village),
                     ],
                     [
                         'title' => 'Alamat Utama',
@@ -1452,7 +1533,8 @@ class Checkout extends Component
         } catch (\Exception $e) {
             DB::rollBack();
             $lock->release();
-            session()->flash('error', 'Terjadi kesalahan saat memproses pesanan Anda: ' . $e->getMessage());
+            session()->flash('error', 'Terjadi kesalahan saat memproses pesanan Anda: '.$e->getMessage());
+
             return;
         }
 
@@ -1463,12 +1545,12 @@ class Checkout extends Component
         $order->load('items');
 
         try {
-            (new \App\Observers\OrderObserver())->sendNewOrderEmails($order);
+            (new OrderObserver)->sendNewOrderEmails($order);
         } catch (\Exception $e) {
-            logger()->error("Gagal mengirim email pesanan baru: " . $e->getMessage());
+            logger()->error('Gagal mengirim email pesanan baru: '.$e->getMessage());
         }
 
-        $activeGateway = \App\Models\SiteSetting::where('key', 'active_payment_gateway')->value('value') ?: 'tripay';
+        $activeGateway = SiteSetting::where('key', 'active_payment_gateway')->value('value') ?: 'tripay';
 
         // Metode Tunai / Manual / Offline
         if ($this->payment_method === 'tunai') {
@@ -1480,31 +1562,32 @@ class Checkout extends Component
             session()->forget('checkout_item_ids');
 
             $lock->release();
-            return redirect()->to('/order-success?order=' . $order->order_number);
+
+            return redirect()->to('/order-success?order='.$order->order_number);
         }
 
         // Metode Pembayaran Online Gateway
         try {
             if ($activeGateway === 'tripay') {
-                $apiKey = \App\Models\SiteSetting::where('key', 'tripay_api_key')->value('value') ?: env('TRIPAY_API_KEY');
-                $privateKey = \App\Models\SiteSetting::where('key', 'tripay_private_key')->value('value') ?: env('TRIPAY_PRIVATE_KEY');
-                $merchantCode = \App\Models\SiteSetting::where('key', 'tripay_merchant_code')->value('value') ?: env('TRIPAY_MERCHANT_CODE');
-                $mode = \App\Models\SiteSetting::where('key', 'tripay_mode')->value('value') ?: env('TRIPAY_MODE', 'sandbox');
-                
-                if (!$apiKey || !$privateKey || !$merchantCode) {
+                $apiKey = SiteSetting::where('key', 'tripay_api_key')->value('value') ?: env('TRIPAY_API_KEY');
+                $privateKey = SiteSetting::where('key', 'tripay_private_key')->value('value') ?: env('TRIPAY_PRIVATE_KEY');
+                $merchantCode = SiteSetting::where('key', 'tripay_merchant_code')->value('value') ?: env('TRIPAY_MERCHANT_CODE');
+                $mode = SiteSetting::where('key', 'tripay_mode')->value('value') ?: env('TRIPAY_MODE', 'sandbox');
+
+                if (! $apiKey || ! $privateKey || ! $merchantCode) {
                     throw new \Exception('Kredensial pembayaran Tripay belum dikonfigurasi di Pengaturan Toko.');
                 }
 
-                $endpoint = $mode === 'production' 
+                $endpoint = $mode === 'production'
                     ? 'https://tripay.co.id/api/transaction/create'
                     : 'https://tripay.co.id/api-sandbox/transaction/create';
 
                 $method = $this->payment_method;
                 $merchantRef = $order->order_number;
                 $amount = (int) $order->grand_total;
-                
-                $signature = hash_hmac('sha256', $merchantCode . $merchantRef . $amount, $privateKey);
-                
+
+                $signature = hash_hmac('sha256', $merchantCode.$merchantRef.$amount, $privateKey);
+
                 // Format order items for Tripay
                 $orderItems = [];
                 foreach ($order->items as $item) {
@@ -1513,17 +1596,17 @@ class Checkout extends Component
                         'name' => mb_substr($item->product->name, 0, 50),
                         'price' => (int) $item->price,
                         'quantity' => $item->quantity,
-                        'product_url' => url('/product/' . $item->product->slug),
+                        'product_url' => url('/product/'.$item->product->slug),
                         'image_url' => asset('assets/images/placeholder.png'),
                     ];
                 }
-                
+
                 // Add shipping as an item
                 if ($this->shipping_cost > 0) {
                     $orderItems[] = [
-                        'sku'      => 'SHIPPING',
-                        'name'     => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
-                        'price'    => (int) $order->shipping_cost,
+                        'sku' => 'SHIPPING',
+                        'name' => 'Ongkos Kirim ('.strtoupper($this->shipping_method).')',
+                        'price' => (int) $order->shipping_cost,
                         'quantity' => 1,
                     ];
                 }
@@ -1535,27 +1618,27 @@ class Checkout extends Component
 
                 if ($paymentFee > 0) {
                     $orderItems[] = [
-                        'sku'      => 'PAYMENT-FEE',
-                        'name'     => 'Biaya Layanan Pembayaran',
-                        'price'    => $paymentFee,
+                        'sku' => 'PAYMENT-FEE',
+                        'name' => 'Biaya Layanan Pembayaran',
+                        'price' => $paymentFee,
                         'quantity' => 1,
                     ];
                 }
 
                 $data = [
-                    'method'         => $method,
-                    'merchant_ref'   => $merchantRef,
-                    'amount'         => (int) $amount,
-                    'customer_name'  => trim($this->first_name . ' ' . $this->last_name) ?: 'Guest',
+                    'method' => $method,
+                    'merchant_ref' => $merchantRef,
+                    'amount' => (int) $amount,
+                    'customer_name' => trim($this->first_name.' '.$this->last_name) ?: 'Guest',
                     'customer_email' => $this->email ?: 'noemail@example.com',
                     'customer_phone' => $this->phone ?: '080000000000',
-                    'order_items'    => $orderItems,
-                    'return_url'     => url('/order-success?order=' . $merchantRef),
-                    'expired_time'   => (time() + (24 * 60 * 60)),
-                    'signature'      => $signature
+                    'order_items' => $orderItems,
+                    'return_url' => url('/order-success?order='.$merchantRef),
+                    'expired_time' => (time() + (24 * 60 * 60)),
+                    'signature' => $signature,
                 ];
 
-                $response = \Illuminate\Support\Facades\Http::timeout(10)
+                $response = Http::timeout(10)
                     ->withToken($apiKey)
                     ->post($endpoint, $data);
 
@@ -1563,9 +1646,9 @@ class Checkout extends Component
                     $tripayData = $response->json('data');
                     $order->update([
                         'payment_id' => $tripayData['reference'],
-                        'payment_url' => $tripayData['checkout_url']
+                        'payment_url' => $tripayData['checkout_url'],
                     ]);
-                    
+
                     CartItem::whereIn('id', $checkoutItemIds)->delete();
                     $cart = $this->cart;
                     if ($cart && $cart->items()->count() === 0) {
@@ -1575,22 +1658,23 @@ class Checkout extends Component
 
                     $lock->release();
                     $this->redirect($tripayData['checkout_url'], navigate: false);
+
                     return;
                 } else {
                     Log::error('Tripay Create Transaction Error', ['response' => $response->json()]);
                     throw new \Exception($response->json('message') ?? 'Gagal membuat transaksi Tripay');
                 }
             } elseif ($activeGateway === 'xendit') {
-                $apiKey = \App\Models\SiteSetting::where('key', 'xendit_secret_key')->value('value') ?: env('XENDIT_SECRET_KEY');
-                
-                if (!$apiKey) {
+                $apiKey = SiteSetting::where('key', 'xendit_secret_key')->value('value') ?: env('XENDIT_SECRET_KEY');
+
+                if (! $apiKey) {
                     throw new \Exception('Kredensial pembayaran Xendit belum dikonfigurasi di Pengaturan Toko.');
                 }
 
                 $endpoint = 'https://api.xendit.co/v2/invoices';
                 $merchantRef = $order->order_number;
                 $amount = $order->grand_total;
-                
+
                 $orderItems = [];
                 foreach ($order->items as $item) {
                     $orderItems[] = [
@@ -1599,15 +1683,15 @@ class Checkout extends Component
                         'quantity' => $item->quantity,
                     ];
                 }
-                
+
                 if ($order->shipping_cost > 0) {
                     $orderItems[] = [
-                        'name' => 'Ongkos Kirim (' . strtoupper($this->shipping_method) . ')',
+                        'name' => 'Ongkos Kirim ('.strtoupper($this->shipping_method).')',
                         'price' => (int) $order->shipping_cost,
                         'quantity' => 1,
                     ];
                 }
-                
+
                 if ($this->paymentFee > 0) {
                     $orderItems[] = [
                         'name' => 'Biaya Layanan',
@@ -1626,32 +1710,32 @@ class Checkout extends Component
                 }
 
                 $data = [
-                    'external_id'      => $merchantRef,
-                    'amount'           => (int) $amount,
-                    'description'      => 'Pembayaran Pesanan ' . $merchantRef,
+                    'external_id' => $merchantRef,
+                    'amount' => (int) $amount,
+                    'description' => 'Pembayaran Pesanan '.$merchantRef,
                     'invoice_duration' => 86400,
                     'customer' => [
-                        'given_names'   => trim($this->first_name . ' ' . $this->last_name) ?: 'Guest',
-                        'email'         => $this->email ?: 'noemail@example.com',
+                        'given_names' => trim($this->first_name.' '.$this->last_name) ?: 'Guest',
+                        'email' => $this->email ?: 'noemail@example.com',
                         'mobile_number' => $this->phone ?: '080000000000',
                     ],
-                    'success_redirect_url' => url('/order-success?order=' . $merchantRef),
+                    'success_redirect_url' => url('/order-success?order='.$merchantRef),
                     'failure_redirect_url' => url('/checkout'),
-                    'items' => $orderItems
+                    'items' => $orderItems,
                 ];
 
                 if ($this->payment_method && $this->payment_method !== 'XENDIT_AUTO') {
                     $data['payment_methods'] = [$this->payment_method];
                 }
 
-                $response = \Illuminate\Support\Facades\Http::timeout(10)
+                $response = Http::timeout(10)
                     ->withBasicAuth($apiKey, '')
                     ->post($endpoint, $data);
 
-                if (!$response->successful() && $response->json('error_code') === 'UNAVAILABLE_PAYMENT_METHOD_ERROR') {
-                    Log::warning('Xendit Fallback triggered: Payment method ' . $this->payment_method . ' not active. Falling back to generic invoice.');
+                if (! $response->successful() && $response->json('error_code') === 'UNAVAILABLE_PAYMENT_METHOD_ERROR') {
+                    Log::warning('Xendit Fallback triggered: Payment method '.$this->payment_method.' not active. Falling back to generic invoice.');
                     unset($data['payment_methods']);
-                    $response = \Illuminate\Support\Facades\Http::timeout(10)
+                    $response = Http::timeout(10)
                         ->withBasicAuth($apiKey, '')
                         ->post($endpoint, $data);
                 }
@@ -1660,9 +1744,9 @@ class Checkout extends Component
                     $xenditData = $response->json();
                     $order->update([
                         'payment_id' => $xenditData['id'],
-                        'payment_url' => $xenditData['invoice_url']
+                        'payment_url' => $xenditData['invoice_url'],
                     ]);
-                    
+
                     CartItem::whereIn('id', $checkoutItemIds)->delete();
                     $cart = $this->cart;
                     if ($cart && $cart->items()->count() === 0) {
@@ -1672,6 +1756,7 @@ class Checkout extends Component
 
                     $lock->release();
                     $this->redirect($xenditData['invoice_url'], navigate: false);
+
                     return;
                 } else {
                     Log::error('Xendit Create Invoice Error', ['response' => $response->json()]);
@@ -1686,18 +1771,20 @@ class Checkout extends Component
                 session()->forget('checkout_item_ids');
 
                 $lock->release();
-                return redirect()->to('/order-success?order=' . $order->order_number);
+
+                return redirect()->to('/order-success?order='.$order->order_number);
             }
         } catch (\Exception $gatewayEx) {
-            Log::error('Payment Gateway initialization failed: ' . $gatewayEx->getMessage(), [
+            Log::error('Payment Gateway initialization failed: '.$gatewayEx->getMessage(), [
                 'order_number' => $order->order_number,
                 'gateway' => $activeGateway,
             ]);
 
             $this->failOrderAndRestoreStock($order, $gatewayEx->getMessage());
 
-            session()->flash('error', 'Gagal memproses pembayaran via gateway: ' . $gatewayEx->getMessage() . '. Pesanan Anda telah dibatalkan dengan aman. Silakan pilih metode pembayaran lain atau coba kembali.');
+            session()->flash('error', 'Gagal memproses pembayaran via gateway: '.$gatewayEx->getMessage().'. Pesanan Anda telah dibatalkan dengan aman. Silakan pilih metode pembayaran lain atau coba kembali.');
             $lock->release();
+
             return;
         }
     }
@@ -1705,17 +1792,17 @@ class Checkout extends Component
     protected function failOrderAndRestoreStock(Order $order, string $reason): void
     {
         // Pulihkan stok pesanan dan kuota voucher via centralized service terlebih dahulu dengan alasan spesifik
-        app(\App\Services\OrderStockService::class)->restoreStock(
+        app(OrderStockService::class)->restoreStock(
             $order,
             reason: 'Payment Failed',
-            notes: 'Pengembalian stok pesanan #' . $order->order_number . " (Gateway gagal: {$reason})",
+            notes: 'Pengembalian stok pesanan #'.$order->order_number." (Gateway gagal: {$reason})",
             userId: auth()->id()
         );
 
         $order->update([
             'status' => 'cancelled',
             'payment_status' => 'failed',
-            'notes' => trim(($order->notes ?? '') . " [Batal Otomatis Gateway: {$reason}]"),
+            'notes' => trim(($order->notes ?? '')." [Batal Otomatis Gateway: {$reason}]"),
         ]);
     }
 
@@ -1733,7 +1820,7 @@ class Checkout extends Component
 
     public function render()
     {
-        $paymentMethods = \App\Models\PaymentMethod::where('is_active', true)
+        $paymentMethods = PaymentMethod::where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('config->availability')
                     ->orWhere('config->availability', 'both')
@@ -1741,84 +1828,84 @@ class Checkout extends Component
             })
             ->get();
         $this->calculateDiscount(); // Ensure discount is calculated before render
-        
-        $vouchers = \App\Models\Voucher::where('is_active', true)
+
+        $vouchers = Voucher::where('is_active', true)
             ->forOnline()
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->get();
-            
+
         $availableVouchers = collect();
         $cartQuantity = $this->checkoutItems->sum('quantity');
         $baseTotalForVoucher = max(0, $this->subtotal - $this->reseller_discount);
         $user = auth()->user();
-        
+
         foreach ($vouchers as $voucher) {
             // Cek voucher khusus user tertentu
-            if (!empty($voucher->specific_users)) {
-                if (!$user || !in_array($user->email, $voucher->specific_users)) {
+            if (! empty($voucher->specific_users)) {
+                if (! $user || ! in_array($user->email, $voucher->specific_users)) {
                     continue; // Jangan tampilkan sama sekali
                 }
             }
-            
+
             $isEligible = true;
             $reason = '';
-            
+
             if ($voucher->max_uses > 0 && $voucher->used_count >= $voucher->max_uses) {
                 $isEligible = false;
                 $reason = 'Sudah melewati batas penggunaan maksimal.';
             } elseif ($voucher->min_items > 0 && $cartQuantity < $voucher->min_items) {
                 $isEligible = false;
-                $reason = 'Minimal belanja ' . $voucher->min_items . ' item.';
+                $reason = 'Minimal belanja '.$voucher->min_items.' item.';
             } elseif ($voucher->min_purchase > 0 && $baseTotalForVoucher < $voucher->min_purchase) {
                 $isEligible = false;
-                $reason = 'Minimal transaksi Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.';
+                $reason = 'Minimal transaksi Rp'.number_format($voucher->min_purchase, 0, ',', '.').'.';
             } elseif ($voucher->exclude_resellers && $user && $user->hasRole('reseller')) {
                 $isEligible = false;
                 $reason = 'Tidak berlaku untuk mitra Reseller.';
             }
-            
+
             if ($isEligible && $voucher->max_uses_per_user > 0) {
-                $userUsageQuery = \App\Models\Order::where('voucher_id', $voucher->id)
+                $userUsageQuery = Order::where('voucher_id', $voucher->id)
                     ->where(function ($q) {
                         $q->where('payment_status', '!=', 'cancelled')
-                          ->where('status', '!=', 'cancelled');
+                            ->where('status', '!=', 'cancelled');
                     });
-                
+
                 if ($user) {
                     $userUsageQuery->where(function ($q) use ($user) {
                         $q->where('user_id', $user->id)
-                          ->orWhere('shipping_address->email', $user->email);
+                            ->orWhere('shipping_address->email', $user->email);
                     });
                 } else {
-                    if (!empty($this->email)) {
+                    if (! empty($this->email)) {
                         $userUsageQuery->where('shipping_address->email', $this->email);
                     } else {
                         $userUsageQuery = null;
                     }
                 }
-                
+
                 if ($userUsageQuery && $userUsageQuery->count() >= $voucher->max_uses_per_user) {
                     $isEligible = false;
-                    $reason = 'Telah melewati batas penggunaan untuk akun Anda (' . $voucher->max_uses_per_user . ' kali).';
+                    $reason = 'Telah melewati batas penggunaan untuk akun Anda ('.$voucher->max_uses_per_user.' kali).';
                 }
             }
-            
+
             $voucher->is_eligible = $isEligible;
             $voucher->ineligibility_reason = $reason;
             $availableVouchers->push($voucher);
         }
-        
+
         return view('livewire.checkout', [
             'paymentMethods' => $paymentMethods,
-            'availableVouchers' => $availableVouchers
+            'availableVouchers' => $availableVouchers,
         ])->layout('components.layouts.app', [
             'title' => 'Checkout',
-            'robots' => 'noindex, nofollow'
+            'robots' => 'noindex, nofollow',
         ]);
     }
 
