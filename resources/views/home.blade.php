@@ -1,7 +1,7 @@
 @php
     $siteName = \App\Models\SiteSetting::where('key', 'site_name')->value('value') ?? 'Raabiha Olshop';
     $logoId = \App\Models\SiteSetting::where('key', 'site_logo_dark')->value('value') ?: \App\Models\SiteSetting::where('key', 'site_logo_light')->value('value');
-    $logoMedia = $logoId ? \Awcodes\Curator\Models\Media::find($logoId) : null;
+    $logoMedia = $logoId ? \App\Models\Media::find($logoId) : null;
     $logoUrl = $logoMedia ? Storage::url($logoMedia->path) : asset('favicon.ico');
     if ($logoUrl && !str_starts_with($logoUrl, 'http')) {
         $logoUrl = url($logoUrl);
@@ -37,35 +37,21 @@
 <x-layouts.app title="Beranda" :schema="$schema">
 <main class="w-full min-h-screen">
     @php
-        // Helper untuk render image Curator or Fallback
+        // Helper untuk render image Curator or Fallback via Single Source of Truth
         $resolveImage = function($curatorId, $fallback = null) {
-            if ($curatorId) {
-                if (is_string($curatorId) && (str_starts_with($curatorId, 'http://') || str_starts_with($curatorId, 'https://'))) {
-                    return $curatorId;
-                }
-                if (is_numeric($curatorId)) {
-                    $media = \Awcodes\Curator\Models\Media::find($curatorId);
-                    if ($media) return $media->url;
-                }
-                if (is_string($curatorId)) {
-                    return asset('storage/' . ltrim($curatorId, '/'));
-                }
-            }
-            return $fallback ?: 'https://placehold.co/800x800/e5e2de/615e57?text=Image+Not+Available';
+            return \App\Services\ProductImageResolver::resolveSingle(
+                $curatorId,
+                null,
+                $fallback ?: \App\Services\ProductImageResolver::placeholderUrl()
+            );
         };
 
         $resolveCatImage = function($imageValue, $fallback = null) {
-            if ($imageValue) {
-                if (is_string($imageValue) && (str_starts_with($imageValue, 'http://') || str_starts_with($imageValue, 'https://'))) {
-                    return $imageValue;
-                }
-                if (is_numeric($imageValue)) {
-                    $media = \Awcodes\Curator\Models\Media::find($imageValue);
-                    if ($media) return $media->url;
-                }
-                return asset('storage/' . ltrim($imageValue, '/'));
-            }
-            return $fallback ?: 'https://placehold.co/800x800/e5e2de/615e57?text=Image+Not+Available';
+            return \App\Services\ProductImageResolver::resolveSingle(
+                $imageValue,
+                null,
+                $fallback ?: \App\Services\ProductImageResolver::placeholderUrl()
+            );
         };
 
         // Load settings
@@ -265,7 +251,8 @@
         
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
             @php
-                $latestProducts = \App\Models\Product::where('is_active', true)->where('is_hidden', false)->latest()->take(4)->get();
+                $latestProducts = \App\Models\Product::visibleOnline()->latest()->take(4)->get();
+                $latestProductsMedia = \App\Services\ProductImageResolver::preloadMedia($latestProducts);
             @endphp
             @forelse($latestProducts as $prod)
                 <div class="group block relative flex flex-col h-full">
@@ -273,19 +260,7 @@
                     <div class="aspect-[3/4] bg-[#e5e2de] mb-4 overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.09)] group-hover:shadow-[0_8px_36px_rgba(0,0,0,0.15)] transition-shadow duration-500">
                         <a href="{{ url('/product/' . $prod->slug) }}" class="block w-full h-full" aria-label="Lihat produk {{ $prod->name }}">
                             @php
-                                $imageUrl = asset('assets/images/placeholder.webp');
-                                if (!empty($prod->images)) {
-                                    if (is_numeric($prod->images[0])) {
-                                        $media = \Awcodes\Curator\Models\Media::find($prod->images[0]);
-                                        if ($media && Storage::disk('public')->exists($media->path)) {
-                                            $imageUrl = Storage::url($media->path);
-                                        }
-                                    } else {
-                                        if (Storage::disk('public')->exists($prod->images[0])) {
-                                            $imageUrl = asset('storage/' . $prod->images[0]);
-                                        }
-                                    }
-                                }
+                                $imageUrl = $prod->resolvePrimaryImageUrl($latestProductsMedia);
                             @endphp
                             <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]" alt="{{ $prod->name }}" loading="lazy" />
                             {{-- Hover overlay --}}
@@ -413,20 +388,19 @@
                 
                 @php
                     if (!empty($lookbookProductIds)) {
-                        $featuredProducts = \App\Models\Product::whereIn('id', $lookbookProductIds)->where('is_active', true)->where('is_hidden', false)->take(3)->get();
+                        $featuredProducts = \App\Models\Product::visibleOnline()->whereIn('id', $lookbookProductIds)->take(3)->get();
                     } else {
-                        $featuredProducts = \App\Models\Product::where('is_active', true)->where('is_hidden', false)->inRandomOrder()->take(3)->get();
+                        $featuredProducts = \App\Models\Product::visibleOnline()->inRandomOrder()->take(3)->get();
                     }
+                @endphp
+                @php
+                    $featuredProductsMedia = \App\Services\ProductImageResolver::preloadMedia($featuredProducts);
                 @endphp
                 <div class="flex flex-col gap-4">
                     @foreach($featuredProducts as $fp)
                         <a href="{{ url('/product/' . $fp->slug) }}" class="flex items-center justify-between pb-4 border-b border-[#e5e5e5] hover:opacity-85 transition-opacity">
                             <div class="flex items-center gap-4">
-                                @php
-                                    $fpImages = $fp->images;
-                                    $fpImg = is_array($fpImages) && count($fpImages) > 0 ? $fpImages[0] : null;
-                                @endphp
-                                <img src="{{ $resolveImage($fpImg) }}" class="w-12 h-12 object-cover" loading="lazy">
+                                <img src="{{ $fp->resolvePrimaryImageUrl($featuredProductsMedia) }}" class="w-12 h-12 object-cover" loading="lazy">
                                 <div>
                                     <div class="text-[10px] font-semibold tracking-[0.1em] uppercase mb-1">{{ $fp->name }}</div>
                                     @if($fp->discount_price !== null && $fp->discount_price > 0)

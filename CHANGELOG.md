@@ -7,10 +7,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Ditambahkan
-- *(Belum ada)*
+- Laporan pembaruan keamanan dependensi P0 Fase 3 (`docs/reports/2026-11-23-backend-p0-fase-3-patch-cve-dependensi.md`).
+- Scope kanal terpusat `scopeVisibleOnline()` & `scopeVisibleInPos()` pada `app/Models/Product.php` untuk mengisolasi produk kasir POS (`pos_only` & `is_custom = true`) dari website E-Commerce sambil tetap mentoleransi data legacy `both` sementara (Opsi A).
+- Migrasi non-destruktif `database/migrations/2026_11_23_070000_set_channel_visibility_default_to_online_only.php` untuk mengubah default kolom `channel_visibility` pada `products` & `product_variants` dari `both` menjadi `online_only` tanpa mengubah data lama.
+- Automated feature test `tests/Feature/ChannelIsolationAndPosCustomProductTest.php` dan laporan pengerjaan P0 Fase 2 (`docs/reports/2026-11-23-backend-p0-fase-2-kanal-dan-pos.md`).
+- Layanan resolusi gambar produk & varian terpusat (*Single Source of Truth*) `app/Services/ProductImageResolver.php` beserta accessor `primary_image_url` / `resolveGallery()` pada `Product` dan `image_url` / `resolveImageUrl()` pada `ProductVariant` (seragam memakai `\App\Models\Media` dan fallback `placeholder.webp` 16 KB).
+- Perintah Artisan idempoten `php artisan products:normalize-images` (`app/Console/Commands/NormalizeProductImages.php`) dengan opsi `--dry-run` untuk memulihkan `products.images` dari string URL/path kembali ke ID Curator tanpa kehilangan data (*zero data loss*).
+- Automated feature test komprehensif `tests/Feature/ProductImageSingleSourceOfTruthTest.php` untuk verifikasi resolusi gambar produk berdiri sendiri & varian di Shop, Detail Produk, Cart, Checkout, normalisasi gambar, serta proteksi impor CSV.
+- Laporan pengerjaan P0 Fase 1 (`docs/reports/2026-11-23-backend-p0-fase-1-gambar-curator.md`).
+- Laporan audit logika bisnis & inkonsistensi penamaan Admin Dashboard (`docs/reports/2026-11-09-admin-logic-audit.md`).
+- Catatan keputusan arsitektur ADR-001 (peniadaan kanal `both`) & ADR-002 (reseller sebagai fitur lanjutan) di `docs/decisions.md`.
+- Tiket backlog perbaikan lanjutan BKL-004 s/d BKL-012 di `docs/backlog.md`.
 
 ### Diubah
-- *(Belum ada)*
+- Perbaikan temuan audit P0 (`F-01` & `F-02`): `app/Http/Controllers/SitemapController.php` kini memakai `Product::visibleOnline()` agar produk `pos_only` & `is_custom` tidak bocor ke `/sitemap.xml`, dan bagian *Related Products* di `resources/views/livewire/product-detail.blade.php` kini memakai `ProductImageResolver::preloadMedia()` + `resolvePrimaryImageUrl()` (eliminasi N+1 `Media::find()`).
+- Patch keamanan dependensi P0 Fase 3 (`composer.lock`, `package-lock.json`, & aset publik Filament/Curator): menambal 49 Composer security advisories menjadi **0** (`laravel/framework 13.12.0 -> 13.43.0`, `filament/filament 5.6.6 -> 5.12.0`, `livewire/livewire 4.3.1 -> 4.4.9`, `awcodes/filament-curator 5.0.7 -> 5.6.7`, `symfony/* 8.1.0 -> 8.1.11`, `league/commonmark 2.8.2 -> 2.10.7`, `guzzlehttp/guzzle 7.10.6 -> 8.6.0`, `ueberdosis/tiptap-php 2.1.0 -> 2.2.1`) serta 4 NPM High advisories menjadi **0** (`npm audit --omit=dev`).
+- Penutupan kebocoran produk kasir POS ke E-Commerce: `home.blade.php` (produk terbaru & lookbook), `ProductDetail.php` (`mount()` kini mengembalikan 404 untuk `pos_only` / `is_custom = true`, serta `relatedProducts()`), `Shop.php`, `Search.php`, dan `PosManager.php` kini memakai `Product::visibleOnline()` / `Product::visibleInPos()`.
+- Penegakan 2 kanal (ADR-001): menghapus opsi/fallback `'both'` pada Bulk Action `ProductsTable.php`, `ProductImporter.php`, `ProductVariantImporter.php`, `ExportProductsCsvJob.php`, `ListProducts.php`, dan `ExportData.php`, serta menambahkan badge & filter *"Legacy (Perlu Dipilah)"* di Admin Table untuk memudahkan pemilahan bulk data lama.
+- Perbaikan bug stok fiktif auto-save produk kustom di `app/Services/PosTransactionService.php`: `locked_model` kini terhubung ke produk kustom yang baru disimpan sehingga stok langsung dikurangi ke `0` dan tercatat di `StockLog`.
+- Pengamanan `CuratorPicker::make('images')` pada `app/Filament/Resources/Products/Schemas/ProductForm.php`: menerjemahkan URL/path legacy ke ID Curator saat hidrasi dan mencegah penghapusan `products.images` menjadi `NULL` saat tombol Simpan diklik.
+- Perbaikan `app/Filament/Imports/ProductImporter.php`: kolom `Gambar` kini mengonversi URL/path CSV ke ID Curator saat impor dan memakai `ignoreBlankState()` agar sel kosong tidak menimpa gambar eksisting.
+- Konsolidasi resolusi gambar di 6 lokasi (`ProductsTable.php`, `shop.blade.php`, `home.blade.php`, `ProductDetail.php`, `cart.blade.php`, `checkout.blade.php`) memakai `ProductImageResolver` dengan batch preloading (eliminasi N+1 query), prioritas foto varian di Cart & Checkout, serta eager loading `items.variant.media` di `Cart.php` dan `Checkout.php`.
+- Pembaruan spesifikasi peran `/role-inspektur` (`.agents/skills/role-inspektur/SKILL.md` & `.agents/roster.md`) menjadi auditor forensik & skeptis dengan 5 pilar pemeriksaan (logika bisnis, semantik/penamaan/duplikasi, sinkronisasi FE-BE-DB, struktur/ukuran file ≤300 baris & efisiensi sintaks/DB, anti-AI-slop), *Zero-Assumption Gate*, serta *Context-Budget Guard* (pembagian fase ≤50% konteks input).
 
 ### Dihapus & Alasan
 - *(Belum ada)*

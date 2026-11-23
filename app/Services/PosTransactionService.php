@@ -54,6 +54,7 @@ class PosTransactionService
                     $saveToCatalog = ! empty($item['save_to_catalog']);
 
                     $productId = null;
+                    $lockedCustomProduct = null;
 
                     if ($saveToCatalog) {
                         // Simpan ke katalog POS agar dapat dipakai lagi di masa depan (ala Majoo POS)
@@ -69,6 +70,7 @@ class PosTransactionService
                             'channel_visibility' => 'pos_only',
                         ]);
                         $productId = $newProduct->id;
+                        $lockedCustomProduct = $newProduct;
                     }
 
                     $unitOrigPrice = max($customOriginalPrice, $customPrice);
@@ -84,7 +86,7 @@ class PosTransactionService
                         'original_price' => $unitOrigPrice,
                         'quantity' => $qty,
                         'purchase_price' => $customPurchasePrice,
-                        'locked_model' => null,
+                        'locked_model' => $lockedCustomProduct,
                     ];
 
                     continue;

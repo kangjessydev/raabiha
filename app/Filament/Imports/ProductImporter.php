@@ -3,6 +3,7 @@
 namespace App\Filament\Imports;
 
 use App\Models\Product;
+use App\Services\ProductImageResolver;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
@@ -106,7 +107,24 @@ class ProductImporter extends Importer
             ImportColumn::make('images')
                 ->label('Gambar')
                 ->exampleHeader('Gambar')
-                ->castStateUsing(fn (?string $state) => $state ? array_map('trim', explode(',', $state)) : null),
+                ->ignoreBlankState()
+                ->castStateUsing(function (?string $state): ?array {
+                    if (blank($state)) {
+                        return null;
+                    }
+
+                    $items = array_values(array_filter(array_map('trim', explode(',', $state))));
+                    if (empty($items)) {
+                        return null;
+                    }
+
+                    return ProductImageResolver::normalizeImageArray($items)['normalized'];
+                })
+                ->fillRecordUsing(function (Product $record, ?array $state): void {
+                    if (! empty($state)) {
+                        $record->images = $state;
+                    }
+                }),
             ImportColumn::make('price')
                 ->label('Harga')
                 ->exampleHeader('Harga')
@@ -183,12 +201,19 @@ class ProductImporter extends Importer
                 ->rules(['nullable', 'max:160']),
             ImportColumn::make('channel_visibility')
                 ->label('Tampil Di (Channel)')
-                ->exampleHeader('Tampil Di (Channel) [both/online_only/pos_only]')
-                ->rules(['nullable', 'in:both,online_only,pos_only'])
-                ->fillRecordUsing(function (Product $record, ?string $state): void {
-                    $record->channel_visibility = in_array($state, ['both', 'online_only', 'pos_only'])
+                ->exampleHeader('Tampil Di (Channel) [online_only/pos_only]')
+                ->rules(['nullable', 'in:online_only,pos_only'])
+                ->fillRecordUsing(function (Product $record, ?string $state, array $data): void {
+                    $isCustom = filter_var($data['is_custom'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                    if ($isCustom) {
+                        $record->channel_visibility = 'pos_only';
+
+                        return;
+                    }
+
+                    $record->channel_visibility = in_array($state, ['online_only', 'pos_only'], true)
                         ? $state
-                        : 'both';
+                        : 'online_only';
                 }),
             ImportColumn::make('is_custom')
                 ->label('Asal Produk (Dibuat via POS?)')
@@ -294,9 +319,9 @@ class ProductImporter extends Importer
                 $variant->stock = $this->data['stock'] ?? 0;
                 $variant->minimum_stock = $this->data['minimum_stock'] ?? null;
                 $variant->is_active = $this->data['is_active'] ?? true;
-                $variant->channel_visibility = in_array($this->data['channel_visibility'] ?? '', ['both', 'online_only', 'pos_only'])
+                $variant->channel_visibility = in_array($this->data['channel_visibility'] ?? '', ['online_only', 'pos_only'], true)
                     ? $this->data['channel_visibility']
-                    : 'both';
+                    : 'online_only';
                 $variant->pos_price = filled($this->data['pos_price'] ?? null) ? $this->data['pos_price'] : null;
                 $variant->pos_discount_price = filled($this->data['pos_discount_price'] ?? null) ? $this->data['pos_discount_price'] : null;
                 $variant->save();

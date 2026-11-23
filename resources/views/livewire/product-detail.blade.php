@@ -665,8 +665,12 @@
                 </h2>
                 
                 <div class="relative">
+                    @php
+                        $relatedProductsList = $this->relatedProducts;
+                        $relatedMediaMap = \App\Services\ProductImageResolver::preloadMedia($relatedProductsList);
+                    @endphp
                     <div id="related-products-track" class="flex md:grid md:grid-cols-4 gap-6 md:gap-8 overflow-x-auto md:overflow-x-visible pb-6 md:pb-0 scrollbar-none scroll-smooth" style="scrollbar-width: none; -ms-overflow-style: none;">
-                        @foreach($this->relatedProducts as $related)
+                        @foreach($relatedProductsList as $related)
                         <div class="w-[calc(50%-12px)] md:w-auto shrink-0">
                             <a href="{{ url('/product/' . $related->slug) }}" class="group block">
                                 <div class="w-full aspect-[4/5] bg-[#e5e5e5] mb-4 overflow-hidden relative">
@@ -675,24 +679,7 @@
                                     @endif
                                     
                                     @php
-                                        $imgUrl = asset('assets/images/placeholder.webp');
-                                        if (!empty($related->images)) {
-                                            if (is_numeric($related->images[0])) {
-                                                $media = \Awcodes\Curator\Models\Media::find($related->images[0]);
-                                                if ($media && \Illuminate\Support\Facades\Storage::disk('public')->exists($media->path)) {
-                                                    $imgUrl = $media->url;
-                                                }
-                                            } else {
-                                                $relImg = $related->images[0];
-                                                if (is_string($relImg) && (str_starts_with($relImg, 'http://') || str_starts_with($relImg, 'https://'))) {
-                                                    $imgUrl = $relImg;
-                                                } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($relImg)) {
-                                                    $imgUrl = asset('storage/' . $relImg);
-                                                } else {
-                                                    $imgUrl = asset($relImg);
-                                                }
-                                            }
-                                        }
+                                        $imgUrl = $related->resolvePrimaryImageUrl($relatedMediaMap);
                                     @endphp
                                     <img width="1024" height="1024" src="{{ $imgUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ $related->name }}" />                                                                
                                     

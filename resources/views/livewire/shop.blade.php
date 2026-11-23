@@ -257,30 +257,16 @@
 
                     <!-- Products Grid -->
                     <div id="products-grid" wire:loading.remove wire:target="search, selectedCategories, selectedAttributes, maxPrice, sort" class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 lg:gap-x-6 gap-y-12 w-full mt-4">
+                        @php
+                            $preloadedMedia = \App\Services\ProductImageResolver::preloadMedia($products);
+                        @endphp
                         @forelse ($products as $product)
                             <div class="group block relative flex flex-col h-full" wire:key="product-{{ $product->id }}">
                                 {{-- IMAGE: Portrait 3:4 editorial --}}
                                 <div class="aspect-[3/4] bg-[#e5e2de] mb-4 overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.09)] group-hover:shadow-[0_8px_36px_rgba(0,0,0,0.15)] transition-shadow duration-500">
                                     <a href="{{ url('/product/' . $product->slug) }}" class="block w-full h-full" aria-label="Lihat produk {{ $product->name }}">
                                         @php
-                                            $imageUrl = asset('assets/images/placeholder.webp');
-                                            if (!empty($product->images)) {
-                                                $firstImg = $product->images[0];
-                                                if (is_numeric($firstImg)) {
-                                                    $media = \Awcodes\Curator\Models\Media::find($firstImg);
-                                                    if ($media && Storage::disk('public')->exists($media->path)) {
-                                                        $imageUrl = Storage::url($media->path);
-                                                    }
-                                                } elseif (is_string($firstImg)) {
-                                                    if (str_starts_with($firstImg, 'http://') || str_starts_with($firstImg, 'https://')) {
-                                                        $imageUrl = $firstImg;
-                                                    } elseif (Storage::disk('public')->exists($firstImg)) {
-                                                        $imageUrl = asset('storage/' . $firstImg);
-                                                    } else {
-                                                        $imageUrl = asset($firstImg);
-                                                    }
-                                                }
-                                            }
+                                            $imageUrl = $product->resolvePrimaryImageUrl($preloadedMedia);
                                         @endphp
                                         <img src="{{ $imageUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]" alt="{{ $product->name }}" loading="lazy" />
                                         {{-- Hover overlay --}}

@@ -1418,9 +1418,8 @@ class PosManager extends Component
 
         if ($this->activeSession) {
             /* ---------- Product list ---------- */
-            $query = Product::with(['variants.attributeOptions.attribute', 'variants.media'])
-                ->where('is_active', true)
-                ->whereIn('channel_visibility', ['pos_only', 'both']);
+            $query = Product::visibleInPos()
+                ->with(['variants.attributeOptions.attribute', 'variants.media']);
 
             if (!empty($this->search)) {
                 $query->where(function ($q) {

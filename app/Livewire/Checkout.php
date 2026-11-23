@@ -944,11 +944,11 @@ class Checkout extends Component
     public function getCartProperty()
     {
         if (auth()->check()) {
-            return Cart::with(['items.product', 'items.variant.attributeOptions.attribute'])
+            return Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
                 ->where('user_id', auth()->id())
                 ->first();
         } else {
-            return Cart::with(['items.product', 'items.variant.attributeOptions.attribute'])
+            return Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
                 ->where('session_id', session()->getId())
                 ->first();
         }
@@ -1597,7 +1597,9 @@ class Checkout extends Component
                         'price' => (int) $item->price,
                         'quantity' => $item->quantity,
                         'product_url' => url('/product/'.$item->product->slug),
-                        'image_url' => asset('assets/images/placeholder.png'),
+                        'image_url' => $item->variant
+                            ? $item->variant->resolveImageUrl($item->product)
+                            : ($item->product ? $item->product->primary_image_url : \App\Services\ProductImageResolver::placeholderUrl()),
                     ];
                 }
 

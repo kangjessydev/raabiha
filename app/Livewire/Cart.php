@@ -136,12 +136,12 @@ class Cart extends Component
     public function loadCart()
     {
         if (auth()->check()) {
-            $this->cart = \App\Models\Cart::with(['items.product', 'items.variant.attributeOptions.attribute'])
+            $this->cart = \App\Models\Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
                 ->where('user_id', auth()->id())
                 ->where('is_buy_now', false)
                 ->first();
         } else {
-            $this->cart = \App\Models\Cart::with(['items.product', 'items.variant.attributeOptions.attribute'])
+            $this->cart = \App\Models\Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
                 ->where('session_id', session()->getId())
                 ->whereNull('user_id')
                 ->where('is_buy_now', false)

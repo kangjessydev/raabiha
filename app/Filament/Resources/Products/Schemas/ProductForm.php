@@ -2,6 +2,10 @@
 
 namespace App\Filament\Resources\Products\Schemas;
 
+use App\Models\Media;
+use App\Models\Product;
+use App\Services\ProductImageResolver;
+use Awcodes\Curator\Components\Forms\CuratorPicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -14,6 +18,8 @@ use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class ProductForm
 {
@@ -95,13 +101,70 @@ class ProductForm
                                     }
                                 </style>
                             ')),
-                        \Awcodes\Curator\Components\Forms\CuratorPicker::make('images')
+                        CuratorPicker::make('images')
                             ->label('Galeri Produk (Media Library)')
                             ->multiple()
                             ->listDisplay(false)
                             ->buttonLabel('Jelajahi Media Library & Upload Foto')
                             ->color('primary')
                             ->size(\Filament\Support\Enums\Size::Large)
+                            ->afterStateHydrated(static function (CuratorPicker $component, array|int|string|null $state): void {
+                                if (blank($state)) {
+                                    $component->state([]);
+
+                                    return;
+                                }
+
+                                $items = [];
+                                $normalizedState = is_array($state) ? array_values($state) : $state;
+
+                                if (is_array($normalizedState) && isset($normalizedState[0]['id'])) {
+                                    $mediaItems = $normalizedState;
+                                } elseif (is_array($normalizedState) && isset($normalizedState['id'])) {
+                                    $mediaItems = [$normalizedState];
+                                } else {
+                                    $resolvedIds = ProductImageResolver::resolveMediaIds(Arr::wrap($normalizedState));
+                                    $mediaById = ! empty($resolvedIds)
+                                        ? Media::whereIn('id', $resolvedIds)->get()->keyBy('id')
+                                        : collect();
+
+                                    $mediaItems = [];
+                                    foreach ($resolvedIds as $id) {
+                                        if ($media = $mediaById->get($id)) {
+                                            $mediaItems[] = $media->toArray();
+                                        }
+                                    }
+                                }
+
+                                foreach ($mediaItems as $itemData) {
+                                    $items[(string) Str::uuid()] = $itemData;
+                                }
+
+                                $component->state($items);
+                            })
+                            ->dehydrateStateUsing(static function (CuratorPicker $component, mixed $state, ?Product $record): ?array {
+                                if (filled($state)) {
+                                    $ids = collect($state)
+                                        ->pluck('id')
+                                        ->filter(fn ($id) => is_numeric($id))
+                                        ->map(fn ($id) => (int) $id)
+                                        ->values()
+                                        ->all();
+
+                                    return ! empty($ids) ? $ids : null;
+                                }
+
+                                // Zero Data Loss guard: preserve unresolvable legacy URL strings
+                                // that CuratorPicker could not display, instead of wiping them to null on Save.
+                                if ($record && is_array($record->images) && ! empty($record->images)) {
+                                    $resolvableIds = ProductImageResolver::resolveMediaIds($record->images);
+                                    if (empty($resolvableIds)) {
+                                        return $record->images;
+                                    }
+                                }
+
+                                return null;
+                            })
                             ->extraAttributes(['class' => 'horizontal-gallery', 'style' => 'border: 2px dashed #d1d5db; padding: 1.5rem; border-radius: 0.75rem; background-color: #f9fafb; display: flex; flex-direction: column; align-items: center;'])
                             ->columnSpanFull(),
                     ])->columns(2),

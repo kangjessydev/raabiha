@@ -42,21 +42,14 @@
                                 </label>
                             </div>
 
+                            @php
+                                $preloadedMedia = \App\Services\ProductImageResolver::preloadMedia($cart->items);
+                            @endphp
                             @foreach($cart->items as $item)
                                 @php
-                                    $imageUrl = asset('assets/images/placeholder.webp');
-                                    if (!empty($item->product->images)) {
-                                        if (is_numeric($item->product->images[0])) {
-                                            $media = \Awcodes\Curator\Models\Media::find($item->product->images[0]);
-                                            if ($media && Storage::disk('public')->exists($media->path)) {
-                                                $imageUrl = Storage::url($media->path);
-                                            }
-                                        } else {
-                                            if (Storage::disk('public')->exists($item->product->images[0])) {
-                                                $imageUrl = asset('storage/' . $item->product->images[0]);
-                                            }
-                                        }
-                                    }
+                                    $imageUrl = $item->variant
+                                        ? $item->variant->resolveImageUrl($item->product, $preloadedMedia)
+                                        : $item->product->resolvePrimaryImageUrl($preloadedMedia);
                                     
                                     $price = $item->variant && $item->variant->price ? $item->variant->price : $item->product->price;
                                 @endphp

@@ -520,23 +520,15 @@
                             <!-- Order Items Mini -->
                             <div class="flex flex-col gap-4 mb-4 lg:mb-0 order-items-scroll" data-lenis-prevent>
                             @if($this->checkoutItems && $this->checkoutItems->count() > 0)
+                                @php
+                                    $preloadedMedia = \App\Services\ProductImageResolver::preloadMedia($this->checkoutItems);
+                                @endphp
                                 @foreach($this->checkoutItems as $item)
                                     @php
                                         $price = $item->variant && $item->variant->price !== null ? $item->variant->price : $item->product->price;
-                                        $imageId = $item->product->images && count($item->product->images) > 0 ? $item->product->images[0] : null;
-                                        $image = asset('assets/images/placeholder.webp');
-                                        if ($imageId) {
-                                            if (is_numeric($imageId)) {
-                                                $media = \Awcodes\Curator\Models\Media::find($imageId);
-                                                if ($media && Storage::disk('public')->exists($media->path)) {
-                                                    $image = Storage::url($media->path);
-                                                }
-                                            } else {
-                                                if (Storage::disk('public')->exists($imageId)) {
-                                                    $image = asset('storage/' . $imageId);
-                                                }
-                                            }
-                                        }
+                                        $image = $item->variant
+                                            ? $item->variant->resolveImageUrl($item->product, $preloadedMedia)
+                                            : $item->product->resolvePrimaryImageUrl($preloadedMedia);
                                         
                                         $variantText = '';
                                         if ($item->variant) {
