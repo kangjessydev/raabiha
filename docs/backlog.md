@@ -116,3 +116,18 @@ Dokumen ini mencatat daftar temuan, rencana peningkatan, dan perbaikan tertunda 
   - Inkonsistensi status string `'active'` (di menu Reseller) vs `'approved'` (di menu Users).
 - **Rencana Tindakan:**
   Dikerjakan bertahap saat fitur reseller resmi diwajibkan oleh bisnis. Selesaikan penyeragaman status string, assignment Spatie role, dan sinkronisasi formula `reseller_price` antara katalog dan checkout.
+
+---
+
+## 5. Isolasi Buy Now & Sinkronisasi Stok Keranjang
+
+### BKL-013: Pemisahan Penuh Aksi "Beli Sekarang" (`is_buy_now = true`) & Notifikasi Penyesuaian Stok Keranjang
+- **Sumber Temuan:** Klarifikasi Aturan Bisnis User pada Audit Verifikasi P1 Fase 1 (2026-11-23).
+- **Tingkat Prioritas:** Sedang-Tinggi (UX & Integritas Alur Checkout).
+- **Status Riil Saat Ini:** 🔴 **Belum Diterapkan.**
+  - Saat ini [`ProductDetail::buyNow()`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Livewire/ProductDetail.php#L549-L571) masih memanggil `addToCart()` ke keranjang reguler (`is_buy_now = false`) lalu mengisolasi lewat `session('checkout_item_ids')`, sementara [`Checkout.php:950-981`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Livewire/Checkout.php#L950-L981) mengambil keranjang pertama tanpa membedakan `is_buy_now`.
+  - Akibatnya, jika produk yang sama sudah ada di keranjang reguler mencapai batas stok, klik "Beli Sekarang" ikut terblokir oleh isi keranjang reguler.
+  - Selain itu, belum ada notifikasi / penyesuaian otomatis di halaman `/cart` bila stok produk di gudang berkurang sehingga `cart_items.quantity > stock` riil.
+- **Rencana Tindakan:**
+  1. Pisahkan `ProductDetail::buyNow()` agar memakai `Cart` khusus `is_buy_now = true` (mengabaikan isi keranjang reguler, hanya mengecek stok riil terhadap qty yang dipilih saat itu) dan sesuaikan `Checkout.php` membaca keranjang `is_buy_now` saat mode Buy Now aktif.
+  2. Tambahkan deteksi & notifikasi (serta auto-clamp / peringatan jelas) pada halaman `/cart` bila ada item yang kuantitasnya melebihi stok riil terbaru atau variannya sudah dinonaktifkan.

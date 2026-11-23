@@ -355,8 +355,8 @@
                                                     @endphp
                                                     <button 
                                                         type="button"
-                                                        @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                                        class="flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'cursor-not-allowed' : 'cursor-pointer' }} {{ $index >= 5 ? 'hidden md:flex' : 'flex' }}">
+                                                        @if($isAvailable || $isSelected) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                                        class="flex-col items-center gap-1.5 group transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1 rounded-sm {{ !$isAvailable && !$isSelected ? 'cursor-not-allowed' : 'cursor-pointer' }} {{ $index >= 5 ? 'hidden md:flex' : 'flex' }}">
                                                         <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 relative {{ $isSelected ? 'border-[#1c1c1a]' : ($isAvailable ? 'border-gray-300 hover:border-gray-500' : 'border-transparent') }}">
                                                             <div class="w-full h-full rounded-full border border-black/10 {{ !$isAvailable ? 'opacity-20' : '' }}" style="background-color: {{ $hex }}">
                                                             </div>
@@ -389,8 +389,8 @@
                                                     @endphp
                                                     <button 
                                                         type="button" 
-                                                        @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                                        class="py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 relative overflow-hidden focus:outline-none
+                                                        @if($isAvailable || $isSelected) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                                        class="py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-colors duration-200 relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1
                                                         {{ $isSelected ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] ' . ($isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed') }}
                                                         {{ $index >= 5 ? 'hidden md:block' : 'block' }} flex-1">
                                                         {{ $val }}
@@ -416,7 +416,12 @@
                             <div class="woocommerce-variation-add-to-cart variations_button w-full flex flex-col gap-3">
                                 
                                 <!-- Stock Status Row -->
-                                <div class="text-[10px] font-mono tracking-widest text-[#615e57] uppercase mb-1 flex items-center gap-2">
+                                @php
+                                    $maxOrderableQty = $this->maxOrderableQuantity;
+                                    $isQtyAtMin = $product->is_out_of_stock || $quantity <= 1;
+                                    $isQtyAtMax = $product->is_out_of_stock || $maxOrderableQty <= 0 || $quantity >= $maxOrderableQty;
+                                @endphp
+                                <div class="text-[10px] font-mono tabular-nums tracking-widest text-[#615e57] uppercase mb-1 flex items-center gap-2">
                                     <span class="w-2.5 h-2.5 rounded-full {{ $product->is_out_of_stock ? 'bg-red-500' : 'bg-emerald-500' }}"></span>
                                     <span>STATUS STOK: </span>
                                     @if($product->has_variants)
@@ -442,11 +447,11 @@
                                 <div class="hidden md:flex items-center gap-3 w-full h-14">
                                     <!-- QTY -->
                                     <div class="flex items-center border border-[#e5e2de] w-28 shrink-0 h-full {{ $product->is_out_of_stock ? 'opacity-40 pointer-events-none' : '' }}">
-                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" wire:click="decrementQuantity" @if($product->is_out_of_stock) disabled @endif>
+                                        <button type="button" aria-label="Kurangi jumlah" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] disabled:opacity-40 disabled:cursor-not-allowed" wire:click="decrementQuantity" @if($isQtyAtMin) disabled @endif>
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                                         </button>
-                                        <input type="number" id="qty" wire:model.live="quantity" min="1" class="w-full text-center bg-transparent border-none focus:outline-none text-[#1c1c1a] font-mono text-[13px] appearance-none m-0" style="-moz-appearance: textfield;" @if($product->is_out_of_stock) disabled @endif>
-                                        <button type="button" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus:outline-none" wire:click="incrementQuantity" @if($product->is_out_of_stock) disabled @endif>
+                                        <input type="number" id="qty" aria-label="Jumlah pembelian" wire:model.live="quantity" min="1" max="{{ max(1, $maxOrderableQty) }}" class="w-full text-center bg-transparent border-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] text-[#1c1c1a] font-mono tabular-nums text-[13px] appearance-none m-0" style="-moz-appearance: textfield;" @if($product->is_out_of_stock) disabled @endif>
+                                        <button type="button" aria-label="Tambah jumlah" class="w-8 h-full flex items-center justify-center text-[#1c1c1a] hover:bg-[#f2efe8] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] disabled:opacity-40 disabled:cursor-not-allowed" wire:click="incrementQuantity" @if($isQtyAtMax) disabled @endif>
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                         </button>
                                     </div>
@@ -798,11 +803,11 @@
         <div class="flex items-center justify-between px-5 pb-4 border-b border-[#e5e2de]">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-16 bg-[#e5e2de] rounded-sm overflow-hidden shrink-0">
-                    <img src="{{ $galleryUrls[0] ?? asset('assets/images/placeholder.webp') }}" class="w-full h-full object-cover">
+                    <img id="bs-product-image" src="{{ $this->activeGalleryImageUrl }}" alt="{{ $product->name }}" width="48" height="64" class="w-full h-full object-cover transition-opacity duration-200">
                 </div>
                 <div>
                     <div id="bs-product-name" class="text-[#1c1c1a] text-sm font-serif font-bold uppercase leading-tight">{{ $product->name }}</div>
-                    <div id="bs-product-price" class="text-[#615e57] text-xs font-mono mt-0.5 flex items-center gap-2">
+                    <div id="bs-product-price" class="text-[#615e57] text-xs font-mono tabular-nums mt-0.5 flex items-center gap-2">
                         @if($this->priceRange)
                             @if($this->priceRange['has_discount'])
                                 <span class="font-bold text-[#064e3b]">
@@ -828,7 +833,7 @@
                             @endif
                         @endif
                     </div>
-                    <div class="text-[10px] font-mono text-[#615e57] mt-1 flex items-center gap-1.5">
+                    <div class="text-[10px] font-mono tabular-nums text-[#615e57] mt-1 flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full {{ $product->is_out_of_stock ? 'bg-red-500' : 'bg-emerald-500' }}"></span>
                         <span>Stok: </span>
                         @if($product->has_variants)
@@ -870,8 +875,8 @@
                                     $escapedVal = addslashes($val);
                                 @endphp
                                 <button type="button" 
-                                    @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                    class="flex flex-col items-center gap-1.5 group transition-all duration-200 {{ !$isAvailable ? 'cursor-not-allowed' : 'cursor-pointer' }}">
+                                    @if($isAvailable || $isSelected) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                    class="flex flex-col items-center gap-1.5 group transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1 rounded-sm {{ !$isAvailable && !$isSelected ? 'cursor-not-allowed' : 'cursor-pointer' }}">
                                     <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 relative {{ $isSelected ? 'border-[#1c1c1a]' : ($isAvailable ? 'border-gray-300 hover:border-gray-500' : 'border-transparent') }}">
                                         <div class="w-full h-full rounded-full border border-black/10 {{ !$isAvailable ? 'opacity-20' : '' }}" style="background-color: {{ $hex }}">
                                         </div>
@@ -895,8 +900,8 @@
                                     $escapedVal = addslashes($val);
                                 @endphp
                                 <button type="button" 
-                                    @if($isAvailable) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                    class="flex-1 py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-all duration-200 relative overflow-hidden
+                                    @if($isAvailable || $isSelected) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                    class="flex-1 py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-colors duration-200 relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1
                                     {{ $isSelected ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] ' . ($isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed') }}">
                                     {{ $val }}
                                     @if(!$isAvailable)
@@ -914,11 +919,11 @@
             <div class="mb-2" id="bs-qty-selector">
                 <label class="block text-[#1c1c1a] text-[10px] font-mono font-bold tracking-widest uppercase mb-2">QUANTITY</label>
                 <div class="flex items-center w-[120px] h-10 border border-[#e5e2de] {{ $product->is_out_of_stock ? 'opacity-40 pointer-events-none' : '' }}">
-                    <button type="button" wire:click="decrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none" @if($product->is_out_of_stock) disabled @endif>
+                    <button type="button" aria-label="Kurangi jumlah" wire:click="decrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] disabled:opacity-40 disabled:cursor-not-allowed" @if($isQtyAtMin) disabled @endif>
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                     </button>
-                    <div class="flex-1 h-full flex items-center justify-center font-mono text-[12px] text-[#1c1c1a] bg-transparent">{{ $quantity }}</div>
-                    <button type="button" wire:click="incrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus:outline-none" @if($product->is_out_of_stock) disabled @endif>
+                    <div class="flex-1 h-full flex items-center justify-center font-mono tabular-nums text-[12px] text-[#1c1c1a] bg-transparent">{{ $quantity }}</div>
+                    <button type="button" aria-label="Tambah jumlah" wire:click="incrementQuantity" class="w-10 h-full flex items-center justify-center text-[#615e57] hover:bg-[#f2efe8] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] disabled:opacity-40 disabled:cursor-not-allowed" @if($isQtyAtMax) disabled @endif>
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     </button>
                 </div>

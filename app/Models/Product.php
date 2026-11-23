@@ -194,18 +194,19 @@ class Product extends Model
     public function getIsOutOfStockAttribute(): bool
     {
         if ($this->has_variants) {
-            return $this->variants->sum('stock') <= 0;
+            return $this->variants->where('is_active', true)->sum('stock') <= 0;
         }
+
         return $this->stock <= 0;
     }
 
     public function getTotalStockAttribute(): int
     {
         if ($this->has_variants) {
-            return $this->variants->sum('stock');
+            return (int) $this->variants->where('is_active', true)->sum('stock');
         }
 
-        return $this->stock;
+        return (int) $this->stock;
     }
 
     public function getPrimaryImageUrlAttribute(): string

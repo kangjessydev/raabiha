@@ -155,12 +155,31 @@ class Cart extends Component
             $this->loadCart();
         }
 
-        $item = $this->cart ? $this->cart->items()->find($itemId) : null;
-        if ($item) {
-            $item->increment('quantity');
-            $this->loadCart();
-            $this->dispatch('cart-updated');
+        $item = $this->cart ? $this->cart->items()->with(['product', 'variant'])->find($itemId) : null;
+        if (! $item) {
+            return;
         }
+
+        if ($item->product_variant_id !== null) {
+            if (! $item->variant || ! $item->variant->is_active) {
+                session()->flash('error', 'Varian produk ini sudah tidak tersedia atau tidak aktif.');
+
+                return;
+            }
+            $availableStock = (int) $item->variant->stock;
+        } else {
+            $availableStock = (int) ($item->product?->stock ?? 0);
+        }
+
+        if ($item->quantity >= $availableStock) {
+            session()->flash('error', "Stok maksimal ({$availableStock} pcs) sudah tercapai.");
+
+            return;
+        }
+
+        $item->increment('quantity');
+        $this->loadCart();
+        $this->dispatch('cart-updated');
     }
 
     public function decrementQuantity($itemId)

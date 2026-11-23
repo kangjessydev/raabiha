@@ -29,6 +29,8 @@ class ProductDetail extends Component
 
     public $galleryMediaIds = [];
 
+    public int $activeGalleryIndex = 0;
+
     public $bsOpen = false;
 
     public $bsMode = 'cart';
@@ -42,6 +44,42 @@ class ProductDetail extends Component
 
     public $showReviewForm = false;
 
+    protected function activeVariants()
+    {
+        if (! isset($this->product) || ! $this->product->has_variants) {
+            return collect();
+        }
+
+        return $this->product->variants->where('is_active', true)->values();
+    }
+
+    #[Computed]
+    public function activeGalleryImageUrl(): string
+    {
+        return $this->galleryUrls[$this->activeGalleryIndex]
+            ?? $this->galleryUrls[0]
+            ?? asset('assets/images/placeholder.webp');
+    }
+
+    #[Computed]
+    public function maxOrderableQuantity(): int
+    {
+        if (! isset($this->product)) {
+            return 0;
+        }
+
+        if ($this->product->has_variants) {
+            $matchedVariant = $this->getMatchedVariant();
+            if ($matchedVariant) {
+                return max(0, (int) $matchedVariant->stock);
+            }
+
+            return max(0, (int) $this->activeVariants()->max('stock'));
+        }
+
+        return max(0, (int) $this->product->stock);
+    }
+
     #[Computed]
     public function availableAttributes()
     {
@@ -50,7 +88,7 @@ class ProductDetail extends Component
         }
 
         $attributes = [];
-        foreach ($this->product->variants as $variant) {
+        foreach ($this->activeVariants() as $variant) {
             foreach ($variant->attributeOptions as $option) {
                 $attrSlug = $option->attribute->slug;
                 if (! isset($attributes[$attrSlug])) {
@@ -84,7 +122,7 @@ class ProductDetail extends Component
         $testSelection[$attrSlug] = $optionValue;
         $testSelection = array_filter($testSelection, fn ($val) => $val !== '');
 
-        foreach ($this->product->variants as $variant) {
+        foreach ($this->activeVariants() as $variant) {
             if ($variant->stock <= 0) {
                 continue;
             }
@@ -109,16 +147,23 @@ class ProductDetail extends Component
 
     public function selectOption($attrSlug, $optionValue)
     {
-        if (! $this->isOptionAvailable($attrSlug, $optionValue)) {
-            return;
-        }
-
-        if ($this->selectedOptions[$attrSlug] === $optionValue) {
+        if (($this->selectedOptions[$attrSlug] ?? '') === $optionValue) {
             $this->selectedOptions[$attrSlug] = ''; // Deselect
         } else {
+            if (! $this->isOptionAvailable($attrSlug, $optionValue)) {
+                return;
+            }
+
             $this->selectedOptions[$attrSlug] = $optionValue;
         }
 
+        // Clamp quantity to the newly matched variant's real stock
+        $maxQty = $this->maxOrderableQuantity;
+        if ($maxQty > 0 && $this->quantity > $maxQty) {
+            $this->quantity = $maxQty;
+        }
+
+        $targetIndex = 0;
         $variantWithImage = $this->getFirstVariantWithImage();
         if ($variantWithImage && $variantWithImage->media_id) {
             $targetMediaId = (int) $variantWithImage->media_id;
@@ -138,9 +183,12 @@ class ProductDetail extends Component
             }
 
             if ($index !== false) {
-                $this->dispatch('change-gallery-image', index: $index);
+                $targetIndex = (int) $index;
             }
         }
+
+        $this->activeGalleryIndex = $targetIndex;
+        $this->dispatch('change-gallery-image', index: $targetIndex);
     }
 
     public function getFirstVariantWithImage()
@@ -154,7 +202,7 @@ class ProductDetail extends Component
             return null;
         }
 
-        return $this->product->variants->first(function ($variant) use ($activeSelections) {
+        return $this->activeVariants()->first(function ($variant) use ($activeSelections) {
             if (! $variant->media_id) {
                 return false;
             }
@@ -178,7 +226,11 @@ class ProductDetail extends Component
             return null;
         }
 
-        return $this->product->variants->first(function ($variant) {
+        if (empty($this->selectedOptions)) {
+            return null;
+        }
+
+        return $this->activeVariants()->first(function ($variant) {
             foreach ($this->selectedOptions as $slug => $val) {
                 if (empty($val)) {
                     return false;
@@ -229,7 +281,7 @@ class ProductDetail extends Component
             return null;
         }
 
-        $activeVariants = $this->product->variants->where('is_active', true);
+        $activeVariants = $this->activeVariants();
         if ($activeVariants->isEmpty()) {
             return null;
         }
@@ -366,7 +418,8 @@ class ProductDetail extends Component
 
     public function incrementQuantity()
     {
-        if ($this->quantity < 10) {
+        $maxQty = $this->maxOrderableQuantity;
+        if ($maxQty > 0 && $this->quantity < $maxQty) {
             $this->quantity++;
         }
     }
@@ -378,11 +431,34 @@ class ProductDetail extends Component
         }
     }
 
+    public function updatedQuantity($value)
+    {
+        $qty = (int) $value;
+        $maxQty = $this->maxOrderableQuantity;
+
+        if ($maxQty <= 0 || $qty < 1) {
+            $this->quantity = 1;
+        } elseif ($qty > $maxQty) {
+            $this->quantity = $maxQty;
+        } else {
+            $this->quantity = $qty;
+        }
+    }
+
     public function addToCart()
     {
+        $this->quantity = max(1, (int) $this->quantity);
+
         // 1. Validation
         if ($this->product->has_variants) {
-            foreach ($this->availableAttributes() as $attrSlug => $data) {
+            $availableAttributes = $this->availableAttributes();
+            if (empty($availableAttributes)) {
+                session()->flash('error', 'Varian produk tidak tersedia atau sedang tidak aktif.');
+
+                return;
+            }
+
+            foreach ($availableAttributes as $attrSlug => $data) {
                 if (empty($this->selectedOptions[$attrSlug])) {
                     session()->flash('error', 'Silakan lengkapi pilihan varian terlebih dahulu.');
 
@@ -396,20 +472,23 @@ class ProductDetail extends Component
         if ($this->product->has_variants) {
             $matchedVariant = $this->getMatchedVariant();
 
-            if (! $matchedVariant) {
-                session()->flash('error', 'Kombinasi varian tidak ditemukan atau habis.');
+            if (! $matchedVariant || ! $matchedVariant->is_active) {
+                session()->flash('error', 'Kombinasi varian tidak ditemukan, tidak aktif, atau habis.');
 
                 return;
             }
             $variantId = $matchedVariant->id;
+            $availableStock = (int) $matchedVariant->stock;
 
-            if ($matchedVariant->stock < $this->quantity) {
+            if ($availableStock < $this->quantity) {
                 session()->flash('error', 'Stok varian tidak mencukupi.');
 
                 return;
             }
         } else {
-            if ($this->product->stock < $this->quantity) {
+            $availableStock = (int) $this->product->stock;
+
+            if ($availableStock < $this->quantity) {
                 session()->flash('error', 'Stok produk tidak mencukupi.');
 
                 return;
@@ -425,14 +504,26 @@ class ProductDetail extends Component
             $cart = Cart::firstOrCreate(['session_id' => session()->getId(), 'user_id' => null, 'is_buy_now' => false]);
         }
 
-        // 4. Add or Update Item in Cart
+        // 4. Add or Update Item in Cart (guard accumulated quantity against real stock)
         $cartItem = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $this->product->id)
             ->where('product_variant_id', $variantId)
             ->first();
 
+        $existingQty = $cartItem ? (int) $cartItem->quantity : 0;
+        if (($existingQty + $this->quantity) > $availableStock) {
+            $remaining = max(0, $availableStock - $existingQty);
+            $message = $remaining === 0
+                ? "Stok maksimal ({$availableStock} pcs) sudah ada di keranjang Anda."
+                : "Stok tidak mencukupi. Anda sudah memiliki {$existingQty} pcs di keranjang (sisa yang dapat ditambahkan: {$remaining} pcs).";
+
+            session()->flash('error', $message);
+
+            return;
+        }
+
         if ($cartItem) {
-            $cartItem->quantity += $this->quantity;
+            $cartItem->quantity = $existingQty + $this->quantity;
             $cartItem->save();
         } else {
             $cartItem = CartItem::create([
@@ -536,7 +627,7 @@ class ProductDetail extends Component
         $price = $this->product->effective_price;
         $inStock = $this->product->stock > 0;
         if ($this->product->has_variants) {
-            $inStock = $this->product->variants->sum('stock') > 0;
+            $inStock = $this->activeVariants()->sum('stock') > 0;
         }
         $availability = $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
 
