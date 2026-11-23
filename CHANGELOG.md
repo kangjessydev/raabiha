@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Ditambahkan
+- Migrasi idempoten P4 Fase 1 (`database/migrations/2026_11_23_090000_add_composite_indexes_and_drop_unused_legacy_tables.php`, `BKL-010`) yang menambahkan 6 composite performance indexes (`idx_products_channel_active`, `idx_variants_product_active_stock`, `idx_orders_source_payment_created`, `idx_orders_status_created`, `idx_carts_user_buy_now`, `idx_carts_session_buy_now`) serta test verifikasi `tests/Feature/DatabasePerformanceIndexesAndCleanupTest.php`.
 - Automated feature test `tests/Feature/PosManualDiscountServerGuardTest.php` dan laporan pengerjaan P3 Fase 2 (`docs/reports/2026-11-23-backend-p3-fase-2-pos-manual-discount-server-guard.md`).
 - Automated feature test `tests/Feature/P3WidgetStockAndPosVoidNullSafeTest.php` dan laporan pengerjaan P3 Fase 1 (`docs/reports/2026-11-23-backend-p3-fase-1-widget-stok-dan-void-null-safe.md`).
 - Catatan keputusan arsitektur ADR-003 di `docs/decisions.md` (penangguhan `BKL-003` rate limiting PIN supervisor POS atas permintaan klien).
@@ -28,6 +29,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tiket backlog perbaikan lanjutan BKL-004 s/d BKL-012 di `docs/backlog.md`.
 
 ### Diubah
+- Optimasi P4 Fase 2 (temuan minor `R-01` hasil audit P2 & P3):
+  - `app/Services/PosTransactionService.php`: menggabungkan 3 query `SiteSetting` di `authorizeManualDiscount()` menjadi 1 query tunggal `whereIn(...)->pluck('value', 'key')`.
+  - `app/Filament/Resources/Orders/Schemas/OrderForm.php`: menambahkan memoize ringan per request (`spl_object_id(request())`) pada `productHasVariants()` agar `visible()` & `required()` pada item repeater tidak mengulang query identik.
 - Perbaikan P3 Fase 3 (`S-01` — `resources/views/livewire/cart.blade.php:73`): menyelaraskan tampilan harga per baris item keranjang agar menggunakan `effective_price` seperti kalkulasi subtotal di `app/Livewire/Cart.php`.
 - Perbaikan P3 Fase 2 (`BKL-001` — Hardening Otorisasi Diskon Manual Kasir di Sisi Server):
   - `app/Services/PosTransactionService.php`: menambahkan `authorizeManualDiscount()` & `isSupervisorUser()` pada `completePosTransaction()` untuk memvalidasi ambang batas `pos_manual_discount_max_percent_without_pin` (default 20%) & `pos_manual_discount_max_rp_without_pin` (default Rp 50.000) di sisi server, mencegah diskon negatif, mewajibkan otorisasi supervisor bila melewati batas, dan mencatat `manual_discount_supervisor_id` di `payment_details`.
@@ -57,7 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Pembaruan spesifikasi peran `/role-inspektur` (`.agents/skills/role-inspektur/SKILL.md` & `.agents/roster.md`) menjadi auditor forensik & skeptis dengan 5 pilar pemeriksaan (logika bisnis, semantik/penamaan/duplikasi, sinkronisasi FE-BE-DB, struktur/ukuran file ≤300 baris & efisiensi sintaks/DB, anti-AI-slop), *Zero-Assumption Gate*, serta *Context-Budget Guard* (pembagian fase ≤50% konteks input).
 
 ### Dihapus & Alasan
-- *(Belum ada)*
+- Tabel database legacy `coupons` dan `salespages` (`Schema::dropIfExists` pada migrasi `2026_11_23_090000_add_composite_indexes_and_drop_unused_legacy_tables.php`, dengan izin eksplisit user 2026-11-23): **Alasan:** Kedua tabel sudah 0 referensi aktif di `app/`, `routes/`, dan `resources/views/` (digantikan oleh modul `vouchers` & halaman modern), sehingga dibersihkan untuk efisiensi skema database (`BKL-010`).
 
 ## [1.0.7] - 2026-11-09
 

@@ -74,18 +74,12 @@ Dokumen ini mencatat daftar temuan, rencana peningkatan, dan perbaikan tertunda 
 ### BKL-010: Database Indexing & Pembersihan Tabel Hantu
 - **Sumber Temuan:** Diskusi Arsitektur Efisiensi Resource VPS.
 - **Tingkat Prioritas:** Sedang (Medium/Performance).
-- **Status Riil Saat Ini:** 🔴 **Belum Diterapkan.**
-  - Tabel lama `coupons` dan `salespages` masih tertinggal di database.
-  - Beberapa foreign key dan kolom pencarian transaksi (`payment_status`, `source`) belum memiliki index komposit.
-- **Rencana Tindakan:**
-  Hapus tabel tak terpakai melalui migrasi drop table, dan tambahkan database index pada tabel transaksi dan katalog.
+- **Status Riil Saat Ini:** ✅ **Selesai (P4 Fase 1 — 2026-11-23).** Migrasi idempoten [`2026_11_23_090000_add_composite_indexes_and_drop_unused_legacy_tables.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/database/migrations/2026_11_23_090000_add_composite_indexes_and_drop_unused_legacy_tables.php) menambahkan 6 composite performance indexes (`products`, `product_variants`, `orders`, `carts`) dan menghapus tabel legacy `coupons` & `salespages` (izin eksplisit user). Diverifikasi oleh [`DatabasePerformanceIndexesAndCleanupTest.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/tests/Feature/DatabasePerformanceIndexesAndCleanupTest.php).
 
 ### BKL-011: Refactoring & Perampingan File Gemuk ("Fat Class")
 - **Sumber Temuan:** Diskusi Arsitektur Pemeliharaan Kode.
-- **Tingkat Prioritas:** Sedang (Medium).
-- **Status Riil Saat Ini:** 🔴 **Belum Diterapkan.** Berkas `Checkout.php` (~900 baris) dan `ProductDetail.php` (~600 baris) menanggung terlalu banyak tanggung jawab secara bersamaan.
-- **Rencana Tindakan:**
-  Ekstraksi kalkulasi ongkir, voucher, dan pembayaran ke Action Class terpisah (Single Responsibility Principle).
+- **Tingkat Prioritas:** Sedang (Medium — Ditunda Pasca-Rilis sesuai Keputusan User Opsi A pada 2026-11-23).
+- **Status Riil Saat Ini:** ⏸️ **Sebagian Selesai / Refactoring Besar Ditunda Pasca-Rilis.** Optimasi query ringan (`R-01` di `PosTransactionService.php` & `OrderForm.php`) telah diselesaikan pada P4 Fase 2 (2026-11-23). Pemecahan besar `Checkout.php` (~1.900 baris) dan `ProductDetail.php` sengaja ditunda pasca-rilis agar stabilitas kode menjelang rilis tetap maksimal.
 
 ---
 

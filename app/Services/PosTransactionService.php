@@ -45,15 +45,21 @@ class PosTransactionService
             return null;
         }
 
-        $requirePinSetting = SiteSetting::where('key', 'pos_require_pin_for_manual_discount')->value('value');
+        $settings = SiteSetting::whereIn('key', [
+            'pos_require_pin_for_manual_discount',
+            'pos_manual_discount_max_percent_without_pin',
+            'pos_manual_discount_max_rp_without_pin',
+        ])->pluck('value', 'key');
+
+        $requirePinSetting = $settings->get('pos_require_pin_for_manual_discount');
         $requirePin = $requirePinSetting === null || $requirePinSetting === '1' || $requirePinSetting === 'true' || $requirePinSetting === true;
 
         if (! $requirePin) {
             return null;
         }
 
-        $maxPercentWithoutPin = (float) (SiteSetting::where('key', 'pos_manual_discount_max_percent_without_pin')->value('value') ?? 20);
-        $maxRpWithoutPin = (float) (SiteSetting::where('key', 'pos_manual_discount_max_rp_without_pin')->value('value') ?? 50000);
+        $maxPercentWithoutPin = (float) ($settings->get('pos_manual_discount_max_percent_without_pin') ?? 20);
+        $maxRpWithoutPin = (float) ($settings->get('pos_manual_discount_max_rp_without_pin') ?? 50000);
 
         $discountPercent = $subtotal > 0 ? (($manualDiscount / $subtotal) * 100) : 100.0;
         $exceedsThreshold = ($manualDiscount > $maxRpWithoutPin) || ($discountPercent > $maxPercentWithoutPin);

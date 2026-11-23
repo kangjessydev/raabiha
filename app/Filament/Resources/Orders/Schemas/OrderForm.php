@@ -875,8 +875,22 @@ class OrderForm
             return false;
         }
 
-        return (bool) \App\Models\Product::query()
-            ->whereKey($productId)
-            ->value('has_variants');
+        static $requestId = null;
+        static $cache = [];
+
+        $currentRequestId = app()->bound('request') ? spl_object_id(request()) : 0;
+        if ($requestId !== $currentRequestId) {
+            $requestId = $currentRequestId;
+            $cache = [];
+        }
+
+        $cacheKey = (string) $productId;
+        if (! array_key_exists($cacheKey, $cache)) {
+            $cache[$cacheKey] = (bool) \App\Models\Product::query()
+                ->whereKey($productId)
+                ->value('has_variants');
+        }
+
+        return $cache[$cacheKey];
     }
 }
