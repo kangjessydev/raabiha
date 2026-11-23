@@ -456,12 +456,28 @@ class Account extends Component
             return;
         }
 
-        $order = Order::where('user_id', Auth::id())
-            ->where('status', 'pending')
-            ->findOrFail($this->cancelOrderId);
-
         try {
-            DB::transaction(function () use ($order) {
+            $cancelledOrderNumber = null;
+
+            DB::transaction(function () use (&$cancelledOrderNumber) {
+                // Kunci baris order di dalam transaksi (S-04 — cegah race condition vs webhook PAID)
+                $order = Order::where('id', $this->cancelOrderId)
+                    ->where('user_id', Auth::id())
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $order) {
+                    throw new \Exception('Pesanan tidak ditemukan.');
+                }
+
+                if ($order->payment_status === 'paid') {
+                    throw new \Exception('Pesanan yang sudah dibayar tidak dapat dibatalkan.');
+                }
+
+                if ($order->status !== 'pending') {
+                    throw new \Exception('Hanya pesanan berstatus menunggu pembayaran yang dapat dibatalkan.');
+                }
+
                 // Update order status to cancelled (juga mentrigger OrderObserver)
                 $order->update([
                     'status' => 'cancelled',
@@ -475,9 +491,13 @@ class Account extends Component
                     notes: 'Pembayaran dibatalkan manual oleh pelanggan untuk pesanan #'.$order->order_number,
                     userId: Auth::id()
                 );
+
+                $cancelledOrderNumber = $order->order_number;
             });
 
-            session()->flash('order_message', 'Pesanan #'.$order->order_number.' telah berhasil dibatalkan.');
+            if ($cancelledOrderNumber) {
+                session()->flash('order_message', 'Pesanan #'.$cancelledOrderNumber.' telah berhasil dibatalkan.');
+            }
         } catch (\Exception $e) {
             session()->flash('order_error', 'Gagal membatalkan pesanan: '.$e->getMessage());
         } finally {

@@ -26,20 +26,10 @@
                 <div class="flex flex-col gap-6">
                     @foreach($cart->items as $item)
                         @php
-                            $imageUrl = asset('assets/images/placeholder.webp');
-                            if (!empty($item->product->images)) {
-                                if (is_numeric($item->product->images[0])) {
-                                    $media = \Awcodes\Curator\Models\Media::find($item->product->images[0]);
-                                    if ($media && Storage::disk('public')->exists($media->path)) {
-                                        $imageUrl = Storage::url($media->path);
-                                    }
-                                } else {
-                                    if (Storage::disk('public')->exists($item->product->images[0])) {
-                                        $imageUrl = asset('storage/' . $item->product->images[0]);
-                                    }
-                                }
-                            }
-                            $price = $item->variant && $item->variant->price ? $item->variant->price : $item->product->price;
+                            $imageUrl = $item->variant
+                                ? $item->variant->resolveImageUrl($item->product)
+                                : ($item->product ? $item->product->primary_image_url : \App\Services\ProductImageResolver::placeholderUrl());
+                            $price = $item->variant ? $item->variant->effective_price : ($item->product ? $item->product->effective_price : 0);
                         @endphp
                         <div class="flex gap-4 relative">
                             <div class="w-20 h-24 bg-[#f0ede9] shrink-0">
@@ -90,7 +80,7 @@
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <a href="/cart" class="flex items-center justify-center border border-[#1c1c1a] text-[#1c1c1a] py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#f2efe8] transition-colors leading-tight">LIHAT KERANJANG</a>
-                <a href="/checkout" class="flex items-center justify-center bg-[#064e3b] text-white py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#043326] transition-colors leading-tight">LANJUT PEMBAYARAN</a>
+                <button type="button" wire:click="proceedToCheckout" class="flex items-center justify-center bg-[#064e3b] text-white py-3.5 px-2 font-mono text-[9px] font-bold tracking-[0.1em] uppercase text-center hover:bg-[#043326] transition-colors leading-tight cursor-pointer">LANJUT PEMBAYARAN</button>
             </div>
         </div>
         @endif

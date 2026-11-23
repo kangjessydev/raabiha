@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Ditambahkan
+- Automated feature test hardening transaksi & fundamental pra-rilis `v1.1.0`: `tests/Feature/EcommerceCheckoutAndWebhookHardeningTest.php`, `tests/Feature/PosTransactionHardeningTest.php`, `tests/Feature/MiniCartGuestMergeAndVoucherDedupTest.php`.
+- Helper `Cart::mergeGuestCartToUser()` di `app/Models/Cart.php` untuk menggabungkan keranjang belanja guest ke akun user saat Login/Register (`K-03`), serta method `Checkout::clearDestination()` (`F-03`) dan `MiniCart::proceedToCheckout()` (`K-02`).
 - Migrasi idempoten P4 Fase 1 (`database/migrations/2026_11_23_090000_add_composite_indexes_and_drop_unused_legacy_tables.php`, `BKL-010`) yang menambahkan 6 composite performance indexes (`idx_products_channel_active`, `idx_variants_product_active_stock`, `idx_orders_source_payment_created`, `idx_orders_status_created`, `idx_carts_user_buy_now`, `idx_carts_session_buy_now`) serta test verifikasi `tests/Feature/DatabasePerformanceIndexesAndCleanupTest.php`.
 - Automated feature test `tests/Feature/PosManualDiscountServerGuardTest.php` dan laporan pengerjaan P3 Fase 2 (`docs/reports/2026-11-23-backend-p3-fase-2-pos-manual-discount-server-guard.md`).
 - Automated feature test `tests/Feature/P3WidgetStockAndPosVoidNullSafeTest.php` dan laporan pengerjaan P3 Fase 1 (`docs/reports/2026-11-23-backend-p3-fase-1-widget-stok-dan-void-null-safe.md`).
@@ -29,6 +31,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tiket backlog perbaikan lanjutan BKL-004 s/d BKL-012 di `docs/backlog.md`.
 
 ### Diubah
+- Hardening Transaksi & Fundamental Pra-Rilis `v1.1.0` (Handoff `023`, `024`, `025`):
+  - `app/Livewire/Checkout.php` & `resources/views/livewire/checkout.blade.php`: mengunci `#[Locked]` pada `$shippingRates` & `$totalWeight` (`T-01`), menyelaraskan total `order_items` Tripay saat ada diskon/voucher agar sama dengan `amount` (`T-04`), validasi `is_active`/kanal online di dalam `lockForUpdate()` & validasi `payment_method` online aktif (`S-02`), serta mengganti `$wire.set('shipping_cost', 0)` pada tombol Ganti/Hapus Lokasi dengan `$wire.clearDestination()` agar tidak memicu HTTP 500 Livewire 4 (`F-03`).
+  - `app/Http/Controllers/Webhook/TripayWebhookController.php` & `XenditWebhookController.php`: mencegah webhook `EXPIRED`/`FAILED` menimpa pesanan yang sudah `paid`, serta menandai pembayaran telat (`PAID` pada order `cancelled`) untuk verifikasi manual admin (`S-01`).
+  - `app/Livewire/PosManager.php`: memperbaiki *double-checked locking* idempotency di `processCheckout()` (`T-02`), menambahkan `lockForUpdate()` + flag `is_stock_restored` di `voidOrder()` untuk mencegah double-void & double-restock saat order dihapus (`T-03`), serta memperbaiki kalkulasi Z-Report tutup shift (`closeSession()`) agar tidak mengurangkan void tunai shift yang sama dua kali dan menyertakan porsi tunai split payment (`K-01`).
+  - `app/Services/PosTransactionService.php`: memaksa harga item katalog POS & barang tukar 100% dari server (`resolveServerCatalogPrice()` — anti manipulasi Console Rp 100rb → Rp 0, `F-01`), memvalidasi kecukupan bayar tunai & split di server (`F-02`), serta menolak kuantitas `<= 0` (`S-03`).
+  - `app/Livewire/MiniCart.php` & `resources/views/livewire/mini-cart.blade.php`: menutup IDOR via scoping `$this->cart->items()`, menambah guard stok riil & `is_active`, menyelaraskan harga promo `effective_price` + gambar Curator `ProductImageResolver`, serta mereset `checkout_is_buy_now` saat klik Lanjut Pembayaran (`K-02`).
+  - `app/Livewire/Auth/Login.php` & `Register.php`: menggabungkan keranjang guest ke akun user saat Login/Register (`K-03`).
+  - `app/Livewire/Account.php`: mengunci baris order dengan `lockForUpdate()` & menolak pembatalan jika `payment_status === 'paid'` (`S-04`).
+  - `app/Services/VoucherService.php`: menambahkan deduplikasi kode voucher pada `verifyAndCalculate()` (`F-04`).
 - Perbaikan aset publik & UX Detail Produk:
   - Mem-publish ulang aset publik `public/vendor/livewire/` (`manifest.json: 102cd394`) agar selaras dengan Livewire `4.4.9` & Filament `5.12.0` (menutup error JS `TypeError: h is not a function` pada `ToggleColumn` di `VariantsRelationManager`).
   - `app/Livewire/ProductDetail.php` & `resources/views/livewire/product-detail.blade.php`: menambahkan *Optimistic Instant Slide* (`0ms`) berbasis `getPredictedGalleryIndex()`, state Alpine lokal `optimisticSelected` + `wire:key` unik pada tombol opsi varian (menghilangkan border ganda saat klik cepat), filter `priceRange()` berdasarkan pilihan parsial (langsung menyempit ke harga varian terpilih saat warna diklik), sinkronisasi preview `#bs-product-image` `0ms`, serta menghapus `translate-y-0` permanen pada drawer Bottom Sheet.

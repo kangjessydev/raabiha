@@ -149,12 +149,19 @@ class VoucherService
         $recalculatedProductDiscount = 0;
         $recalculatedShippingDiscount = 0;
         $verifiedVouchers = [];
+        $seenCodes = [];
 
         foreach ($appliedVouchersData as $vData) {
             $voucherCode = $vData['code'] ?? null;
             if (! $voucherCode) {
                 continue;
             }
+
+            $normalizedCode = strtoupper(trim((string) $voucherCode));
+            if (in_array($normalizedCode, $seenCodes, true)) {
+                continue;
+            }
+            $seenCodes[] = $normalizedCode;
 
             $query = Voucher::where('code', $voucherCode);
             if ($lockForUpdate) {

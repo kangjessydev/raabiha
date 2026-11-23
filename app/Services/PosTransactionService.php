@@ -6,6 +6,7 @@ use App\Models\Cashflow;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\PosCustomer;
+use App\Models\PosEventPromotion;
 use App\Models\PosReturn;
 use App\Models\PosReturnItem;
 use App\Models\PosStampLog;
@@ -91,6 +92,41 @@ class PosTransactionService
     }
 
     /**
+     * Hitung harga katalog POS secara otoritatif di sisi server (F-01 — anti console tampering).
+     *
+     * @return array{original_price: float, final_price: float}
+     */
+    protected function resolveServerCatalogPrice(Product $product, ?ProductVariant $variant, $activeEventPromos): array
+    {
+        $basePrice = $variant
+            ? (float) ($variant->pos_price ?: ($variant->price ?: $product->price))
+            : (float) ($product->pos_price ?: $product->price);
+
+        $activePromo = $activeEventPromos->first(fn ($ep) => $ep->isProductEligible($product->id, $product->category_id));
+        $finalPrice = $basePrice;
+
+        if ($activePromo) {
+            if ($activePromo->discount_type === 'percent') {
+                $finalPrice = max(0.0, $basePrice * (1 - (((float) $activePromo->discount_amount) / 100)));
+            } else {
+                $finalPrice = max(0.0, $basePrice - ((float) $activePromo->discount_amount));
+            }
+        } elseif ($variant && $variant->pos_discount_price) {
+            $finalPrice = (float) $variant->pos_discount_price;
+        } elseif ($product->pos_discount_price) {
+            $finalPrice = (float) $product->pos_discount_price;
+        }
+
+        $finalPrice = max(0.0, $finalPrice);
+        $originalPrice = max($basePrice, $finalPrice);
+
+        return [
+            'original_price' => $originalPrice,
+            'final_price' => $finalPrice,
+        ];
+    }
+
+    /**
      * Memproses pesanan POS dengan perhitungan harga server-side,
      * lock stock, pengurangan stock, dan pencatatan arus kas.
      */
@@ -100,10 +136,12 @@ class PosTransactionService
             $items = $data['items'];
             $cashierId = $data['cashier_id'];
             $posSessionId = $data['pos_session_id'];
-            $cashPaid = $data['cash_paid'] ?? 0;
+            $cashPaid = (float) ($data['cash_paid'] ?? 0);
             $paymentDetails = $data['payment_details'] ?? null;
             $customerName = $data['customer_name'] ?? null;
             $customerPhone = $data['customer_phone'] ?? null;
+
+            $activeEventPromos = PosEventPromotion::active()->get();
 
             $subtotal = 0;
             $totalPurchasePrice = 0;
@@ -111,7 +149,10 @@ class PosTransactionService
 
             // 1. Validasi dan kunci stok, hitung harga
             foreach ($items as $item) {
-                $qty = (int) $item['quantity'];
+                $qty = (int) ($item['quantity'] ?? 0);
+                if ($qty <= 0) {
+                    throw new Exception('Jumlah item harus lebih dari 0.');
+                }
 
                 // Cek jika produk KUSTOM (Fast Entry)
                 if (! empty($item['is_custom']) || empty($item['product_id'])) {
@@ -119,6 +160,9 @@ class PosTransactionService
                     $customPrice = (float) ($item['price'] ?? 0);
                     $customOriginalPrice = isset($item['original_price']) && is_numeric($item['original_price']) ? (float) $item['original_price'] : $customPrice;
                     $customPurchasePrice = (float) ($item['purchase_price'] ?? 0);
+                    if ($customPrice < 0 || $customPurchasePrice < 0) {
+                        throw new Exception('Harga produk kustom tidak boleh bernilai negatif.');
+                    }
                     $saveToCatalog = ! empty($item['save_to_catalog']);
 
                     $productId = null;
@@ -173,13 +217,9 @@ class PosTransactionService
                     }
 
                     $lockedProduct = Product::find($lockedVariant->product_id);
-                    $basePrice = (float) ($lockedVariant->pos_price ?: ($lockedVariant->price ?: $lockedProduct->price));
-                    $itemPrice = isset($item['price']) && is_numeric($item['price']) ? (float) $item['price'] : null;
-                    $itemOrigPrice = isset($item['original_price']) && is_numeric($item['original_price']) ? (float) $item['original_price'] : null;
-
-                    $unitOrigPrice = $itemOrigPrice !== null ? $itemOrigPrice : $basePrice;
-                    $finalPrice = $itemPrice !== null ? $itemPrice : ($lockedVariant->pos_discount_price ?: $basePrice);
-                    $unitOrigPrice = max($unitOrigPrice, $finalPrice);
+                    $resolvedPrices = $this->resolveServerCatalogPrice($lockedProduct, $lockedVariant, $activeEventPromos);
+                    $unitOrigPrice = $resolvedPrices['original_price'];
+                    $finalPrice = $resolvedPrices['final_price'];
                     $purchasePrice = $lockedVariant->purchase_price ?: $lockedProduct->purchase_price;
 
                     $subtotal += ($unitOrigPrice * $qty);
@@ -208,13 +248,9 @@ class PosTransactionService
                         throw new Exception('Stok tidak cukup untuk produk: '.$lockedProduct->name);
                     }
 
-                    $basePrice = (float) ($lockedProduct->pos_price ?: $lockedProduct->price);
-                    $itemPrice = isset($item['price']) && is_numeric($item['price']) ? (float) $item['price'] : null;
-                    $itemOrigPrice = isset($item['original_price']) && is_numeric($item['original_price']) ? (float) $item['original_price'] : null;
-
-                    $unitOrigPrice = $itemOrigPrice !== null ? $itemOrigPrice : $basePrice;
-                    $finalPrice = $itemPrice !== null ? $itemPrice : ($lockedProduct->pos_discount_price ?: $basePrice);
-                    $unitOrigPrice = max($unitOrigPrice, $finalPrice);
+                    $resolvedPrices = $this->resolveServerCatalogPrice($lockedProduct, null, $activeEventPromos);
+                    $unitOrigPrice = $resolvedPrices['original_price'];
+                    $finalPrice = $resolvedPrices['final_price'];
                     $purchasePrice = $lockedProduct->purchase_price;
 
                     $subtotal += ($unitOrigPrice * $qty);
@@ -281,11 +317,37 @@ class PosTransactionService
             // Total seluruh potongan (Promo Item + Manual + Voucher)
             $discount = $itemDiscountsTotal + $manualDiscount + $voucherDiscount;
             $grandTotal = max(0, $subtotal - $discount);
-            $cashChange = $cashPaid - $grandTotal;
 
             $normalizedPhone = PosCustomer::normalizePhone($customerPhone) ?: $customerPhone;
 
             $paymentDetails = is_array($paymentDetails) ? $paymentDetails : (is_string($paymentDetails) ? json_decode($paymentDetails, true) : []);
+            $paymentMethod = strtolower((string) ($data['payment_method'] ?? 'cash'));
+
+            // Validasi kecukupan nominal bayar di sisi server (F-02)
+            if (in_array($paymentMethod, ['cash', 'tunai'], true)) {
+                if ($cashPaid < $grandTotal) {
+                    throw new Exception('Nominal pembayaran tunai kurang dari total belanja (Rp '.number_format($grandTotal, 0, ',', '.').').');
+                }
+            } elseif ($paymentMethod === 'split') {
+                $splits = $paymentDetails['split_payments'] ?? [];
+                if (! is_array($splits) || empty($splits)) {
+                    throw new Exception('Rincian pembayaran split tidak boleh kosong.');
+                }
+                $totalSplitPaid = 0.0;
+                foreach ($splits as $split) {
+                    $splitAmt = (float) ($split['amount'] ?? 0);
+                    if ($splitAmt <= 0) {
+                        throw new Exception('Nominal setiap metode split payment harus lebih dari 0.');
+                    }
+                    $totalSplitPaid += $splitAmt;
+                }
+                if ($totalSplitPaid < $grandTotal) {
+                    throw new Exception('Total pembayaran split kurang dari total belanja (Rp '.number_format($grandTotal, 0, ',', '.').').');
+                }
+                $cashPaid = max($cashPaid, $totalSplitPaid);
+            }
+
+            $cashChange = max(0, $cashPaid - $grandTotal);
             $paymentDetails['item_discounts'] = $itemDiscountsTotal;
             $paymentDetails['manual_discount'] = $manualDiscount;
             if ($manualDiscountSupervisorId !== null) {
@@ -699,6 +761,7 @@ class PosTransactionService
             $exchangedItemsData = [];
 
             if ($type === 'exchange' && ! empty($exchangedItemsPayload)) {
+                $activeEventPromos = PosEventPromotion::active()->get();
                 foreach ($exchangedItemsPayload as $exItem) {
                     $qty = (int) ($exItem['quantity'] ?? 0);
                     if ($qty <= 0) {
@@ -715,9 +778,8 @@ class PosTransactionService
                         }
 
                         $lockedProduct = Product::find($lockedVariant->product_id);
-                        $price = $lockedVariant->pos_price ?: ($lockedVariant->price ?: $lockedProduct->price);
-                        $exPrice = isset($exItem['price']) && is_numeric($exItem['price']) ? (float) $exItem['price'] : null;
-                        $finalPrice = $exPrice !== null ? $exPrice : ($lockedVariant->pos_discount_price ?: $price);
+                        $resolvedPrices = $this->resolveServerCatalogPrice($lockedProduct, $lockedVariant, $activeEventPromos);
+                        $finalPrice = $resolvedPrices['final_price'];
 
                         $exchangedSubtotal += ($finalPrice * $qty);
                         $exchangedItemsData[] = [
@@ -738,9 +800,8 @@ class PosTransactionService
                             throw new Exception("Stok produk tukar tidak mencukupi ({$lockedProduct->name}).");
                         }
 
-                        $price = $lockedProduct->pos_price ?: $lockedProduct->price;
-                        $exPrice = isset($exItem['price']) && is_numeric($exItem['price']) ? (float) $exItem['price'] : null;
-                        $finalPrice = $exPrice !== null ? $exPrice : ($lockedProduct->pos_discount_price ?: $price);
+                        $resolvedPrices = $this->resolveServerCatalogPrice($lockedProduct, null, $activeEventPromos);
+                        $finalPrice = $resolvedPrices['final_price'];
 
                         $exchangedSubtotal += ($finalPrice * $qty);
                         $exchangedItemsData[] = [

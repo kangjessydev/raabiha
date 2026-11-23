@@ -279,6 +279,18 @@ class Checkout extends Component
         $this->generateShippingRates();
     }
 
+    public function clearDestination(): void
+    {
+        $this->selectedDestinationId = '';
+        $this->selectedDestinationLabel = '';
+        $this->searchLocation = '';
+        $this->destinationOptions = [];
+        $this->shippingRates = [];
+        $this->shipping_method = '';
+        $this->shipping_cost = 0;
+        $this->isFallbackShipping = false;
+    }
+
     // BinderByte Cascading Dropdown Logic
     public function loadProvinces()
     {
@@ -419,8 +431,10 @@ class Checkout extends Component
         $this->generateShippingRates();
     }
 
+    #[Locked]
     public $shippingRates = [];
 
+    #[Locked]
     public $totalWeight = 0;
 
     public $activeShippingCategory = 'reguler';
@@ -1265,6 +1279,23 @@ class Checkout extends Component
             return;
         }
 
+        // Validasi metode pembayaran terhadap daftar metode bayar aktif kanal online (S-02)
+        $activeOnlinePaymentCodes = PaymentMethod::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('config->availability')
+                    ->orWhere('config->availability', 'both')
+                    ->orWhere('config->availability', 'online');
+            })
+            ->pluck('code')
+            ->all();
+
+        if (! empty($activeOnlinePaymentCodes) && ! in_array($this->payment_method, $activeOnlinePaymentCodes, true)) {
+            $this->addError('payment_method', 'Metode pembayaran yang dipilih tidak tersedia untuk transaksi online.');
+            session()->flash('error', 'Metode pembayaran yang dipilih tidak tersedia untuk transaksi online.');
+
+            return;
+        }
+
         if ($this->appliedVoucher) {
             $voucher = Voucher::find($this->appliedVoucher['id']);
             if ($voucher) {
@@ -1329,8 +1360,12 @@ class Checkout extends Component
                     $variant = ProductVariant::where('id', $item->product_variant_id)
                         ->lockForUpdate()
                         ->first();
-                    if (! $variant) {
-                        throw new \Exception("Varian produk '{$item->product->name}' tidak ditemukan.");
+                    if (! $variant || ! $variant->is_active) {
+                        throw new \Exception("Varian produk '{$item->product->name}' sudah tidak tersedia atau tidak aktif.");
+                    }
+                    $parentProduct = Product::where('id', $variant->product_id)->first();
+                    if (! $parentProduct || ! $parentProduct->is_active || $parentProduct->channel_visibility === 'pos_only' || $parentProduct->is_custom) {
+                        throw new \Exception("Produk '{$item->product->name}' tidak tersedia untuk pembelian online.");
                     }
                     if ($variant->stock < $item->quantity) {
                         throw new \Exception("Stok produk '{$item->product->name}' (Varian: {$variant->name}) tidak mencukupi. Tersedia: {$variant->stock}.");
@@ -1339,8 +1374,8 @@ class Checkout extends Component
                     $product = Product::where('id', $item->product_id)
                         ->lockForUpdate()
                         ->first();
-                    if (! $product) {
-                        throw new \Exception("Produk '{$item->product->name}' tidak ditemukan.");
+                    if (! $product || ! $product->is_active || $product->channel_visibility === 'pos_only' || $product->is_custom) {
+                        throw new \Exception("Produk '{$item->product->name}' tidak tersedia untuk pembelian online.");
                     }
                     if ($product->stock < $item->quantity) {
                         throw new \Exception("Stok produk '{$product->name}' tidak mencukupi. Tersedia: {$product->stock}.");
@@ -1634,6 +1669,24 @@ class Checkout extends Component
                         'name' => 'Biaya Layanan Pembayaran',
                         'price' => $paymentFee,
                         'quantity' => 1,
+                    ];
+                }
+
+                // Pastikan sum(price * quantity) pada order_items Tripay selalu tepat sama dengan $amount (T-04)
+                $tripayItemsSum = array_reduce(
+                    $orderItems,
+                    fn (int $carry, array $it): int => $carry + ((int) $it['price'] * (int) $it['quantity']),
+                    0
+                );
+
+                if ($tripayItemsSum !== (int) $amount) {
+                    $orderItems = [
+                        [
+                            'sku' => $merchantRef,
+                            'name' => mb_substr('Pesanan #'.$merchantRef.' (Termasuk Diskon & Ongkir)', 0, 50),
+                            'price' => max(0, (int) $amount),
+                            'quantity' => 1,
+                        ],
                     ];
                 }
 

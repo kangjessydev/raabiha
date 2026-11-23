@@ -29,7 +29,7 @@ Status: ✅ ada · 📝 direncanakan
 | `/role-inspektur` | ✅ | Auditor forensik & skeptis: logika bisnis, duplikasi/penamaan, sinkronisasi FE-BE-DB, ukuran file (≤300 baris), sintaks/DB, anti-slop, kerja per fase ≤50% konteks | Tidak (Read-Only) |
 | `/role-security` | 📝 | Cek keamanan sesuai profil risiko | Tidak |
 | `/role-bug-hunter` | 📝 | Cari bug dengan bukti | Tidak |
-| `/role-devops` | 📝 | Tes, build, rilis, optimasi sebelum production | Terbatas (config/CI) |
+| `/role-devops` | ✅ | Audit VPS CloudPanel, release gate/tag, backup, & deploy terkendali (wajib izin per langkah) | Terbatas (config/CI/deploy) |
 | `/role-simplifier` | 📝 | Hapus duplikasi, kode mati, over-engineering | Ya (tes harus hijau) |
 | `/role-retro` | 📝 | Tinjau log penyimpangan, usulkan perbaikan SKILL.md | Tidak |
 | `/role-help` | 📝 | Tampilkan kartu contekan ini | Tidak |
