@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-23
+
 ### Ditambahkan
 - Automated feature test hardening transaksi & fundamental pra-rilis `v1.1.0`: `tests/Feature/EcommerceCheckoutAndWebhookHardeningTest.php`, `tests/Feature/PosTransactionHardeningTest.php`, `tests/Feature/MiniCartGuestMergeAndVoucherDedupTest.php`.
 - Helper `Cart::mergeGuestCartToUser()` di `app/Models/Cart.php` untuk menggabungkan keranjang belanja guest ke akun user saat Login/Register (`K-03`), serta method `Checkout::clearDestination()` (`F-03`) dan `MiniCart::proceedToCheckout()` (`K-02`).
