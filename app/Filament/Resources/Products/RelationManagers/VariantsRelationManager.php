@@ -243,7 +243,7 @@ class VariantsRelationManager extends RelationManager
                     ->label('Harga Promo (Diskon)')
                     ->numeric()
                     ->prefix('Rp')
-                    ->helperText('Hanya berlaku untuk varian ini. Jika dikosongkan, varian ini tidak menggunakan harga promo.'),
+                    ->helperText('Opsional. Jika dikosongkan, varian ini otomatis mengikuti Harga Promo (Diskon) produk induk (jika ada).'),
                 TextInput::make('purchase_price')
                     ->label('Harga Modal (HPP)')
                     ->numeric()

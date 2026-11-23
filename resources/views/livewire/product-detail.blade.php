@@ -1,4 +1,4 @@
-<div x-data="{ bsOpen: $wire.entangle('bsOpen'), bsMode: $wire.entangle('bsMode'), shareOpen: false }">
+<div x-data="{ bsOpen: $wire.entangle('bsOpen'), bsMode: $wire.entangle('bsMode'), optimisticSelected: @js($selectedOptions), shareOpen: false }" @selection-synced.window="optimisticSelected = $event.detail.selected">
     @slot('header')
         <x-global.mobile-subnav title="Detail Produk" transparent="true" :cart="true" />
     @endslot
@@ -352,12 +352,17 @@
                                                         $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
                                                         $isAvailable = $this->isOptionAvailable($attrSlug, $val);
                                                         $escapedVal = addslashes($val);
+                                                        $predictedIndex = ($isAvailable || $isSelected) ? $this->getPredictedGalleryIndex($attrSlug, $val) : null;
                                                     @endphp
                                                     <button 
+                                                        wire:key="desktop-color-{{ $attrSlug }}-{{ md5($val) }}"
                                                         type="button"
-                                                        @if($isAvailable || $isSelected) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                                        @if($isAvailable || $isSelected)
+                                                            @click="optimisticSelected['{{ $attrSlug }}'] = (optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? '' : '{{ $escapedVal }}'); $dispatch('change-gallery-image', { index: {{ $predictedIndex }} })"
+                                                            wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')"
+                                                        @endif
                                                         class="flex-col items-center gap-1.5 group transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1 rounded-sm {{ !$isAvailable && !$isSelected ? 'cursor-not-allowed' : 'cursor-pointer' }} {{ $index >= 5 ? 'hidden md:flex' : 'flex' }}">
-                                                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 relative {{ $isSelected ? 'border-[#1c1c1a]' : ($isAvailable ? 'border-gray-300 hover:border-gray-500' : 'border-transparent') }}">
+                                                        <div :class="optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? 'border-[#1c1c1a]' : '{{ $isAvailable ? 'border-gray-300 hover:border-gray-500' : 'border-transparent' }}'" class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-colors duration-150 relative">
                                                             <div class="w-full h-full rounded-full border border-black/10 {{ !$isAvailable ? 'opacity-20' : '' }}" style="background-color: {{ $hex }}">
                                                             </div>
                                                             @if(!$isAvailable)
@@ -366,7 +371,7 @@
                                                                 </div>
                                                             @endif
                                                         </div>
-                                                        <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : ($isAvailable ? 'text-[#615e57] group-hover:text-[#1c1c1a]' : 'text-[#c2bfb8] line-through font-light') }}">{{ $val }}</span>
+                                                        <span :class="optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? 'text-[#1c1c1a] font-bold' : '{{ $isAvailable ? 'text-[#615e57] group-hover:text-[#1c1c1a]' : 'text-[#c2bfb8] line-through font-light' }}'" class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-150">{{ $val }}</span>
                                                     </button>
                                                 @endforeach
                                                 @if(count($data['options']) > 5)
@@ -386,13 +391,17 @@
                                                         $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
                                                         $isAvailable = $this->isOptionAvailable($attrSlug, $val);
                                                         $escapedVal = addslashes($val);
+                                                        $predictedIndex = ($isAvailable || $isSelected) ? $this->getPredictedGalleryIndex($attrSlug, $val) : null;
                                                     @endphp
                                                     <button 
+                                                        wire:key="desktop-text-{{ $attrSlug }}-{{ md5($val) }}"
                                                         type="button" 
-                                                        @if($isAvailable || $isSelected) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                                        class="py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-colors duration-200 relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1
-                                                        {{ $isSelected ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] ' . ($isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed') }}
-                                                        {{ $index >= 5 ? 'hidden md:block' : 'block' }} flex-1">
+                                                        @if($isAvailable || $isSelected)
+                                                            @click="optimisticSelected['{{ $attrSlug }}'] = (optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? '' : '{{ $escapedVal }}'); $dispatch('change-gallery-image', { index: {{ $predictedIndex }} })"
+                                                            wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')"
+                                                        @endif
+                                                        :class="optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] {{ $isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed' }}'"
+                                                        class="py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-colors duration-150 relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1 {{ $index >= 5 ? 'hidden md:block' : 'block' }} flex-1">
                                                         {{ $val }}
                                                         @if(!$isAvailable)
                                                             <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
@@ -793,7 +802,9 @@
          x-transition:leave="transition-transform duration-300"
          x-transition:leave-start="translate-y-0"
          x-transition:leave-end="translate-y-full"
-         class="md:hidden fixed bottom-0 left-0 right-0 z-[120] bg-[#fcf9f5] rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] transform translate-y-0" style="display: none;">
+         x-data="{ bsActiveIndex: {{ (int) $activeGalleryIndex }}, bsGalleryUrls: @js($galleryUrls) }"
+         @change-gallery-image.window="bsActiveIndex = $event.detail.index"
+         class="md:hidden fixed bottom-0 left-0 right-0 z-[120] bg-[#fcf9f5] rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] transform" style="display: none;">
         <!-- Handle -->
         <div class="flex justify-center pt-3 pb-2" @click="bsOpen = false">
             <div class="w-10 h-1 bg-[#e5e2de] rounded-full cursor-pointer"></div>
@@ -803,7 +814,7 @@
         <div class="flex items-center justify-between px-5 pb-4 border-b border-[#e5e2de]">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-16 bg-[#e5e2de] rounded-sm overflow-hidden shrink-0">
-                    <img id="bs-product-image" src="{{ $this->activeGalleryImageUrl }}" alt="{{ $product->name }}" width="48" height="64" class="w-full h-full object-cover transition-opacity duration-200">
+                    <img id="bs-product-image" src="{{ $this->activeGalleryImageUrl }}" :src="bsGalleryUrls[bsActiveIndex] ?? '{{ $this->activeGalleryImageUrl }}'" alt="{{ $product->name }}" width="48" height="64" class="w-full h-full object-cover transition-opacity duration-200">
                 </div>
                 <div>
                     <div id="bs-product-name" class="text-[#1c1c1a] text-sm font-serif font-bold uppercase leading-tight">{{ $product->name }}</div>
@@ -873,11 +884,15 @@
                                     $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
                                     $isAvailable = $this->isOptionAvailable($attrSlug, $val);
                                     $escapedVal = addslashes($val);
+                                    $predictedIndex = ($isAvailable || $isSelected) ? $this->getPredictedGalleryIndex($attrSlug, $val) : null;
                                 @endphp
-                                <button type="button" 
-                                    @if($isAvailable || $isSelected) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
+                                <button wire:key="mobile-color-{{ $attrSlug }}-{{ md5($val) }}" type="button" 
+                                    @if($isAvailable || $isSelected)
+                                        @click="optimisticSelected['{{ $attrSlug }}'] = (optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? '' : '{{ $escapedVal }}'); $dispatch('change-gallery-image', { index: {{ $predictedIndex }} })"
+                                        wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')"
+                                    @endif
                                     class="flex flex-col items-center gap-1.5 group transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1 rounded-sm {{ !$isAvailable && !$isSelected ? 'cursor-not-allowed' : 'cursor-pointer' }}">
-                                    <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-all duration-200 relative {{ $isSelected ? 'border-[#1c1c1a]' : ($isAvailable ? 'border-gray-300 hover:border-gray-500' : 'border-transparent') }}">
+                                    <div :class="optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? 'border-[#1c1c1a]' : '{{ $isAvailable ? 'border-gray-300 hover:border-gray-500' : 'border-transparent' }}'" class="w-8 h-8 rounded-full border-2 flex items-center justify-center p-0.5 transition-colors duration-150 relative">
                                         <div class="w-full h-full rounded-full border border-black/10 {{ !$isAvailable ? 'opacity-20' : '' }}" style="background-color: {{ $hex }}">
                                         </div>
                                         @if(!$isAvailable)
@@ -886,7 +901,7 @@
                                             </div>
                                         @endif
                                     </div>
-                                    <span class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-200 {{ $isSelected ? 'text-[#1c1c1a] font-bold' : ($isAvailable ? 'text-[#615e57] group-hover:text-[#1c1c1a]' : 'text-[#c2bfb8] line-through font-light') }}">{{ $val }}</span>
+                                    <span :class="optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? 'text-[#1c1c1a] font-bold' : '{{ $isAvailable ? 'text-[#615e57] group-hover:text-[#1c1c1a]' : 'text-[#c2bfb8] line-through font-light' }}'" class="text-[9px] font-mono uppercase tracking-wide transition-colors duration-150">{{ $val }}</span>
                                 </button>
                             @endforeach
                         </div>
@@ -898,11 +913,15 @@
                                     $isSelected = ($selectedOptions[$attrSlug] ?? '') === $val;
                                     $isAvailable = $this->isOptionAvailable($attrSlug, $val);
                                     $escapedVal = addslashes($val);
+                                    $predictedIndex = ($isAvailable || $isSelected) ? $this->getPredictedGalleryIndex($attrSlug, $val) : null;
                                 @endphp
-                                <button type="button" 
-                                    @if($isAvailable || $isSelected) wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')" @endif
-                                    class="flex-1 py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-colors duration-200 relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1
-                                    {{ $isSelected ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] ' . ($isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed') }}">
+                                <button wire:key="mobile-text-{{ $attrSlug }}-{{ md5($val) }}" type="button" 
+                                    @if($isAvailable || $isSelected)
+                                        @click="optimisticSelected['{{ $attrSlug }}'] = (optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? '' : '{{ $escapedVal }}'); $dispatch('change-gallery-image', { index: {{ $predictedIndex }} })"
+                                        wire:click="selectOption('{{ $attrSlug }}', '{{ $escapedVal }}')"
+                                    @endif
+                                    :class="optimisticSelected['{{ $attrSlug }}'] === '{{ $escapedVal }}' ? 'border-[#1c1c1a] bg-[#1c1c1a] text-white font-bold' : 'border-[#e5e2de] text-[#1c1c1a] {{ $isAvailable ? 'hover:border-[#1c1c1a]' : 'opacity-40 bg-[#f9f8f6] text-[#a09e99] cursor-not-allowed' }}'"
+                                    class="flex-1 py-3 px-2 text-[10px] font-mono border uppercase tracking-wider transition-colors duration-150 relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-1">
                                     {{ $val }}
                                     @if(!$isAvailable)
                                         <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">

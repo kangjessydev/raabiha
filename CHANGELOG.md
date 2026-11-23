@@ -29,6 +29,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tiket backlog perbaikan lanjutan BKL-004 s/d BKL-012 di `docs/backlog.md`.
 
 ### Diubah
+- Perbaikan aset publik & UX Detail Produk:
+  - Mem-publish ulang aset publik `public/vendor/livewire/` (`manifest.json: 102cd394`) agar selaras dengan Livewire `4.4.9` & Filament `5.12.0` (menutup error JS `TypeError: h is not a function` pada `ToggleColumn` di `VariantsRelationManager`).
+  - `app/Livewire/ProductDetail.php` & `resources/views/livewire/product-detail.blade.php`: menambahkan *Optimistic Instant Slide* (`0ms`) berbasis `getPredictedGalleryIndex()`, state Alpine lokal `optimisticSelected` + `wire:key` unik pada tombol opsi varian (menghilangkan border ganda saat klik cepat), filter `priceRange()` berdasarkan pilihan parsial (langsung menyempit ke harga varian terpilih saat warna diklik), sinkronisasi preview `#bs-product-image` `0ms`, serta menghapus `translate-y-0` permanen pada drawer Bottom Sheet.
+  - `app/Filament/Resources/Products/RelationManagers/VariantsRelationManager.php`: menyelaraskan helper text `Harga Promo (Diskon)` agar sesuai perilaku model `ProductVariant::getDiscountPriceAttribute()` (mewarisi harga promo produk induk bila dikosongkan).
+  - `resources/views/livewire/account.blade.php`: memperbaiki atribut `x-transition` pada toast notifikasi alamat.
 - Optimasi P4 Fase 2 (temuan minor `R-01` hasil audit P2 & P3):
   - `app/Services/PosTransactionService.php`: menggabungkan 3 query `SiteSetting` di `authorizeManualDiscount()` menjadi 1 query tunggal `whereIn(...)->pluck('value', 'key')`.
   - `app/Filament/Resources/Orders/Schemas/OrderForm.php`: menambahkan memoize ringan per request (`spl_object_id(request())`) pada `productHasVariants()` agar `visible()` & `required()` pada item repeater tidak mengulang query identik.

@@ -163,32 +163,75 @@ class ProductDetail extends Component
             $this->quantity = $maxQty;
         }
 
-        $targetIndex = 0;
         $variantWithImage = $this->getFirstVariantWithImage();
-        if ($variantWithImage && $variantWithImage->media_id) {
-            $targetMediaId = (int) $variantWithImage->media_id;
-            $normalizedMediaIds = array_map(fn ($id) => $id !== null ? (int) $id : null, $this->galleryMediaIds);
-            $index = array_search($targetMediaId, $normalizedMediaIds);
-
-            // Fallback: jika media_id tidak cocok langsung di index, cocokkan melalui path/URL media varian
-            if ($index === false && $variantWithImage->media) {
-                $vPath = $variantWithImage->media->path;
-                $vUrl = $variantWithImage->media->url;
-                foreach ($this->galleryUrls as $gIdx => $gUrl) {
-                    if (str_contains($gUrl, $vPath) || $gUrl === $vUrl) {
-                        $index = $gIdx;
-                        break;
-                    }
-                }
-            }
-
-            if ($index !== false) {
-                $targetIndex = (int) $index;
-            }
-        }
+        $targetIndex = $this->resolveGalleryIndexForVariant($variantWithImage);
 
         $this->activeGalleryIndex = $targetIndex;
         $this->dispatch('change-gallery-image', index: $targetIndex);
+        $this->dispatch('selection-synced', selected: $this->selectedOptions);
+    }
+
+    protected function resolveGalleryIndexForVariant($variantWithImage): int
+    {
+        if (! $variantWithImage || ! $variantWithImage->media_id) {
+            return 0;
+        }
+
+        $targetMediaId = (int) $variantWithImage->media_id;
+        $normalizedMediaIds = array_map(fn ($id) => $id !== null ? (int) $id : null, $this->galleryMediaIds);
+        $index = array_search($targetMediaId, $normalizedMediaIds);
+
+        // Fallback: jika media_id tidak cocok langsung di index, cocokkan melalui path/URL media varian
+        if ($index === false && $variantWithImage->media) {
+            $vPath = $variantWithImage->media->path;
+            $vUrl = $variantWithImage->media->url;
+            foreach ($this->galleryUrls as $gIdx => $gUrl) {
+                if (str_contains($gUrl, $vPath) || $gUrl === $vUrl) {
+                    $index = $gIdx;
+                    break;
+                }
+            }
+        }
+
+        return $index !== false ? (int) $index : 0;
+    }
+
+    public function getPredictedGalleryIndex(string $attrSlug, string $optionValue): int
+    {
+        if (! $this->product->has_variants) {
+            return 0;
+        }
+
+        $simulatedSelections = $this->selectedOptions;
+        if (($simulatedSelections[$attrSlug] ?? '') === $optionValue) {
+            $simulatedSelections[$attrSlug] = '';
+        } else {
+            $simulatedSelections[$attrSlug] = $optionValue;
+        }
+
+        $activeSelections = array_filter($simulatedSelections, fn ($val) => $val !== '');
+        if (empty($activeSelections)) {
+            return 0;
+        }
+
+        $variantWithImage = $this->activeVariants()->first(function ($variant) use ($activeSelections) {
+            if (! $variant->media_id) {
+                return false;
+            }
+
+            foreach ($activeSelections as $slug => $val) {
+                $hasOption = $variant->attributeOptions->contains(function ($opt) use ($slug, $val) {
+                    return $opt->attribute->slug === $slug && $opt->value === $val;
+                });
+                if (! $hasOption) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        return $this->resolveGalleryIndexForVariant($variantWithImage);
     }
 
     public function getFirstVariantWithImage()
@@ -284,6 +327,27 @@ class ProductDetail extends Component
         $activeVariants = $this->activeVariants();
         if ($activeVariants->isEmpty()) {
             return null;
+        }
+
+        // Filter varian berdasarkan opsi yang sudah dipilih sebagian (misal baru pilih Warna)
+        $activeSelections = array_filter($this->selectedOptions, fn ($val) => $val !== '');
+        if (! empty($activeSelections)) {
+            $filteredVariants = $activeVariants->filter(function ($variant) use ($activeSelections) {
+                foreach ($activeSelections as $slug => $val) {
+                    $hasOption = $variant->attributeOptions->contains(function ($opt) use ($slug, $val) {
+                        return $opt->attribute->slug === $slug && $opt->value === $val;
+                    });
+                    if (! $hasOption) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            if ($filteredVariants->isNotEmpty()) {
+                $activeVariants = $filteredVariants;
+            }
         }
 
         $minPrice = $activeVariants->min('effective_price') * $this->quantity;
