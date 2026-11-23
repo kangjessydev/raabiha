@@ -96,7 +96,9 @@ class OrderForm
                                                 $imgTag = $imageUrl ? "<img src='{$imageUrl}' style='width: 32px; height: 32px; object-fit: cover; border-radius: 4px; flex-shrink: 0;' />" : "";
                                                 return "<div style='display: flex; align-items: center; gap: 8px; overflow: hidden; min-width: 0;'>{$imgTag} <span style='white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;'>{$product->name} (ID: {$product->id})</span></div>";
                                             })
+                                            ->live()
                                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                                $set('product_variant_id', null);
                                                 $product = \App\Models\Product::find($state);
                                                 if ($product) {
                                                     $set('name', $product->name);
@@ -111,17 +113,74 @@ class OrderForm
                                             ->label('Varian')
                                             ->native(false)
                                             ->columnSpanFull()
-                                            ->options(function (Get $get) {
+                                            ->visible(fn (Get $get): bool => self::productHasVariants($get('product_id')))
+                                            ->dehydrated(true)
+                                            ->required(fn (Get $get): bool => self::productHasVariants($get('product_id')))
+                                            ->options(function (Get $get): array {
                                                 $productId = $get('product_id');
-                                                if (!$productId)
+                                                if (! $productId) {
                                                     return [];
-                                                return \App\Models\ProductVariant::where('product_id', $productId)->pluck('name', 'id');
+                                                }
+
+                                                return \App\Models\ProductVariant::query()
+                                                    ->where('product_id', $productId)
+                                                    ->orderByDesc('is_active')
+                                                    ->orderBy('name')
+                                                    ->get(['id', 'name', 'is_active'])
+                                                    ->mapWithKeys(fn (\App\Models\ProductVariant $variant): array => [
+                                                        $variant->id => $variant->is_active
+                                                            ? $variant->name
+                                                            : $variant->name . ' (Non-Aktif)',
+                                                    ])
+                                                    ->all();
+                                            })
+                                            ->disableOptionWhen(function (string $label, string $value, string $operation, ?\Illuminate\Database\Eloquent\Model $record): bool {
+                                                if (! str_ends_with($label, ' (Non-Aktif)')) {
+                                                    return false;
+                                                }
+
+                                                if ($operation !== 'create' && $record instanceof \App\Models\OrderItem && (string) $record->product_variant_id === $value) {
+                                                    return false;
+                                                }
+
+                                                return true;
+                                            })
+                                            ->rule(function (Get $get, string $operation, ?\Illuminate\Database\Eloquent\Model $record): \Closure {
+                                                return function (string $attribute, mixed $value, \Closure $fail) use ($get, $operation, $record): void {
+                                                    $productId = $get('product_id');
+                                                    if (! $productId || blank($value)) {
+                                                        return;
+                                                    }
+
+                                                    $variant = \App\Models\ProductVariant::query()
+                                                        ->whereKey($value)
+                                                        ->where('product_id', $productId)
+                                                        ->first(['id', 'product_id', 'is_active']);
+
+                                                    if (! $variant) {
+                                                        $fail('Varian yang dipilih tidak valid untuk produk ini.');
+
+                                                        return;
+                                                    }
+
+                                                    $isHistoricalInactiveVariant = $operation !== 'create'
+                                                        && $record instanceof \App\Models\OrderItem
+                                                        && (int) $record->product_variant_id === (int) $variant->id;
+
+                                                    if (! $variant->is_active && ! $isHistoricalInactiveVariant) {
+                                                        $fail('Varian yang dipilih sedang non-aktif dan tidak dapat digunakan untuk pesanan baru.');
+                                                    }
+                                                };
                                             })
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                                $variant = \App\Models\ProductVariant::find($state);
+                                                $productId = $get('product_id');
+                                                $variant = \App\Models\ProductVariant::query()
+                                                    ->whereKey($state)
+                                                    ->when($productId, fn ($query) => $query->where('product_id', $productId))
+                                                    ->first();
                                                 if ($variant) {
-                                                    $product = \App\Models\Product::find($get('product_id'));
+                                                    $product = \App\Models\Product::find($productId);
                                                     if ($product) {
                                                         $set('name', $product->name . ' - ' . $variant->name);
                                                     } else {
@@ -808,5 +867,16 @@ class OrderForm
         }
 
         return false;
+    }
+
+    protected static function productHasVariants(mixed $productId): bool
+    {
+        if (blank($productId)) {
+            return false;
+        }
+
+        return (bool) \App\Models\Product::query()
+            ->whereKey($productId)
+            ->value('has_variants');
     }
 }

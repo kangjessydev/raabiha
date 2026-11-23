@@ -44,16 +44,13 @@ Dokumen ini mencatat daftar temuan, rencana peningkatan, dan perbaikan tertunda 
 ### BKL-004: Sinkronisasi Nilai Kolom Stok & Sortir Tabel Produk
 - **Sumber Temuan:** Laporan Audit Logika ([`docs/reports/2026-11-09-admin-logic-audit.md`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/docs/reports/2026-11-09-admin-logic-audit.md)) - Temuan #1.1.
 - **Tingkat Prioritas:** Tinggi (High).
-- **Status Riil Saat Ini:** 🟡 **Sebagian / Baru Tampilan.** Teks tampilan kolom stok sudah menjumlahkan varian (`10 pcs (varian)`), tetapi kolom mentah `products.stock` di database masih bernilai `0`. Sorting tabel `->sortable()` masih menggunakan SQL `ORDER BY products.stock` sehingga produk bervarian tetap jatuh ke paling bawah pada sort DESC.
-- **Rencana Tindakan:**
-  Tambahkan observer atau query hook agar `products.stock` otomatis merefleksikan total penjumlahan variannya saat varian ditambah/diubah/dihapus, atau sesuaikan query sorting tabel dengan subquery sum varian.
+- **Status Riil Saat Ini:** ✅ **Selesai (P2 Fase 1 — 2026-11-23).** Sorting kolom `stock` di [`ProductsTable.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Filament/Resources/Products/Tables/ProductsTable.php) kini memakai custom SQL sorting berbasis penjumlahan stok varian aktif (`is_active = 1`) untuk `has_variants = 1` dan `products.stock` untuk produk berdiri sendiri, dilengkapi `withSum` (`active_variants_stock_sum`) serta sinkronisasi `formatStateUsing` & `color` ke stok varian aktif. Diverifikasi oleh [`AdminOrderVariantAndProductStockSortTest.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/tests/Feature/AdminOrderVariantAndProductStockSortTest.php).
 
 ### BKL-005: Penyelarasan Kriteria Stok Habis (Widget vs Manajemen Stok)
 - **Sumber Temuan:** Laporan Audit Logika - Temuan #1.2.
-- **Tingkat Prioritas:** Sedang (Medium).
+- **Tingkat Prioritas:** Sedang (Medium — dijadwalkan di **P3** bersama kelompok POS).
 - **Status Riil Saat Ini:** 🔴 **Belum Diterapkan.** Di widget atas masih menghitung jika *semua varian habis*, sedangkan di Manajemen Stok menghitung jika *ada salah satu varian habis* (terjadi disparitas angka 1 vs 18).
-- **Rencana Tindakan:**
-  Sepakati definisi bisnis: apakah produk dianggap "Perlu Restock" jika ada salah satu varian habis atau semua varian habis, lalu seragamkan query di kedua tempat.
+- **Keputusan Bisnis User (2026-11-23):** Produk bervarian dianggap **"Perlu Restock / Stok Habis"** jika **salah satu variannya habis** (seragamkan query Widget mengikuti definisi ini).
 
 ### BKL-006: Pembersihan Sisa Kanal `both` & Penegasan 2 Kanal Tunggal
 - **Sumber Temuan:** Keputusan Arsitektur User (Kanal sengaja dibatasi hanya `pos_only` atau `online_only`).
@@ -79,9 +76,7 @@ Dokumen ini mencatat daftar temuan, rencana peningkatan, dan perbaikan tertunda 
 ### BKL-009: Validasi Pemilihan Varian pada Pembuatan Pesanan Manual Admin
 - **Sumber Temuan:** Laporan Audit Logika - Temuan #2.1.
 - **Tingkat Prioritas:** Tinggi (High/Data Integrity).
-- **Status Riil Saat Ini:** 🔴 **Belum Diterapkan.** [`OrderForm.php:118`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Filament/Resources/Orders/Schemas/OrderForm.php#L118) mengizinkan penyimpanan pesanan untuk produk bervarian tanpa memilih varian (`product_variant_id = null`).
-- **Rencana Tindakan:**
-  Pasang validasi `required(fn(Get $get) => Product::find($get('product_id'))?->has_variants)` pada field varian.
+- **Status Riil Saat Ini:** ✅ **Selesai (P2 Fase 1 — 2026-11-23).** [`OrderForm.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Filament/Resources/Orders/Schemas/OrderForm.php) kini mereset `product_variant_id` saat `product_id` diganti, menyembunyikan field varian untuk produk non-varian, mewajibkan pemilihan varian (`required`) untuk produk `has_variants = true`, memvalidasi kepemilikan `product_id` & status aktif varian di sisi server (sambil tetap mempertahankan pesanan historis bervarian non-aktif saat Edit), serta memberi label `(Non-Aktif)` pada opsi non-aktif. Diverifikasi oleh [`AdminOrderVariantAndProductStockSortTest.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/tests/Feature/AdminOrderVariantAndProductStockSortTest.php).
 
 ---
 
@@ -124,10 +119,7 @@ Dokumen ini mencatat daftar temuan, rencana peningkatan, dan perbaikan tertunda 
 ### BKL-013: Pemisahan Penuh Aksi "Beli Sekarang" (`is_buy_now = true`) & Notifikasi Penyesuaian Stok Keranjang
 - **Sumber Temuan:** Klarifikasi Aturan Bisnis User pada Audit Verifikasi P1 Fase 1 (2026-11-23).
 - **Tingkat Prioritas:** Sedang-Tinggi (UX & Integritas Alur Checkout).
-- **Status Riil Saat Ini:** 🔴 **Belum Diterapkan.**
-  - Saat ini [`ProductDetail::buyNow()`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Livewire/ProductDetail.php#L549-L571) masih memanggil `addToCart()` ke keranjang reguler (`is_buy_now = false`) lalu mengisolasi lewat `session('checkout_item_ids')`, sementara [`Checkout.php:950-981`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Livewire/Checkout.php#L950-L981) mengambil keranjang pertama tanpa membedakan `is_buy_now`.
-  - Akibatnya, jika produk yang sama sudah ada di keranjang reguler mencapai batas stok, klik "Beli Sekarang" ikut terblokir oleh isi keranjang reguler.
-  - Selain itu, belum ada notifikasi / penyesuaian otomatis di halaman `/cart` bila stok produk di gudang berkurang sehingga `cart_items.quantity > stock` riil.
-- **Rencana Tindakan:**
-  1. Pisahkan `ProductDetail::buyNow()` agar memakai `Cart` khusus `is_buy_now = true` (mengabaikan isi keranjang reguler, hanya mengecek stok riil terhadap qty yang dipilih saat itu) dan sesuaikan `Checkout.php` membaca keranjang `is_buy_now` saat mode Buy Now aktif.
-  2. Tambahkan deteksi & notifikasi (serta auto-clamp / peringatan jelas) pada halaman `/cart` bila ada item yang kuantitasnya melebihi stok riil terbaru atau variannya sudah dinonaktifkan.
+- **Status Riil Saat Ini:** ✅ **Selesai (P2 Fase 2A & 2B — 2026-11-23).**
+  - [`ProductDetail::buyNow()`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Livewire/ProductDetail.php) kini terisolasi penuh memakai `Cart` (`is_buy_now = true`) dan hanya mengecek stok riil terhadap qty Beli Sekarang tanpa menyentuh keranjang reguler.
+  - [`Checkout.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Livewire/Checkout.php) memilih sumber cart berdasarkan `session('checkout_is_buy_now')` dan membersihkan session pasca-order via `cleanupCheckedOutCart()`.
+  - [`Cart.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/app/Livewire/Cart.php) & [`cart.blade.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/resources/views/livewire/cart.blade.php) menerapkan Opsi A: banner notifikasi `$stockNotices`, auto-clamp qty ke stok riil, uncheck & blokir checkout item habis/non-aktif, serta disable tombol `- / +` & checkbox sesuai ketersediaan riil. Diverifikasi oleh [`BuyNowIsolationAndCartStockSyncTest.php`](file:///home/kangjessy/Documents/projects/raabiha-ecommerce/tests/Feature/BuyNowIsolationAndCartStockSyncTest.php).

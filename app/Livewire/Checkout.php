@@ -943,15 +943,30 @@ class Checkout extends Component
 
     public function getCartProperty()
     {
+        $isBuyNow = (bool) session('checkout_is_buy_now', false);
+
         if (auth()->check()) {
             return Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
                 ->where('user_id', auth()->id())
-                ->first();
-        } else {
-            return Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
-                ->where('session_id', session()->getId())
+                ->where('is_buy_now', $isBuyNow)
                 ->first();
         }
+
+        return Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
+            ->where('session_id', session()->getId())
+            ->whereNull('user_id')
+            ->where('is_buy_now', $isBuyNow)
+            ->first();
+    }
+
+    protected function cleanupCheckedOutCart(array $checkoutItemIds): void
+    {
+        $cart = $this->cart;
+        CartItem::whereIn('id', $checkoutItemIds)->delete();
+        if ($cart && $cart->items()->count() === 0) {
+            $cart->delete();
+        }
+        session()->forget(['checkout_item_ids', 'checkout_is_buy_now']);
     }
 
     public function getCheckoutItemsProperty()
@@ -1554,12 +1569,7 @@ class Checkout extends Component
 
         // Metode Tunai / Manual / Offline
         if ($this->payment_method === 'tunai') {
-            CartItem::whereIn('id', $checkoutItemIds)->delete();
-            $cart = $this->cart;
-            if ($cart && $cart->items()->count() === 0) {
-                $cart->delete();
-            }
-            session()->forget('checkout_item_ids');
+            $this->cleanupCheckedOutCart($checkoutItemIds);
 
             $lock->release();
 
@@ -1651,12 +1661,7 @@ class Checkout extends Component
                         'payment_url' => $tripayData['checkout_url'],
                     ]);
 
-                    CartItem::whereIn('id', $checkoutItemIds)->delete();
-                    $cart = $this->cart;
-                    if ($cart && $cart->items()->count() === 0) {
-                        $cart->delete();
-                    }
-                    session()->forget('checkout_item_ids');
+                    $this->cleanupCheckedOutCart($checkoutItemIds);
 
                     $lock->release();
                     $this->redirect($tripayData['checkout_url'], navigate: false);
@@ -1749,12 +1754,7 @@ class Checkout extends Component
                         'payment_url' => $xenditData['invoice_url'],
                     ]);
 
-                    CartItem::whereIn('id', $checkoutItemIds)->delete();
-                    $cart = $this->cart;
-                    if ($cart && $cart->items()->count() === 0) {
-                        $cart->delete();
-                    }
-                    session()->forget('checkout_item_ids');
+                    $this->cleanupCheckedOutCart($checkoutItemIds);
 
                     $lock->release();
                     $this->redirect($xenditData['invoice_url'], navigate: false);
@@ -1765,12 +1765,7 @@ class Checkout extends Component
                     throw new \Exception($response->json('message') ?? 'Gagal membuat transaksi Xendit');
                 }
             } else {
-                CartItem::whereIn('id', $checkoutItemIds)->delete();
-                $cart = $this->cart;
-                if ($cart && $cart->items()->count() === 0) {
-                    $cart->delete();
-                }
-                session()->forget('checkout_item_ids');
+                $this->cleanupCheckedOutCart($checkoutItemIds);
 
                 $lock->release();
 

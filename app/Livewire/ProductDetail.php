@@ -445,9 +445,15 @@ class ProductDetail extends Component
         }
     }
 
-    public function addToCart()
+    protected function resolveSelectionForCart(): ?array
     {
         $this->quantity = max(1, (int) $this->quantity);
+
+        if (! $this->product || ! $this->product->is_active || $this->product->is_custom || $this->product->channel_visibility === 'pos_only') {
+            session()->flash('error', 'Produk tidak tersedia untuk pembelian online.');
+
+            return null;
+        }
 
         // 1. Validation
         if ($this->product->has_variants) {
@@ -455,14 +461,14 @@ class ProductDetail extends Component
             if (empty($availableAttributes)) {
                 session()->flash('error', 'Varian produk tidak tersedia atau sedang tidak aktif.');
 
-                return;
+                return null;
             }
 
             foreach ($availableAttributes as $attrSlug => $data) {
                 if (empty($this->selectedOptions[$attrSlug])) {
                     session()->flash('error', 'Silakan lengkapi pilihan varian terlebih dahulu.');
 
-                    return;
+                    return null;
                 }
             }
         }
@@ -475,7 +481,7 @@ class ProductDetail extends Component
             if (! $matchedVariant || ! $matchedVariant->is_active) {
                 session()->flash('error', 'Kombinasi varian tidak ditemukan, tidak aktif, atau habis.');
 
-                return;
+                return null;
             }
             $variantId = $matchedVariant->id;
             $availableStock = (int) $matchedVariant->stock;
@@ -483,7 +489,7 @@ class ProductDetail extends Component
             if ($availableStock < $this->quantity) {
                 session()->flash('error', 'Stok varian tidak mencukupi.');
 
-                return;
+                return null;
             }
         } else {
             $availableStock = (int) $this->product->stock;
@@ -491,9 +497,25 @@ class ProductDetail extends Component
             if ($availableStock < $this->quantity) {
                 session()->flash('error', 'Stok produk tidak mencukupi.');
 
-                return;
+                return null;
             }
         }
+
+        return [
+            'variant_id' => $variantId,
+            'available_stock' => $availableStock,
+        ];
+    }
+
+    public function addToCart()
+    {
+        $selection = $this->resolveSelectionForCart();
+        if (! $selection) {
+            return;
+        }
+
+        $variantId = $selection['variant_id'];
+        $availableStock = $selection['available_stock'];
 
         // 3. Get or Create Cart
         if (auth()->check()) {
@@ -556,16 +578,37 @@ class ProductDetail extends Component
             return;
         }
 
-        // Add to cart first
-        $cartItem = $this->addToCart();
-
-        // If there's an error (e.g. out of stock, no variant selected), stop
-        if (session()->has('error') || ! $cartItem) {
+        // Validasi stok riil hanya terhadap qty Beli Sekarang (abaikan keranjang reguler)
+        $selection = $this->resolveSelectionForCart();
+        if (! $selection) {
             return;
         }
 
-        // Isolasi item checkout hanya untuk produk ini agar keranjang lama tidak tercampur
-        session(['checkout_item_ids' => [(string) $cartItem->id]]);
+        if (auth()->check()) {
+            $buyNowCart = Cart::firstOrCreate(['user_id' => auth()->id(), 'is_buy_now' => true]);
+        } else {
+            session()->put('cart_active', true);
+            $buyNowCart = Cart::firstOrCreate([
+                'session_id' => session()->getId(),
+                'user_id' => null,
+                'is_buy_now' => true,
+            ]);
+        }
+
+        $buyNowCart->items()->delete();
+
+        $buyNowItem = CartItem::create([
+            'cart_id' => $buyNowCart->id,
+            'product_id' => $this->product->id,
+            'product_variant_id' => $selection['variant_id'],
+            'quantity' => $this->quantity,
+        ]);
+
+        // Isolasi penuh checkout Beli Sekarang agar tidak menyentuh keranjang reguler
+        session([
+            'checkout_is_buy_now' => true,
+            'checkout_item_ids' => [(string) $buyNowItem->id],
+        ]);
 
         return $this->redirect('/checkout', navigate: true);
     }

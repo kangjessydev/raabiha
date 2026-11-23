@@ -22,12 +22,17 @@ class Cart extends Component
 
     public $appliedVoucher = null;
 
+    public array $stockNotices = [];
+
+    public array $itemAvailability = [];
+
     public function mount()
     {
         $this->loadCart();
         if ($this->cart && $this->cart->items) {
             $this->selectedItems = $this->cart->items->pluck('id')->map(fn ($id) => (string) $id)->toArray();
         }
+        $this->syncCartStockState(true);
         $this->appliedVoucher = session('applied_voucher', null);
     }
 
@@ -121,8 +126,13 @@ class Cart extends Component
 
     public function updatedSelectAll($value)
     {
-        if ($value) {
-            $this->selectedItems = $this->cart->items->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        if ($value && $this->cart && $this->cart->items) {
+            $this->selectedItems = $this->cart->items
+                ->filter(fn ($item) => (bool) ($this->itemAvailability[(string) $item->id]['is_available'] ?? true))
+                ->pluck('id')
+                ->map(fn ($id) => (string) $id)
+                ->values()
+                ->toArray();
         } else {
             $this->selectedItems = [];
         }
@@ -130,7 +140,117 @@ class Cart extends Component
 
     public function updatedSelectedItems()
     {
-        $this->selectAll = count($this->selectedItems) === $this->cart->items->count();
+        $availableIds = $this->getAvailableItemIds();
+        $this->selectedItems = array_values(array_intersect(
+            array_map('strval', $this->selectedItems),
+            $availableIds
+        ));
+        $this->selectAll = ! empty($availableIds) && count($this->selectedItems) === count($availableIds);
+    }
+
+    protected function getAvailableItemIds(): array
+    {
+        if (! $this->cart || ! $this->cart->items) {
+            return [];
+        }
+
+        return $this->cart->items
+            ->filter(fn ($item) => (bool) ($this->itemAvailability[(string) $item->id]['is_available'] ?? true))
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->toArray();
+    }
+
+    protected function syncCartStockState(bool $recordNotices = true): bool
+    {
+        $this->itemAvailability = [];
+        if ($recordNotices) {
+            $this->stockNotices = [];
+        }
+
+        if (! $this->cart || ! $this->cart->items || $this->cart->items->isEmpty()) {
+            $this->selectedItems = [];
+            $this->selectAll = false;
+
+            return false;
+        }
+
+        $hadChanges = false;
+
+        foreach ($this->cart->items as $item) {
+            $itemId = (string) $item->id;
+            $product = $item->product;
+            $variant = $item->variant;
+            $itemLabel = $product ? $product->name : 'Produk';
+            if ($variant && ! empty($variant->name)) {
+                $itemLabel .= ' ('.$variant->name.')';
+            }
+
+            $isAvailable = true;
+            $availableStock = 0;
+            $reason = null;
+
+            if (! $product || ! $product->is_active || $product->is_custom || $product->channel_visibility === 'pos_only') {
+                $isAvailable = false;
+                $reason = 'Produk sudah tidak tersedia.';
+            } elseif ($item->product_variant_id !== null) {
+                if (! $variant || ! $variant->is_active) {
+                    $isAvailable = false;
+                    $reason = 'Varian sudah tidak aktif.';
+                } else {
+                    $availableStock = max(0, (int) $variant->stock);
+                    if ($availableStock <= 0) {
+                        $isAvailable = false;
+                        $reason = 'Stok habis.';
+                    }
+                }
+            } else {
+                $availableStock = max(0, (int) ($product->stock ?? 0));
+                if ($availableStock <= 0) {
+                    $isAvailable = false;
+                    $reason = 'Stok habis.';
+                }
+            }
+
+            $this->itemAvailability[$itemId] = [
+                'is_available' => $isAvailable,
+                'available_stock' => $availableStock,
+                'reason' => $reason,
+            ];
+
+            if (! $isAvailable) {
+                if (in_array($itemId, $this->selectedItems, true)) {
+                    $this->selectedItems = array_values(array_diff($this->selectedItems, [$itemId]));
+                    $hadChanges = true;
+                }
+                if ($recordNotices) {
+                    $this->stockNotices[] = "Item \"{$itemLabel}\" tidak dapat di-checkout: {$reason}";
+                }
+
+                continue;
+            }
+
+            if ((int) $item->quantity > $availableStock) {
+                $oldQty = (int) $item->quantity;
+                $item->update(['quantity' => $availableStock]);
+                $item->quantity = $availableStock;
+                $hadChanges = true;
+
+                if ($recordNotices) {
+                    $this->stockNotices[] = "Stok \"{$itemLabel}\" berkurang. Jumlah di keranjang otomatis disesuaikan dari {$oldQty} menjadi {$availableStock} pcs.";
+                }
+            }
+        }
+
+        $availableIds = $this->getAvailableItemIds();
+        $this->selectedItems = array_values(array_intersect(
+            array_map('strval', $this->selectedItems),
+            $availableIds
+        ));
+        $this->selectAll = ! empty($availableIds) && count($this->selectedItems) === count($availableIds);
+
+        return $hadChanges;
     }
 
     public function loadCart()
@@ -179,6 +299,7 @@ class Cart extends Component
 
         $item->increment('quantity');
         $this->loadCart();
+        $this->syncCartStockState(false);
         $this->dispatch('cart-updated');
     }
 
@@ -192,6 +313,7 @@ class Cart extends Component
         if ($item && $item->quantity > 1) {
             $item->decrement('quantity');
             $this->loadCart();
+            $this->syncCartStockState(false);
             $this->dispatch('cart-updated');
         }
     }
@@ -207,7 +329,7 @@ class Cart extends Component
             $item->delete();
             $this->loadCart();
             $this->selectedItems = array_values(array_diff($this->selectedItems, [(string) $itemId]));
-            $this->updatedSelectedItems();
+            $this->syncCartStockState(true);
             $this->dispatch('cart-updated');
         }
     }
@@ -222,13 +344,25 @@ class Cart extends Component
             return;
         }
 
+        $this->loadCart();
+        $hadStockChanges = $this->syncCartStockState(true);
+
+        if ($hadStockChanges) {
+            session()->flash('error', 'Stok atau ketersediaan produk di keranjang berubah. Silakan periksa kembali jumlah barang sebelum melanjutkan checkout.');
+
+            return;
+        }
+
         if (empty($this->selectedItems)) {
             session()->flash('error', 'Pilih minimal satu produk untuk di-checkout.');
 
             return;
         }
 
-        session(['checkout_item_ids' => $this->selectedItems]);
+        session([
+            'checkout_is_buy_now' => false,
+            'checkout_item_ids' => $this->selectedItems,
+        ]);
 
         return $this->redirect('/checkout', navigate: true);
     }

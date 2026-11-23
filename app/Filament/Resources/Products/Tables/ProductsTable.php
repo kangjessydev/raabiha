@@ -30,7 +30,13 @@ class ProductsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['category', 'variants']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query
+                ->with(['category', 'variants'])
+                ->withSum(
+                    ['variants as active_variants_stock_sum' => fn (Builder $variantQuery): Builder => $variantQuery->where('is_active', true)],
+                    'stock'
+                )
+            )
             ->poll('5s')
             ->defaultSort('created_at', 'desc')
             ->columns([
@@ -88,18 +94,26 @@ class ProductsTable
                     ->sortable(),
                 TextColumn::make('stock')
                     ->label('Stock')
-                    ->sortable()
-                    ->formatStateUsing(function ($state, Product $record) {
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        $safeDirection = strtolower($direction) === 'desc' ? 'desc' : 'asc';
+
+                        return $query->orderByRaw(
+                            "CASE WHEN products.has_variants = 1 THEN COALESCE((SELECT SUM(pv.stock) FROM product_variants pv WHERE pv.product_id = products.id AND pv.is_active = 1), 0) ELSE COALESCE(products.stock, 0) END {$safeDirection}"
+                        );
+                    })
+                    ->formatStateUsing(function ($state, Product $record): string {
                         if ($record->has_variants) {
-                            $totalVariantStock = $record->variants->sum('stock');
+                            $totalVariantStock = (int) ($record->active_variants_stock_sum ?? $record->variants->where('is_active', true)->sum('stock'));
 
                             return $totalVariantStock.' pcs (varian)';
                         }
 
-                        return ($state ?? 0).' pcs';
+                        return ((int) ($state ?? 0)).' pcs';
                     })
-                    ->color(function ($state, Product $record) {
-                        $stock = $record->has_variants ? $record->variants->sum('stock') : ($state ?? 0);
+                    ->color(function ($state, Product $record): string {
+                        $stock = $record->has_variants
+                            ? (int) ($record->active_variants_stock_sum ?? $record->variants->where('is_active', true)->sum('stock'))
+                            : (int) ($state ?? 0);
 
                         return match (true) {
                             $stock <= 0 => 'danger',
