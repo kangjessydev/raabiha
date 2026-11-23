@@ -654,7 +654,23 @@ class PosManager extends Component
             })
             ->sum('grand_total');
 
-        // Kas keluar fisik: Void tunai + Refund retur (dikembalikan dari laci kas)
+        // Sertakan porsi tunai dari transaksi Split Payment aktif pada shift ini (K-01)
+        $splitCashSales = \App\Models\Cashflow::where('source', 'pos')
+            ->where('category', 'pos_sale')
+            ->where('type', 'in')
+            ->where('is_reversed', false)
+            ->whereIn('payment_channel', ['cash', 'tunai'])
+            ->whereHas('order', function ($q) {
+                $q->where('pos_session_id', $this->activeSession->id)
+                  ->where('payment_method', 'split')
+                  ->whereNotIn('status', ['cancelled']);
+            })
+            ->sum('amount');
+
+        $totalCashSales += (float) $splitCashSales;
+
+        // Kas keluar fisik: Refund retur tunai + Void tunai untuk nota dari shift SEBELUMNYA (K-01)
+        // (Nota void dari shift yang sama sudah dikeluarkan dari $totalCashSales agar tidak dikurangkan 2x)
         $voidAndRefundCashOut = \App\Models\Cashflow::where('source', 'pos')
             ->where('type', 'out')
             ->where('created_at', '>=', $this->activeSession->opened_at)
@@ -663,7 +679,11 @@ class PosManager extends Component
                   ->orWhere(function ($q2) {
                       $q2->where('category', 'pos_void')
                          ->whereHas('order', function ($q3) {
-                             $q3->whereIn('payment_method', ['cash', 'tunai']);
+                             $q3->whereIn('payment_method', ['cash', 'tunai'])
+                                ->where(function ($q4) {
+                                    $q4->whereNull('pos_session_id')
+                                       ->orWhere('pos_session_id', '!=', $this->activeSession->id);
+                                });
                          });
                   });
             })
@@ -734,8 +754,18 @@ class PosManager extends Component
         }
 
         $data = is_string($payload) ? json_decode($payload, true) : $payload;
+        unset($data['manual_discount_authorized_by']);
         $data['cashier_id']    = Auth::id();
         $data['pos_session_id'] = $this->activeSession->id;
+
+        $supervisorAuth = session('pos_supervisor_discount_auth');
+        if (
+            is_array($supervisorAuth)
+            && ! empty($supervisorAuth['supervisor_id'])
+            && (int) ($supervisorAuth['expires_at'] ?? 0) >= now()->timestamp
+        ) {
+            $data['manual_discount_authorized_by'] = (int) $supervisorAuth['supervisor_id'];
+        }
 
         $idempotencyKey = $data['payment_details']['idempotency_key'] ?? null;
         $lock = null;
@@ -791,11 +821,33 @@ class PosManager extends Component
                 $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi sedang diproses. Harap tunggu sebentar...']);
                 return;
             }
+
+            // Double-checked locking (T-02): cek ulang setelah lock berhasil diperoleh
+            if (\Illuminate\Support\Facades\Cache::has($lockKey)) {
+                $existingOrderId = \Illuminate\Support\Facades\Cache::get($lockKey);
+                $existingOrder = \App\Models\Order::find($existingOrderId);
+                if ($existingOrder) {
+                    $lock->release();
+                    $receiptBase64 = $this->escPos()->generateReceipt($existingOrder);
+                    $receiptText   = $this->escPos()->generateReceiptText($existingOrder);
+
+                    $this->dispatch('checkout-success', [
+                        'order_id'     => $existingOrder->id,
+                        'order_number' => $existingOrder->order_number,
+                        'grand_total'  => $existingOrder->grand_total,
+                        'cash_change'  => $existingOrder->cash_change,
+                        'receipt_text' => $receiptText,
+                        'base64'       => $receiptBase64,
+                    ]);
+                    return;
+                }
+            }
         }
 
         try {
             $service = new PosTransactionService();
             $order   = $service->completePosTransaction($data);
+            session()->forget('pos_supervisor_discount_auth');
 
             if ($idempotencyKey) {
                 // Simpan ID Order yang berhasil dibuat dengan key ini
@@ -1182,6 +1234,12 @@ class PosManager extends Component
     {
         $supervisor = $this->validateSupervisorPin($supervisorId, $pin, 'supervisor-auth-failed');
         if ($supervisor) {
+            session([
+                'pos_supervisor_discount_auth' => [
+                    'supervisor_id' => $supervisor->id,
+                    'expires_at'    => now()->addMinutes(15)->timestamp,
+                ],
+            ]);
             $this->dispatch('supervisor-authorized', ['actionType' => $actionType, 'supervisorName' => $supervisor->name]);
         }
     }
@@ -1211,40 +1269,63 @@ class PosManager extends Component
             }
         }
 
+        $voidActorLabel = $supervisor
+            ? 'Disetujui Supervisor: ' . $supervisor->name
+            : 'Oleh Kasir: ' . (Auth::user()?->name ?? 'Kasir');
+
         try {
-            DB::transaction(function () use ($order, $supervisor, $reason) {
-                // 1. Mark order as cancelled/void
-                $order->update([
-                    'status'         => 'cancelled',
-                    'payment_status' => 'failed',
-                    'void_by_id'     => $supervisor ? $supervisor->id : Auth::id(),
-                    'void_reason'    => $reason ?: 'Void Kasir POS',
-                    'void_at'        => now(),
+            $alreadyVoided = false;
+
+            DB::transaction(function () use ($orderId, $supervisor, $reason, $voidActorLabel, &$alreadyVoided) {
+                // Kunci baris order di dalam transaksi (T-03 — anti double-void race condition)
+                $lockedOrder = Order::with(['items', 'voidBy'])
+                    ->where('id', $orderId)
+                    ->where('source', 'pos')
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $lockedOrder || $lockedOrder->status === 'cancelled' || $lockedOrder->is_stock_restored) {
+                    $alreadyVoided = true;
+                    return;
+                }
+
+                // 1. Mark order as cancelled/void + tandai is_stock_restored agar OrderObserver::deleting tidak double-restock
+                $lockedOrder->update([
+                    'status'            => 'cancelled',
+                    'payment_status'    => 'failed',
+                    'void_by_id'        => $supervisor ? $supervisor->id : Auth::id(),
+                    'void_reason'       => $reason ?: 'Void Kasir POS',
+                    'void_at'           => now(),
+                    'is_stock_restored' => true,
+                    'stock_restored_at' => now(),
                 ]);
 
-                // 2. Restock product items
-                foreach ($order->items as $item) {
+                // 2. Restock product items dengan lockForUpdate
+                foreach ($lockedOrder->items as $item) {
                     $stockBefore = 0;
                     $stockAfter  = 0;
+                    $restocked   = false;
 
                     if ($item->product_variant_id) {
-                        $variant = \App\Models\ProductVariant::find($item->product_variant_id);
+                        $variant = \App\Models\ProductVariant::where('id', $item->product_variant_id)->lockForUpdate()->first();
                         if ($variant) {
                             $stockBefore = $variant->stock;
                             $variant->increment('stock', $item->quantity);
                             $stockAfter = $stockBefore + $item->quantity;
+                            $restocked  = true;
                         }
                     } else {
-                        $product = Product::find($item->product_id);
+                        $product = Product::where('id', $item->product_id)->lockForUpdate()->first();
                         if ($product) {
                             $stockBefore = $product->stock;
                             $product->increment('stock', $item->quantity);
                             $stockAfter = $stockBefore + $item->quantity;
+                            $restocked  = true;
                         }
                     }
 
                     // Stock log (hanya jika ada model yang ditemukan)
-                    if ($stockAfter > 0 || $stockBefore >= 0) {
+                    if ($restocked) {
                         \App\Models\StockLog::create([
                             'product_id'         => $item->product_id,
                             'product_variant_id' => $item->product_variant_id,
@@ -1254,14 +1335,14 @@ class PosManager extends Component
                             'quantity_change'    => $item->quantity,
                             'quantity_after'     => $stockAfter,
                             'reason'             => 'pos_void',
-                            'notes'              => 'Restock Void Nota POS #' . $order->order_number . ' (Disetujui Supervisor: ' . $supervisor->name . ')',
+                            'notes'              => 'Restock Void Nota POS #' . $lockedOrder->order_number . ' (' . $voidActorLabel . ')',
                         ]);
                     }
                 }
 
                 // 3. Record Cashflow Reversal — balik SEMUA entri 'pos_sale' untuk order ini
                 // (Penting untuk Split Payment yang memiliki lebih dari 1 baris cashflow per transaksi)
-                $existingCashflows = \App\Models\Cashflow::where('order_id', $order->id)
+                $existingCashflows = \App\Models\Cashflow::where('order_id', $lockedOrder->id)
                     ->where('type', 'in')
                     ->where('source', 'pos')
                     ->where('category', 'pos_sale')
@@ -1275,8 +1356,8 @@ class PosManager extends Component
                         'type'             => 'out',
                         'category'         => 'pos_void',
                         'amount'           => $cf->amount,
-                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
-                        'order_id'         => $order->id,
+                        'description'      => 'Void Transaksi POS #' . $lockedOrder->order_number . ' (' . strtoupper($lockedOrder->payment_method) . ') (' . $voidActorLabel . ') - ' . ($reason ?: 'Batal transaksi'),
+                        'order_id'         => $lockedOrder->id,
                         'source'           => 'pos',
                         'is_reversed'      => true,
                     ]);
@@ -1288,20 +1369,20 @@ class PosManager extends Component
                         'transaction_date' => now()->toDateString(),
                         'type'             => 'out',
                         'category'         => 'pos_void',
-                        'amount'           => $order->grand_total,
-                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
-                        'order_id'         => $order->id,
+                        'amount'           => $lockedOrder->grand_total,
+                        'description'      => 'Void Transaksi POS #' . $lockedOrder->order_number . ' (' . strtoupper($lockedOrder->payment_method) . ') (' . $voidActorLabel . ') - ' . ($reason ?: 'Batal transaksi'),
+                        'order_id'         => $lockedOrder->id,
                         'source'           => 'pos',
                         'is_reversed'      => true,
                     ]);
                 }
 
                 // 4. Rollback Loyalti Stempel Pelanggan jika ada
-                if ($order->customer_phone) {
-                    $phone = \App\Models\PosCustomer::normalizePhone($order->customer_phone);
-                    $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->first() : null;
+                if ($lockedOrder->customer_phone) {
+                    $phone = \App\Models\PosCustomer::normalizePhone($lockedOrder->customer_phone);
+                    $customer = $phone ? \App\Models\PosCustomer::where('phone', $phone)->lockForUpdate()->first() : null;
                     if ($customer) {
-                        $earnedLogs = \App\Models\PosStampLog::where('order_id', $order->id)->where('type', 'earned')->get();
+                        $earnedLogs = \App\Models\PosStampLog::where('order_id', $lockedOrder->id)->where('type', 'earned')->get();
                         foreach ($earnedLogs as $eLog) {
                             $stampsToDeduct = $eLog->stamps;
                             $pointsToDeduct = $eLog->points;
@@ -1314,21 +1395,26 @@ class PosManager extends Component
 
                             \App\Models\PosStampLog::create([
                                 'pos_customer_id' => $customer->id,
-                                'order_id'        => $order->id,
+                                'order_id'        => $lockedOrder->id,
                                 'type'            => 'adjusted',
                                 'stamps'          => -$stampsToDeduct,
                                 'points'          => -$pointsToDeduct,
-                                'description'     => "Penyesuaian ditarik kembali karena Void Nota POS #{$order->order_number}.",
+                                'description'     => "Penyesuaian ditarik kembali karena Void Nota POS #{$lockedOrder->order_number}.",
                             ]);
                         }
                     }
                 }
             });
 
+            if ($alreadyVoided) {
+                $this->dispatch('notify', ['type' => 'error', 'message' => 'Transaksi ini sudah pernah dibatalkan (Void).']);
+                return;
+            }
+
             $this->dispatch('order-voided');
             $this->dispatch('notify', [
                 'type'    => 'success',
-                'message' => 'Transaksi #' . $order->order_number . ' berhasil dibatalkan (Disetujui Supervisor: ' . $supervisor->name . ').'
+                'message' => 'Transaksi #' . $order->order_number . ' berhasil dibatalkan (' . $voidActorLabel . ').'
             ]);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal membatalkan transaksi: ' . $e->getMessage()]);
@@ -1418,9 +1504,8 @@ class PosManager extends Component
 
         if ($this->activeSession) {
             /* ---------- Product list ---------- */
-            $query = Product::with(['variants.attributeOptions.attribute', 'variants.media'])
-                ->where('is_active', true)
-                ->whereIn('channel_visibility', ['pos_only', 'both']);
+            $query = Product::visibleInPos()
+                ->with(['variants.attributeOptions.attribute', 'variants.media']);
 
             if (!empty($this->search)) {
                 $query->where(function ($q) {

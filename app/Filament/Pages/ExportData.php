@@ -65,9 +65,8 @@ class ExportData extends Page
                                     ->label('Channel')
                                     ->placeholder('Semua Channel')
                                     ->options([
-                                        'both'        => 'Semua (Ecommerce & POS)',
-                                        'online_only' => 'Ecommerce Only',
-                                        'pos_only'    => 'POS Only',
+                                        'online_only' => 'E-Commerce Saja',
+                                        'pos_only'    => 'POS Kasir Saja',
                                     ])
                                     ->native(false),
 

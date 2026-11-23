@@ -16,12 +16,16 @@ class ProductStatsWidget extends BaseWidget
         $totalProducts = Product::count();
         $activeProducts = Product::where('is_active', true)->count();
 
-        // Accurate stock calculation (considers variants)
+        // Accurate stock calculation: variant product needs restock if any active variant is out of stock (or no active variant exists)
         $outOfStock = Product::where(function ($query) {
             $query->where('has_variants', false)->where('stock', '<=', 0);
         })->orWhere(function ($query) {
-            $query->where('has_variants', true)->whereDoesntHave('variants', function ($q) {
-                $q->where('stock', '>', 0);
+            $query->where('has_variants', true)->where(function ($variantQuery) {
+                $variantQuery->whereHas('variants', function ($q) {
+                    $q->where('is_active', true)->where('stock', '<=', 0);
+                })->orWhereDoesntHave('variants', function ($q) {
+                    $q->where('is_active', true);
+                });
             });
         })->count();
 

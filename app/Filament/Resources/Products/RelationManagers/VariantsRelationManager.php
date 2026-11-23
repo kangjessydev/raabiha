@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Products\RelationManagers;
 use App\Models\Attribute;
 use App\Models\AttributeOption;
 use App\Models\ProductVariant;
+use App\Services\ProductImageResolver;
 use Awcodes\Curator\Models\Media;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -15,6 +16,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
@@ -240,7 +243,7 @@ class VariantsRelationManager extends RelationManager
                     ->label('Harga Promo (Diskon)')
                     ->numeric()
                     ->prefix('Rp')
-                    ->helperText('Hanya berlaku untuk varian ini. Jika dikosongkan, varian ini tidak menggunakan harga promo.'),
+                    ->helperText('Opsional. Jika dikosongkan, varian ini otomatis mengikuti Harga Promo (Diskon) produk induk (jika ada).'),
                 TextInput::make('purchase_price')
                     ->label('Harga Modal (HPP)')
                     ->numeric()
@@ -251,16 +254,29 @@ class VariantsRelationManager extends RelationManager
                     ->numeric()
                     ->prefix('Rp')
                     ->placeholder('Mengikuti produk induk jika kosong'),
+                Toggle::make('is_active')
+                    ->label('Aktif di Katalog')
+                    ->default(true)
+                    ->helperText('Nonaktifkan jika varian ini tidak ingin tampil atau dibeli di katalog.'),
             ]);
     }
 
     public function table(Table $table): Table
     {
+        $ownerRecord = $this->getOwnerRecord();
+        $preloadedOwnerMedia = ProductImageResolver::preloadMedia([$ownerRecord]);
+
         return $table
             ->recordTitleAttribute('name')
+            ->modifyQueryUsing(fn ($query) => $query->with('media'))
             ->poll('15s')
             ->defaultSort('created_at', 'desc')
             ->columns([
+                Tables\Columns\ImageColumn::make('thumbnail')
+                    ->label('Foto')
+                    ->getStateUsing(fn (ProductVariant $record): string => ProductImageResolver::resolveVariantUrl($record, $ownerRecord, $preloadedOwnerMedia))
+                    ->circular()
+                    ->imageSize(36),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Varian')
                     ->searchable()
@@ -268,6 +284,9 @@ class VariantsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('sku')
                     ->label('SKU')
                     ->searchable(),
+                Tables\Columns\ToggleColumn::make('is_active')
+                    ->label('Aktif')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stok')
                     ->sortable(),
@@ -289,7 +308,8 @@ class VariantsRelationManager extends RelationManager
                     ->description(fn ($record) => $record->getRawOriginal('reseller_price') === null ? 'Menginduk' : 'Kustom', position: 'below'),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('Status Aktif'),
             ])
             ->headerActions([
 
@@ -336,16 +356,43 @@ class VariantsRelationManager extends RelationManager
                             $matrix = $append;
                         }
 
+                        // Build canonical signatures of existing variant attribute combinations (prevent duplicates)
+                        $existingSignatures = [];
+                        $existingVariants = $product->variants()->with('attributeOptions:id')->get();
+                        foreach ($existingVariants as $existingVariant) {
+                            $ids = $existingVariant->attributeOptions->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+                            if (! empty($ids)) {
+                                $existingSignatures[implode('-', $ids)] = true;
+                            }
+                        }
+
+                        // Preload all referenced attribute options in a single query
+                        $allOptionIds = collect($matrix)->flatten()->map(fn ($id) => (int) $id)->unique()->values()->all();
+                        $optionsById = AttributeOption::whereIn('id', $allOptionIds)->get()->keyBy('id');
+
+                        $createdCount = 0;
+                        $skippedCount = 0;
+
                         // Generate variants
                         foreach ($matrix as $combination) {
-                            // Fetch options to generate name/SKU
-                            $options = AttributeOption::whereIn('id', $combination)->get();
-                            $nameParts = $options->pluck('value')->join(' - ');
+                            $sortedIds = collect($combination)->map(fn ($id) => (int) $id)->unique()->sort()->values()->all();
+                            $signature = implode('-', $sortedIds);
+
+                            if (isset($existingSignatures[$signature])) {
+                                $skippedCount++;
+
+                                continue;
+                            }
+
+                            $nameParts = collect($combination)
+                                ->map(fn ($id) => (int) $id)
+                                ->unique()
+                                ->map(fn ($id) => $optionsById->get($id)?->value)
+                                ->filter()
+                                ->join(' - ');
 
                             $variantName = "{$product->name} - {$nameParts}";
 
-                            // Check if exact variant exists (naive check)
-                            // Create variant
                             $variant = $product->variants()->create([
                                 'name' => $variantName,
                                 'stock' => 0,
@@ -355,7 +402,29 @@ class VariantsRelationManager extends RelationManager
                             ]);
 
                             // Attach options
-                            $variant->attributeOptions()->attach($combination);
+                            $variant->attributeOptions()->attach($sortedIds);
+
+                            $existingSignatures[$signature] = true;
+                            $createdCount++;
+                        }
+
+                        if ($createdCount > 0) {
+                            $body = "{$createdCount} varian baru berhasil dibuat.";
+                            if ($skippedCount > 0) {
+                                $body .= " {$skippedCount} kombinasi duplikat dilewati.";
+                            }
+
+                            Notification::make()
+                                ->title('Generate Varian Selesai')
+                                ->body($body)
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('Tidak Ada Varian Baru Dibuat')
+                                ->body("Semua {$skippedCount} kombinasi yang dipilih sudah ada sebelumnya.")
+                                ->warning()
+                                ->send();
                         }
                     }),
                 CreateAction::make()->label('Tambah Manual'),

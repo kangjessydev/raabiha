@@ -40,10 +40,13 @@ class Login extends Component
             }
         }
 
+        $oldSessionId = session()->getId();
+
         if (Auth::attempt(['email' => $email, 'password' => $this->password], $this->remember)) {
             session()->regenerate();
 
             $user = Auth::user();
+            \App\Models\Cart::mergeGuestCartToUser($oldSessionId, (int) $user->id);
 
             // Check if the user is an admin/staff role
             $adminRoles = ['super_admin', 'owner', 'kasir', 'finance', 'marketing', 'gudang', 'cs'];

@@ -29,6 +29,25 @@
                         <a href="/shop" class="inline-block bg-[#064e3b] text-white px-8 py-4 font-mono text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-[#043326] transition-colors">MULAI BELANJA</a>
                     </div>
                 @else
+                    @if (!empty($stockNotices))
+                        <div class="mb-6 bg-[#fff8eb] border-l-2 border-[#b45309] px-5 py-4 text-[#78350f]" role="alert" aria-live="polite">
+                            <div class="font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-[#92400e] mb-2">
+                                Pembaruan Stok Keranjang
+                            </div>
+                            <ul class="space-y-1 font-sans text-[13px] leading-relaxed list-disc pl-4">
+                                @foreach ($stockNotices as $notice)
+                                    <li>{{ $notice }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @php
+                        $availableItemCount = $cart->items->filter(
+                            fn ($cartItem) => (bool) ($itemAvailability[(string) $cartItem->id]['is_available'] ?? true)
+                        )->count();
+                    @endphp
+
                     <!-- Main Grid -->
                     <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 lg:gap-16 items-start">
                         
@@ -36,39 +55,43 @@
                         <div class="flex flex-col">
                             <!-- Select All -->
                             <div class="flex items-center gap-4 mb-6 pb-6 border-b border-[#e5e2de] sm:border-[rgba(23,24,24,0.1)]">
-                                <label class="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" wire:model.live="selectAll" class="w-4 h-4 sm:w-5 sm:h-5 text-[#064e3b] bg-transparent border border-[#e5e2de] rounded-sm focus:ring-[#064e3b] focus:ring-offset-0 cursor-pointer accent-[#064e3b]">
-                                    <span class="font-mono text-[11px] uppercase tracking-widest font-bold text-[#1c1c1a]">Pilih Semua ({{ $cart->items->count() }})</span>
+                                <label class="flex items-center gap-3 {{ $availableItemCount === 0 ? 'cursor-not-allowed opacity-60' : 'cursor-pointer' }}">
+                                    <input type="checkbox" wire:model.live="selectAll" @disabled($availableItemCount === 0) class="w-4 h-4 sm:w-5 sm:h-5 text-[#064e3b] bg-transparent border border-[#e5e2de] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] accent-[#064e3b] disabled:cursor-not-allowed">
+                                    <span class="font-mono text-[11px] uppercase tracking-widest font-bold text-[#1c1c1a] tabular-nums">Pilih Semua ({{ $availableItemCount }}/{{ $cart->items->count() }})</span>
                                 </label>
                             </div>
 
+                            @php
+                                $preloadedMedia = \App\Services\ProductImageResolver::preloadMedia($cart->items);
+                            @endphp
                             @foreach($cart->items as $item)
                                 @php
-                                    $imageUrl = asset('assets/images/placeholder.webp');
-                                    if (!empty($item->product->images)) {
-                                        if (is_numeric($item->product->images[0])) {
-                                            $media = \Awcodes\Curator\Models\Media::find($item->product->images[0]);
-                                            if ($media && Storage::disk('public')->exists($media->path)) {
-                                                $imageUrl = Storage::url($media->path);
-                                            }
-                                        } else {
-                                            if (Storage::disk('public')->exists($item->product->images[0])) {
-                                                $imageUrl = asset('storage/' . $item->product->images[0]);
-                                            }
-                                        }
-                                    }
+                                    $imageUrl = $item->variant
+                                        ? $item->variant->resolveImageUrl($item->product, $preloadedMedia)
+                                        : $item->product->resolvePrimaryImageUrl($preloadedMedia);
                                     
-                                    $price = $item->variant && $item->variant->price ? $item->variant->price : $item->product->price;
+                                    $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
+
+                                    $availability = $itemAvailability[(string) $item->id] ?? [
+                                        'is_available' => true,
+                                        'available_stock' => $item->variant ? (int) $item->variant->stock : (int) ($item->product?->stock ?? 0),
+                                        'reason' => null,
+                                    ];
+                                    $isItemAvailable = (bool) ($availability['is_available'] ?? true);
+                                    $availableStock = max(0, (int) ($availability['available_stock'] ?? 0));
+                                    $unavailableReason = $availability['reason'] ?? null;
+                                    $isQtyAtMin = ! $isItemAvailable || (int) $item->quantity <= 1;
+                                    $isQtyAtMax = ! $isItemAvailable || (int) $item->quantity >= $availableStock;
                                 @endphp
 
-                                <div class="cart-item-row flex flex-row sm:flex-row gap-4 sm:gap-6 pb-6 sm:pb-12 mb-6 sm:mb-12 border-b border-[#e5e2de] sm:border-[rgba(23,24,24,0.1)] items-center sm:items-start">
+                                <div class="cart-item-row flex flex-row sm:flex-row gap-4 sm:gap-6 pb-6 sm:pb-12 mb-6 sm:mb-12 border-b border-[#e5e2de] sm:border-[rgba(23,24,24,0.1)] items-center sm:items-start {{ ! $isItemAvailable ? 'opacity-60' : '' }}">
                                     <!-- Checkbox -->
                                     <div class="shrink-0 flex items-center justify-center pt-0 sm:pt-4">
-                                        <input type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}" class="w-4 h-4 sm:w-5 sm:h-5 text-[#064e3b] bg-transparent border border-[#e5e2de] rounded-sm focus:ring-[#064e3b] focus:ring-offset-0 cursor-pointer accent-[#064e3b]">
+                                        <input type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}" @disabled(! $isItemAvailable) aria-label="Pilih {{ $item->product->name }}" class="w-4 h-4 sm:w-5 sm:h-5 text-[#064e3b] bg-transparent border border-[#e5e2de] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] accent-[#064e3b] {{ ! $isItemAvailable ? 'cursor-not-allowed opacity-50' : 'cursor-pointer' }}">
                                     </div>
                                     <!-- Image -->
                                     <div class="w-[80px] h-[100px] sm:w-[240px] sm:h-[280px] bg-[#f0ede9] shrink-0">
-                                        <img src="{{ $imageUrl }}" alt="{{ $item->product->name }}" class="w-full h-full object-cover">
+                                        <img src="{{ $imageUrl }}" alt="{{ $item->product->name }}" width="240" height="280" loading="lazy" class="w-full h-full object-cover">
                                     </div>
                                     <!-- Info -->
                                     <div class="flex flex-col flex-1 py-0 sm:py-2 min-w-0">
@@ -76,10 +99,20 @@
                                             <h3 class="font-serif text-base sm:text-[24px] font-semibold text-[#1c1c1a] leading-tight sm:normal-case line-clamp-2 sm:line-clamp-none pr-1">
                                                 <a href="/product/{{ $item->product->slug }}" class="hover:text-[#615e57] transition-colors">{{ $item->product->name }}</a>
                                             </h3>
-                                            <div class="item-subtotal-val font-sans text-sm sm:text-[18px] font-medium sm:font-normal text-[#1c1c1a] whitespace-nowrap shrink-0">
+                                            <div class="item-subtotal-val font-sans text-sm sm:text-[18px] font-medium sm:font-normal text-[#1c1c1a] whitespace-nowrap shrink-0 tabular-nums">
                                                 Rp{{ number_format($price * $item->quantity, 0, ',', '.') }}
                                             </div>
                                         </div>
+
+                                        @if (! $isItemAvailable && $unavailableReason)
+                                            <div class="mt-2 inline-flex items-center gap-1.5 bg-[#fef2f2] border border-[#fecaca] text-[#ba1a1a] px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.1em] w-fit">
+                                                {{ $unavailableReason }}
+                                            </div>
+                                        @elseif ($isItemAvailable && $availableStock > 0 && $availableStock <= 5)
+                                            <div class="mt-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[#92400e] tabular-nums">
+                                                Sisa {{ $availableStock }} pcs
+                                            </div>
+                                        @endif
                                         
                                         @if($item->variant)
                                             <!-- Mobile Variations -->
@@ -104,18 +137,18 @@
                                         
                                         <div class="flex justify-between items-center mt-4 sm:mt-8 w-full">
                                             <div class="border border-[#e5e2de] flex items-stretch h-[36px] sm:h-[48px] qty-container">
-                                                <button type="button" wire:click="decrementQuantity({{ $item->id }})" class="w-10 sm:w-12 h-full flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] hover:bg-black/5 transition-colors focus:outline-none">
+                                                <button type="button" wire:click="decrementQuantity({{ $item->id }})" @disabled($isQtyAtMin) aria-label="Kurangi jumlah {{ $item->product->name }}" class="w-10 sm:w-12 h-full flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] hover:bg-black/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                                                     <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
                                                 </button>
-                                                <input type="number" readonly value="{{ $item->quantity }}" min="1" class="h-full w-8 sm:w-12 bg-transparent text-center font-mono text-[12px] sm:text-[14px] text-[#1c1c1a] focus:outline-none appearance-none p-0 m-0 border-0" style="-moz-appearance: textfield;">
-                                                <button type="button" wire:click="incrementQuantity({{ $item->id }})" class="w-10 sm:w-12 h-full flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] hover:bg-black/5 transition-colors focus:outline-none">
+                                                <input type="number" readonly value="{{ $item->quantity }}" min="1" max="{{ max(1, $availableStock) }}" aria-label="Jumlah {{ $item->product->name }}" class="h-full w-8 sm:w-12 bg-transparent text-center font-mono text-[12px] sm:text-[14px] text-[#1c1c1a] tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] appearance-none p-0 m-0 border-0" style="-moz-appearance: textfield;">
+                                                <button type="button" wire:click="incrementQuantity({{ $item->id }})" @disabled($isQtyAtMax) aria-label="Tambah jumlah {{ $item->product->name }}" class="w-10 sm:w-12 h-full flex items-center justify-center text-[#615e57] hover:text-[#1c1c1a] hover:bg-black/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                                                     <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                                                 </button>
                                             </div>
                                             <!-- Mobile Remove Link -->
-                                            <button type="button" wire:click="removeItem({{ $item->id }})" class="block sm:hidden font-mono text-[10px] font-bold tracking-[0.1em] text-[#ba1a1a] uppercase hover:text-[#1c1c1a] transition-colors focus:outline-none">REMOVE</button>
+                                            <button type="button" wire:click="removeItem({{ $item->id }})" aria-label="Hapus {{ $item->product->name }}" class="block sm:hidden font-mono text-[10px] font-bold tracking-[0.1em] text-[#ba1a1a] uppercase hover:text-[#1c1c1a] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b]">REMOVE</button>
                                             <!-- Desktop Remove Link -->
-                                            <button type="button" wire:click="removeItem({{ $item->id }})" class="hidden sm:flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[#615e57] hover:text-[#1c1c1a] transition-colors group focus:outline-none"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg><span>Hapus</span></button>
+                                            <button type="button" wire:click="removeItem({{ $item->id }})" aria-label="Hapus {{ $item->product->name }}" class="hidden sm:flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[#615e57] hover:text-[#1c1c1a] transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b]"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg><span>Hapus</span></button>
                                         </div>
                                     </div>
                                 </div>
@@ -157,18 +190,18 @@
                                 <!-- Subtotal Row -->
                                 <div class="flex justify-between py-0">
                                     <span class="text-[#1c1c1a] font-sans text-[14px]">Subtotal ({{ count($selectedItems) }} Produk)</span>
-                                    <span>Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
+                                    <span class="tabular-nums">Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
                                 </div>
                                 @if(isset($resellerDiscount) && $resellerDiscount > 0)
                                 <div class="flex justify-between py-0 mt-3 text-[#064e3b]">
                                     <span class="font-sans text-[14px]">Diskon Reseller</span>
-                                    <span>-Rp{{ number_format($resellerDiscount, 0, ',', '.') }}</span>
+                                    <span class="tabular-nums">-Rp{{ number_format($resellerDiscount, 0, ',', '.') }}</span>
                                 </div>
                                 @endif
                                 @if($discountAmount > 0)
                                 <div class="flex justify-between py-0 mt-3 text-[#064e3b]">
                                     <span class="font-sans text-[14px]">Diskon ({{ $appliedVoucher['code'] ?? '' }})</span>
-                                    <span>-Rp{{ number_format($discountAmount, 0, ',', '.') }}</span>
+                                    <span class="tabular-nums">-Rp{{ number_format($discountAmount, 0, ',', '.') }}</span>
                                 </div>
                                 @endif
                             </div>
@@ -199,11 +232,11 @@
                             <!-- Total -->
                             <div class="flex justify-between items-end mb-8 py-0">
                                 <span class="font-serif text-[24px] font-semibold text-[#1c1c1a] uppercase">TOTAL</span>
-                                <span class="font-serif text-[32px] font-semibold text-[#1c1c1a] leading-none">Rp{{ number_format($grandTotal, 0, ',', '.') }}</span>
+                                <span class="font-serif text-[32px] font-semibold text-[#1c1c1a] leading-none tabular-nums">Rp{{ number_format($grandTotal, 0, ',', '.') }}</span>
                             </div>
                             
                             <!-- Button -->
-                            <button type="button" wire:click="proceedToCheckout" class="flex justify-center items-center gap-2 w-full bg-[#064e3b] hover:bg-[#043326] text-white py-5 px-6 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors">
+                            <button type="button" wire:click="proceedToCheckout" class="flex justify-center items-center gap-2 w-full bg-[#064e3b] hover:bg-[#043326] text-white py-5 px-6 font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-2">
                                 <span class="block">LANJUT KE PEMBAYARAN</span>
                             </button>
                             
@@ -232,7 +265,7 @@
     <!-- Mobile Sticky Bottom Bar -->
     <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#e5e2de] z-[90] pb-safe shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
         @if (session()->has('error'))
-            <div class="bg-red-50 text-red-600 px-5 py-2 text-[10px] font-mono tracking-widest uppercase border-b border-red-100 text-center">
+            <div class="bg-red-50 text-red-600 px-5 py-2 text-[10px] font-mono tracking-widest uppercase border-b border-red-100 text-center" role="alert">
                 {{ session('error') }}
             </div>
         @endif
@@ -257,9 +290,9 @@
         <div class="px-5 py-4 bg-white flex justify-between items-center gap-4">
             <div class="flex flex-col min-w-0">
                 <span class="font-mono text-[9px] uppercase tracking-[0.1em] text-[#615e57] mb-1">TOTAL BELANJA</span>
-                <span class="font-serif text-[18px] font-semibold text-[#1c1c1a] leading-none truncate">Rp{{ number_format($grandTotal, 0, ',', '.') }}</span>
+                <span class="font-serif text-[18px] font-semibold text-[#1c1c1a] leading-none truncate tabular-nums">Rp{{ number_format($grandTotal, 0, ',', '.') }}</span>
             </div>
-            <button type="button" wire:click="proceedToCheckout" class="bg-[#064e3b] text-white px-5 py-3.5 font-mono text-[10px] font-bold tracking-[0.1em] uppercase transition-colors hover:bg-[#043326] flex-shrink-0 min-w-[120px] flex items-center justify-center">
+            <button type="button" wire:click="proceedToCheckout" class="bg-[#064e3b] text-white px-5 py-3.5 font-mono text-[10px] font-bold tracking-[0.1em] uppercase transition-colors hover:bg-[#043326] flex-shrink-0 min-w-[120px] flex items-center justify-center tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b] focus-visible:ring-offset-2">
                 <span wire:loading.remove wire:target="proceedToCheckout">CHECKOUT ({{ count($selectedItems) }})</span>
                 <span wire:loading wire:target="proceedToCheckout">TUNGGU...</span>
             </button>

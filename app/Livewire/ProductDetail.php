@@ -8,7 +8,6 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductReview;
 use App\Models\SiteSetting;
-use Awcodes\Curator\Models\Media;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
@@ -30,6 +29,8 @@ class ProductDetail extends Component
 
     public $galleryMediaIds = [];
 
+    public int $activeGalleryIndex = 0;
+
     public $bsOpen = false;
 
     public $bsMode = 'cart';
@@ -43,6 +44,42 @@ class ProductDetail extends Component
 
     public $showReviewForm = false;
 
+    protected function activeVariants()
+    {
+        if (! isset($this->product) || ! $this->product->has_variants) {
+            return collect();
+        }
+
+        return $this->product->variants->where('is_active', true)->values();
+    }
+
+    #[Computed]
+    public function activeGalleryImageUrl(): string
+    {
+        return $this->galleryUrls[$this->activeGalleryIndex]
+            ?? $this->galleryUrls[0]
+            ?? asset('assets/images/placeholder.webp');
+    }
+
+    #[Computed]
+    public function maxOrderableQuantity(): int
+    {
+        if (! isset($this->product)) {
+            return 0;
+        }
+
+        if ($this->product->has_variants) {
+            $matchedVariant = $this->getMatchedVariant();
+            if ($matchedVariant) {
+                return max(0, (int) $matchedVariant->stock);
+            }
+
+            return max(0, (int) $this->activeVariants()->max('stock'));
+        }
+
+        return max(0, (int) $this->product->stock);
+    }
+
     #[Computed]
     public function availableAttributes()
     {
@@ -51,7 +88,7 @@ class ProductDetail extends Component
         }
 
         $attributes = [];
-        foreach ($this->product->variants as $variant) {
+        foreach ($this->activeVariants() as $variant) {
             foreach ($variant->attributeOptions as $option) {
                 $attrSlug = $option->attribute->slug;
                 if (! isset($attributes[$attrSlug])) {
@@ -85,7 +122,7 @@ class ProductDetail extends Component
         $testSelection[$attrSlug] = $optionValue;
         $testSelection = array_filter($testSelection, fn ($val) => $val !== '');
 
-        foreach ($this->product->variants as $variant) {
+        foreach ($this->activeVariants() as $variant) {
             if ($variant->stock <= 0) {
                 continue;
             }
@@ -110,38 +147,91 @@ class ProductDetail extends Component
 
     public function selectOption($attrSlug, $optionValue)
     {
-        if (! $this->isOptionAvailable($attrSlug, $optionValue)) {
-            return;
-        }
-
-        if ($this->selectedOptions[$attrSlug] === $optionValue) {
+        if (($this->selectedOptions[$attrSlug] ?? '') === $optionValue) {
             $this->selectedOptions[$attrSlug] = ''; // Deselect
         } else {
+            if (! $this->isOptionAvailable($attrSlug, $optionValue)) {
+                return;
+            }
+
             $this->selectedOptions[$attrSlug] = $optionValue;
         }
 
-        $variantWithImage = $this->getFirstVariantWithImage();
-        if ($variantWithImage && $variantWithImage->media_id) {
-            $targetMediaId = (int) $variantWithImage->media_id;
-            $normalizedMediaIds = array_map(fn ($id) => $id !== null ? (int) $id : null, $this->galleryMediaIds);
-            $index = array_search($targetMediaId, $normalizedMediaIds);
+        // Clamp quantity to the newly matched variant's real stock
+        $maxQty = $this->maxOrderableQuantity;
+        if ($maxQty > 0 && $this->quantity > $maxQty) {
+            $this->quantity = $maxQty;
+        }
 
-            // Fallback: jika media_id tidak cocok langsung di index, cocokkan melalui path/URL media varian
-            if ($index === false && $variantWithImage->media) {
-                $vPath = $variantWithImage->media->path;
-                $vUrl = $variantWithImage->media->url;
-                foreach ($this->galleryUrls as $gIdx => $gUrl) {
-                    if (str_contains($gUrl, $vPath) || $gUrl === $vUrl) {
-                        $index = $gIdx;
-                        break;
-                    }
+        $variantWithImage = $this->getFirstVariantWithImage();
+        $targetIndex = $this->resolveGalleryIndexForVariant($variantWithImage);
+
+        $this->activeGalleryIndex = $targetIndex;
+        $this->dispatch('change-gallery-image', index: $targetIndex);
+        $this->dispatch('selection-synced', selected: $this->selectedOptions);
+    }
+
+    protected function resolveGalleryIndexForVariant($variantWithImage): int
+    {
+        if (! $variantWithImage || ! $variantWithImage->media_id) {
+            return 0;
+        }
+
+        $targetMediaId = (int) $variantWithImage->media_id;
+        $normalizedMediaIds = array_map(fn ($id) => $id !== null ? (int) $id : null, $this->galleryMediaIds);
+        $index = array_search($targetMediaId, $normalizedMediaIds);
+
+        // Fallback: jika media_id tidak cocok langsung di index, cocokkan melalui path/URL media varian
+        if ($index === false && $variantWithImage->media) {
+            $vPath = $variantWithImage->media->path;
+            $vUrl = $variantWithImage->media->url;
+            foreach ($this->galleryUrls as $gIdx => $gUrl) {
+                if (str_contains($gUrl, $vPath) || $gUrl === $vUrl) {
+                    $index = $gIdx;
+                    break;
+                }
+            }
+        }
+
+        return $index !== false ? (int) $index : 0;
+    }
+
+    public function getPredictedGalleryIndex(string $attrSlug, string $optionValue): int
+    {
+        if (! $this->product->has_variants) {
+            return 0;
+        }
+
+        $simulatedSelections = $this->selectedOptions;
+        if (($simulatedSelections[$attrSlug] ?? '') === $optionValue) {
+            $simulatedSelections[$attrSlug] = '';
+        } else {
+            $simulatedSelections[$attrSlug] = $optionValue;
+        }
+
+        $activeSelections = array_filter($simulatedSelections, fn ($val) => $val !== '');
+        if (empty($activeSelections)) {
+            return 0;
+        }
+
+        $variantWithImage = $this->activeVariants()->first(function ($variant) use ($activeSelections) {
+            if (! $variant->media_id) {
+                return false;
+            }
+
+            foreach ($activeSelections as $slug => $val) {
+                $hasOption = $variant->attributeOptions->contains(function ($opt) use ($slug, $val) {
+                    return $opt->attribute->slug === $slug && $opt->value === $val;
+                });
+                if (! $hasOption) {
+                    return false;
                 }
             }
 
-            if ($index !== false) {
-                $this->dispatch('change-gallery-image', index: $index);
-            }
-        }
+            return true;
+        });
+
+        return $this->resolveGalleryIndexForVariant($variantWithImage);
     }
 
     public function getFirstVariantWithImage()
@@ -155,7 +245,7 @@ class ProductDetail extends Component
             return null;
         }
 
-        return $this->product->variants->first(function ($variant) use ($activeSelections) {
+        return $this->activeVariants()->first(function ($variant) use ($activeSelections) {
             if (! $variant->media_id) {
                 return false;
             }
@@ -179,7 +269,11 @@ class ProductDetail extends Component
             return null;
         }
 
-        return $this->product->variants->first(function ($variant) {
+        if (empty($this->selectedOptions)) {
+            return null;
+        }
+
+        return $this->activeVariants()->first(function ($variant) {
             foreach ($this->selectedOptions as $slug => $val) {
                 if (empty($val)) {
                     return false;
@@ -230,9 +324,30 @@ class ProductDetail extends Component
             return null;
         }
 
-        $activeVariants = $this->product->variants->where('is_active', true);
+        $activeVariants = $this->activeVariants();
         if ($activeVariants->isEmpty()) {
             return null;
+        }
+
+        // Filter varian berdasarkan opsi yang sudah dipilih sebagian (misal baru pilih Warna)
+        $activeSelections = array_filter($this->selectedOptions, fn ($val) => $val !== '');
+        if (! empty($activeSelections)) {
+            $filteredVariants = $activeVariants->filter(function ($variant) use ($activeSelections) {
+                foreach ($activeSelections as $slug => $val) {
+                    $hasOption = $variant->attributeOptions->contains(function ($opt) use ($slug, $val) {
+                        return $opt->attribute->slug === $slug && $opt->value === $val;
+                    });
+                    if (! $hasOption) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            if ($filteredVariants->isNotEmpty()) {
+                $activeVariants = $filteredVariants;
+            }
         }
 
         $minPrice = $activeVariants->min('effective_price') * $this->quantity;
@@ -341,7 +456,10 @@ class ProductDetail extends Component
         \Log::info('ProductDetail mount called with slug: '.var_export($slug, true));
         $this->slug = $slug;
         try {
-            $this->product = Product::with(['variants.attributeOptions.attribute', 'variants.media'])->where('slug', $slug)->firstOrFail();
+            $this->product = Product::visibleOnline()
+                ->with(['variants.attributeOptions.attribute', 'variants.media'])
+                ->where('slug', $slug)
+                ->firstOrFail();
         } catch (\Exception $e) {
             \Log::error('ProductDetail mount failed: '.$e->getMessage());
             throw $e;
@@ -352,72 +470,10 @@ class ProductDetail extends Component
             $this->selectedOptions[$attrSlug] = '';
         }
 
-        // Resolve Curator Media URLs & Parallel Media IDs
-        $this->galleryUrls = [];
-        $this->galleryMediaIds = [];
-        if (! empty($this->product->images) && is_array($this->product->images)) {
-            // Check if it's new Curator ID format or old path format
-            if (is_numeric($this->product->images[0])) {
-                $mediaItems = Media::whereIn('id', $this->product->images)->get();
-                // To maintain order
-                foreach ($this->product->images as $id) {
-                    $media = $mediaItems->firstWhere('id', (int) $id);
-                    if ($media) {
-                        $disk = $media->disk ?? 'public';
-                        $url = Storage::disk($disk)->exists($media->path)
-                            ? $media->url
-                            : asset('storage/'.$media->path);
-                        $this->galleryUrls[] = $url;
-                        $this->galleryMediaIds[] = (int) $id;
-                    }
-                }
-            } else {
-                // Fallback for strings (URL or relative path)
-                $searchPaths = [];
-                foreach ($this->product->images as $path) {
-                    if (is_string($path)) {
-                        $pathOnly = parse_url($path, PHP_URL_PATH) ?? $path;
-                        $clean = ltrim($pathOnly, '/');
-                        $searchPaths[] = $clean;
-                        $searchPaths[] = str_replace('storage/', '', $clean);
-                        $searchPaths[] = basename($pathOnly);
-                    }
-                }
-                $searchPaths = array_values(array_unique(array_filter($searchPaths)));
-
-                $mediaItems = ! empty($searchPaths)
-                    ? Media::whereIn('path', $searchPaths)->orWhereIn('name', $searchPaths)->get()
-                    : collect();
-
-                foreach ($this->product->images as $path) {
-                    if (is_string($path) && (str_starts_with($path, 'http://') || str_starts_with($path, 'https://'))) {
-                        $this->galleryUrls[] = $path;
-                    } elseif (is_string($path) && Storage::disk('public')->exists($path)) {
-                        $this->galleryUrls[] = asset('storage/'.$path);
-                    } else {
-                        $this->galleryUrls[] = asset((string) $path);
-                    }
-
-                    // Find matching Media ID
-                    $pathOnly = is_string($path) ? (parse_url($path, PHP_URL_PATH) ?? $path) : '';
-                    $clean = ltrim($pathOnly, '/');
-                    $storageClean = str_replace('storage/', '', $clean);
-                    $base = basename($pathOnly);
-
-                    $matchedMedia = $mediaItems->first(function ($m) use ($clean, $storageClean, $base) {
-                        return in_array($m->path, [$clean, $storageClean, $base])
-                            || in_array($m->name, [$clean, $storageClean, $base]);
-                    });
-
-                    $this->galleryMediaIds[] = $matchedMedia ? (int) $matchedMedia->id : null;
-                }
-            }
-        }
-
-        // If gallery is completely empty after validation, push a placeholder
-        if (empty($this->galleryUrls)) {
-            $this->galleryUrls[] = asset('assets/images/placeholder.png');
-        }
+        // Resolve Curator Media URLs & Parallel Media IDs via Single Source of Truth
+        $gallery = $this->product->resolveGallery();
+        $this->galleryUrls = $gallery['urls'];
+        $this->galleryMediaIds = $gallery['media_ids'];
 
         if (auth()->check()) {
             $this->reviewName = auth()->user()->name;
@@ -426,7 +482,8 @@ class ProductDetail extends Component
 
     public function incrementQuantity()
     {
-        if ($this->quantity < 10) {
+        $maxQty = $this->maxOrderableQuantity;
+        if ($maxQty > 0 && $this->quantity < $maxQty) {
             $this->quantity++;
         }
     }
@@ -438,15 +495,44 @@ class ProductDetail extends Component
         }
     }
 
-    public function addToCart()
+    public function updatedQuantity($value)
     {
+        $qty = (int) $value;
+        $maxQty = $this->maxOrderableQuantity;
+
+        if ($maxQty <= 0 || $qty < 1) {
+            $this->quantity = 1;
+        } elseif ($qty > $maxQty) {
+            $this->quantity = $maxQty;
+        } else {
+            $this->quantity = $qty;
+        }
+    }
+
+    protected function resolveSelectionForCart(): ?array
+    {
+        $this->quantity = max(1, (int) $this->quantity);
+
+        if (! $this->product || ! $this->product->is_active || $this->product->is_custom || $this->product->channel_visibility === 'pos_only') {
+            session()->flash('error', 'Produk tidak tersedia untuk pembelian online.');
+
+            return null;
+        }
+
         // 1. Validation
         if ($this->product->has_variants) {
-            foreach ($this->availableAttributes() as $attrSlug => $data) {
+            $availableAttributes = $this->availableAttributes();
+            if (empty($availableAttributes)) {
+                session()->flash('error', 'Varian produk tidak tersedia atau sedang tidak aktif.');
+
+                return null;
+            }
+
+            foreach ($availableAttributes as $attrSlug => $data) {
                 if (empty($this->selectedOptions[$attrSlug])) {
                     session()->flash('error', 'Silakan lengkapi pilihan varian terlebih dahulu.');
 
-                    return;
+                    return null;
                 }
             }
         }
@@ -456,25 +542,44 @@ class ProductDetail extends Component
         if ($this->product->has_variants) {
             $matchedVariant = $this->getMatchedVariant();
 
-            if (! $matchedVariant) {
-                session()->flash('error', 'Kombinasi varian tidak ditemukan atau habis.');
+            if (! $matchedVariant || ! $matchedVariant->is_active) {
+                session()->flash('error', 'Kombinasi varian tidak ditemukan, tidak aktif, atau habis.');
 
-                return;
+                return null;
             }
             $variantId = $matchedVariant->id;
+            $availableStock = (int) $matchedVariant->stock;
 
-            if ($matchedVariant->stock < $this->quantity) {
+            if ($availableStock < $this->quantity) {
                 session()->flash('error', 'Stok varian tidak mencukupi.');
 
-                return;
+                return null;
             }
         } else {
-            if ($this->product->stock < $this->quantity) {
+            $availableStock = (int) $this->product->stock;
+
+            if ($availableStock < $this->quantity) {
                 session()->flash('error', 'Stok produk tidak mencukupi.');
 
-                return;
+                return null;
             }
         }
+
+        return [
+            'variant_id' => $variantId,
+            'available_stock' => $availableStock,
+        ];
+    }
+
+    public function addToCart()
+    {
+        $selection = $this->resolveSelectionForCart();
+        if (! $selection) {
+            return;
+        }
+
+        $variantId = $selection['variant_id'];
+        $availableStock = $selection['available_stock'];
 
         // 3. Get or Create Cart
         if (auth()->check()) {
@@ -485,14 +590,26 @@ class ProductDetail extends Component
             $cart = Cart::firstOrCreate(['session_id' => session()->getId(), 'user_id' => null, 'is_buy_now' => false]);
         }
 
-        // 4. Add or Update Item in Cart
+        // 4. Add or Update Item in Cart (guard accumulated quantity against real stock)
         $cartItem = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $this->product->id)
             ->where('product_variant_id', $variantId)
             ->first();
 
+        $existingQty = $cartItem ? (int) $cartItem->quantity : 0;
+        if (($existingQty + $this->quantity) > $availableStock) {
+            $remaining = max(0, $availableStock - $existingQty);
+            $message = $remaining === 0
+                ? "Stok maksimal ({$availableStock} pcs) sudah ada di keranjang Anda."
+                : "Stok tidak mencukupi. Anda sudah memiliki {$existingQty} pcs di keranjang (sisa yang dapat ditambahkan: {$remaining} pcs).";
+
+            session()->flash('error', $message);
+
+            return;
+        }
+
         if ($cartItem) {
-            $cartItem->quantity += $this->quantity;
+            $cartItem->quantity = $existingQty + $this->quantity;
             $cartItem->save();
         } else {
             $cartItem = CartItem::create([
@@ -525,16 +642,37 @@ class ProductDetail extends Component
             return;
         }
 
-        // Add to cart first
-        $cartItem = $this->addToCart();
-
-        // If there's an error (e.g. out of stock, no variant selected), stop
-        if (session()->has('error') || ! $cartItem) {
+        // Validasi stok riil hanya terhadap qty Beli Sekarang (abaikan keranjang reguler)
+        $selection = $this->resolveSelectionForCart();
+        if (! $selection) {
             return;
         }
 
-        // Isolasi item checkout hanya untuk produk ini agar keranjang lama tidak tercampur
-        session(['checkout_item_ids' => [(string) $cartItem->id]]);
+        if (auth()->check()) {
+            $buyNowCart = Cart::firstOrCreate(['user_id' => auth()->id(), 'is_buy_now' => true]);
+        } else {
+            session()->put('cart_active', true);
+            $buyNowCart = Cart::firstOrCreate([
+                'session_id' => session()->getId(),
+                'user_id' => null,
+                'is_buy_now' => true,
+            ]);
+        }
+
+        $buyNowCart->items()->delete();
+
+        $buyNowItem = CartItem::create([
+            'cart_id' => $buyNowCart->id,
+            'product_id' => $this->product->id,
+            'product_variant_id' => $selection['variant_id'],
+            'quantity' => $this->quantity,
+        ]);
+
+        // Isolasi penuh checkout Beli Sekarang agar tidak menyentuh keranjang reguler
+        session([
+            'checkout_is_buy_now' => true,
+            'checkout_item_ids' => [(string) $buyNowItem->id],
+        ]);
 
         return $this->redirect('/checkout', navigate: true);
     }
@@ -596,7 +734,7 @@ class ProductDetail extends Component
         $price = $this->product->effective_price;
         $inStock = $this->product->stock > 0;
         if ($this->product->has_variants) {
-            $inStock = $this->product->variants->sum('stock') > 0;
+            $inStock = $this->activeVariants()->sum('stock') > 0;
         }
         $availability = $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
 
@@ -639,9 +777,7 @@ class ProductDetail extends Component
     #[Computed]
     public function relatedProducts()
     {
-        return Product::where('is_active', true)
-            ->where('is_hidden', false)
-            ->whereIn('channel_visibility', ['online_only', 'both'])
+        return Product::visibleOnline()
             ->where('category_id', $this->product->category_id)
             ->where('id', '!=', $this->product->id)
             ->inRandomOrder()

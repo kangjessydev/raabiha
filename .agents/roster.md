@@ -26,10 +26,10 @@ Status: ✅ ada · 📝 direncanakan
 | `/role-motion` | 📝 | Konsultan & auditor animasi/motion UI (timing, easing, performa, anti-AI slop) | Tidak |
 | `/role-backend` | ✅ | Backend/API (arsitektur 4 lapis, validasi ketat, anti-race condition) | Ya |
 | `/role-database` | ✅ | Skema, migrasi aman, relasi, indexing, RLS, zero data loss | Ya |
-| `/role-inspektur` | ✅ | Cek ketidaksinkronan UI-API-DB-kontrak, audit data dummy, audit anti-slop | Tidak |
+| `/role-inspektur` | ✅ | Auditor forensik & skeptis: logika bisnis, duplikasi/penamaan, sinkronisasi FE-BE-DB, ukuran file (≤300 baris), sintaks/DB, anti-slop, kerja per fase ≤50% konteks | Tidak (Read-Only) |
 | `/role-security` | 📝 | Cek keamanan sesuai profil risiko | Tidak |
 | `/role-bug-hunter` | 📝 | Cari bug dengan bukti | Tidak |
-| `/role-devops` | 📝 | Tes, build, rilis, optimasi sebelum production | Terbatas (config/CI) |
+| `/role-devops` | ✅ | Audit VPS CloudPanel, release gate/tag, backup, & deploy terkendali (wajib izin per langkah) | Terbatas (config/CI/deploy) |
 | `/role-simplifier` | 📝 | Hapus duplikasi, kode mati, over-engineering | Ya (tes harus hijau) |
 | `/role-retro` | 📝 | Tinjau log penyimpangan, usulkan perbaikan SKILL.md | Tidak |
 | `/role-help` | 📝 | Tampilkan kartu contekan ini | Tidak |

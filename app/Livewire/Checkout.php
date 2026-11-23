@@ -279,6 +279,18 @@ class Checkout extends Component
         $this->generateShippingRates();
     }
 
+    public function clearDestination(): void
+    {
+        $this->selectedDestinationId = '';
+        $this->selectedDestinationLabel = '';
+        $this->searchLocation = '';
+        $this->destinationOptions = [];
+        $this->shippingRates = [];
+        $this->shipping_method = '';
+        $this->shipping_cost = 0;
+        $this->isFallbackShipping = false;
+    }
+
     // BinderByte Cascading Dropdown Logic
     public function loadProvinces()
     {
@@ -419,8 +431,10 @@ class Checkout extends Component
         $this->generateShippingRates();
     }
 
+    #[Locked]
     public $shippingRates = [];
 
+    #[Locked]
     public $totalWeight = 0;
 
     public $activeShippingCategory = 'reguler';
@@ -943,15 +957,30 @@ class Checkout extends Component
 
     public function getCartProperty()
     {
+        $isBuyNow = (bool) session('checkout_is_buy_now', false);
+
         if (auth()->check()) {
-            return Cart::with(['items.product', 'items.variant.attributeOptions.attribute'])
+            return Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
                 ->where('user_id', auth()->id())
-                ->first();
-        } else {
-            return Cart::with(['items.product', 'items.variant.attributeOptions.attribute'])
-                ->where('session_id', session()->getId())
+                ->where('is_buy_now', $isBuyNow)
                 ->first();
         }
+
+        return Cart::with(['items.product', 'items.variant.media', 'items.variant.attributeOptions.attribute'])
+            ->where('session_id', session()->getId())
+            ->whereNull('user_id')
+            ->where('is_buy_now', $isBuyNow)
+            ->first();
+    }
+
+    protected function cleanupCheckedOutCart(array $checkoutItemIds): void
+    {
+        $cart = $this->cart;
+        CartItem::whereIn('id', $checkoutItemIds)->delete();
+        if ($cart && $cart->items()->count() === 0) {
+            $cart->delete();
+        }
+        session()->forget(['checkout_item_ids', 'checkout_is_buy_now']);
     }
 
     public function getCheckoutItemsProperty()
@@ -1250,6 +1279,23 @@ class Checkout extends Component
             return;
         }
 
+        // Validasi metode pembayaran terhadap daftar metode bayar aktif kanal online (S-02)
+        $activeOnlinePaymentCodes = PaymentMethod::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('config->availability')
+                    ->orWhere('config->availability', 'both')
+                    ->orWhere('config->availability', 'online');
+            })
+            ->pluck('code')
+            ->all();
+
+        if (! empty($activeOnlinePaymentCodes) && ! in_array($this->payment_method, $activeOnlinePaymentCodes, true)) {
+            $this->addError('payment_method', 'Metode pembayaran yang dipilih tidak tersedia untuk transaksi online.');
+            session()->flash('error', 'Metode pembayaran yang dipilih tidak tersedia untuk transaksi online.');
+
+            return;
+        }
+
         if ($this->appliedVoucher) {
             $voucher = Voucher::find($this->appliedVoucher['id']);
             if ($voucher) {
@@ -1314,8 +1360,12 @@ class Checkout extends Component
                     $variant = ProductVariant::where('id', $item->product_variant_id)
                         ->lockForUpdate()
                         ->first();
-                    if (! $variant) {
-                        throw new \Exception("Varian produk '{$item->product->name}' tidak ditemukan.");
+                    if (! $variant || ! $variant->is_active) {
+                        throw new \Exception("Varian produk '{$item->product->name}' sudah tidak tersedia atau tidak aktif.");
+                    }
+                    $parentProduct = Product::where('id', $variant->product_id)->first();
+                    if (! $parentProduct || ! $parentProduct->is_active || $parentProduct->channel_visibility === 'pos_only' || $parentProduct->is_custom) {
+                        throw new \Exception("Produk '{$item->product->name}' tidak tersedia untuk pembelian online.");
                     }
                     if ($variant->stock < $item->quantity) {
                         throw new \Exception("Stok produk '{$item->product->name}' (Varian: {$variant->name}) tidak mencukupi. Tersedia: {$variant->stock}.");
@@ -1324,8 +1374,8 @@ class Checkout extends Component
                     $product = Product::where('id', $item->product_id)
                         ->lockForUpdate()
                         ->first();
-                    if (! $product) {
-                        throw new \Exception("Produk '{$item->product->name}' tidak ditemukan.");
+                    if (! $product || ! $product->is_active || $product->channel_visibility === 'pos_only' || $product->is_custom) {
+                        throw new \Exception("Produk '{$item->product->name}' tidak tersedia untuk pembelian online.");
                     }
                     if ($product->stock < $item->quantity) {
                         throw new \Exception("Stok produk '{$product->name}' tidak mencukupi. Tersedia: {$product->stock}.");
@@ -1554,12 +1604,7 @@ class Checkout extends Component
 
         // Metode Tunai / Manual / Offline
         if ($this->payment_method === 'tunai') {
-            CartItem::whereIn('id', $checkoutItemIds)->delete();
-            $cart = $this->cart;
-            if ($cart && $cart->items()->count() === 0) {
-                $cart->delete();
-            }
-            session()->forget('checkout_item_ids');
+            $this->cleanupCheckedOutCart($checkoutItemIds);
 
             $lock->release();
 
@@ -1597,7 +1642,9 @@ class Checkout extends Component
                         'price' => (int) $item->price,
                         'quantity' => $item->quantity,
                         'product_url' => url('/product/'.$item->product->slug),
-                        'image_url' => asset('assets/images/placeholder.png'),
+                        'image_url' => $item->variant
+                            ? $item->variant->resolveImageUrl($item->product)
+                            : ($item->product ? $item->product->primary_image_url : \App\Services\ProductImageResolver::placeholderUrl()),
                     ];
                 }
 
@@ -1625,6 +1672,24 @@ class Checkout extends Component
                     ];
                 }
 
+                // Pastikan sum(price * quantity) pada order_items Tripay selalu tepat sama dengan $amount (T-04)
+                $tripayItemsSum = array_reduce(
+                    $orderItems,
+                    fn (int $carry, array $it): int => $carry + ((int) $it['price'] * (int) $it['quantity']),
+                    0
+                );
+
+                if ($tripayItemsSum !== (int) $amount) {
+                    $orderItems = [
+                        [
+                            'sku' => $merchantRef,
+                            'name' => mb_substr('Pesanan #'.$merchantRef.' (Termasuk Diskon & Ongkir)', 0, 50),
+                            'price' => max(0, (int) $amount),
+                            'quantity' => 1,
+                        ],
+                    ];
+                }
+
                 $data = [
                     'method' => $method,
                     'merchant_ref' => $merchantRef,
@@ -1649,12 +1714,7 @@ class Checkout extends Component
                         'payment_url' => $tripayData['checkout_url'],
                     ]);
 
-                    CartItem::whereIn('id', $checkoutItemIds)->delete();
-                    $cart = $this->cart;
-                    if ($cart && $cart->items()->count() === 0) {
-                        $cart->delete();
-                    }
-                    session()->forget('checkout_item_ids');
+                    $this->cleanupCheckedOutCart($checkoutItemIds);
 
                     $lock->release();
                     $this->redirect($tripayData['checkout_url'], navigate: false);
@@ -1747,12 +1807,7 @@ class Checkout extends Component
                         'payment_url' => $xenditData['invoice_url'],
                     ]);
 
-                    CartItem::whereIn('id', $checkoutItemIds)->delete();
-                    $cart = $this->cart;
-                    if ($cart && $cart->items()->count() === 0) {
-                        $cart->delete();
-                    }
-                    session()->forget('checkout_item_ids');
+                    $this->cleanupCheckedOutCart($checkoutItemIds);
 
                     $lock->release();
                     $this->redirect($xenditData['invoice_url'], navigate: false);
@@ -1763,12 +1818,7 @@ class Checkout extends Component
                     throw new \Exception($response->json('message') ?? 'Gagal membuat transaksi Xendit');
                 }
             } else {
-                CartItem::whereIn('id', $checkoutItemIds)->delete();
-                $cart = $this->cart;
-                if ($cart && $cart->items()->count() === 0) {
-                    $cart->delete();
-                }
-                session()->forget('checkout_item_ids');
+                $this->cleanupCheckedOutCart($checkoutItemIds);
 
                 $lock->release();
 

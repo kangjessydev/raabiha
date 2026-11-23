@@ -74,6 +74,29 @@ class XenditWebhookController extends Controller
                     return ['status' => 200, 'body' => ['success' => true, 'message' => 'Order already paid']];
                 }
 
+                if ($order->status === 'cancelled') {
+                    Log::warning('Late PAID webhook received from Xendit for cancelled order', [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'invoice_id' => $xenditInvoiceId,
+                    ]);
+
+                    $order->update([
+                        'notes' => trim(($order->notes ?? '') . " [PERHATIAN: Callback PAID Xendit ({$xenditInvoiceId}) masuk setelah pesanan dibatalkan - butuh verifikasi manual admin]"),
+                    ]);
+
+                    foreach ($admins as $admin) {
+                        Notification::make()
+                            ->icon('heroicon-o-exclamation-triangle')
+                            ->iconColor('warning')
+                            ->title('⚠️ Pembayaran Terlambat (Xendit)')
+                            ->body("Pembayaran Xendit masuk untuk pesanan #{$order->order_number} yang sudah dibatalkan. Mohon verifikasi manual.")
+                            ->sendToDatabase($admin);
+                    }
+
+                    return ['status' => 200, 'body' => ['success' => true, 'message' => 'Late payment flagged for manual review']];
+                }
+
                 $order->update([
                     'status' => 'packed',
                     'payment_status' => 'paid',
@@ -91,6 +114,14 @@ class XenditWebhookController extends Controller
 
                 return ['status' => 200, 'body' => ['success' => true, 'message' => 'Payment recorded']];
             } elseif (in_array($status, ['EXPIRED', 'FAILED'])) {
+                if ($order->payment_status === 'paid') {
+                    Log::info('Ignoring Xendit EXPIRED/FAILED webhook for already paid order', [
+                        'order_id' => $order->id,
+                        'invoice_id' => $xenditInvoiceId,
+                    ]);
+                    return ['status' => 200, 'body' => ['success' => true, 'message' => 'Order already paid, ignoring failed/expired status']];
+                }
+
                 if ($order->status === 'cancelled') {
                     return ['status' => 200, 'body' => ['success' => true, 'message' => 'Order already cancelled']];
                 }

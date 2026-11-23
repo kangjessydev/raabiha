@@ -90,8 +90,15 @@
 
         <div x-data="{ show: false, message: '' }" 
              @address-saved.window="show = true; message = $event.detail.message; setTimeout(() => show = false, 3000)"
-             class="fixed bottom-5 right-5 z-50 transition-all duration-300 transform"
-             x-show="show" x-transition:enter="translate-y-10 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="translate-y-0 opacity-100" x-transition:leave-end="translate-y-10 opacity-0" style="display: none;">
+             class="fixed bottom-5 right-5 z-50 transform"
+             x-show="show"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="translate-y-8 opacity-0"
+             x-transition:enter-end="translate-y-0 opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="translate-y-0 opacity-100"
+             x-transition:leave-end="translate-y-8 opacity-0"
+             style="display: none;">
             <div class="bg-[#064e3b] text-white px-6 py-3 shadow-xl font-sans text-sm flex items-center gap-3">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 <span x-text="message"></span>

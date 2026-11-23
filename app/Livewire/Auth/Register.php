@@ -36,6 +36,8 @@ class Register extends Component
     {
         $this->validate();
 
+        $oldSessionId = session()->getId();
+
         $user = User::create([
             'name' => $this->name,
             'email' => $this->email,
@@ -46,6 +48,8 @@ class Register extends Component
         event(new Registered($user));
 
         Auth::login($user);
+        session()->regenerate();
+        \App\Models\Cart::mergeGuestCartToUser($oldSessionId, (int) $user->id);
 
         return redirect()->route('verification.notice');
     }

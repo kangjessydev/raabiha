@@ -75,6 +75,29 @@ class TripayWebhookController extends Controller
                     return ['status' => 200, 'body' => ['success' => true, 'message' => 'Order already paid']];
                 }
 
+                if ($order->status === 'cancelled') {
+                    Log::warning('Late PAID webhook received from Tripay for cancelled order', [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'reference' => $tripayReference,
+                    ]);
+
+                    $order->update([
+                        'notes' => trim(($order->notes ?? '') . " [PERHATIAN: Callback PAID Tripay ({$tripayReference}) masuk setelah pesanan dibatalkan - butuh verifikasi manual admin]"),
+                    ]);
+
+                    foreach ($admins as $admin) {
+                        Notification::make()
+                            ->icon('heroicon-o-exclamation-triangle')
+                            ->iconColor('warning')
+                            ->title('⚠️ Pembayaran Terlambat (Tripay)')
+                            ->body("Pembayaran Tripay masuk untuk pesanan #{$order->order_number} yang sudah dibatalkan. Mohon verifikasi manual.")
+                            ->sendToDatabase($admin);
+                    }
+
+                    return ['status' => 200, 'body' => ['success' => true, 'message' => 'Late payment flagged for manual review']];
+                }
+
                 $order->update([
                     'status' => 'packed',
                     'payment_status' => 'paid',
@@ -92,6 +115,14 @@ class TripayWebhookController extends Controller
 
                 return ['status' => 200, 'body' => ['success' => true, 'message' => 'Payment recorded']];
             } elseif (in_array($status, ['EXPIRED', 'FAILED'])) {
+                if ($order->payment_status === 'paid') {
+                    Log::info('Ignoring Tripay EXPIRED/FAILED webhook for already paid order', [
+                        'order_id' => $order->id,
+                        'reference' => $tripayReference,
+                    ]);
+                    return ['status' => 200, 'body' => ['success' => true, 'message' => 'Order already paid, ignoring failed/expired status']];
+                }
+
                 if ($order->status === 'cancelled') {
                     return ['status' => 200, 'body' => ['success' => true, 'message' => 'Order already cancelled']];
                 }

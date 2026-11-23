@@ -20,10 +20,8 @@ class Search extends Component
         $posts = collect();
 
         if (trim($this->q) !== '') {
-            $products = Product::with(['category', 'variants'])
-                ->where('is_active', true)
-                ->where('is_hidden', false)
-                ->whereIn('channel_visibility', ['online_only', 'both'])
+            $products = Product::visibleOnline()
+                ->with(['category', 'variants'])
                 ->where(function($query) {
                     $query->where('name', 'like', '%' . $this->q . '%')
                           ->orWhere('description', 'like', '%' . $this->q . '%');

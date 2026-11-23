@@ -2,13 +2,19 @@
 
 namespace App\Models;
 
+use App\Services\ProductImageResolver;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 
 class ProductVariant extends Model
 {
     use HasFactory;
+
+    protected $attributes = [
+        'channel_visibility' => 'online_only',
+    ];
 
     protected $fillable = [
         'product_id',
@@ -56,7 +62,7 @@ class ProductVariant extends Model
 
     public function media(): BelongsTo
     {
-        return $this->belongsTo(\Awcodes\Curator\Models\Media::class, 'media_id');
+        return $this->belongsTo(Media::class, 'media_id');
     }
 
     public function variantOptions(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -124,5 +130,18 @@ class ProductVariant extends Model
         }
 
         return $basePrice;
+    }
+
+    public function getImageUrlAttribute(): string
+    {
+        return ProductImageResolver::resolveVariantUrl($this);
+    }
+
+    /**
+     * @param  Collection<int, Media>|null  $preloadedMedia
+     */
+    public function resolveImageUrl(?Product $fallbackProduct = null, ?Collection $preloadedMedia = null): string
+    {
+        return ProductImageResolver::resolveVariantUrl($this, $fallbackProduct, $preloadedMedia);
     }
 }

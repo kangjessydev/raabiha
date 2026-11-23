@@ -2,14 +2,21 @@
 
 namespace App\Models;
 
+use App\Services\ProductImageResolver;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Product extends Model
 {
     use HasFactory;
+
+    protected $attributes = [
+        'channel_visibility' => 'online_only',
+    ];
 
     protected $fillable = [
         'category_id',
@@ -58,6 +65,29 @@ class Product extends Model
         'rating' => 'decimal:1',
         'sold_count' => 'integer',
     ];
+
+    /**
+     * Scope products visible on E-Commerce storefront.
+     * Strictly excludes POS-only and cashier custom products (`is_custom = true`),
+     * while temporarily allowing legacy non-custom `both` records until admin reclassifies them (Opsi A).
+     */
+    public function scopeVisibleOnline(Builder $query): Builder
+    {
+        return $query->where('is_active', true)
+            ->where('is_hidden', false)
+            ->where('is_custom', false)
+            ->whereIn('channel_visibility', ['online_only', 'both']);
+    }
+
+    /**
+     * Scope products visible in POS cashier terminal.
+     * Includes `pos_only` (and cashier custom products) plus legacy `both` records (Opsi A).
+     */
+    public function scopeVisibleInPos(Builder $query): Builder
+    {
+        return $query->where('is_active', true)
+            ->whereIn('channel_visibility', ['pos_only', 'both']);
+    }
 
     public function category(): BelongsTo
     {
@@ -164,16 +194,39 @@ class Product extends Model
     public function getIsOutOfStockAttribute(): bool
     {
         if ($this->has_variants) {
-            return $this->variants->sum('stock') <= 0;
+            return $this->variants->where('is_active', true)->sum('stock') <= 0;
         }
+
         return $this->stock <= 0;
     }
 
     public function getTotalStockAttribute(): int
     {
         if ($this->has_variants) {
-            return $this->variants->sum('stock');
+            return (int) $this->variants->where('is_active', true)->sum('stock');
         }
-        return $this->stock;
+
+        return (int) $this->stock;
+    }
+
+    public function getPrimaryImageUrlAttribute(): string
+    {
+        return ProductImageResolver::resolvePrimaryUrl($this);
+    }
+
+    /**
+     * @param  Collection<int, Media>|null  $preloadedMedia
+     */
+    public function resolvePrimaryImageUrl(?Collection $preloadedMedia = null): string
+    {
+        return ProductImageResolver::resolvePrimaryUrl($this, $preloadedMedia);
+    }
+
+    /**
+     * @return array{urls: array<int, string>, media_ids: array<int, int|null>}
+     */
+    public function resolveGallery(): array
+    {
+        return ProductImageResolver::resolveGallery($this);
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Products\Tables;
 
 use App\Models\Product;
-use Awcodes\Curator\Models\Media;
+use App\Services\ProductImageResolver;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -30,7 +30,13 @@ class ProductsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['category', 'variants']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query
+                ->with(['category', 'variants'])
+                ->withSum(
+                    ['variants as active_variants_stock_sum' => fn (Builder $variantQuery): Builder => $variantQuery->where('is_active', true)],
+                    'stock'
+                )
+            )
             ->poll('5s')
             ->defaultSort('created_at', 'desc')
             ->columns([
@@ -48,24 +54,14 @@ class ProductsTable
                     ->formatStateUsing(function (Product $record) {
                         $mediaIds = $record->images ?? [];
                         $firstMediaId = is_array($mediaIds) ? ($mediaIds[0] ?? null) : $mediaIds;
-
-                        $imgSrc = null;
-                        if (! empty($firstMediaId)) {
-                            if (is_string($firstMediaId) && (str_starts_with($firstMediaId, 'http://') || str_starts_with($firstMediaId, 'https://'))) {
-                                $imgSrc = $firstMediaId;
-                            } elseif (is_numeric($firstMediaId)) {
-                                $media = Media::find($firstMediaId);
-                                $imgSrc = $media ? $media->url : null;
-                            } elseif (is_string($firstMediaId)) {
-                                $imgSrc = asset('storage/'.ltrim($firstMediaId, '/'));
-                            }
-                        }
+                        $imgSrc = ProductImageResolver::resolveSingle($firstMediaId, null, null);
 
                         $catName = e($record->category?->name ?? 'Tanpa Kategori');
                         $name = e($record->name);
+                        $safeImgSrc = $imgSrc ? e($imgSrc) : null;
 
-                        $imgHtml = $imgSrc
-                            ? "<img src='{$imgSrc}' alt='{$name}' style='width:2.5rem; height:2.5rem; border-radius:9999px; object-fit:cover; border: 2px solid #e5e7eb; flex-shrink: 0;' />"
+                        $imgHtml = $safeImgSrc
+                            ? "<img src='{$safeImgSrc}' alt='{$name}' style='width:2.5rem; height:2.5rem; border-radius:9999px; object-fit:cover; border: 2px solid #e5e7eb; flex-shrink: 0;' />"
                             : "<div style='width:2.5rem; height:2.5rem; border-radius:9999px; background-color:#f3f4f6; display:flex; align-items:center; justify-content:center; flex-shrink:0;'><svg style='width:1.25rem; height:1.25rem; color:#6b7280;' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' d='M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z' /></svg></div>";
 
                         return "
@@ -98,18 +94,26 @@ class ProductsTable
                     ->sortable(),
                 TextColumn::make('stock')
                     ->label('Stock')
-                    ->sortable()
-                    ->formatStateUsing(function ($state, Product $record) {
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        $safeDirection = strtolower($direction) === 'desc' ? 'desc' : 'asc';
+
+                        return $query->orderByRaw(
+                            "CASE WHEN products.has_variants = 1 THEN COALESCE((SELECT SUM(pv.stock) FROM product_variants pv WHERE pv.product_id = products.id AND pv.is_active = 1), 0) ELSE COALESCE(products.stock, 0) END {$safeDirection}"
+                        );
+                    })
+                    ->formatStateUsing(function ($state, Product $record): string {
                         if ($record->has_variants) {
-                            $totalVariantStock = $record->variants->sum('stock');
+                            $totalVariantStock = (int) ($record->active_variants_stock_sum ?? $record->variants->where('is_active', true)->sum('stock'));
 
                             return $totalVariantStock.' pcs (varian)';
                         }
 
-                        return ($state ?? 0).' pcs';
+                        return ((int) ($state ?? 0)).' pcs';
                     })
-                    ->color(function ($state, Product $record) {
-                        $stock = $record->has_variants ? $record->variants->sum('stock') : ($state ?? 0);
+                    ->color(function ($state, Product $record): string {
+                        $stock = $record->has_variants
+                            ? (int) ($record->active_variants_stock_sum ?? $record->variants->where('is_active', true)->sum('stock'))
+                            : (int) ($state ?? 0);
 
                         return match (true) {
                             $stock <= 0 => 'danger',
@@ -134,12 +138,14 @@ class ProductsTable
                     ->formatStateUsing(fn ($state) => match ($state) {
                         'pos_only' => 'POS Kasir',
                         'online_only' => 'E-Commerce',
+                        'both' => 'Legacy (Perlu Dipilah)',
                         default => ucwords($state ?? '-'),
                     })
                     ->color(fn ($state) => match ($state) {
                         'pos_only' => 'warning',
                         'online_only' => 'info',
-                        default => 'secondary',
+                        'both' => 'danger',
+                        default => 'gray',
                     })
                     ->sortable(),
                 ToggleColumn::make('is_active')
@@ -161,6 +167,7 @@ class ProductsTable
                     ->options([
                         'pos_only' => 'POS Kasir Saja (Toko Fisik)',
                         'online_only' => 'E-Commerce Saja (Website Online)',
+                        'both' => 'Legacy (Perlu Dipilah)',
                     ]),
                 SelectFilter::make('category_id')
                     ->relationship('category', 'name')
@@ -241,9 +248,8 @@ class ProductsTable
                             Select::make('channel_visibility')
                                 ->label('Tampil di')
                                 ->options([
-                                    'both' => 'Web & POS Kasir',
-                                    'online_only' => 'Web Toko Online Saja',
-                                    'pos_only' => 'POS Kasir Saja',
+                                    'online_only' => 'E-Commerce Saja (Website Online)',
+                                    'pos_only' => 'POS Kasir Saja (Toko Fisik)',
                                 ])
                                 ->required(),
                         ])

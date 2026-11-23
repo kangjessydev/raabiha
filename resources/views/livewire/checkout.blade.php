@@ -186,7 +186,7 @@
                                     @if($selectedDestinationLabel)
                                         <div class="mt-2 text-sm text-[#064e3b] font-semibold flex items-center justify-between bg-[#f0ede9] p-3 rounded">
                                             <span class="truncate">{{ $selectedDestinationLabel }}</span>
-                                            <button type="button" @click="$wire.set('selectedDestinationId', ''); $wire.set('selectedDestinationLabel', ''); $wire.set('shipping_cost', 0)" class="text-red-500 hover:text-red-700 ml-2 shrink-0">
+                                            <button type="button" @click="$wire.clearDestination()" class="text-red-500 hover:text-red-700 ml-2 shrink-0">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                             </button>
                                         </div>
@@ -202,7 +202,7 @@
                                             <span class="text-[#064e3b] font-semibold text-xs block mb-1">Wilayah Tujuan Pengiriman:</span>
                                             <span class="text-sm font-sans">{{ $selectedDestinationLabel }}</span>
                                         </div>
-                                        <button type="button" @click="changeLocation = true; $wire.set('selectedDestinationId', ''); $wire.set('selectedDestinationLabel', ''); $wire.set('shipping_cost', 0)" class="shrink-0 text-xs font-mono font-bold uppercase text-red-600 hover:text-red-800 underline">Ganti Lokasi</button>
+                                        <button type="button" @click="changeLocation = true; $wire.clearDestination()" class="shrink-0 text-xs font-mono font-bold uppercase text-red-600 hover:text-red-800 underline">Ganti Lokasi</button>
                                     </div>
 
                                     <div x-show="changeLocation">
@@ -520,23 +520,15 @@
                             <!-- Order Items Mini -->
                             <div class="flex flex-col gap-4 mb-4 lg:mb-0 order-items-scroll" data-lenis-prevent>
                             @if($this->checkoutItems && $this->checkoutItems->count() > 0)
+                                @php
+                                    $preloadedMedia = \App\Services\ProductImageResolver::preloadMedia($this->checkoutItems);
+                                @endphp
                                 @foreach($this->checkoutItems as $item)
                                     @php
                                         $price = $item->variant && $item->variant->price !== null ? $item->variant->price : $item->product->price;
-                                        $imageId = $item->product->images && count($item->product->images) > 0 ? $item->product->images[0] : null;
-                                        $image = asset('assets/images/placeholder.webp');
-                                        if ($imageId) {
-                                            if (is_numeric($imageId)) {
-                                                $media = \Awcodes\Curator\Models\Media::find($imageId);
-                                                if ($media && Storage::disk('public')->exists($media->path)) {
-                                                    $image = Storage::url($media->path);
-                                                }
-                                            } else {
-                                                if (Storage::disk('public')->exists($imageId)) {
-                                                    $image = asset('storage/' . $imageId);
-                                                }
-                                            }
-                                        }
+                                        $image = $item->variant
+                                            ? $item->variant->resolveImageUrl($item->product, $preloadedMedia)
+                                            : $item->product->resolvePrimaryImageUrl($preloadedMedia);
                                         
                                         $variantText = '';
                                         if ($item->variant) {
