@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Ditambahkan
+- Automated feature test `tests/Feature/PosManualDiscountServerGuardTest.php` dan laporan pengerjaan P3 Fase 2 (`docs/reports/2026-11-23-backend-p3-fase-2-pos-manual-discount-server-guard.md`).
+- Automated feature test `tests/Feature/P3WidgetStockAndPosVoidNullSafeTest.php` dan laporan pengerjaan P3 Fase 1 (`docs/reports/2026-11-23-backend-p3-fase-1-widget-stok-dan-void-null-safe.md`).
+- Catatan keputusan arsitektur ADR-003 di `docs/decisions.md` (penangguhan `BKL-003` rate limiting PIN supervisor POS atas permintaan klien).
 - Automated feature test `tests/Feature/BuyNowIsolationAndCartStockSyncTest.php` dan laporan pengerjaan P2 Fase 2A (`docs/reports/2026-11-23-backend-p2-fase-2a-buy-now-isolation-dan-cart-stock-sync.md`).
 - Kontrak publik `$stockNotices` dan `$itemAvailability` beserta method `syncCartStockState()` pada `app/Livewire/Cart.php` untuk sinkronisasi & auto-clamp stok keranjang (Opsi A — `BKL-013`).
 - Automated feature test `tests/Feature/AdminOrderVariantAndProductStockSortTest.php` dan laporan pengerjaan P2 Fase 1 (`docs/reports/2026-11-23-backend-p2-fase-1-order-variant-dan-stok-admin.md`).
@@ -25,6 +28,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tiket backlog perbaikan lanjutan BKL-004 s/d BKL-012 di `docs/backlog.md`.
 
 ### Diubah
+- Perbaikan P3 Fase 3 (`S-01` — `resources/views/livewire/cart.blade.php:73`): menyelaraskan tampilan harga per baris item keranjang agar menggunakan `effective_price` seperti kalkulasi subtotal di `app/Livewire/Cart.php`.
+- Perbaikan P3 Fase 2 (`BKL-001` — Hardening Otorisasi Diskon Manual Kasir di Sisi Server):
+  - `app/Services/PosTransactionService.php`: menambahkan `authorizeManualDiscount()` & `isSupervisorUser()` pada `completePosTransaction()` untuk memvalidasi ambang batas `pos_manual_discount_max_percent_without_pin` (default 20%) & `pos_manual_discount_max_rp_without_pin` (default Rp 50.000) di sisi server, mencegah diskon negatif, mewajibkan otorisasi supervisor bila melewati batas, dan mencatat `manual_discount_supervisor_id` di `payment_details`.
+  - `app/Livewire/PosManager.php`: menyimpan token otorisasi sekali pakai di server-side session (`pos_supervisor_discount_auth`, TTL 15 menit) saat `verifySupervisorPin()` berhasil, membuang potensi pemalsuan `manual_discount_authorized_by` dari payload klien di `processCheckout()`, dan menghanguskan token pasca-transaksi sukses.
+- Perbaikan P3 Fase 1:
+  - `app/Filament/Resources/Products/Widgets/ProductStatsWidget.php` (`BKL-005`): menyelaraskan query `Stok Habis / Menipis` agar produk bervarian dihitung perlu restock bila memiliki minimal 1 varian aktif (`is_active = true`) dengan `stock <= 0` atau belum memiliki varian aktif sama sekali (varian non-aktif stok `0` tidak memicu false positive).
+  - `app/Livewire/PosManager.php` (`BKL-002`): memasang null-safe `$voidActorLabel` pada `voidOrder()` (`Disetujui Supervisor: ...` vs `Oleh Kasir: ...`) agar pembatalan nota tanpa PIN supervisor (`pos_require_pin_for_void = false`) tidak crash `Attempt to read property "name" on null`.
 - Perbaikan P2 Fase 2B (`BKL-013` Frontend) pada `resources/views/livewire/cart.blade.php`: menampilkan banner notifikasi `$stockNotices` (`role="alert"`, `aria-live="polite"`) untuk peringatan auto-clamp & item tidak tersedia, badge alasan (`Stok habis.` / `Varian sudah tidak aktif.`) & indikator `Sisa X pcs`, menonaktifkan checkbox & tombol `- / +` sesuai ketersediaan dan batas stok riil (`$itemAvailability`), serta kepatuhan anti-AI-slop (dimensi eksplisit `width="240" height="280"` + `loading="lazy"`, `tabular-nums`, `aria-label`, dan `focus-visible:ring-2`).
 - Perbaikan P2 Fase 2A (`BKL-013` Backend):
   - `app/Livewire/ProductDetail.php`: memisahkan `buyNow()` dari `addToCart()` dengan `Cart` terpisah (`is_buy_now = true`) dan pengecekan stok riil khusus qty Beli Sekarang (mengabaikan isi/qty keranjang reguler) serta mengekstrak helper bersama `resolveSelectionForCart()`.

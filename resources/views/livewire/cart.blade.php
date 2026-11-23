@@ -70,7 +70,7 @@
                                         ? $item->variant->resolveImageUrl($item->product, $preloadedMedia)
                                         : $item->product->resolvePrimaryImageUrl($preloadedMedia);
                                     
-                                    $price = $item->variant && $item->variant->price ? $item->variant->price : $item->product->price;
+                                    $price = $item->variant ? $item->variant->effective_price : $item->product->effective_price;
 
                                     $availability = $itemAvailability[(string) $item->id] ?? [
                                         'is_available' => true,

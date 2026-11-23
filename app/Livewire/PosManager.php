@@ -734,8 +734,18 @@ class PosManager extends Component
         }
 
         $data = is_string($payload) ? json_decode($payload, true) : $payload;
+        unset($data['manual_discount_authorized_by']);
         $data['cashier_id']    = Auth::id();
         $data['pos_session_id'] = $this->activeSession->id;
+
+        $supervisorAuth = session('pos_supervisor_discount_auth');
+        if (
+            is_array($supervisorAuth)
+            && ! empty($supervisorAuth['supervisor_id'])
+            && (int) ($supervisorAuth['expires_at'] ?? 0) >= now()->timestamp
+        ) {
+            $data['manual_discount_authorized_by'] = (int) $supervisorAuth['supervisor_id'];
+        }
 
         $idempotencyKey = $data['payment_details']['idempotency_key'] ?? null;
         $lock = null;
@@ -796,6 +806,7 @@ class PosManager extends Component
         try {
             $service = new PosTransactionService();
             $order   = $service->completePosTransaction($data);
+            session()->forget('pos_supervisor_discount_auth');
 
             if ($idempotencyKey) {
                 // Simpan ID Order yang berhasil dibuat dengan key ini
@@ -1182,6 +1193,12 @@ class PosManager extends Component
     {
         $supervisor = $this->validateSupervisorPin($supervisorId, $pin, 'supervisor-auth-failed');
         if ($supervisor) {
+            session([
+                'pos_supervisor_discount_auth' => [
+                    'supervisor_id' => $supervisor->id,
+                    'expires_at'    => now()->addMinutes(15)->timestamp,
+                ],
+            ]);
             $this->dispatch('supervisor-authorized', ['actionType' => $actionType, 'supervisorName' => $supervisor->name]);
         }
     }
@@ -1211,8 +1228,12 @@ class PosManager extends Component
             }
         }
 
+        $voidActorLabel = $supervisor
+            ? 'Disetujui Supervisor: ' . $supervisor->name
+            : 'Oleh Kasir: ' . (Auth::user()?->name ?? 'Kasir');
+
         try {
-            DB::transaction(function () use ($order, $supervisor, $reason) {
+            DB::transaction(function () use ($order, $supervisor, $reason, $voidActorLabel) {
                 // 1. Mark order as cancelled/void
                 $order->update([
                     'status'         => 'cancelled',
@@ -1254,7 +1275,7 @@ class PosManager extends Component
                             'quantity_change'    => $item->quantity,
                             'quantity_after'     => $stockAfter,
                             'reason'             => 'pos_void',
-                            'notes'              => 'Restock Void Nota POS #' . $order->order_number . ' (Disetujui Supervisor: ' . $supervisor->name . ')',
+                            'notes'              => 'Restock Void Nota POS #' . $order->order_number . ' (' . $voidActorLabel . ')',
                         ]);
                     }
                 }
@@ -1275,7 +1296,7 @@ class PosManager extends Component
                         'type'             => 'out',
                         'category'         => 'pos_void',
                         'amount'           => $cf->amount,
-                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
+                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (' . $voidActorLabel . ') - ' . ($reason ?: 'Batal transaksi'),
                         'order_id'         => $order->id,
                         'source'           => 'pos',
                         'is_reversed'      => true,
@@ -1289,7 +1310,7 @@ class PosManager extends Component
                         'type'             => 'out',
                         'category'         => 'pos_void',
                         'amount'           => $order->grand_total,
-                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (Disetujui Supervisor: ' . $supervisor->name . ') - ' . ($reason ?: 'Batal transaksi'),
+                        'description'      => 'Void Transaksi POS #' . $order->order_number . ' (' . strtoupper($order->payment_method) . ') (' . $voidActorLabel . ') - ' . ($reason ?: 'Batal transaksi'),
                         'order_id'         => $order->id,
                         'source'           => 'pos',
                         'is_reversed'      => true,
@@ -1328,7 +1349,7 @@ class PosManager extends Component
             $this->dispatch('order-voided');
             $this->dispatch('notify', [
                 'type'    => 'success',
-                'message' => 'Transaksi #' . $order->order_number . ' berhasil dibatalkan (Disetujui Supervisor: ' . $supervisor->name . ').'
+                'message' => 'Transaksi #' . $order->order_number . ' berhasil dibatalkan (' . $voidActorLabel . ').'
             ]);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'Gagal membatalkan transaksi: ' . $e->getMessage()]);

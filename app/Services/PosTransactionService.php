@@ -22,6 +22,68 @@ use Illuminate\Support\Str;
 
 class PosTransactionService
 {
+    protected function isSupervisorUser(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return (bool) (
+            $user->is_pos_supervisor ||
+            in_array($user->role, ['super_admin', 'owner', 'admin', 'manager', 'supervisor'], true) ||
+            $user->hasAnyRole(['super_admin', 'owner', 'admin', 'manager', 'supervisor'])
+        );
+    }
+
+    /**
+     * Validasi ambang batas diskon manual kasir di sisi server (BKL-001).
+     * Mengembalikan ID supervisor yang mengotorisasi bila melewati batas, atau null jika dalam batas / tidak wajib PIN.
+     */
+    protected function authorizeManualDiscount(float $manualDiscount, float $subtotal, int|string|null $cashierId, array $data): ?int
+    {
+        if ($manualDiscount <= 0) {
+            return null;
+        }
+
+        $requirePinSetting = SiteSetting::where('key', 'pos_require_pin_for_manual_discount')->value('value');
+        $requirePin = $requirePinSetting === null || $requirePinSetting === '1' || $requirePinSetting === 'true' || $requirePinSetting === true;
+
+        if (! $requirePin) {
+            return null;
+        }
+
+        $maxPercentWithoutPin = (float) (SiteSetting::where('key', 'pos_manual_discount_max_percent_without_pin')->value('value') ?? 20);
+        $maxRpWithoutPin = (float) (SiteSetting::where('key', 'pos_manual_discount_max_rp_without_pin')->value('value') ?? 50000);
+
+        $discountPercent = $subtotal > 0 ? (($manualDiscount / $subtotal) * 100) : 100.0;
+        $exceedsThreshold = ($manualDiscount > $maxRpWithoutPin) || ($discountPercent > $maxPercentWithoutPin);
+
+        if (! $exceedsThreshold) {
+            return null;
+        }
+
+        $cashier = $cashierId ? User::find($cashierId) : null;
+        if ($this->isSupervisorUser($cashier)) {
+            return $cashier->id;
+        }
+
+        if (! empty($data['manual_discount_authorized_by'])) {
+            $authorizedSupervisor = User::find($data['manual_discount_authorized_by']);
+            if ($this->isSupervisorUser($authorizedSupervisor)) {
+                return $authorizedSupervisor->id;
+            }
+        }
+
+        if (! empty($data['supervisor_id']) && ! empty($data['supervisor_pin'])) {
+            $supervisor = User::find($data['supervisor_id']);
+            if ($this->isSupervisorUser($supervisor) && $supervisor->pos_pin && Hash::check((string) $data['supervisor_pin'], $supervisor->pos_pin)) {
+                return $supervisor->id;
+            }
+        }
+
+        throw new Exception('Diskon manual melebihi batas kasir tanpa PIN. Diperlukan otorisasi PIN Supervisor.');
+    }
+
     /**
      * Memproses pesanan POS dengan perhitungan harga server-side,
      * lock stock, pengurangan stock, dan pencatatan arus kas.
@@ -175,7 +237,8 @@ class PosTransactionService
             }
 
             // Diskon manual & Voucher
-            $manualDiscount = (float) ($data['manual_discount'] ?? $data['discount'] ?? 0);
+            $manualDiscount = max(0.0, (float) ($data['manual_discount'] ?? $data['discount'] ?? 0));
+            $manualDiscountSupervisorId = $this->authorizeManualDiscount($manualDiscount, (float) $subtotal, $cashierId, $data);
             $voucherDiscount = 0;
 
             // Validasi & Rekalkulasi Voucher Sisi Server jika digunakan
@@ -219,6 +282,9 @@ class PosTransactionService
             $paymentDetails = is_array($paymentDetails) ? $paymentDetails : (is_string($paymentDetails) ? json_decode($paymentDetails, true) : []);
             $paymentDetails['item_discounts'] = $itemDiscountsTotal;
             $paymentDetails['manual_discount'] = $manualDiscount;
+            if ($manualDiscountSupervisorId !== null) {
+                $paymentDetails['manual_discount_supervisor_id'] = $manualDiscountSupervisorId;
+            }
             $paymentDetails['voucher_discount'] = $voucherDiscount;
             if (! empty($data['claimed_physical_gifts']) && is_array($data['claimed_physical_gifts'])) {
                 $paymentDetails['claimed_physical_gifts'] = $data['claimed_physical_gifts'];

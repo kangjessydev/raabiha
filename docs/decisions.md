@@ -24,3 +24,13 @@ Dokumen ini mencatat keputusan arsitektur, pilihan stack, dan trade-off yang dis
   Fitur reseller saat ini baru terpasang sebagian dan memiliki inkonsistensi otorisasi serta kalkulasi harga antara halaman produk dan checkout.
 - **Keputusan:**
   Fitur reseller secara resmi diklasifikasikan sebagai **Fitur Lanjutan (Backlog / Non-Fundamental)**. Fokus utama saat ini diprioritaskan pada stabilitas fundamental katalog produk, manajemen stok, dan keandalan sistem inti. Perbaikan reseller ditunda sampai ada permintaan resmi dari bisnis.
+
+---
+
+## ADR-003: Tidak Menerapkan Rate Limiting pada PIN Supervisor POS (`BKL-003` Ditangguhkan)
+- **Tanggal:** 2026-11-23
+- **Status:** Diterima (Accepted)
+- **Konteks:**
+  Audit keamanan sebelumnya mengusulkan pembatasan percobaan (rate limiting / lockout sementara) pada verifikasi PIN supervisor di kasir POS (`BKL-003`).
+- **Keputusan:**
+  Berdasarkan aturan operasional klien yang tidak menginginkan pembatasan terlalu ketat pada alur kasir, **rate limiting PIN supervisor sengaja tidak diterapkan saat ini**. Dilarang menambahkan lockout PIN supervisor secara sepihak tanpa permintaan eksplisit klien di masa depan.
