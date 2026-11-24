@@ -1,7 +1,7 @@
 # Brief: Inspeksi VPS CloudPanel & Deploy Rilis v1.1.0
 
 - **Untuk:** role-devops   **Dari:** role-asisten   **Tanggal:** 2026-11-23
-- **Status:** `open`
+- **Status:** `closed` (Laporan: [2026-11-23-devops-deploy-v1-1-0.md](../reports/2026-11-23-devops-deploy-v1-1-0.md))
 - **Disetujui user:** ya
 
 ## Tujuan
