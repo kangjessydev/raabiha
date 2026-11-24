@@ -225,7 +225,7 @@ class ProductsTable
                 Action::make('view_frontend')
                     ->label('Lihat di Toko')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (Product $record): string => url('/product/'.$record->slug))
+                    ->url(fn (Product $record): string => rtrim((string) config('app.url'), '/').'/product/'.$record->slug)
                     ->openUrlInNewTab()
                     ->color('info')
                     ->iconButton()

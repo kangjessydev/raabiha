@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-11-24
+
+### Diubah
+- Mengganti pemanggilan `url(...)` untuk tautan storefront publik di seluruh panel Admin Filament & `OrderObserver` (`ProductForm`, `ProductsTable`, `StaticPagesTable`, `SalesPagesTable`, `PostForm`, `PostsTable`, `IntegrationSettings`, `OrderObserver`) menjadi berbasis `config('app.url')` agar tidak mewarisi subdomain `admin.raabiha.com`.
+- `app/Livewire/ProductDetail.php`: mengizinkan produk dengan `is_hidden = true` tetap dapat diakses melalui tautan langsung `/product/{slug}` (sesuai fitur *"Sembunyikan dari Katalog / Bagikan link ini ke pemesan"*), sementara produk non-aktif, `pos_only`, dan `is_custom = true` tetap mengembalikan 404.
+
 ## [1.1.1] - 2026-11-24
 
 ### Diubah

@@ -35,7 +35,7 @@ class IntegrationSettings extends Page implements HasForms
     public function mount(): void
     {
         $settings = SiteSetting::all()->pluck('value', 'key')->toArray();
-        $settings['xendit_callback_url'] = url('/webhook/xendit');
+        $settings['xendit_callback_url'] = rtrim((string) config('app.url'), '/') . '/webhook/xendit';
         $this->form->fill($settings);
     }
 

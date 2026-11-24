@@ -265,7 +265,7 @@ class ProductForm
                             ->label('Sembunyikan dari Katalog (Produk Custom)')
                             ->helperText(function (Get $get) {
                                 if ($get('slug')) {
-                                    $url = url('/product/' . $get('slug'));
+                                    $url = rtrim((string) config('app.url'), '/') . '/product/' . $get('slug');
                                     return new \Illuminate\Support\HtmlString('Jika aktif, produk tidak muncul di daftar Shop. <br>Bagikan link ini ke pemesan: <a href="'.$url.'" target="_blank" class="text-primary-600 underline">'.$url.'</a>');
                                 }
                                 return 'Jika aktif, produk tidak muncul di halaman Shop. Simpan dulu untuk mendapatkan link.';

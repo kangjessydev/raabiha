@@ -116,7 +116,7 @@ class PostForm
                                                 $wordCount = str_word_count(preg_replace('/[^\p{L}\p{N}\s]/u', '', $contentClean));
 
                                                 // Snippet Preview HTML
-                                                $snippetUrl = url('/blog') . '/' . ($slug ?: 'url-artikel-anda');
+                                                $snippetUrl = rtrim((string) config('app.url'), '/') . '/blog/' . ($slug ?: 'url-artikel-anda');
 
                                                 $html = '
                                                 <div style="background-color: #ffffff; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1.5rem; font-family: Arial, sans-serif; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">

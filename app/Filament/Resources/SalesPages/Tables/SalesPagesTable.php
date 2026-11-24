@@ -28,7 +28,7 @@ class SalesPagesTable
                     ->label('Slug')
                     ->searchable()
                     ->limit(30)
-                    ->url(fn (\App\Models\SalesPage $record): string => url('/' . ltrim($record->slug, '/')))
+                    ->url(fn (\App\Models\SalesPage $record): string => rtrim((string) config('app.url'), '/') . '/' . ltrim($record->slug, '/'))
                     ->openUrlInNewTab()
                     ->color('primary'),
                 IconColumn::make('is_active')
