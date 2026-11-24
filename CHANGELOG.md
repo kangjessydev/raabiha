@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.2] - 2026-11-24
 
 ### Diubah
+- `app/Services/BinderByteService.php` & `app/Livewire/Checkout.php`: menambahkan `searchLocations()` dan `resolveLocationId()` berbasis endpoint resmi `GET /v1/locations` agar kode kecamatan Kemendagri (`32.04.14`, `32.04.37`) otomatis diterjemahkan menjadi ID lokasi valid BinderByte (`village_xxxx`) sebelum memanggil `POST /v1/cost` (menutup error HTTP 400 `"Invalid origin or destination prefix IDs"` yang sebelumnya memaksa fallback ke Tarif Toko), berhenti men-cache hasil gagal `[]` selama 6 jam, serta meneruskan label provinsi asal toko ke `ShippingMethod::shouldShowService()` agar aturan `is_local_province` akurat (terverifikasi oleh `tests/Feature/BinderByteShippingResolutionTest.php`).
 - Mengganti pemanggilan `url(...)` untuk tautan storefront publik di seluruh panel Admin Filament & `OrderObserver` (`ProductForm`, `ProductsTable`, `StaticPagesTable`, `SalesPagesTable`, `PostForm`, `PostsTable`, `IntegrationSettings`, `OrderObserver`) menjadi berbasis `config('app.url')` agar tidak mewarisi subdomain `admin.raabiha.com`.
 - `app/Livewire/ProductDetail.php`: mengizinkan produk dengan `is_hidden = true` tetap dapat diakses melalui tautan langsung `/product/{slug}` (sesuai fitur *"Sembunyikan dari Katalog / Bagikan link ini ke pemesan"*), sementara produk non-aktif, `pos_only`, dan `is_custom = true` tetap mengembalikan 404.
 
