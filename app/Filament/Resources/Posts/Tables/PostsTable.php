@@ -34,7 +34,7 @@ class PostsTable
                     ->label('Slug')
                     ->searchable()
                     ->limit(30)
-                    ->url(fn (\App\Models\Post $record): string => url('/blog/' . $record->slug))
+                    ->url(fn (\App\Models\Post $record): string => rtrim((string) config('app.url'), '/') . '/blog/' . $record->slug)
                     ->openUrlInNewTab()
                     ->color('primary'),
                 TextColumn::make('category.name')

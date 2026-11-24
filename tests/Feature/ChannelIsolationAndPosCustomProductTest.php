@@ -289,4 +289,23 @@ class ChannelIsolationAndPosCustomProductTest extends TestCase
         $this->get('/product/'.$product->slug)->assertOk();
         Livewire::test(Shop::class)->assertSee($product->name);
     }
+
+    public function test_hidden_online_product_is_excluded_from_shop_and_sitemap_but_accessible_by_direct_link(): void
+    {
+        $hiddenProduct = Product::create([
+            'name' => 'Sophia Blazer Custom Link',
+            'slug' => 'sophia-blazer-custom-link',
+            'sku' => 'SPH-HID',
+            'price' => 300000,
+            'stock' => 5,
+            'is_active' => true,
+            'is_hidden' => true,
+            'is_custom' => false,
+            'channel_visibility' => 'online_only',
+        ]);
+
+        Livewire::test(Shop::class)->assertDontSee($hiddenProduct->name);
+        $this->get('/sitemap.xml')->assertDontSee('/product/'.$hiddenProduct->slug, false);
+        $this->get('/product/'.$hiddenProduct->slug)->assertOk();
+    }
 }

@@ -641,8 +641,32 @@ class Checkout extends Component
                 return;
             }
 
-            $originDistrict = SiteSetting::where('key', 'binderbyte_origin_district')->value('value');
+            $originSettings = SiteSetting::whereIn('key', [
+                'binderbyte_origin_province',
+                'binderbyte_origin_city',
+                'binderbyte_origin_district',
+                'store_address',
+            ])->pluck('value', 'key');
+
+            $originDistrict = $originSettings->get('binderbyte_origin_district');
             if ($originDistrict) {
+                $originLabel = null;
+                $originProvId = (string) ($originSettings->get('binderbyte_origin_province') ?? '');
+                $originCityId = (string) ($originSettings->get('binderbyte_origin_city') ?? '');
+
+                if ($originProvId !== '' && $originCityId !== '') {
+                    $originProvName = collect(BinderByteService::getProvinces())->firstWhere('id', $originProvId)['name'] ?? '';
+                    $originCityName = collect(BinderByteService::getCities($originProvId))->firstWhere('id', $originCityId)['name'] ?? '';
+                    $originDistName = collect(BinderByteService::getDistricts($originCityId))->firstWhere('id', $originDistrict)['name'] ?? '';
+                    $builtLabel = trim(sprintf('%s, %s, %s', $originDistName, $originCityName, $originProvName), ', ');
+                    if ($builtLabel !== '') {
+                        $originLabel = $builtLabel;
+                    }
+                }
+                if (! $originLabel) {
+                    $originLabel = (string) ($originSettings->get('store_address') ?? '');
+                }
+
                 $courierCodes = $activeCouriers->pluck('code')->implode(',');
 
                 try {
@@ -650,7 +674,9 @@ class Checkout extends Component
                         $originDistrict,
                         $this->selectedDestinationId,
                         $totalWeight,
-                        $courierCodes
+                        $courierCodes,
+                        $originLabel,
+                        $this->selectedDestinationLabel
                     );
 
                     if (! empty($results) && isset($results['results'])) {
@@ -690,8 +716,8 @@ class Checkout extends Component
                                     continue;
                                 }
 
-                                // Dynamic shipping rule verification
-                                if (! $courierModel->shouldShowService($rawServiceName, $totalWeight, $originDistrict, $this->selectedDestinationLabel)) {
+                                // Dynamic shipping rule verification (gunakan $originLabel agar deteksi provinsi lokal akurat)
+                                if (! $courierModel->shouldShowService($rawServiceName, $totalWeight, $originLabel ?: $originDistrict, $this->selectedDestinationLabel)) {
                                     continue;
                                 }
 

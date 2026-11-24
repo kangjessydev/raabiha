@@ -456,7 +456,11 @@ class ProductDetail extends Component
         \Log::info('ProductDetail mount called with slug: '.var_export($slug, true));
         $this->slug = $slug;
         try {
-            $this->product = Product::visibleOnline()
+            // Produk berstatus `is_hidden = true` tetap dapat diakses via tautan langsung (sesuai fitur "Bagikan link ini ke pemesan"),
+            // sementara produk non-aktif, `pos_only`, dan `is_custom = true` tetap diblokir (404).
+            $this->product = Product::where('is_active', true)
+                ->where('is_custom', false)
+                ->whereIn('channel_visibility', ['online_only', 'both'])
                 ->with(['variants.attributeOptions.attribute', 'variants.media'])
                 ->where('slug', $slug)
                 ->firstOrFail();
