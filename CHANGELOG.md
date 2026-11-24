@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-24
+
+### Diubah
+- `app/Observers/ProductObserver.php`: menambahkan hook `saving()` yang otomatis mereset `is_custom = false` ketika Admin memindahkan produk POS kustom ke kanal E-Commerce (`channel_visibility = 'online_only'`), sehingga langsung tampil di `/shop`, `/product/{slug}`, dan `/sitemap.xml` (Brief `026`, terverifikasi oleh `ChannelIsolationAndPosCustomProductTest`).
+
 ## [1.1.0] - 2026-11-23
 
 ### Ditambahkan

@@ -9,6 +9,15 @@ use Filament\Notifications\Notification;
 
 class ProductObserver
 {
+    public function saving(Product $product): void
+    {
+        // Bila admin memindahkan produk kustom POS ke kanal E-Commerce (`online_only`),
+        // otomatis reset flag `is_custom` agar lolos filter `Product::visibleOnline()`.
+        if ($product->channel_visibility === 'online_only' && $product->is_custom) {
+            $product->is_custom = false;
+        }
+    }
+
     public function updated(Product $product): void
     {
         // Hanya cek jika tidak memiliki varian (karena jika punya varian, stok dihitung dari variannya)

@@ -265,4 +265,28 @@ class ChannelIsolationAndPosCustomProductTest extends TestCase
         $response->assertDontSee('/product/'.$posOnly->slug, false);
         $response->assertDontSee('/product/'.$legacyCustom->slug, false);
     }
+
+    public function test_moving_pos_custom_product_to_online_only_resets_is_custom_and_shows_on_storefront(): void
+    {
+        $product = Product::create([
+            'name' => 'Soraya Abaya Textured',
+            'slug' => 'soraya-abaya-textured',
+            'sku' => 'SRY',
+            'price' => 250000,
+            'stock' => 10,
+            'is_active' => true,
+            'is_hidden' => false,
+            'is_custom' => true,
+            'channel_visibility' => 'pos_only',
+        ]);
+
+        $this->get('/product/'.$product->slug)->assertNotFound();
+
+        $product->update(['channel_visibility' => 'online_only']);
+        $product->refresh();
+
+        $this->assertFalse((bool) $product->is_custom);
+        $this->get('/product/'.$product->slug)->assertOk();
+        Livewire::test(Shop::class)->assertSee($product->name);
+    }
 }
